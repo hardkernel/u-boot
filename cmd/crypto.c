@@ -12,6 +12,8 @@
 #include <u-boot/sha256.h>
 #include <u-boot/sha512.h>
 
+#define HASH_PERF_EVAL(dev, algo)	hash_perf_eval(dev, algo, #algo)
+
 __cacheline_aligned static u8 foo_data[] = {
 	0x52, 0x53, 0x41, 0x4b, 0x00, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00,
 	0xda, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -225,6 +227,50 @@ static void dump_hex(const char *name, const u8 *array, u32 len)
 	printf("\n");
 }
 
+static int hash_perf_eval(struct udevice *dev, u32 algo, char *algo_name)
+{
+	sha_context ctx;
+	u32 data_size = 8 * 1024;
+	u8 *data = NULL;
+	u8 hash_out[64];
+	int ret;
+
+	ctx.algo = algo;
+	ctx.length = 100 * 1024 * 1024;
+
+	data = (u8 *)memalign(CONFIG_SYS_CACHELINE_SIZE, data_size);
+	if (!data) {
+		printf("%s, %d: memalign %u error!\n",
+		       __func__, __LINE__, data_size);
+		return -EINVAL;
+	}
+
+	memset(data, 0xab, data_size);
+
+	ulong start = get_timer(0);
+
+	ret = crypto_sha_init(dev, &ctx);
+	if (ret)
+		goto exit;
+
+	for (u32 i = 0; i < ctx.length / data_size; i++) {
+		ret = crypto_sha_update(dev, (u32 *)data, data_size);
+		if (ret)
+			goto exit;
+	}
+
+	ret = crypto_sha_final(dev, &ctx, hash_out);
+
+	ulong time_cost = get_timer(start);
+
+	printf("%s, hash performance = %luMBps\n",
+	       algo_name, (100 * 1000) / time_cost);
+exit:
+	free(data);
+
+	return ret;
+}
+
 static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct udevice *dev;
@@ -256,6 +302,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	/* MD5 */
 	if (cap & CRYPTO_MD5) {
+		HASH_PERF_EVAL(dev, CRYPTO_MD5);
 		csha_ctx.algo = CRYPTO_MD5;
 		csha_ctx.length = sizeof(foo_data);
 		memset(hard_out, 0x00, sizeof(hard_out));
@@ -268,6 +315,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	/* SHA1 */
 	if (cap & CRYPTO_SHA1) {
+		HASH_PERF_EVAL(dev, CRYPTO_SHA1);
 		csha_ctx.algo = CRYPTO_SHA1;
 		csha_ctx.length = sizeof(foo_data);
 		memset(hard_out, 0x00, sizeof(hard_out));
@@ -282,6 +330,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	/* SHA512 */
 	if (cap & CRYPTO_SHA512) {
+		HASH_PERF_EVAL(dev, CRYPTO_SHA512);
 		csha_ctx.algo = CRYPTO_SHA512;
 		csha_ctx.length = sizeof(foo_data);
 		memset(hard_out, 0x00, sizeof(hard_out));
@@ -297,6 +346,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	/* SHA256 */
 	if (cap & CRYPTO_SHA256) {
+		HASH_PERF_EVAL(dev, CRYPTO_SHA256);
 		csha_ctx.algo = CRYPTO_SHA256;
 		csha_ctx.length = sizeof(foo_data);
 		memset(hard_out, 0x00, sizeof(hard_out));
@@ -311,7 +361,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	/* RSA2048-SHA256 */
-	if ((cap & CRYPTO_RSA2048) && (cap & CRYPTO_SHA256)) {
+	if (cap & CRYPTO_RSA2048) {
 		memset(&rsa_key, 0x00, sizeof(rsa_key));
 		rsa_key.algo = CRYPTO_RSA2048;
 		rsa_key.n = (u32 *)&rsa2048_n;
