@@ -5,4 +5,5 @@
 #
 
 obj-y += syscon_rv1126.o
+obj-y += clk_rv1126.o
 obj-y += rv1126.o
