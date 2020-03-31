@@ -45,6 +45,11 @@
 	u-boot,dm-spl;
 };
 
+&crypto {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
 &grf {
 	u-boot,dm-spl;
 };

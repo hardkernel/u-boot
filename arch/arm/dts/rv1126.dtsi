@@ -739,6 +739,15 @@
 		status = "disabled";
 	};
 
+	crypto: crypto@ff500000 {
+		compatible = "rockchip,rv1126-crypto";
+		reg = <0xff500000 0x10000>;
+		clock-names = "sclk_crypto", "sclk_crypto_apk";
+		clocks = <&cru CLK_CRYPTO_CORE>, <&cru CLK_CRYPTO_PKA>;
+		clock-frequency = <200000000>, <300000000>;
+		status = "disabled";
+	};
+
 	i2c1: i2c@ff510000 {
 		compatible = "rockchip,rv1126-i2c", "rockchip,rk3399-i2c";
 		reg = <0xff510000 0x1000>;
