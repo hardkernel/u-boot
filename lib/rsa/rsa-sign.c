@@ -388,7 +388,7 @@ static void rsa_engine_remove(ENGINE *e)
  * key to sign current fit image. Then we replace the signature in fit image
  * with a valid one.
  */
-static void gen_data2sign(const struct image_region region[], int region_count)
+static int gen_data2sign(const struct image_region region[], int region_count)
 {
 	char *file = "data2sign.bin";
 	FILE *fd;
@@ -405,6 +405,8 @@ static void gen_data2sign(const struct image_region region[], int region_count)
 		fwrite(region[i].data, region[i].size, 1, fd);
 
 	fclose(fd);
+
+	return 0;
 }
 
 static int rsa_sign_with_key(RSA *rsa, struct checksum_algo *checksum_algo,
