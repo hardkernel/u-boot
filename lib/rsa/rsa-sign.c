@@ -383,6 +383,30 @@ static void rsa_engine_remove(ENGINE *e)
 	}
 }
 
+/*
+ * With this data2sign.bin, we can provide it to who real holds the RAS-private
+ * key to sign current fit image. Then we replace the signature in fit image
+ * with a valid one.
+ */
+static void gen_data2sign(const struct image_region region[], int region_count)
+{
+	char *file = "data2sign.bin";
+	FILE *fd;
+	int i;
+
+	fd = fopen(file, "wb");
+	if (!fd) {
+		fprintf(stderr, "Failed to create %s: %s\n",
+			file, strerror(errno));
+		return -ENOENT;
+	}
+
+	for (i = 0; i < region_count; i++)
+		fwrite(region[i].data, region[i].size, 1, fd);
+
+	fclose(fd);
+}
+
 static int rsa_sign_with_key(RSA *rsa, struct checksum_algo *checksum_algo,
 		const struct image_region region[], int region_count,
 		uint8_t **sigp, uint *sig_size)
@@ -444,6 +468,8 @@ static int rsa_sign_with_key(RSA *rsa, struct checksum_algo *checksum_algo,
 	debug("Got signature: %d bytes, expected %d\n", *sig_size, size);
 	*sigp = sig;
 	*sig_size = size;
+
+	gen_data2sign(region, region_count);
 
 	return 0;
 
