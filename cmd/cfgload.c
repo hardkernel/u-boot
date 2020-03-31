@@ -12,123 +12,38 @@
 
 #include <common.h>
 #include <command.h>
-#include <linux/errno.h>
-#include <malloc.h>
-#include <linux/ctype.h>    /* isalpha, isdigit */
-#include <linux/sizes.h>
-
-#ifdef CONFIG_HUSH_PARSER
-#include <cli_hush.h>
-#endif
-
-#define BOOTINI_MAGIC	"ODROIDGO2-UBOOT-CONFIG"
-#define SZ_BOOTINI		SZ_64K
-
-/* Nothing to proceed with zero size string or comment.
- *
- * FIXME: Do we really need to strip the line start with '#' or ';',
- *        since any U-boot command does not start with punctuation character.
- */
-static int valid_command(const char* p)
-{
-	char *q;
-
-	for (q = (char*)p; *q; q++) {
-		if (isblank(*q)) continue;
-		if (isalnum(*q)) return 1;
-		if (ispunct(*q))
-			return (*q != '#') && (*q != ';');
-	}
-
-	return !(p == q);
-}
-
-/* Read boot.ini from FAT partition
- */
-static char* read_cfgload(void)
-{
-	char cmd[128];
-	unsigned long filesize;
-	char *p;
-	char *tmp;
-	u32 dev_no;
-
-	tmp = env_get("loadaddr");
-	if (NULL == tmp)
-		p = (char *)CONFIG_SYS_LOAD_ADDR;
-	else
-		p = (char *)simple_strtoul(tmp, NULL, 16);
-
-	env_set("filesize", "0");
-
-	dev_no = 1;
-
-	sprintf(cmd, "fatload mmc %d:1 0x%p boot.ini", dev_no, (void *)p);
-	run_command(cmd, 0);
-
-	filesize = env_get_ulong("filesize", 16, 0);
-	if (0 == filesize) {
-		printf("cfgload: no boot.ini or empty file\n");
-		return NULL;
-	}
-
-	if (filesize > SZ_BOOTINI) {
-		printf("boot.ini: 'boot.ini' exceeds %d, size=%ld\n",
-				SZ_BOOTINI, filesize);
-		return NULL;
-    }
-
-	/* Terminate the read buffer with '\0' to be treated as string */
-	*(char *)(p + filesize) = '\0';
-
-	/* Scan MAGIC string, readed boot.ini must start with exact magic string.
-	 * Otherwise, we will not proceed at all.
-	 */
-	while (*p) {
-		char *s = strsep(&p, "\n");
-		if (!valid_command(s))
-			continue;
-
-		/* MAGIC string is discovered, return the buffer address of next to
-		 * proceed the commands.
-		 */
-		if (!strncmp(s, BOOTINI_MAGIC, sizeof(BOOTINI_MAGIC)))
-			return memcpy(malloc(filesize), p, filesize);
-	}
-
-	printf("cfgload: MAGIC NAME, %s, is not found!!\n", BOOTINI_MAGIC);
-
-	return NULL;
-}
+#include <fs.h>
 
 static int do_load_cfgload(cmd_tbl_t *cmdtp, int flag, int argc,
 		char *const argv[])
 {
-	char *p;
-	char *cmd;
+	ulong addr;
+	char cmd[256];
+	const char *scripts[] = {
+		"boot.ini",
+		"boot.scr",
+	};
+	int i;
 
-	p = read_cfgload();
-	if (NULL == p)
-		return 0;
-
-	printf("cfgload: applying boot.ini...\n");
-
-	while (p) {
-		cmd = strsep(&p, "\n");
-		if (!valid_command(cmd))
-			continue;
-
-		printf("cfgload: %s\n", cmd);
-
-#ifndef CONFIG_HUSH_PARSER
-		run_command(cmd, 0);
-#else
-		parse_string_outer(cmd, FLAG_PARSE_SEMICOLON
-				| FLAG_EXIT_FROM_LOOP);
-#endif
+	if (argc < 2) {
+		addr = CONFIG_SYS_LOAD_ADDR;
+		debug("cfgload: default load address = 0x%08lx\n", addr);
+	} else {
+		addr = simple_strtoul(argv[1], NULL, 16);
+		debug("cfgload: cmdline image address = 0x%08lx\n", addr);
 	}
 
-	return 0;
+	for (i = 0; i < ARRAY_SIZE(scripts); i++) {
+		if (file_exists("mmc", "1", scripts[i], FS_TYPE_ANY)) {
+			snprintf(cmd, sizeof(cmd),
+				"load mmc 1:1 0x%08lx %s; source 0x%08lx",
+				addr, scripts[i], addr);
+			if (run_command(cmd, 0) == 0)
+				return 0;
+		}
+	}
+
+	return -1;
 }
 
 U_BOOT_CMD(
