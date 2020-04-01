@@ -675,11 +675,11 @@ static ulong rv1126_pdbus_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 			     (src_clk_div - 1) << ACLK_PDBUS_DIV_SHIFT);
 		break;
 	case HCLK_PDBUS:
-		src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
 		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[2],
 			     HCLK_PDBUS_SEL_MASK | HCLK_PDBUS_DIV_MASK,
-			     HCLK_PDBUS_SEL_CPLL << HCLK_PDBUS_SEL_SHIFT |
+			     HCLK_PDBUS_SEL_GPLL << HCLK_PDBUS_SEL_SHIFT |
 			     (src_clk_div - 1) << HCLK_PDBUS_DIV_SHIFT);
 		break;
 	case PCLK_PDBUS:
