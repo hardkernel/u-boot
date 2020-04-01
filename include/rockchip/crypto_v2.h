@@ -581,7 +581,6 @@ struct crypto_lli_desc {
 
 struct rk_hash_ctx {
 	struct crypto_lli_desc data_lli;/* lli desc */
-	const	u8 *null_hash;		/* when length is zero */
 	void	*cache;			/* virt addr for hash src data*/
 	u32	cache_size;		/* data in cached size */
 	u32	left_len;		/* left data to calc */
