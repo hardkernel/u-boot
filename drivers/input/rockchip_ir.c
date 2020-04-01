@@ -1,11 +1,11 @@
 /*
  * (C) Copyright 2017 Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier:     GPL-2.0+
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#include <clk.h>
 #include <common.h>
+#include <clk.h>
 #include <dm.h>
 #include <dm/pinctrl.h>
 #include <errno.h>
@@ -19,7 +19,7 @@
 
 #include <asm/arch/periph.h>
 #include <asm/io.h>
-
+#include <dm/ofnode.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct nec_dec nec;
@@ -71,26 +71,29 @@ static int ir_parse_keys(struct udevice *dev)
 	int i, j;
 	int len;
 	int ret;
-	int subnode;
-	int node = dev_of_offset(dev);
-	const void *blob = gd->fdt_blob;
+	u32 val;
+	ofnode node;
 
 	i = 0;
-	fdt_for_each_subnode(subnode, blob, node) {
-		rc_map[i].usercode = fdtdec_get_uint(blob, subnode,
-						     "rockchip,usercode",
-						     1234u);
-		if (rc_map[i].usercode == 1234u) {
+	dev_for_each_subnode(node, dev) {
+		ret = ofnode_read_u32(node, "rockchip,usercode", &val);
+		if (ret) {
+			debug("unable to get usercode\n");
+			return -1;
+		}
+		rc_map[i].usercode = val;
+		if (rc_map[i].usercode == 0) {
 			debug("missing usercode property in the dts\n");
 			return -1;
 		}
 		debug("add new usercode:0x%x\n", rc_map[i].usercode);
-		fdt_get_property(blob, subnode, "rockchip,key_table", &len);
+		len = ofnode_read_size(node, "rockchip,key_table");
 		len /= sizeof(u32);
 		debug("len:%d\n", len);
 		rc_map[i].nbuttons = len / 2;
-		ret = fdtdec_get_int_array(blob, subnode, "rockchip,key_table",
-					   (u32 *)rc_map[i].scan, len);
+
+		ret = ofnode_read_u32_array(node, "rockchip,key_table",
+					    (u32 *)rc_map[i].scan, len);
 		if (ret) {
 			debug("missing key_table property in the dts\n");
 			return -1;
@@ -119,9 +122,6 @@ static int ir_nec_decode(struct rockchip_ir_priv *priv, struct ir_raw_event *ev)
 	u32 scancode;
 	u8 __maybe_unused address, not_address, command, not_command;
 	struct nec_dec *data = &nec;
-
-	debug("NEC decode started at state %d (%uus %s)\n",
-	      data->state, TO_US(ev->duration), TO_STR(ev->pulse));
 
 	switch (data->state) {
 	case STATE_INACTIVE:
@@ -161,11 +161,12 @@ static int ir_nec_decode(struct rockchip_ir_priv *priv, struct ir_raw_event *ev)
 			break;
 
 		data->bits <<= 1;
-		if (eq_margin(ev->duration, NEC_BIT_1_SPACE, NEC_UNIT / 2))
+		if (eq_margin(ev->duration, NEC_BIT_1_SPACE, NEC_UNIT / 2)) {
 			data->bits |= 1;
-		else if (!eq_margin(ev->duration, NEC_BIT_0_SPACE,
-				    NEC_UNIT / 2))
+		} else if (!eq_margin(ev->duration, NEC_BIT_0_SPACE,
+				    NEC_UNIT / 2)) {
 			break;
+		}
 		data->count++;
 
 		if (data->count == NEC_NBITS) {
@@ -180,11 +181,12 @@ static int ir_nec_decode(struct rockchip_ir_priv *priv, struct ir_raw_event *ev)
 			}
 			usercode = address << 8 | not_address;
 			scancode = command << 8 | not_command;
-			debug("raw usercode 0x%04x scancode 0x%04x\n",
-			      usercode, scancode);
+
 			/* change to dts format */
 			usercode = bitrev16(usercode);
 			scancode = (bitrev16(scancode) >> 8) & 0xFF;
+			debug("usercode 0x%04x scancode 0x%04x\n",
+			      usercode, scancode);
 
 			data->state = STATE_INACTIVE;
 			ret = ir_lookup_by_scancode(priv, usercode, scancode);
@@ -226,6 +228,7 @@ static void rockchip_ir_irq(int irq, void *data)
 	}
 	writel(PWM_CH_INT(priv->id),
 	       priv->base + PWM_STA_REG(priv->id));
+
 	ev.duration = cycle * priv->period;
 	ir_nec_decode(priv, &ev);
 }
@@ -253,16 +256,25 @@ static void rockchip_ir_hw_init(struct udevice *dev)
 
 static int rockchip_ir_ofdata_to_platdata(struct udevice *dev)
 {
-	int node = dev_of_offset(dev);
-	const void *blob = gd->fdt_blob;
+	ofnode node;
+	int ret;
+	int subnode_num = 0;
+	u32 val;
 	struct rockchip_ir_priv *priv = dev_get_priv(dev);
 
-	priv->num = fdtdec_get_child_count(blob, node);
+	dev_for_each_subnode(node, dev) {
+		ret = ofnode_read_u32(node, "rockchip,usercode", &val);
+		if (!ret)
+			subnode_num++;
+	}
+
+	priv->num = subnode_num;
+
 	if (priv->num == 0) {
 		debug("no ir map in dts\n");
 		return -1;
 	}
-	priv->base = devfdt_get_addr(dev);
+	priv->base = dev_read_addr(dev);
 	priv->id = (priv->base >> 4) & 0xF;
 
 	return 0;
@@ -286,7 +298,6 @@ static int rockchip_ir_probe(struct udevice *dev)
 		debug("%s: failed to parse keys\n", __func__);
 		return -EINVAL;
 	}
-
 	/*
 	 * The PWM does not have decicated interrupt number in dts and can
 	 * not get periph_id by pinctrl framework, so let's init then here.
@@ -294,12 +305,6 @@ static int rockchip_ir_probe(struct udevice *dev)
 	ret = uclass_get_device(UCLASS_PINCTRL, 0, &pinctrl);
 	if (ret) {
 		debug("%s: can't find pinctrl device\n", __func__);
-		return -EINVAL;
-	}
-
-	ret = pinctrl_request_noflags(pinctrl, PERIPH_ID_PWM0 + priv->id);
-	if (ret) {
-		debug("%s pwm%d pinctrl init fail\n", __func__, priv->id);
 		return -EINVAL;
 	}
 
