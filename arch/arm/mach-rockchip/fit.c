@@ -55,33 +55,6 @@ static int fit_is_required(void *fit, const void *sig_blob)
 	return 0;
 }
 
-static int fit_get_image_defconf_node(void *fit, int *images, int *defconf)
-{
-	int images_node, confs_node, defconf_node;
-	const char *def_name;
-
-	images_node = fdt_path_offset(fit, FIT_IMAGES_PATH);
-	if (images_node < 0)
-		return images_node;
-
-	confs_node = fdt_path_offset(fit, FIT_CONFS_PATH);
-	if (confs_node < 0)
-		return confs_node;
-
-	def_name = fdt_getprop(fit, confs_node, FIT_DEFAULT_PROP, NULL);
-	if (!def_name)
-		return -ENOENT;
-
-	defconf_node = fdt_subnode_offset(fit, confs_node, def_name);
-	if (defconf_node < 0)
-		return defconf_node;
-
-	*images = images_node;
-	*defconf = defconf_node;
-
-	return 0;
-}
-
 int fit_fixup_load_entry(void *fit, int images, int defconf,
 			 char *name, ulong *load, ulong new_addr)
 {
