@@ -11,6 +11,7 @@
 #include <linux/libfdt.h>
 #include <spl.h>
 #include <malloc.h>
+#include <optee_include/OpteeClientInterface.h>
 
 #ifndef CONFIG_SYS_BOOTM_LEN
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)
@@ -408,8 +409,25 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		}
 		printf("\n");
 	}
-#endif
 
+#ifdef CONFIG_SPL_FIT_ROLLBACK_PROTECT
+	uint32_t this_index, min_index;
+
+	ret = fit_rollback_index_verify(fit, FIT_ROLLBACK_INDEX_SPL,
+					&this_index, &min_index);
+	if (ret) {
+		printf("fit failed to get rollback index, ret=%d\n", ret);
+		return ret;
+	} else if (this_index < min_index) {
+		printf("fit reject rollback: %d < %d(min)\n",
+		       this_index, min_index);
+		return -EINVAL;
+	}
+
+	spl_image->rollback_index = this_index;
+	printf("rollback index: %d >= %d, OK\n", this_index, min_index);
+#endif
+#endif
 	/*
 	 * Find the U-Boot image using the following search order:
 	 *   - start at 'firmware' (e.g. an ARM Trusted Firmware)

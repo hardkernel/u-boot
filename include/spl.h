@@ -37,6 +37,9 @@ struct spl_image_info {
 	uintptr_t entry_point_os;	/* point to uboot or kernel */
 #endif
 	void *fdt_addr;
+#if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)
+	u32 rollback_index;
+#endif
 	u32 boot_device;
 	u32 next_stage;
 	u32 size;
