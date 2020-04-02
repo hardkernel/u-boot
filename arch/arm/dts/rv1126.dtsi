@@ -1401,7 +1401,7 @@
 			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
 		fifo-depth = <0x100>;
-		max-frequency = <50000000>;
+		max-frequency = <200000000>;
 		status = "disabled";
 	};
 
