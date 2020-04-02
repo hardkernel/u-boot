@@ -1033,6 +1033,7 @@ int bootm_host_load_images(const void *fit, int cfg_noffset, int is_spl)
 		IH_TYPE_FLATDT,
 		IH_TYPE_RAMDISK,
 	};
+#ifdef CONFIG_SPL_ATF
 	static uint8_t image_types_spl[] = {
 		IH_TYPE_FLATDT,
 		IH_TYPE_FIRMWARE,
@@ -1040,6 +1041,13 @@ int bootm_host_load_images(const void *fit, int cfg_noffset, int is_spl)
 		IH_TYPE_LOADABLE,
 		IH_TYPE_LOADABLE,
 	};
+#else
+	static uint8_t image_types_spl[] = {
+		IH_TYPE_FLATDT,
+		IH_TYPE_FIRMWARE,
+		IH_TYPE_LOADABLE,
+	};
+#endif
 	int loadable_index = 0;
 	int err = 0;
 	int index;
