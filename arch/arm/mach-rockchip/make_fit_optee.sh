@@ -66,6 +66,7 @@ cat << EOF
 		default = "conf@1";
 		conf@1 {
 			description = "Rockchip armv7 with OP-TEE";
+			rollback-index = <0x0>;
 			firmware = "optee@1";
 			loadables = "uboot@1";
 			fdt = "fdt@1";
