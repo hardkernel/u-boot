@@ -318,9 +318,21 @@ void spl_optee_entry(void *arg0, void *arg1, void *arg2, void *arg3);
 void board_return_to_bootrom(void);
 
 /**
+ * spl_cleanup_before_jump() - cleanup cache/mmu/interrupt, etc before jump
+ *			       to next stage.
+ */
+void spl_cleanup_before_jump(struct spl_image_info *spl_image);
+
+/**
  * spl_perform_fixups() - arch/board-specific callback before processing
  *                        the boot-payload
  */
 void spl_perform_fixups(struct spl_image_info *spl_image);
+
+/**
+ * spl_board_prepare_for_jump() - arch/board-specific callback exactly before
+ *				  jumping to next stage
+ */
+int spl_board_prepare_for_jump(struct spl_image_info *spl_image);
 
 #endif
