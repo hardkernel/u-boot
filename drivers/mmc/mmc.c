@@ -386,6 +386,7 @@ static int mmc_go_idle(struct mmc *mmc)
 	return 0;
 }
 
+#ifndef CONFIG_MMC_USE_PRE_CONFIG
 static int sd_send_op_cond(struct mmc *mmc)
 {
 	int timeout = 1000;
@@ -453,6 +454,7 @@ static int sd_send_op_cond(struct mmc *mmc)
 
 	return 0;
 }
+#endif
 
 static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 {
@@ -475,6 +477,7 @@ static int mmc_send_op_cond_iter(struct mmc *mmc, int use_arg)
 	return 0;
 }
 
+#ifndef CONFIG_MMC_USE_PRE_CONFIG
 static int mmc_send_op_cond(struct mmc *mmc)
 {
 	int err, i;
@@ -495,7 +498,7 @@ static int mmc_send_op_cond(struct mmc *mmc)
 	mmc->op_cond_pending = 1;
 	return 0;
 }
-
+#endif
 static int mmc_complete_op_cond(struct mmc *mmc)
 {
 	struct mmc_cmd cmd;
@@ -1553,7 +1556,7 @@ static int mmc_startup(struct mmc *mmc)
 			return err;
 	}
 #endif
-
+#ifndef CONFIG_MMC_USE_PRE_CONFIG
 	/* Put the Card in Identify Mode */
 	cmd.cmdidx = mmc_host_is_spi(mmc) ? MMC_CMD_SEND_CID :
 		MMC_CMD_ALL_SEND_CID; /* cmd not supported in spi */
@@ -1585,7 +1588,7 @@ static int mmc_startup(struct mmc *mmc)
 		if (IS_SD(mmc))
 			mmc->rca = (cmd.response[0] >> 16) & 0xffff;
 	}
-
+#endif
 	/* Get the Card-Specific Data */
 	cmd.cmdidx = MMC_CMD_SEND_CSD;
 	cmd.resp_type = MMC_RSP_R2;
@@ -1924,6 +1927,7 @@ static int mmc_startup(struct mmc *mmc)
 	return 0;
 }
 
+#ifndef CONFIG_MMC_USE_PRE_CONFIG
 static int mmc_send_if_cond(struct mmc *mmc)
 {
 	struct mmc_cmd cmd;
@@ -1946,6 +1950,7 @@ static int mmc_send_if_cond(struct mmc *mmc)
 
 	return 0;
 }
+#endif
 
 #if !CONFIG_IS_ENABLED(DM_MMC)
 /* board-specific MMC power initializations. */
@@ -1954,6 +1959,7 @@ __weak void board_mmc_power_init(void)
 }
 #endif
 
+#ifndef CONFIG_MMC_USE_PRE_CONFIG
 static int mmc_power_init(struct mmc *mmc)
 {
 #if CONFIG_IS_ENABLED(DM_MMC)
@@ -1983,7 +1989,50 @@ static int mmc_power_init(struct mmc *mmc)
 #endif
 	return 0;
 }
+#endif
+#ifdef CONFIG_MMC_USE_PRE_CONFIG
+static int mmc_select_card(struct mmc *mmc, int n)
+{
+	struct mmc_cmd cmd;
+	int err = 0;
 
+	memset(&cmd, 0, sizeof(struct mmc_cmd));
+	if (!mmc_host_is_spi(mmc)) { /* cmd not supported in spi */
+		mmc->rca = n;
+		cmd.cmdidx = MMC_CMD_SELECT_CARD;
+		cmd.resp_type = MMC_RSP_R1;
+		cmd.cmdarg = mmc->rca << 16;
+		err = mmc_send_cmd(mmc, &cmd, NULL);
+	}
+
+	return err;
+}
+
+int mmc_start_init(struct mmc *mmc)
+{
+	/*
+	 * We use the MMC config set by the bootrom.
+	 * So it is no need to reset the eMMC device.
+	 */
+	mmc_set_bus_width(mmc, 8);
+	mmc_set_clock(mmc, 1);
+	mmc_set_timing(mmc, MMC_TIMING_LEGACY);
+	/* Send cmd7 to return stand-by state*/
+	mmc_select_card(mmc, 0);
+	mmc->version = MMC_VERSION_UNKNOWN;
+	mmc->high_capacity = 1;
+	/*
+	 * The RCA is set to 2 by rockchip bootrom, use the default
+	 * value here.
+	 */
+#ifdef CONFIG_ARCH_ROCKCHIP
+	mmc->rca = 2;
+#else
+	mmc->rca = 1;
+#endif
+	return 0;
+}
+#else
 int mmc_start_init(struct mmc *mmc)
 {
 	bool no_card;
@@ -2056,6 +2105,7 @@ int mmc_start_init(struct mmc *mmc)
 
 	return err;
 }
+#endif
 
 static int mmc_complete_init(struct mmc *mmc)
 {
