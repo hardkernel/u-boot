@@ -921,6 +921,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_COMP_PROP		"compression"
 #define FIT_ENTRY_PROP		"entry"
 #define FIT_LOAD_PROP		"load"
+#define FIT_ROLLBACK_PROP	"rollback-index"
 
 /* configuration node */
 #define FIT_KERNEL_PROP		"kernel"
@@ -1005,12 +1006,16 @@ int fit_image_get_data_offset(const void *fit, int noffset, int *data_offset);
 int fit_image_get_data_position(const void *fit, int noffset,
 				int *data_position);
 int fit_image_get_data_size(const void *fit, int noffset, int *data_size);
+int fit_image_get_rollback_index(const void *fit, int noffset, uint32_t *index);
 
 int fit_image_hash_get_algo(const void *fit, int noffset, char **algo);
 int fit_image_hash_get_value(const void *fit, int noffset, uint8_t **value,
 				int *value_len);
 
 int fit_set_timestamp(void *fit, int noffset, time_t timestamp);
+
+int fit_get_image_defconf_node(const void *fit,
+			       int *images_noffset, int *def_noffset);
 
 /**
  * fit_add_verification_data() - add verification data to FIT image nodes
