@@ -222,6 +222,12 @@ config FIT_SIGNATURE
 	  format support in this case, enable it using
 	  CONFIG_IMAGE_FORMAT_LEGACY.
 
+config FIT_ROLLBACK_PROTECT
+	bool "Enable rollback-index protection for FIT image"
+	depends on FIT_SIGNATURE
+	help
+	  Enable rollback-index protection for FIT image
+
 config FIT_VERBOSE
 	bool "Show verbose messages when FIT images fail"
 	help
@@ -271,6 +277,12 @@ config SPL_FIT_SIGNATURE
 	depends on SPL_DM
 	select SPL_FIT
 	select SPL_RSA
+
+config SPL_FIT_ROLLBACK_PROTECT
+	bool "Enable SPL rollback-index protection for FIT image"
+	depends on SPL_FIT_SIGNATURE
+	help
+	  Enable SPL rollback-index protection for FIT image
 
 config SPL_LOAD_FIT
 	bool "Enable SPL loading U-Boot as a FIT"
