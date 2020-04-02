@@ -67,7 +67,7 @@ void arch_lmb_reserve(struct lmb *lmb)
 		    gd->ram_top - sp);
 }
 
-__weak void board_quiesce_devices(void)
+__weak void board_quiesce_devices(void *images)
 {
 }
 
@@ -76,7 +76,7 @@ __weak void board_quiesce_devices(void)
  *
  * @fake: non-zero to do everything except actually boot
  */
-static void announce_and_cleanup(int fake)
+static void announce_and_cleanup(bootm_headers_t *images, int fake)
 {
 	ulong us;
 
@@ -97,7 +97,7 @@ static void announce_and_cleanup(int fake)
 	udc_disconnect();
 #endif
 
-	board_quiesce_devices();
+	board_quiesce_devices(images);
 
 	/* Flush all console data */
 	flushc();
@@ -331,7 +331,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 		(ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
-	announce_and_cleanup(fake);
+	announce_and_cleanup(images, fake);
 
 	if (!fake) {
 #ifdef CONFIG_ARMV8_PSCI
@@ -381,7 +381,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	debug("## Transferring control to Linux (at address %08lx)" \
 		"...\n", (ulong) kernel_entry);
 	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
-	announce_and_cleanup(fake);
+	announce_and_cleanup(images, fake);
 
 	if (IMAGE_ENABLE_OF_LIBFDT && images->ft_len)
 		r2 = (unsigned long)images->ft_addr;
