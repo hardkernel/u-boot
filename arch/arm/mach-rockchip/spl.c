@@ -10,6 +10,7 @@
 #include <key.h>
 #include <ram.h>
 #include <spl.h>
+#include <optee_include/OpteeClientInterface.h>
 #include <asm/arch/bootrom.h>
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 #include <asm/arch/rk_atags.h>
@@ -295,3 +296,12 @@ void spl_next_stage(struct spl_image_info *spl)
 	}
 }
 #endif
+
+int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
+{
+#if CONFIG_SPL_FIT_ROLLBACK_PROTECT
+	/* TODO */
+	printf("spl fit: rollback protect not implement\n");
+#endif
+	return 0;
+}
