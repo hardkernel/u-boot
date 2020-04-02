@@ -396,6 +396,10 @@ typedef struct bootm_headers {
 #ifdef CONFIG_LMB
 	struct lmb	lmb;		/* for memory mgmt */
 #endif
+
+#ifdef CONFIG_FIT_ROLLBACK_PROTECT
+	u32 rollback_index;
+#endif
 } bootm_headers_t;
 
 extern bootm_headers_t images;
