@@ -1052,7 +1052,7 @@ int rk_exptmod_np(void *m, void *e, void *n, void *np, void *d)
 	if (m_np->d)
 		error = rk_calcNp_and_initmodop((m_n)->d, /*in N*/
 						exact_size,	/*in N size*/
-						np,	/*out NP*/
+						m_np->d,	/*out NP*/
 						RK_PKA_SET_NP, /*in set NP*/
 						2,	/*in *r_t0*/
 						3,	/*in r_t1*/

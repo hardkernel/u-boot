@@ -20,6 +20,8 @@
 #include <mapmem.h>
 #include <asm/io.h>
 #include <malloc.h>
+#include <crypto.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 #endif /* !USE_HOSTCC*/
 
@@ -1086,8 +1088,9 @@ int fit_set_timestamp(void *fit, int noffset, time_t timestamp)
  *     0, on success
  *    -1, when algo is unsupported
  */
-int calculate_hash(const void *data, int data_len, const char *algo,
-			uint8_t *value, int *value_len)
+int calculate_hash_software(const void *data, int data_len,
+			    const char *algo, uint8_t *value,
+			    int *value_len)
 {
 	if (IMAGE_ENABLE_CRC32 && strcmp(algo, "crc32") == 0) {
 		*((uint32_t *)value) = crc32_wd(0, data, data_len,
@@ -1111,6 +1114,63 @@ int calculate_hash(const void *data, int data_len, const char *algo,
 	}
 	return 0;
 }
+
+#ifdef USE_HOSTCC
+int calculate_hash(const void *data, int data_len, const char *algo,
+		   uint8_t *value, int *value_len)
+{
+	return calculate_hash_software(data, data_len, algo, value, value_len);
+}
+#else
+#if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
+static int crypto_csum(u32 cap, const char *data, int len, u8 *output)
+{
+	struct udevice *dev;
+	sha_context csha_ctx;
+
+	dev = crypto_get_device(cap);
+	if (!dev) {
+		printf("Can't find expected crypto device\n");
+		return -ENODEV;
+	}
+
+	csha_ctx.algo = cap;
+	csha_ctx.length = len;
+
+	return crypto_sha_csum(dev, &csha_ctx, (char *)data, len, output);
+}
+
+int calculate_hash(const void *data, int data_len, const char *algo,
+		   uint8_t *value, int *value_len)
+{
+	if (IMAGE_ENABLE_CRC32 && strcmp(algo, "crc32") == 0) {
+		*((uint32_t *)value) = crc32_wd(0, data, data_len,
+							CHUNKSZ_CRC32);
+		*((uint32_t *)value) = cpu_to_uimage(*((uint32_t *)value));
+		*value_len = 4;
+	} else if (IMAGE_ENABLE_SHA1 && strcmp(algo, "sha1") == 0) {
+		crypto_csum(CRYPTO_SHA1, data, data_len, value);
+		*value_len = 20;
+	} else if (IMAGE_ENABLE_SHA256 && strcmp(algo, "sha256") == 0) {
+		crypto_csum(CRYPTO_SHA256, data, data_len, value);
+		*value_len = SHA256_SUM_LEN;
+	} else if (IMAGE_ENABLE_MD5 && strcmp(algo, "md5") == 0) {
+		crypto_csum(CRYPTO_MD5, data, data_len, value);
+		*value_len = 16;
+	} else {
+		debug("Unsupported hash alogrithm\n");
+		return -1;
+	}
+	return 0;
+}
+#else
+int calculate_hash(const void *data, int data_len, const char *algo,
+		   uint8_t *value, int *value_len)
+{
+	return calculate_hash_software(data, data_len, algo, value, value_len);
+}
+#endif
+#endif
 
 static int fit_image_check_hash(const void *fit, int noffset, const void *data,
 				size_t size, char **err_msgp)
