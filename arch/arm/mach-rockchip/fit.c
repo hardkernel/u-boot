@@ -466,7 +466,7 @@ void *fit_image_load_bootables(ulong *size)
 
 static void verbose_msg(void *fit, int defconf)
 {
-	FIT_I("%ssigned, %srequired\n",
+	FIT_I("%ssigned, %sverified-boot\n",
 	      fit_is_signed(fit, gd_fdt_blob()) ? "" : "no ",
 	      fit_is_required(fit, gd_fdt_blob()) ? "" : "no ");
 
