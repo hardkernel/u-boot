@@ -13,18 +13,49 @@ FILE=$2
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 
-# @target board: defined in arch/arm/mach-rockchip/<soc>/Kconfig
-# @label: show build message
-# @loader: search for ini file to pack loader
-# @trust: search for ini file to pack trust
+# @LOADER: map to $RKCHIP_LOADER for loader ini
+# @TRUST:  map to $RKCHIP_TRUST for trust ini
+# @LABEL:  map to $RKCHIP_LEBEL for verbose message
+# @-:      default state/value
+CHIP_TYPE_FIXUP_TABLE=(
+	# CONFIG_XXX                         RKCHIP         LOADER       TRUST         LABEL
+	"CONFIG_ROCKCHIP_RK3368              RK3368H         -            -             -"
+	"CONFIG_ROCKCHIP_RV1108              RV110X          -            -             -"
+	"CONFIG_ROCKCHIP_PX3SE               PX3SE           -            -             -"
+	"CONFIG_ROCKCHIP_RK3126              RK3126          -            -             -"
+	"CONFIG_ROCKCHIP_RK3326              RK3326          -            -             -"
+	"CONFIG_ROCKCHIP_RK3128X             RK3128X         -            -             -"
+	"CONFIG_ROCKCHIP_PX5                 PX5             -            -             -"
+	"CONFIG_ROCKCHIP_RK3399PRO           RK3399PRO       -            -             -"
+	"CONFIG_ROCKCHIP_RK1806              RK1806          -            -             -"
+	"CONFIG_TARGET_GVA_RK3229            RK322X          RK322XAT     -             -"
+	"CONFIG_COPROCESSOR_RK1808           RKNPU-LION      RKNPULION    RKNPULION     -"
+)
+
+# <*> Fixup rsa/sha pack mode for platforms
+#     RSA: RK3308/PX30/RK3326/RK1808 use RSA-PKCS1 V2.1, it's pack magic is "3", and others use default configure.
+#     SHA: RK3368 use rk big endian SHA256, it's pack magic is "2", and others use default configure.
+# <*> Fixup images size pack for platforms
+# <*> Fixup verbose message about AARCH32
 #
-# "NA" means use default name reading from .config
-#
-# Format:           target board               label         loader      trust
-RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
-                 "CONFIG_COPROCESSOR_RK1808  RKNPU-LION      RKNPULION    RKNPULION"
-# to be add...
-                )
+# @RSA:     rsa mode
+# @SHA:     sha mode
+# @A64-KB:  arm64 platform image size: [uboot,trust]
+# @A64-NUM: arm64 platform image number of total: [uboot,trust]
+# @A32-KB:  arm32 platform image size: [uboot,trust]
+# @A32-NUM: arm32 platform image number of total: [uboot,trust]
+# @LOADER:  map to $RKCHIP_LOADER for loader ini
+# @TRUST:   map to $RKCHIP_TRUST for trust ini
+# @-:       default state/value
+CHIP_CFG_FIXUP_TABLE=(
+	# CONFIG_XXX              RSA     SHA     A64-KB      A64-NUM     A32-KB       A32-NUM      LOAER        TRUST
+	"CONFIG_ROCKCHIP_RK3368    -       2       -,-          -,-        -,-          -,-           -           -"
+	"CONFIG_ROCKCHIP_RK3036    -       -       512,512      1,1        -,-          -,-           -           -"
+	"CONFIG_ROCKCHIP_PX30      3       -       -,-          -,-        -,-          -,-           -           -"
+	"CONFIG_ROCKCHIP_RK3326    3       -       -,-          -,-        -,-          -,-           AARCH32     -"
+	"CONFIG_ROCKCHIP_RK3308    3       -       1024,1024    2,2        512,512      2,2           -           AARCH32"
+	"CONFIG_ROCKCHIP_RK1808    3       -       1024,1024    2,2        -,-          -,-           -           -"
+)
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
@@ -45,10 +76,10 @@ BIN_PATH_FIXUP="--replace tools/rk_tools/ ./"
 RKTOOLS=./tools
 
 # Declare global INI file searching index name for every chip, update in select_chip_info()
-RKCHIP=
-RKCHIP_LABEL=
-RKCHIP_LOADER=
-RKCHIP_TRUST=
+RKCHIP="-"
+RKCHIP_LABEL="-"
+RKCHIP_LOADER="-"
+RKCHIP_TRUST="-"
 
 # Declare rkbin repository path, updated in prepare()
 RKBIN=
@@ -322,116 +353,94 @@ sub_commands()
 # We read chip info from .config and 'RKCHIP_INI_DESC'
 select_chip_info()
 {
-	local target_board item value
-
 	# Read RKCHIP firstly from .config
 	# The regular expression that matching:
 	#  - PX30, PX3SE
 	#  - RK????, RK????X
 	#  - RV????
-	local chip_reg='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{1,5}'
-	count=`egrep -c ${chip_reg} .config`
-	# Obtain the matching only
-	RKCHIP=`egrep -o ${chip_reg} .config`
+	CHIP_PATTERN='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{1,5}'
+	RKCHIP=`egrep -o ${CHIP_PATTERN} .config`
 
-	if [ $count -eq 1 ]; then
-		RKCHIP=${RKCHIP##*_}
-		grep '^CONFIG_ROCKCHIP_RK3368=y' .config >/dev/null \
-			&& RKCHIP=RK3368H
-		grep '^CONFIG_ROCKCHIP_RV1108=y' .config >/dev/null \
-			&& RKCHIP=RV110X
-	elif [ $count -gt 1 ]; then
-		# Grep the RK CHIP variant
-		grep '^CONFIG_ROCKCHIP_PX3SE=y' .config > /dev/null \
-			&& RKCHIP=PX3SE
-		grep '^CONFIG_ROCKCHIP_RK3126=y' .config >/dev/null \
-			&& RKCHIP=RK3126
-		grep '^CONFIG_ROCKCHIP_RK3326=y' .config >/dev/null \
-			&& RKCHIP=RK3326
-		grep '^CONFIG_ROCKCHIP_RK3128X=y' .config >/dev/null \
-			&& RKCHIP=RK3128X
-		grep '^CONFIG_ROCKCHIP_PX5=y' .config >/dev/null \
-			&& RKCHIP=PX5
-		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' .config >/dev/null \
-			&& RKCHIP=RK3399PRO
-		grep '^CONFIG_ROCKCHIP_RK1806=y' .config >/dev/null \
-			&& RKCHIP=RK1806
-	else
-		echo "Can't get Rockchip SoC definition in .config"
-		exit 1
+	# default
+	RKCHIP=${RKCHIP##*_}
+
+	# need fixup ?
+	for ITEM in "${CHIP_TYPE_FIXUP_TABLE[@]}"
+	do
+		CONFIG_XXX=`echo $ITEM | awk '{ print $1 }'`
+		if grep  -q "^${CONFIG_XXX}=y" .config ; then
+			RKCHIP=`echo $ITEM | awk '{ print $2 }'`
+			RKCHIP_LOADER=`echo $ITEM | awk '{ print $3 }'`
+			RKCHIP_TRUST=`echo  $ITEM | awk '{ print $4 }'`
+			RKCHIP_LABEL=`echo  $ITEM | awk '{ print $5 }'`
+		fi
+	done
+
+	if [ "$RKCHIP_LOADER" = "-" ]; then
+		RKCHIP_LOADER=${RKCHIP}
+	fi
+	if [ "$RKCHIP_TRUST" = "-" ]; then
+		RKCHIP_TRUST=${RKCHIP}
+	fi
+	if [ "$RKCHIP_LABEL" = "-" ]; then
+		RKCHIP_LABEL=${RKCHIP}
 	fi
 
-	# Default use RKCHIP
-	RKCHIP_LABEL=${RKCHIP}
-	RKCHIP_LOADER=${RKCHIP}
-	RKCHIP_TRUST=${RKCHIP}
+	# echo "## $FUNCNAME: $RKCHIP, $RKCHIP_LOADER, $RKCHIP_TRUST, $RKCHIP_LABEL,"
+}
 
-	# Read from RKCHIP_INI_DESC
-	for item in "${RKCHIP_INI_DESC[@]}"
+function fixup_platform_configure()
+{
+	CFG_U_KB="-" CFG_U_NUM="-" CFG_T_KB="-" CFG_T_NUM="-"  CFG_SHA="-" CFG_RSA="-"
+
+	for ITEM in "${CHIP_CFG_FIXUP_TABLE[@]}"
 	do
-		target_board=`echo $item | awk '{ print $1 }'`
-		if grep  -q "^${target_board}=y" .config ; then
-			value=`echo $item | awk '{ print $2 }'`
-			if [ "$value" != "NA" ]; then
-				RKCHIP_LABEL=${value};
-			fi
-			value=`echo $item | awk '{ print $3 }'`
-			if [ "$value" != "NA" ]; then
-				RKCHIP_LOADER=${value};
-			fi
-			value=`echo $item | awk '{ print $4 }'`
-			if [ "$value" != "NA" ]; then
-				RKCHIP_TRUST=${value};
+		CONFIG_XXX=`echo $ITEM | awk '{ print $1 }'`
+		if grep  -q "^${CONFIG_XXX}=y" .config ; then
+			# <*> Fixup rsa/sha pack mode for platforms
+			CFG_RSA=`echo $ITEM | awk '{ print $2 }'`
+			CFG_SHA=`echo $ITEM | awk '{ print $3 }'`
+
+			# <*> Fixup images size pack for platforms, and ini file
+			if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
+				CFG_U_KB=`echo  $ITEM | awk '{ print $6 }' | awk -F "," '{ print $1 }'`
+				CFG_U_NUM=`echo $ITEM | awk '{ print $7 }' | awk -F "," '{ print $1 }'`
+				CFG_T_KB=`echo  $ITEM | awk '{ print $6 }' | awk -F "," '{ print $2 }'`
+				CFG_T_NUM=`echo $ITEM | awk '{ print $7 }' | awk -F "," '{ print $2 }'`
+
+				PAD_LOADER=`echo $ITEM | awk '{ print $8 }'`
+				PAD_TRUST=`echo  $ITEM | awk '{ print $9 }'`
+				if [ "$PAD_LOADER" != "-" ]; then
+					RKCHIP_LOADER=${RKCHIP_LOADER}${PAD_LOADER}
+				fi
+				if [ "$PAD_TRUST" != "-" ]; then
+					RKCHIP_TRUST=${RKCHIP_TRUST}${PAD_TRUST}
+				fi
+				RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
+			else
+				CFG_U_KB=`echo  $ITEM | awk '{ print $4 }' | awk -F "," '{ print $1 }'`
+				CFG_U_NUM=`echo $ITEM | awk '{ print $5 }' | awk -F "," '{ print $1 }'`
+				CFG_T_KB=`echo  $ITEM | awk '{ print $4 }' | awk -F "," '{ print $2 }'`
+				CFG_T_NUM=`echo $ITEM | awk '{ print $5 }' | awk -F "," '{ print $2 }'`
 			fi
 		fi
 	done
-}
 
-# Fixup platform special configure
-#	1. fixup pack mode;
-#	2. fixup image size
-#	3. fixup ARM64 cpu boot with AArch32
-fixup_platform_configure()
-{
-	local count plat
-
-# <*> Fixup rsa/sha pack mode for platforms
-	# RK3308/PX30/RK3326/RK1808 use RSA-PKCS1 V2.1, it's pack magic is "3"
-	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" -o $RKCHIP = "RK1808" ]; then
-		PLATFORM_RSA="--rsa 3"
-	# RK3368 use rk big endian SHA256, it's pack magic is "2"
-	elif [ $RKCHIP = "RK3368" -o $RKCHIP = "RK3368H" ]; then
-		PLATFORM_SHA="--sha 2"
-	# other platforms use default configure
+	if [ "$CFG_SHA" != "-" ]; then
+		PLATFORM_SHA="--sha $CFG_SHA"
+	fi
+	if [ "$CFG_RSA" != "-" ]; then
+		PLATFORM_RSA="--rsa $CFG_RSA"
+	fi
+	if [ "$CFG_U_KB" != "-" ]; then
+		PLATFORM_UBOOT_IMG_SIZE="--size $CFG_U_KB $CFG_U_NUM"
+	fi
+	if [ "$CFG_T_KB" != "-" ]; then
+		PLATFORM_TRUST_IMG_SIZE="--size $CFG_T_KB $CFG_T_NUM"
 	fi
 
-# <*> Fixup images size pack for platforms
-	if [ $RKCHIP = "RK3308" ]; then
-		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
-			PLATFORM_UBOOT_IMG_SIZE="--size 512 2"
-			PLATFORM_TRUST_IMG_SIZE="--size 512 2"
-		else
-			PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
-			PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
-		fi
-	elif [ $RKCHIP = "RK1808" ]; then
-		PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
-		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
-	elif [ $RKCHIP = "RK3036" ]; then
-		PLATFORM_UBOOT_IMG_SIZE="--size 512 1"
-		PLATFORM_TRUST_IMG_SIZE="--size 512 1"
-	fi
-
-# <*> Fixup AARCH32 for ARM64 cpu platforms
-	if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
-		if [ $RKCHIP = "RK3308" ]; then
-			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
-			RKCHIP_TRUST=${RKCHIP_TRUST}"AARCH32"
-		elif [ $RKCHIP = "RK3326" ]; then
-			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
-			RKCHIP_LOADER=${RKCHIP_LOADER}"AARCH32"
-		fi
-	fi
+	# echo "## $FUNCNAME: $PLATFORM_RSA, $PLATFORM_SHA, $PLATFORM_TRUST_IMG_SIZE, $PLATFORM_UBOOT_IMG_SIZE"
+	# echo "## $FUNCNAME: $RKCHIP_LOADER, $RKCHIP_TRUST, $RKCHIP_LABEL"
 }
 
 pack_uboot_image()
