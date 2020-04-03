@@ -1135,6 +1135,23 @@ static int switch_get_suspend_enable(struct udevice *dev)
  */
 static int switch_get_value(struct udevice *dev)
 {
+	const char *supply_name[] = { "vcc9-supply", "vcc8-supply", };
+	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
+	struct udevice *supply;
+	int id = dev->driver_data - 1;
+
+	if (!switch_get_enable(dev))
+		return 0;
+
+	/* note: rk817 only contains switch0 */
+	if ((priv->variant == RK809_ID) || (priv->variant == RK817_ID)) {
+		if (!uclass_get_device_by_phandle(UCLASS_REGULATOR,
+						  dev_get_parent(dev),
+						  supply_name[id],
+						  &supply))
+			return regulator_get_value(supply);
+	}
+
 	return 0;
 }
 

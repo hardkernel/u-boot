@@ -386,6 +386,13 @@ config GENERIC_ATMEL_MCI
 	  the SD Memory Card Specification V2.0, the SDIO V2.0 specification
 	  and CE-ATA V1.1.
 
+config MMC_USE_PRE_CONFIG
+	bool "Enable to use pre-configure set by pre-loader or bootrom"
+	help
+	  The MMC is initialized by pre-loader or bootrom, so it is no need to
+	  initialize it again. Open this config to skip some unused initialized
+	  process.
+
 endif
 
 config TEGRA124_MMC_DISABLE_EXT_LOOPBACK

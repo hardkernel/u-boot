@@ -950,6 +950,30 @@ int fit_image_get_data_size(const void *fit, int noffset, int *data_size)
 }
 
 /**
+ * Get 'rollback-index' property from a given image node.
+ *
+ * @fit: pointer to the FIT image header
+ * @noffset: component image node offset
+ * @index: holds the rollback-index property
+ *
+ * returns:
+ *     0, on success
+ *     -ENOENT if the property could not be found
+ */
+int fit_image_get_rollback_index(const void *fit, int noffset, uint32_t *index)
+{
+	const fdt32_t *val;
+
+	val = fdt_getprop(fit, noffset, FIT_ROLLBACK_PROP, NULL);
+	if (!val)
+		return -ENOENT;
+
+	*index = fdt32_to_cpu(*val);
+
+	return 0;
+}
+
+/**
  * fit_image_hash_get_algo - get hash algorithm name
  * @fit: pointer to the FIT format image header
  * @noffset: hash node offset
@@ -1066,6 +1090,33 @@ int fit_set_timestamp(void *fit, int noffset, time_t timestamp)
 		      fdt_strerror(ret));
 		return ret == -FDT_ERR_NOSPACE ? -ENOSPC : -1;
 	}
+
+	return 0;
+}
+
+int fit_get_image_defconf_node(const void *fit, int *images_noffset, int *def_noffset)
+{
+	int images_node, confs_node, defconf_node;
+	const char *def_name;
+
+	images_node = fdt_path_offset(fit, FIT_IMAGES_PATH);
+	if (images_node < 0)
+		return images_node;
+
+	confs_node = fdt_path_offset(fit, FIT_CONFS_PATH);
+	if (confs_node < 0)
+		return confs_node;
+
+	def_name = fdt_getprop(fit, confs_node, FIT_DEFAULT_PROP, NULL);
+	if (!def_name)
+		return -ENOENT;
+
+	defconf_node = fdt_subnode_offset(fit, confs_node, def_name);
+	if (defconf_node < 0)
+		return defconf_node;
+
+	*images_noffset = images_node;
+	*def_noffset = defconf_node;
 
 	return 0;
 }

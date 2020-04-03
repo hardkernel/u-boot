@@ -67,7 +67,7 @@
 		default = "conf@1";
 		conf@1 {
 			description = "Boot Linux kernel with FDT blob";
-			conf-version = <1>;
+			rollback-index = <0x0>;
 			fdt = "fdt@1";
 			kernel = "kernel@1";
 			ramdisk = "ramdisk@1";

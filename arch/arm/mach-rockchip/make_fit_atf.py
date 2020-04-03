@@ -103,6 +103,7 @@ def append_fdt_node(file, dtbs):
 def append_conf_section(file, cnt, dtname, atf_cnt):
     print >> file, '\t\tconfig@%d {' % cnt
     print >> file, '\t\t\tdescription = "Rockchip armv8 with ATF";'
+    print >> file, '\t\t\trollback-index = <0x0>;'
     print >> file, '\t\t\tfirmware = "atf@1";'
     print >> file, '\t\t\tloadables = "uboot@1",',
     for i in range(1, atf_cnt):
