@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <fdtdec.h>
 #include <i2c.h>
-#include <linux/usb/phy-rockchip-inno-usb2.h>
+#include <linux/usb/phy-rockchip-usb2.h>
 #include <malloc.h>
 #include <power/battery.h>
 #include <power/fuel_gauge.h>

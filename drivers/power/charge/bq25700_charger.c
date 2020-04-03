@@ -9,7 +9,7 @@
 #include <dm/device.h>
 #include <power/fuel_gauge.h>
 #include <power/pmic.h>
-#include <linux/usb/phy-rockchip-inno-usb2.h>
+#include <linux/usb/phy-rockchip-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
