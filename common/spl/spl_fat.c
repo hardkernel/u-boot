@@ -71,8 +71,14 @@ int spl_load_image_fat(struct spl_image_info *spl_image,
 	if (err <= 0)
 		goto end;
 
+#ifdef CONFIG_SPL_FIT_IMAGE_MULTIPLE
+	if ((IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
+	     image_get_magic(header) == FDT_MAGIC) ||
+	     CONFIG_SPL_FIT_IMAGE_MULTIPLE > 1) {
+#else
 	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
 	    image_get_magic(header) == FDT_MAGIC) {
+#endif
 		struct spl_load_info load;
 
 		debug("Found FIT\n");

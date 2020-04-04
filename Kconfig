@@ -333,6 +333,20 @@ config SPL_FIT_HW_CRYPTO
 	help
 	  Enable SPL hardware crypto for FIT image checksum and rsa verify.
 
+config SPL_FIT_IMAGE_KB
+	int "SPL FIT image size in KiB"
+	depends on SPL_FIT
+	default 2048
+	help
+	  SPL FIT image size in KiB.
+
+config SPL_FIT_IMAGE_MULTIPLE
+	int "SPL FIT image multiple number"
+	depends on SPL_FIT
+	default 1
+	help
+	  SPL FIT image multiple number.
+
 config SPL_SYS_DCACHE_OFF
 	bool "Disable SPL dcache"
 	default y

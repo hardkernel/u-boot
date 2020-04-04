@@ -342,8 +342,9 @@ static int spl_fit_image_get_os(const void *fit, int noffset, uint8_t *os)
 #endif
 }
 
-int spl_load_simple_fit(struct spl_image_info *spl_image,
-			struct spl_load_info *info, ulong sector, void *fit)
+static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
+					struct spl_load_info *info,
+					ulong sector, void *fit)
 {
 	int sectors;
 	ulong size;
@@ -528,3 +529,34 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 
 	return 0;
 }
+
+int spl_load_simple_fit(struct spl_image_info *spl_image,
+			struct spl_load_info *info, ulong sector, void *fit)
+{
+	ulong sector_offs = sector;
+	int i;
+
+	for (i = 0; i < CONFIG_SPL_FIT_IMAGE_MULTIPLE; i++) {
+		if (i > 0) {
+			sector_offs +=
+			   i * ((CONFIG_SPL_FIT_IMAGE_KB << 10) / info->bl_len);
+			printf("Trying fit image at 0x%lx sector\n", sector_offs);
+			if (info->read(info, sector_offs, 1, fit) != 1) {
+				printf("IO error\n");
+				continue;
+			}
+		}
+
+		if (image_get_magic(fit) != FDT_MAGIC) {
+			printf("Bad fit magic\n");
+			continue;
+		}
+
+		if (!spl_internal_load_simple_fit(spl_image, info,
+						  sector_offs, fit))
+			return 0;
+	}
+
+	return -EINVAL;
+}
+
