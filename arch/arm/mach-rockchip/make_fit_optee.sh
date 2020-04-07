@@ -41,7 +41,11 @@ cat << EOF
 			compression = "none";
 EOF
 
-TEE_OFFSET=0x8400000
+if [ -z "$1" -o ! -z "$(echo $1 | sed 's/[x, X, 0-9, a-f, A-F]//g')" ]; then
+	TEE_OFFSET=0x8400000
+else
+	TEE_OFFSET=$1
+fi
 TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
 TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 echo "			load = <0x"$TEE_LOAD_ADDR">;"
