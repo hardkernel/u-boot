@@ -1036,6 +1036,16 @@
 		status = "disabled";
 	};
 
+	hw_decompress: decompress@ff6c0000 {
+		compatible = "rockchip,hw-decompress";
+		reg = <0xff6c0000 0x10000>;
+		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru ACLK_DECOM>, <&cru DCLK_DECOM>, <&cru PCLK_DECOM>;
+		clock-names = "aclk", "dclk", "pclk";
+		soft-reset-addr = <0xff490314>;
+		status = "disabled";
+	};
+
 	i2s0_8ch: i2s@ff800000 {
 		compatible = "rockchip,rv1126-i2s-tdm";
 		reg = <0xff800000 0x1000>;
