@@ -592,7 +592,7 @@ pack_loader_image()
 
 pack_32bit_trust_image()
 {
-	local ini=$1 TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OUTPUT TEE_OFFSET
+	local ini=$1 TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OUTPUT TEE_OFFSET FORMAT
 
 	if [ ! -f ${ini} ]; then
 		echo "pack trust failed! Can't find: ${ini}"
@@ -624,16 +624,26 @@ pack_32bit_trust_image()
 	TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 	TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-	if [ $TOS_TA ]; then
-		${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-	elif [ $TOS ]; then
-		${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS}    ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+	FORMAT=`sed -n "/FORMAT=/s/FORMAT=//p" ${ini} |tr -d '\r'`
+	if [ $FORMAT = "FIT" ]; then
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
+		ls uboot.img >/dev/null 2>&1 && rm uboot.img -rf
+		ls trust.img >/dev/null 2>&1 && rm trust.img -rf
+
+		echo "pack uboot.fit okay! Input: ${ini}"
 	else
-		echo "Can't find any tee bin"
-		exit 1
+		if [ $TOS_TA ]; then
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+		elif [ $TOS ]; then
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS}    ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+		else
+			echo "Can't find any tee bin"
+			exit 1
+		fi
+
+		echo "pack trust okay! Input: ${ini}"
 	fi
 
-	echo "pack trust okay! Input: ${ini}"
 	echo
 }
 
