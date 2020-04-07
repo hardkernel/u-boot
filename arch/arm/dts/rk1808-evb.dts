@@ -18,14 +18,14 @@
 	adc-keys {
 		status = "okay";
 
-		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
 		compatible = "adc-keys";
 		io-channels = <&saradc 2>;
 		io-channel-names = "buttons";
 		keyup-threshold-microvolt = <1800000>;
 
 		vol-up-key {
-			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			linux,code = <KEY_VOLUMEUP>;
 			label = "volume up";
 			press-threshold-microvolt = <10000>;
@@ -33,6 +33,7 @@
 	};
 
 	vcc_phy: vcc-phy-regulator {
+		u-boot,dm-spl;
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_phy";
 		regulator-always-on;

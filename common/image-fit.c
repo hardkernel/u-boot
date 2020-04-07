@@ -1986,7 +1986,7 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 		if (image_type == IH_TYPE_KERNEL) {
 			/* Remember (and possibly verify) this config */
 			images->fit_uname_cfg = fit_base_uname_config;
-			if (IMAGE_ENABLE_VERIFY && images->verify) {
+			if (IMAGE_ENABLE_VERIFY) {
 				puts("   Verifying Hash Integrity ... ");
 				if (fit_config_verify(fit, cfg_noffset)) {
 					puts("Bad Data Hash\n");

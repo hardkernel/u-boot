@@ -22,6 +22,8 @@ int io_domain_init(void)
 	     uclass_next_device(&dev))
 		;
 
+	printf("io-domain: OK\n");
+
 	return 0;
 }
 

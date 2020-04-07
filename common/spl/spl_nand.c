@@ -61,6 +61,9 @@ static int spl_nand_load_element(struct spl_image_info *spl_image,
 	int err;
 
 #ifdef CONFIG_SPL_LOAD_RKFW
+	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
+	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
+	u32 boot_sectors = CONFIG_RKFW_BOOT_SECTOR;
 	struct spl_load_info load;
 	int ret;
 
@@ -71,8 +74,9 @@ static int spl_nand_load_element(struct spl_image_info *spl_image,
 	load.read = spl_nand_rkfw_read;
 
 	ret = spl_load_rkfw_image(spl_image, &load,
-				  CONFIG_RKFW_TRUST_SECTOR,
-				  CONFIG_RKFW_U_BOOT_SECTOR);
+				  trust_sectors,
+				  uboot_sectors,
+				  boot_sectors);
 	if (!ret || ret != -EAGAIN)
 		return ret;
 #endif

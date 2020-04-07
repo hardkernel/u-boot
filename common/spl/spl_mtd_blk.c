@@ -81,6 +81,7 @@ int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 
 	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
 	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
+	u32 boot_sectors = CONFIG_RKFW_BOOT_SECTOR;
 	struct spl_load_info load;
 
 	load.dev = desc;
@@ -101,7 +102,8 @@ int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 
 	ret = spl_load_rkfw_image(spl_image, &load,
 				  trust_sectors,
-				  uboot_sectors);
+				  uboot_sectors,
+				  boot_sectors);
 	if (ret) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl_mtd_load_rkfw: mtd block read error\n");

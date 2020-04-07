@@ -103,5 +103,6 @@ typedef struct tag_second_loader_hdr {
  */
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
 			struct spl_load_info *info,
-			u32 trust_sector, u32 uboot_sector);
+			u32 trust_sector, u32 uboot_sector,
+			u32 boot_sector);
 #endif

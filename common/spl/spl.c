@@ -82,6 +82,9 @@ void __weak spl_perform_fixups(struct spl_image_info *spl_image)
 {
 }
 
+/* Get the next stage process */
+__weak void spl_next_stage(struct spl_image_info *spl) {}
+
 void spl_fixup_fdt(void)
 {
 #if defined(CONFIG_SPL_OF_LIBFDT) && defined(CONFIG_SYS_SPL_ARGS_ADDR)
@@ -533,7 +536,7 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 #endif
 	spl_image.boot_device = BOOT_DEVICE_NONE;
 	board_boot_order(spl_boot_list);
-
+	spl_next_stage(&spl_image);
 	if (boot_from_devices(&spl_image, spl_boot_list,
 			      ARRAY_SIZE(spl_boot_list))) {
 		puts("SPL: failed to boot from all boot devices\n");

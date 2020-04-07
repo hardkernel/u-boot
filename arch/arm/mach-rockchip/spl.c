@@ -7,6 +7,7 @@
 #include <common.h>
 #include <debug_uart.h>
 #include <dm.h>
+#include <key.h>
 #include <ram.h>
 #include <spl.h>
 #include <asm/arch/bootrom.h>
@@ -14,6 +15,7 @@
 #include <asm/arch/rk_atags.h>
 #endif
 #include <asm/arch/sdram.h>
+#include <asm/arch/boot_mode.h>
 #include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
 
@@ -259,3 +261,37 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 	return;
 }
 
+#ifdef CONFIG_SPL_KERNEL_BOOT
+static int spl_rockchip_dnl_key_pressed(void)
+{
+	int key = false;
+#if defined(CONFIG_DM_KEY) && defined(CONFIG_SPL_INPUT)
+	key = key_read(KEY_VOLUMEUP);
+
+	return key_is_pressed(key);
+#else
+	return key;
+#endif
+}
+
+void spl_next_stage(struct spl_image_info *spl)
+{
+	uint32_t reg_boot_mode;
+
+	if (spl_rockchip_dnl_key_pressed()) {
+		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		return;
+	}
+
+	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+	switch (reg_boot_mode) {
+	case BOOT_PANIC:
+	case BOOT_WATCHDOG:
+	case BOOT_NORMAL:
+		spl->next_stage = SPL_NEXT_STAGE_KERNEL;
+		break;
+	default:
+		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+	}
+}
+#endif

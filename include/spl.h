@@ -20,6 +20,10 @@
 #define MMCSD_MODE_FS		2
 #define MMCSD_MODE_EMMCBOOT	3
 
+#define SPL_NEXT_STAGE_UNDEFINED	0
+#define SPL_NEXT_STAGE_UBOOT		1
+#define SPL_NEXT_STAGE_KERNEL		2
+
 struct spl_image_info {
 	const char *name;
 	u8 os;
@@ -34,6 +38,7 @@ struct spl_image_info {
 #endif
 	void *fdt_addr;
 	u32 boot_device;
+	u32 next_stage;
 	u32 size;
 	u32 flags;
 	void *arg;
@@ -77,6 +82,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 void preloader_console_init(void);
 u32 spl_boot_device(void);
 u32 spl_boot_mode(const u32 boot_device);
+void spl_next_stage(struct spl_image_info *spl);
 void spl_set_bd(void);
 
 /**
