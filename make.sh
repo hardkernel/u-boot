@@ -55,6 +55,7 @@ CHIP_CFG_FIXUP_TABLE=(
 	"CONFIG_ROCKCHIP_RK3326    3       -       -,-          -,-        -,-          -,-           AARCH32     -"
 	"CONFIG_ROCKCHIP_RK3308    3       -       1024,1024    2,2        512,512      2,2           -           AARCH32"
 	"CONFIG_ROCKCHIP_RK1808    3       -       1024,1024    2,2        -,-          -,-           -           -"
+	"CONFIG_ROCKCHIP_RV1126    3       -       -,-          -,-        -,-          -,-           -           -"
 )
 
 ########################################### User can modify #############################################
