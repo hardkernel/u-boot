@@ -469,7 +469,7 @@ pack_uboot_image()
 
 pack_uboot_itb_image()
 {
-	local ini
+	local ini TEE_OFFSET
 
 	# ARM64
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' .config ; then
@@ -503,7 +503,13 @@ pack_uboot_itb_image()
 			exit 1
 		fi
 
-		make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
+		TEE_OFFSET=`sed -n "/ADDR=/s/ADDR=//p" ${ini} |tr -d '\r'`
+		if [ "$TEE_OFFSET" = "" ]; then
+			TEE_OFFSET=0x8400000
+		fi
+
+		./arch/arm/mach-rockchip/make_fit_optee.sh $TEE_OFFSET > u-boot.its
+		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: ${ini}"
 	fi
 }
