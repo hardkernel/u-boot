@@ -578,7 +578,7 @@ pack_loader_image()
 	if [ $numline -eq 1 ]; then
 		image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
 		cp ${RKBIN}/${image} ./
-		echo "pack trust okay! Input: ${ini}"
+		echo "pack loader okay! Input: ${ini}"
 		return;
 	fi
 
