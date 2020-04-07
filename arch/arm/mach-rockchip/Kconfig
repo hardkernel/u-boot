@@ -427,6 +427,7 @@ config ROCKCHIP_RV1126
 	select ARM_SMCCC
 	select BOARD_LATE_INIT
 	select SUPPORT_SPL
+	select SUPPORT_TPL
 	select SPL
 	help
 	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
