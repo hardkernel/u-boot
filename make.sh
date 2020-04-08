@@ -152,7 +152,7 @@ prepare()
 
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*)
 		if [ ! -f .config ]; then
 			echo
 			echo "Build failed, Can't find .config"
@@ -171,7 +171,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*)
 		;;
 
 		*)
@@ -206,6 +206,10 @@ prepare()
 		echo "	2. Github repository: https://github.com/rockchip-linux/rkbin"
 		echo "	3. Download full release SDK repository"
 		exit 1
+	fi
+
+	if grep  -q '^CONFIG_ROCKCHIP_FIT_IMAGE_PACK=y' .config ; then
+		PACK_FORMAT="fit"
 	fi
 }
 
@@ -266,6 +270,11 @@ sub_commands()
 
 		debug)
 		./scripts/rkpatch.sh ${opt}
+		exit 0
+		;;
+
+		fit)
+		./scripts/fit-vboot.sh $*
 		exit 0
 		;;
 
@@ -604,12 +613,16 @@ pack_loader_image()
 		return;
 	fi
 
-	cd ${RKBIN}
-
-	${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-	echo "pack loader okay! Input: $ini"
-
-	cd - && mv ${RKBIN}/*_loader_*.bin ./
+	if [ "$PACK_FORMAT" = "rk" ]; then
+		cd ${RKBIN}
+		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
+		cd - && mv ${RKBIN}/*_loader_*.bin ./
+		echo "pack loader okay! Input: $ini"
+	else
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild >/dev/null
+		file=`ls *loader*.bin`
+		echo "pack $file okay! Input: $ini"
+	fi
 }
 
 pack_32bit_trust_image()
@@ -646,14 +659,7 @@ pack_32bit_trust_image()
 	TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 	TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-	FORMAT=`sed -n "/FIT=/s/FIT=//p" ${ini} |tr -d '\r'`
-	if [ "$FORMAT" = "1" ]; then
-		PACK_FORMAT="fit"
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild >/dev/null
-		ls uboot.img >/dev/null 2>&1 && rm uboot.img -rf
-		ls trust.img >/dev/null 2>&1 && rm trust.img -rf
-		echo "pack uboot.fit (with uboot trust) okay! Input: ${ini}"
-	else
+	if [ "$PACK_FORMAT" = "rk" ]; then
 		if [ $TOS_TA ]; then
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 		elif [ $TOS ]; then
@@ -664,6 +670,11 @@ pack_32bit_trust_image()
 		fi
 
 		echo "pack trust okay! Input: ${ini}"
+	else
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild >/dev/null
+		ls uboot.img >/dev/null 2>&1 && rm uboot.img -rf
+		ls trust.img >/dev/null 2>&1 && rm trust.img -rf
+		echo "pack uboot.fit (with uboot trust) okay! Input: ${ini}"
 	fi
 
 	echo
