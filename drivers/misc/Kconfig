@@ -75,7 +75,7 @@ config ROCKCHIP_HW_DECOMPRESS
 
 config SPL_ROCKCHIP_HW_DECOMPRESS
 	bool "Rockchip HardWare Decompress Support"
-	depends on MISC
+	depends on SPL_MISC
 	help
 	  This driver support Decompress IP built-in Rockchip SoC, support
 	  LZ4, GZIP, PNG, ZLIB.
