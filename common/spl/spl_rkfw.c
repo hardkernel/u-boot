@@ -422,6 +422,8 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 		ret = rkfw_load_uboot(info, uboot_sector, spl_image, try_count);
 		if (ret)
 			printf("Load uboot image failed! ret=%d\n", ret);
+		else
+			goto boot;
 #ifdef CONFIG_SPL_KERNEL_BOOT
 	} else if (spl_image->next_stage == SPL_NEXT_STAGE_KERNEL) {
 #endif
@@ -434,6 +436,7 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 	}
 #endif
 
+boot:
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	spl_image->fdt_addr = 0;
 #endif
