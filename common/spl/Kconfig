@@ -835,6 +835,13 @@ config SPL_KERNEL_ADDR
 	  Define the kernel address where load kernel image to.
 	  This is used to boot kernel in spl.
 
+config SPL_KERNEL_COMPRESS_ADDR
+	hex "The compressed kernel in spl"
+	depends on SPL && SPL_ROCKCHIP_HW_DECOMPRESS
+	help
+	  Load compressed kernel in this address, then call the
+	  decompress process to decompress the firmware.
+
 config SPL_FDT_ADDR
 	hex "Device tree blob load address in spl"
 	depends on SPL
@@ -850,6 +857,13 @@ config SPL_RAMDISK_ADDR
 	help
 	  Define the ramdisk address where load ramdisk image to.
 	  This is used to boot kernel in spl.
+
+config SPL_RAMDISK_COMPRESS_ADDR
+	hex "The compressed ramdisk in spl"
+	depends on SPL && SPL_ROCKCHIP_HW_DECOMPRESS
+	help
+	  Load compressed ramdisk in this address, then call the
+	  decompress process to decompress the firmware.
 
 config SPL_KERNEL_BOOT
 	bool "Enable boot kernel in SPL"
