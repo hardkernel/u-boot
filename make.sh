@@ -517,7 +517,14 @@ pack_uboot_itb_image()
 			TEE_OFFSET=0x8400000
 		fi
 
-		./arch/arm/mach-rockchip/make_fit_optee.sh $TEE_OFFSET > u-boot.its
+		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
+		if [ ! -z $SPL_FIT_SOURCE ]; then
+			cp $SPL_FIT_SOURCE u-boot.its
+		else
+			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
+			$SPL_FIT_GENERATOR $TEE_OFFSET > u-boot.its
+		fi
+
 		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: ${ini}"
 	fi
