@@ -7,6 +7,7 @@
 #include <android_image.h>
 #include <errno.h>
 #include <malloc.h>
+#include <misc_decompress.h>
 #include <spl.h>
 #include <spl_rkfw.h>
 #include <linux/kernel.h>
@@ -330,21 +331,67 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 	cnt = ALIGN(hdr->kernel_size, hdr->page_size) >> 9;
 
 	/* Load kernel image */
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+	ret = info->read(info, image_sector, cnt,
+			 (void *)CONFIG_SPL_KERNEL_COMPRESS_ADDR);
+#else
 	ret = info->read(info, image_sector, cnt, (void *)CONFIG_SPL_KERNEL_ADDR);
+#endif
 	if (ret != cnt) {
 		ret = -EIO;
 		goto out;
 	}
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+	struct udevice *dev;
+	u32 cap = GZIP_MOD;
+
+	dev = misc_decompress_get_device(cap);
+
+	if (!dev)
+		goto out;
+
+	ret = misc_decompress_start(dev, CONFIG_SPL_KERNEL_COMPRESS_ADDR,
+				    CONFIG_SPL_KERNEL_ADDR, hdr->kernel_size);
+	if (ret)
+		goto out;
+
+#endif
 
 	/* Load ramdisk image */
 	if (hdr->ramdisk_size) {
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+		ret = info->read(info, (ramdisk_sector >> 9) + image_sector,
+				 ALIGN(hdr->ramdisk_size, hdr->page_size) >> 9,
+				 (void *)CONFIG_SPL_RAMDISK_COMPRESS_ADDR);
+#else
 		ret = info->read(info, (ramdisk_sector >> 9) + image_sector,
 				 ALIGN(hdr->ramdisk_size, hdr->page_size) >> 9,
 				 (void *)CONFIG_SPL_RAMDISK_ADDR);
+#endif
 		if (ret != (ALIGN(hdr->ramdisk_size, hdr->page_size) >> 9)) {
 			ret = -EIO;
 			goto out;
 		}
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+		int timeout = 10000;
+
+		while (misc_decompress_is_complete(dev)) {
+			if (timeout < 0) {
+				ret = -EIO;
+				goto out;
+			}
+
+			timeout--;
+			udelay(10);
+		}
+
+		ret = misc_decompress_start(dev,
+					    CONFIG_SPL_RAMDISK_COMPRESS_ADDR,
+					    CONFIG_SPL_RAMDISK_ADDR,
+					    hdr->kernel_size);
+		if (ret)
+			goto out;
+#endif
 	}
 
 	/* Load resource, and checkout the dtb */
