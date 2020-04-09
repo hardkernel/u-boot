@@ -472,12 +472,11 @@ pack_uboot_image()
 		fi
 
 		${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
+		# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
+		ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
+		ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
 		echo "pack uboot okay! Input: u-boot.bin"
 	fi
-
-	# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
-	ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
-	ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
 }
 
 pack_uboot_itb_image()
@@ -737,7 +736,7 @@ select_chip_info
 fixup_platform_configure
 sub_commands
 make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
+pack_uboot_image
 pack_loader_image
 pack_trust_image
-pack_uboot_image
 finish
