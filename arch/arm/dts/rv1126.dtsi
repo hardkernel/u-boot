@@ -958,6 +958,12 @@
 		};
 	};
 
+	secure_otp: secure_otp@0xff5d0000 {
+		compatible = "rockchip,rv1126-secure-otp";
+		reg = <0xff5d0000 0x4000>;
+		secure_conf = <0xfe0a0008>;
+	};
+
 	saradc: saradc@ff5e0000 {
 		compatible = "rockchip,saradc";
 		reg = <0xff5e0000 0x100>;

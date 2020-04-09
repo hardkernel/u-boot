@@ -104,6 +104,11 @@
 	status = "okay";
 };
 
+&secure_otp {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
 &u2phy0 {
 	u-boot,dm-pre-reloc;
 	status = "okay";
