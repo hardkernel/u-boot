@@ -90,6 +90,8 @@
 #define SFC_QOP		0x30
 #define SFC_DMA_TRIGGER	0x80
 #define SFC_DMA_ADDR	0x84
+#define SFC_LEN_CTRL	0x88
+#define SFC_LEN_EXT	0x8C
 #define SFC_CMD		0x100
 #define SFC_ADDR	0x104
 #define SFC_DATA	0x108
@@ -182,8 +184,13 @@ union SFCCMD_DATA {
 	} b;
 };
 
+struct rk_sfc_op {
+	union SFCCMD_DATA sfcmd;
+	union SFCCTRL_DATA sfctrl;
+};
+
 int sfc_init(void __iomem *reg_addr);
-int sfc_request(u32 sfcmd, u32 sfctrl, u32 addr, void *data);
+int sfc_request(struct rk_sfc_op *op, u32 addr, void *data, u32 size);
 u16 sfc_get_version(void);
 void sfc_clean_irq(void);
 int rksfc_get_reg_addr(unsigned long *p_sfc_addr);
