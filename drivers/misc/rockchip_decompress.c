@@ -7,6 +7,7 @@
 #include <dm.h>
 #include <linux/bitops.h>
 #include <misc.h>
+#include <misc_decompress.h>
 #include <irq-generic.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -75,19 +76,6 @@ DECLARE_GLOBAL_DATA_PTR;
 	DISEIEN | LENEIEN | LITEIEN | SQMEIEN | SLCIEN | \
 	HDEIEN | DSIEN)
 
-enum decom_mod {
-	LZ4_MOD,
-	GZIP_MOD,
-	ZLIB_MOD,
-};
-
-struct rockchip_decom_param {
-	unsigned long addr_src;
-	unsigned long addr_dst;
-	unsigned long size;
-	enum decom_mod mode;
-};
-
 struct rockchip_decom_priv {
 	void __iomem *base;
 	bool done;
@@ -96,7 +84,7 @@ struct rockchip_decom_priv {
 static int rockchip_decom_start(struct udevice *dev, void *buf)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
-	struct rockchip_decom_param *param = (struct rockchip_decom_param *)buf;
+	struct decom_param *param = (struct decom_param *)buf;
 
 	priv->done = false;
 
@@ -151,7 +139,12 @@ static int rockchip_decom_done_poll(struct udevice *dev)
 	return -EINVAL;
 }
 
-/* Caller must fill in param @buf which represent struct rockchip_decom_param */
+static int rockchip_decom_ability(void)
+{
+	return GZIP_MOD;
+}
+
+/* Caller must fill in param @buf which represent struct decom_param */
 static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 				void *buf)
 {
@@ -167,6 +160,8 @@ static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 	case IOCTL_REQ_STOP:
 		ret = rockchip_decom_stop(dev);
 		break;
+	case IOCTL_REQ_CAPABILITY:
+		ret = rockchip_decom_ability();
 	}
 
 	return ret;
