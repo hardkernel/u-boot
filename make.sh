@@ -275,7 +275,11 @@ sub_commands()
 		;;
 
 		fit)
-		./scripts/fit-vboot.sh $*
+		if [ "$opt" = "s" ]; then
+			./scripts/fit-vboot.sh
+		else
+			./scripts/fit-vboot.sh --no-vboot
+		fi
 		exit 0
 		;;
 

@@ -252,8 +252,7 @@ config CONSOLE_RECORD_IN_SIZE
 
 config CONSOLE_DISABLE_CLI
 	bool "disable ctrlc"
-	depends on BOOTDELAY = 0
-	default y if AVB_VBMETA_PUBLIC_KEY_VALIDATE || FIT_SIGNATURE
+	default n
 	help
 	  This disable CLI interactive in verified-boot.
 
