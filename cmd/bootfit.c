@@ -105,12 +105,12 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	if (ret && argc != 1) {
 		fit_sysmem_free_each(fit);
-		ret = -1;
+		goto out;
 	}
 
-	return ret;
+	return CMD_RET_SUCCESS;
 out:
-	return -1;
+	return CMD_RET_FAILURE;
 }
 
 U_BOOT_CMD(
