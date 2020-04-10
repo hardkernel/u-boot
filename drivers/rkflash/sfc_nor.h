@@ -112,6 +112,7 @@ struct SFNOR_DEV {
 	enum SFC_DATA_LINES prog_lines;
 
 	SNOR_WRITE_STATUS write_status;
+	u32 max_iosize;
 };
 
 struct flash_info {
