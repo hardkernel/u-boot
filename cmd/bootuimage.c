@@ -93,12 +93,12 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 
 	if (ret && argc != 1) {
 		uimage_sysmem_free_each(img, ramdisk_sz);
-		ret = -1;
+		goto out;
 	}
 
-	return ret;
+	return CMD_RET_SUCCESS;
 out:
-	return -1;
+	return CMD_RET_FAILURE;
 }
 
 U_BOOT_CMD(
