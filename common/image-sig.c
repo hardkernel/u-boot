@@ -10,6 +10,7 @@
 #else
 #include <common.h>
 #include <malloc.h>
+#include <optee_include/OpteeClientInterface.h>
 DECLARE_GLOBAL_DATA_PTR;
 #endif /* !USE_HOSTCC*/
 #include <image.h>
@@ -470,3 +471,30 @@ int fit_config_verify(const void *fit, int conf_noffset)
 	return fit_config_verify_required_sigs(fit, conf_noffset,
 					       gd_fdt_blob());
 }
+
+#ifndef USE_HOSTCC
+#if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)
+int fit_rollback_index_verify(const void *fit, uint32_t rollback_fd,
+			      uint32_t *this_index, uint32_t *min_index)
+{
+	uint32_t tmp_this;
+	uint64_t tmp_min;
+	int images_noffset;
+	int def_noffset;
+
+	if (fit_get_image_defconf_node(fit, &images_noffset, &def_noffset))
+		return -ENOENT;
+
+	if (fit_image_get_rollback_index(fit, def_noffset, &tmp_this))
+		return -ENODEV;
+
+	/* TODO */
+	tmp_min = tmp_this;
+
+	*this_index = tmp_this;
+	*min_index = tmp_min;
+
+	return 0;
+}
+#endif
+#endif

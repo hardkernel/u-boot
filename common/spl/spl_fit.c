@@ -11,6 +11,7 @@
 #include <linux/libfdt.h>
 #include <spl.h>
 #include <malloc.h>
+#include <optee_include/OpteeClientInterface.h>
 
 #ifndef CONFIG_SYS_BOOTM_LEN
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)
@@ -341,8 +342,9 @@ static int spl_fit_image_get_os(const void *fit, int noffset, uint8_t *os)
 #endif
 }
 
-int spl_load_simple_fit(struct spl_image_info *spl_image,
-			struct spl_load_info *info, ulong sector, void *fit)
+static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
+					struct spl_load_info *info,
+					ulong sector, void *fit)
 {
 	int sectors;
 	ulong size;
@@ -408,8 +410,25 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		}
 		printf("\n");
 	}
-#endif
 
+#ifdef CONFIG_SPL_FIT_ROLLBACK_PROTECT
+	uint32_t this_index, min_index;
+
+	ret = fit_rollback_index_verify(fit, FIT_ROLLBACK_INDEX_SPL,
+					&this_index, &min_index);
+	if (ret) {
+		printf("fit failed to get rollback index, ret=%d\n", ret);
+		return ret;
+	} else if (this_index < min_index) {
+		printf("fit reject rollback: %d < %d(min)\n",
+		       this_index, min_index);
+		return -EINVAL;
+	}
+
+	spl_image->rollback_index = this_index;
+	printf("rollback index: %d >= %d, OK\n", this_index, min_index);
+#endif
+#endif
 	/*
 	 * Find the U-Boot image using the following search order:
 	 *   - start at 'firmware' (e.g. an ARM Trusted Firmware)
@@ -510,3 +529,34 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 
 	return 0;
 }
+
+int spl_load_simple_fit(struct spl_image_info *spl_image,
+			struct spl_load_info *info, ulong sector, void *fit)
+{
+	ulong sector_offs = sector;
+	int i;
+
+	for (i = 0; i < CONFIG_SPL_FIT_IMAGE_MULTIPLE; i++) {
+		if (i > 0) {
+			sector_offs +=
+			   i * ((CONFIG_SPL_FIT_IMAGE_KB << 10) / info->bl_len);
+			printf("Trying fit image at 0x%lx sector\n", sector_offs);
+			if (info->read(info, sector_offs, 1, fit) != 1) {
+				printf("IO error\n");
+				continue;
+			}
+		}
+
+		if (image_get_magic(fit) != FDT_MAGIC) {
+			printf("Bad fit magic\n");
+			continue;
+		}
+
+		if (!spl_internal_load_simple_fit(spl_image, info,
+						  sector_offs, fit))
+			return 0;
+	}
+
+	return -EINVAL;
+}
+

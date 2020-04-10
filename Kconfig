@@ -222,6 +222,12 @@ config FIT_SIGNATURE
 	  format support in this case, enable it using
 	  CONFIG_IMAGE_FORMAT_LEGACY.
 
+config FIT_ROLLBACK_PROTECT
+	bool "Enable rollback-index protection for FIT image"
+	depends on FIT_SIGNATURE
+	help
+	  Enable rollback-index protection for FIT image
+
 config FIT_VERBOSE
 	bool "Show verbose messages when FIT images fail"
 	help
@@ -272,6 +278,12 @@ config SPL_FIT_SIGNATURE
 	select SPL_FIT
 	select SPL_RSA
 
+config SPL_FIT_ROLLBACK_PROTECT
+	bool "Enable SPL rollback-index protection for FIT image"
+	depends on SPL_FIT_SIGNATURE
+	help
+	  Enable SPL rollback-index protection for FIT image
+
 config SPL_LOAD_FIT
 	bool "Enable SPL loading U-Boot as a FIT"
 	select SPL_FIT
@@ -320,6 +332,20 @@ config SPL_FIT_HW_CRYPTO
 	depends on SPL_DM_CRYPTO
 	help
 	  Enable SPL hardware crypto for FIT image checksum and rsa verify.
+
+config SPL_FIT_IMAGE_KB
+	int "SPL FIT image size in KiB"
+	depends on SPL_FIT
+	default 2048
+	help
+	  SPL FIT image size in KiB.
+
+config SPL_FIT_IMAGE_MULTIPLE
+	int "SPL FIT image multiple number"
+	depends on SPL_FIT
+	default 1
+	help
+	  SPL FIT image multiple number.
 
 config SPL_SYS_DCACHE_OFF
 	bool "Disable SPL dcache"

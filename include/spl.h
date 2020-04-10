@@ -37,6 +37,9 @@ struct spl_image_info {
 	uintptr_t entry_point_os;	/* point to uboot or kernel */
 #endif
 	void *fdt_addr;
+#if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)
+	u32 rollback_index;
+#endif
 	u32 boot_device;
 	u32 next_stage;
 	u32 size;
@@ -318,9 +321,21 @@ void spl_optee_entry(void *arg0, void *arg1, void *arg2, void *arg3);
 void board_return_to_bootrom(void);
 
 /**
+ * spl_cleanup_before_jump() - cleanup cache/mmu/interrupt, etc before jump
+ *			       to next stage.
+ */
+void spl_cleanup_before_jump(struct spl_image_info *spl_image);
+
+/**
  * spl_perform_fixups() - arch/board-specific callback before processing
  *                        the boot-payload
  */
 void spl_perform_fixups(struct spl_image_info *spl_image);
+
+/**
+ * spl_board_prepare_for_jump() - arch/board-specific callback exactly before
+ *				  jumping to next stage
+ */
+int spl_board_prepare_for_jump(struct spl_image_info *spl_image);
 
 #endif

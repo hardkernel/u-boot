@@ -396,6 +396,10 @@ typedef struct bootm_headers {
 #ifdef CONFIG_LMB
 	struct lmb	lmb;		/* for memory mgmt */
 #endif
+
+#ifdef CONFIG_FIT_ROLLBACK_PROTECT
+	u32 rollback_index;
+#endif
 } bootm_headers_t;
 
 extern bootm_headers_t images;
@@ -943,6 +947,10 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #endif
 #define FIT_ALIGN(x)		(((x)+IMAGE_ALIGN_SIZE-1)&~(IMAGE_ALIGN_SIZE-1))
 
+/* fit rollback index file description magic */
+#define FIT_ROLLBACK_INDEX	0xf1de0001
+#define FIT_ROLLBACK_INDEX_SPL	0xf1de8002
+
 /* cmdline argument format parsing */
 int fit_parse_conf(const char *spec, ulong addr_curr,
 		ulong *addr, const char **conf_name);
@@ -1054,6 +1062,8 @@ int fit_check_format(const void *fit);
 
 int fit_conf_find_compat(const void *fit, const void *fdt);
 int fit_conf_get_node(const void *fit, const char *conf_uname);
+int fit_rollback_index_verify(const void *fit, uint32_t rollback_fd,
+			      uint32_t *this_index, uint32_t *min_index);
 
 /**
  * fit_conf_get_prop_node() - Get node refered to by a configuration

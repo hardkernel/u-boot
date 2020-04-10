@@ -114,21 +114,6 @@ void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
 
 	bl31_params = bl2_plat_get_bl31_params(bl32_entry, bl33_entry);
 
-	raw_write_daif(SPSR_EXCEPTION_MASK);
-
-	/*
-	 * Turn off I-cache and invalidate it
-	 */
-	icache_disable();
-	invalidate_icache_all();
-
-	/*
-	 * turn off D-cache
-	 * dcache_disable() in turn flushes the d-cache and disables MMU
-	 */
-	dcache_disable();
-	invalidate_dcache_all();
-
 	atf_entry((void *)bl31_params, (void *)fdt_addr);
 }
 
@@ -212,6 +197,9 @@ void spl_invoke_atf(struct spl_image_info *spl_image)
 	 */
 	if (CONFIG_IS_ENABLED(ATF_NO_PLATFORM_PARAM))
 		platform_param = 0;
+
+	/* do cleanup */
+	spl_cleanup_before_jump(spl_image);
 
 	/*
 	 * We don't provide a BL3-2 entry yet, but this will be possible

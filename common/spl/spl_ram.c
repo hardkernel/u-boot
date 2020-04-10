@@ -39,8 +39,14 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 		spl_dfu_cmd(0, "dfu_alt_info_ram", "ram", "0");
 #endif
 
+#ifdef CONFIG_SPL_FIT_IMAGE_MULTIPLE
+	if ((IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
+	     image_get_magic(header) == FDT_MAGIC) ||
+	     CONFIG_SPL_FIT_IMAGE_MULTIPLE > 1) {
+#else
 	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
 	    image_get_magic(header) == FDT_MAGIC) {
+#endif
 		struct spl_load_info load;
 
 		debug("Found FIT\n");

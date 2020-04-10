@@ -85,6 +85,12 @@ void __weak spl_perform_fixups(struct spl_image_info *spl_image)
 /* Get the next stage process */
 __weak void spl_next_stage(struct spl_image_info *spl) {}
 
+/* Weak default function for arch/board-specific preppare before jumping */
+int __weak spl_board_prepare_for_jump(struct spl_image_info *spl_image)
+{
+	return 0;
+}
+
 void spl_fixup_fdt(void)
 {
 #if defined(CONFIG_SPL_OF_LIBFDT) && defined(CONFIG_SYS_SPL_ARGS_ADDR)
@@ -560,7 +566,8 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 #endif
 #if CONFIG_IS_ENABLED(OPTEE)
 	case IH_OS_OP_TEE:
-		debug("Jumping to U-Boot via OP-TEE\n");
+		printf("Jumping to U-Boot via OP-TEE\n");
+		spl_cleanup_before_jump(&spl_image);
 		spl_optee_entry(NULL, (void *)spl_image.entry_point_os,
 				(void *)spl_image.fdt_addr,
 				(void *)spl_image.entry_point);
@@ -662,4 +669,28 @@ ulong spl_relocate_stack_gd(void)
 #else
 	return 0;
 #endif
+}
+
+/* cleanup before jump to next stage */
+void spl_cleanup_before_jump(struct spl_image_info *spl_image)
+{
+	spl_board_prepare_for_jump(spl_image);
+
+	disable_interrupts();
+
+	/*
+	 * Turn off I-cache and invalidate it
+	 */
+	icache_disable();
+	invalidate_icache_all();
+
+	/*
+	 * Turn off D-cache
+	 * dcache_disable() in turn flushes the d-cache and disables MMU
+	 */
+	dcache_disable();
+	invalidate_dcache_all();
+
+	dsb();
+	isb();
 }

@@ -1995,6 +1995,24 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 					return -EACCES;
 				}
 				puts("OK\n");
+
+#ifdef CONFIG_FIT_ROLLBACK_PROTECT
+				uint32_t this_index, min_index;
+
+				puts("   Verifying Rollback-index ... ");
+				if (fit_rollback_index_verify(fit,
+						FIT_ROLLBACK_INDEX,
+						&this_index, &min_index)) {
+					puts("Failed to get index\n");
+					return ret;
+				} else if (this_index < min_index) {
+					printf("Reject index %d < %d(min)\n",
+					       this_index, min_index);
+					return -EINVAL;
+				}
+
+				printf("%d >= %d, OK\n", this_index, min_index);
+#endif
 			}
 			bootstage_mark(BOOTSTAGE_ID_FIT_CONFIG);
 		}

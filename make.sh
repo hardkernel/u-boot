@@ -99,6 +99,8 @@ PLATFORM_SHA=
 PLATFORM_UBOOT_IMG_SIZE=
 PLATFORM_TRUST_IMG_SIZE=
 
+PACK_FORMAT="rk"
+
 # Out env param
 PACK_IGNORE_BL32=$TRUST_PACK_IGNORE_BL32	# Value only: "--ignore-bl32"
 #########################################################################################################
@@ -151,7 +153,7 @@ prepare()
 
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*)
 		if [ ! -f .config ]; then
 			echo
 			echo "Build failed, Can't find .config"
@@ -170,7 +172,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*)
 		;;
 
 		*)
@@ -205,6 +207,10 @@ prepare()
 		echo "	2. Github repository: https://github.com/rockchip-linux/rkbin"
 		echo "	3. Download full release SDK repository"
 		exit 1
+	fi
+
+	if grep  -q '^CONFIG_ROCKCHIP_FIT_IMAGE_PACK=y' .config ; then
+		PACK_FORMAT="fit"
 	fi
 }
 
@@ -265,6 +271,11 @@ sub_commands()
 
 		debug)
 		./scripts/rkpatch.sh ${opt}
+		exit 0
+		;;
+
+		fit)
+		./scripts/fit-vboot.sh $*
 		exit 0
 		;;
 
@@ -463,18 +474,19 @@ pack_uboot_image()
 		exit 1
 	fi
 
-	# Pack image
-	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
-	if [ ! $UBOOT_LOAD_ADDR ]; then
-		UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" .config|tr -d '\r'`
+	if [ "$PACK_FORMAT" = "rk" ]; then
+		# Pack image
+		UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
+		if [ ! $UBOOT_LOAD_ADDR ]; then
+			UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" .config|tr -d '\r'`
+		fi
+
+		${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
+		# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
+		ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
+		ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
+		echo "pack uboot okay! Input: u-boot.bin"
 	fi
-
-	${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
-
-	# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
-	ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
-	ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
-	echo "pack uboot okay! Input: u-boot.bin"
 }
 
 pack_uboot_itb_image()
@@ -518,7 +530,14 @@ pack_uboot_itb_image()
 			TEE_OFFSET=0x8400000
 		fi
 
-		./arch/arm/mach-rockchip/make_fit_optee.sh $TEE_OFFSET > u-boot.its
+		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
+		if [ ! -z $SPL_FIT_SOURCE ]; then
+			cp $SPL_FIT_SOURCE u-boot.its
+		else
+			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
+			$SPL_FIT_GENERATOR $TEE_OFFSET > u-boot.its
+		fi
+
 		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: ${ini}"
 	fi
@@ -564,7 +583,10 @@ pack_spl_loader_image()
 	cd -
 	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
 	mv ${RKBIN}/*_loader_*.bin ./
-	rename 's/loader_/spl_loader_/' *_loader_*.bin
+	filename=`basename *_loader_*.bin`
+	if [[ $filename != *spl* ]]; then
+		rename 's/loader_/spl_loader_/' *_loader_*.bin
+	fi
 	echo "pack loader(${label}) okay! Input: ${ini}"
 	ls ./*_loader_*.bin
 }
@@ -592,12 +614,16 @@ pack_loader_image()
 		return;
 	fi
 
-	cd ${RKBIN}
-
-	${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-	echo "pack loader okay! Input: $ini"
-
-	cd - && mv ${RKBIN}/*_loader_*.bin ./
+	if [ "$PACK_FORMAT" = "rk" ]; then
+		cd ${RKBIN}
+		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
+		cd - && mv ${RKBIN}/*_loader_*.bin ./
+		echo "pack loader okay! Input: $ini"
+	else
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild >/dev/null
+		file=`ls *loader*.bin`
+		echo "pack $file okay! Input: $ini"
+	fi
 }
 
 pack_32bit_trust_image()
@@ -634,14 +660,7 @@ pack_32bit_trust_image()
 	TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 	TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-	FORMAT=`sed -n "/FORMAT=/s/FORMAT=//p" ${ini} |tr -d '\r'`
-	if [ $FORMAT = "FIT" ]; then
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
-		ls uboot.img >/dev/null 2>&1 && rm uboot.img -rf
-		ls trust.img >/dev/null 2>&1 && rm trust.img -rf
-
-		echo "pack uboot.fit okay! Input: ${ini}"
-	else
+	if [ "$PACK_FORMAT" = "rk" ]; then
 		if [ $TOS_TA ]; then
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ${TEE_OUTPUT} ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 		elif [ $TOS ]; then
@@ -652,6 +671,11 @@ pack_32bit_trust_image()
 		fi
 
 		echo "pack trust okay! Input: ${ini}"
+	else
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild >/dev/null
+		ls uboot.img >/dev/null 2>&1 && rm uboot.img -rf
+		ls trust.img >/dev/null 2>&1 && rm trust.img -rf
+		echo "pack uboot.fit (with uboot trust) okay! Input: ${ini}"
 	fi
 
 	echo
