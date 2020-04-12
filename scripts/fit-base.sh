@@ -113,6 +113,18 @@ function fit_process_args()
 	done
 }
 
+function its_file_existence_check()
+{
+	cat $1 | while read line
+	do
+		image=`echo $line | sed -n "/incbin/p" | awk -F '"' '{ printf $2 }' | tr -d ' '`
+		if [ ! -f $image ]; then
+			echo "ERROR: No $image"
+			exit 1
+		fi
+	done
+}
+
 function fit_rebuild()
 {
 	if [ "$ARG_NO_REBUILD" != "y" ]; then
@@ -129,12 +141,12 @@ function fit_rebuild()
 function fit_uboot_make_itb()
 {
 	./make.sh itb
+	its_file_existence_check u-boot.its
 
 	# output uboot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
-		./make.sh spl-s
 	else
 		SIGN_MSG="signed"
 
@@ -216,15 +228,19 @@ function fit_uboot_make_itb()
 
 function fit_boot_make_itb()
 {
+
+	if grep -q '^CONFIG_ARM64=y' .config ; then
+		FIT_ITS_BOOT="kernel_arm64.its"
+	else
+		FIT_ITS_BOOT="kernel_arm.its"
+	fi
+
+	cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
+	its_file_existence_check $FIT_ITS_BOOT
+
 	# output boot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
-		if grep -q '^CONFIG_ARM64=y' .config ; then
-			FIT_ITS_BOOT="kernel_arm64.its"
-		else
-			FIT_ITS_BOOT="kernel_arm.its"
-		fi
-		cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
 		./tools/mkimage -f $FIT_ITS_BOOT -E -p $FIT_NS_OFFS_BOOT $FIT_ITB_BOOT
 	else
 		SIGN_MSG="signed"
@@ -250,14 +266,7 @@ function fit_boot_make_itb()
 			fi
 		fi
 
-		if grep -q '^CONFIG_ARM64=y' .config ; then
-			FIT_ITS_BOOT="kernel_arm64.its"
-		else
-			FIT_ITS_BOOT="kernel_arm.its"
-		fi
-
 		# fixup entry and load address
-		cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
 		COMM_FILE=`sed -n "/_common.h/p" $CHIP_FILE | awk '{ print $1 }'`
 		FDT_ADDR_R=`awk /fdt_addr_r/            $COMM_FILE | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
 		KERNEL_ADDR_R=`awk /kernel_addr_r/      $COMM_FILE | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
@@ -302,7 +311,7 @@ function fit_boot_make_itb()
 	# clean
 	mv $FIT_ITS_BOOT $FIT_DIR
 	./scripts/dtc/dtc -I dtb -O dts $FIT_ITB_BOOT -o $FIT_UNMAP_ITB_BOOT >/dev/null 2>&1
-	./scripts/dtc/dtc -I dtb -O dts u-boot.dtb      -o $FIT_UNMAP_KEY_BOOT >/dev/null 2>&1
+	./scripts/dtc/dtc -I dtb -O dts u-boot.dtb    -o $FIT_UNMAP_KEY_BOOT >/dev/null 2>&1
 }
 
 function fit_uboot_make_img()
