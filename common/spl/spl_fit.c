@@ -342,6 +342,11 @@ static int spl_fit_image_get_os(const void *fit, int noffset, uint8_t *os)
 #endif
 }
 
+__weak int spl_fit_standalone_release(void)
+{
+	return 0;
+}
+
 static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 					struct spl_load_info *info,
 					ulong sector, void *fit)
@@ -429,6 +434,31 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 	printf("rollback index: %d >= %d, OK\n", this_index, min_index);
 #endif
 #endif
+
+	/*
+	 * If required to start the other core before load "loadables"
+	 * firmwares, use the config "standalone" to load the other core's
+	 * firmware, then start it.
+	 * Normally, different cores' firmware is attach to the config
+	 * "loadables" and load them together.
+	 */
+	if (node < 0)
+		node = spl_fit_get_image_node(fit, images, FIT_STANDALONE_PROP,
+					      0);
+	if (node > 0) {
+		/* Load the image and set up the spl_image structure */
+		ret = spl_load_fit_image(info, sector, fit, base_offset, node,
+					 spl_image);
+		if (!ret) {
+			ret = spl_fit_standalone_release();
+			if (ret)
+				printf("Start standalone fail, ret = %d\n",
+				       ret);
+		}
+
+		node = -1;
+	}
+
 	/*
 	 * Find the U-Boot image using the following search order:
 	 *   - start at 'firmware' (e.g. an ARM Trusted Firmware)
