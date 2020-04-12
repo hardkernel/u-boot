@@ -4,48 +4,31 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-
-FIT_UBOOT_IMAGES=(
-	"/images/uboot@1      u-boot-nodtb.bin"
-	"/images/optee@1      tee.bin"
-	"/images/fdt@1        u-boot.dtb"
-)
-
-FIT_BOOT_IMAGES=(
-	"/images/kernel@1     kernel.img"
-	"/images/ramdisk@1    ramdisk.img"
-	"/images/resource@1   resource.img"
-	"/images/fdt@1        rk-kernel.dtb"
-)
+set -e
 
 function usage()
 {
 	echo
 	echo "usage:"
-	echo "    $0 -f [fit/itb image] -o [output] -u    // unpack uboot.fit/itb"
-	echo "    $0 -f [fit/itb image] -o [output] -b    // unpack boot.fit/itb"
+	echo "    $0 -f [fit/itb] -o [output]"
 	echo
 }
 
 function args_process()
 {
-	if [ $# -ne 5 ]; then
+	if [ $# -ne 4 -a $# -ne 2 ]; then
 		usage
 		exit 1
 	fi
 
 	while [ $# -gt 0 ]; do
 		case $1 in
-			-b|-u)
-				TYPE=$1
-				shift 1
-				;;
 			-f)
-				IMAGE=$2
+				file=$2
 				shift 2
 				;;
 			-o)
-				OUTPUT=$2
+				output=$2
 				shift 2
 				;;
 			*)
@@ -55,57 +38,43 @@ function args_process()
 		esac
 	done
 
-	if [ ! -f $IMAGE ]; then
-		echo "ERROR: No $IMAGE"
-		exit 1
-	elif [ -z $OUTPUT ]; then
-		echo "ERROR: No output"
-		exit 1
-	elif [ -z $TYPE ]; then
-		echo "ERROR: No args -u or -b"
+	if [ ! -f $file ]; then
+		echo "ERROR: No $file"
 		exit 1
 	fi
 
-	mkdir -p $OUTPUT
-}
-
-function copy_image()
-{
-	LIST=$1
-
-	NODE=`echo $LIST | awk '{ print $1 }'`
-	NAME=`echo $LIST | awk '{ print $2 }'`
-	OFFS=`fdtget -ti $IMAGE $NODE data-position`
-	SIZE=`fdtget -ti $IMAGE $NODE data-size`
-	if [ -z $OFFS ]; then
-		echo "ERROR: No find $NODE"
-		exit 1
+	if [ -z $output ]; then
+		output="out"
 	fi
 
-	printf "    %-15s: %d bytes\n" $OUTPUT$NAME $SIZE
-	if [ $SIZE -ne 0 ]; then
-		dd if=$IMAGE         of=$OUTPUT/dd.tmp  bs=$OFFS skip=1  >/dev/null 2>&1
-		dd if=$OUTPUT/dd.tmp of=$OUTPUT/$NAME   bs=$SIZE count=1 >/dev/null 2>&1
-		rm $OUTPUT/dd.tmp
-	else
-		touch $OUTPUT/$NAME
-	fi
+	mkdir -p $output
 }
 
 function gen_images()
 {
-	echo "Image:"
-	if [ $TYPE = "-u" ]; then
-		for LIST in "${FIT_UBOOT_IMAGES[@]}"
-		do
-			copy_image "$LIST"
-		done
-	elif [ $TYPE = "-k" ]; then
-		for LIST in "${FIT_BOOT_IMAGES[@]}"
-		do
-			copy_image "$LIST"
-		done
-	fi
+	printf "\n## Unpack $file to directory $output/\n"
+	fdtget -l $file /images > $output/unpack.txt
+	cat $output/unpack.txt | while read line
+	do
+		node="/images/${line}"
+		name=`fdtget -ts $file $node image`
+		offs=`fdtget -ti $file $node data-position`
+		size=`fdtget -ti $file $node data-size`
+		if [ -z $offs ]; then
+			continue;
+		fi
+
+		printf "    %-15s: %d bytes\n" ${name} $size
+		if [ $size -ne 0 ]; then
+			dd if=$file of=$output/dd.tmp  bs=$offs skip=1  >/dev/null 2>&1
+			dd if=$output/dd.tmp of=$output/$name bs=$size count=1 >/dev/null 2>&1
+			rm $output/dd.tmp
+		else
+			touch $output/$name
+		fi
+	done
+
+	rm $output/unpack.txt
 	echo
 }
 
