@@ -50,6 +50,13 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_PWR_DWN_ST		(0x108)
 #define PMU_PWR_GATE_SFTCON	(0x110)
 
+#define CRU_BASE		0xFF490000
+#define CRU_SOFTRST_CON02	0x308
+#define SGRF_BASE		0xFE0A0000
+#define SGRF_CON_SCR1_BOOT_ADDR	0x0b0
+#define SGRF_SOC_CON3		0x00c
+#define SCR1_START_ADDR		0x208000
+
 void board_debug_uart_init(void)
 {
 
@@ -130,3 +137,19 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_SPL_BUILD
+int spl_fit_standalone_release(void)
+{
+	/* Reset the scr1 */
+	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON02);
+	udelay(100);
+	/* set the scr1 addr */
+	writel(SCR1_START_ADDR, SGRF_BASE + SGRF_CON_SCR1_BOOT_ADDR);
+	writel(0x00ff00bf, SGRF_BASE + SGRF_SOC_CON3);
+	/* release the scr1 */
+	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON02);
+
+	return 0;
+}
+#endif
