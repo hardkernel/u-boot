@@ -350,7 +350,9 @@ function fit_boot_make_img()
 		ITB_FILE=$FIT_ITB_BOOT
 	fi
 
-	cp $ITB_FILE $FIT_IMG_BOOT
+	if [ "$ITB_FILE" != "$FIT_IMG_BOOT" ]; then
+		cp $ITB_FILE $FIT_IMG_BOOT -f
+	fi
 }
 
 function fit_resign()
