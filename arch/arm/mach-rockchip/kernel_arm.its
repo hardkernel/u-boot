@@ -14,6 +14,7 @@
 	images {
 		fdt@1 {
 			description = "Device tree blob for arm";
+			image = "rk-kernel.dtb";
 			data = /incbin/("images/rk-kernel.dtb");
 			type = "flat_dt";
 			arch = "arm";
@@ -26,6 +27,7 @@
 
 		kernel@1 {
 			description = "Kernel for arm";
+			image = "kernel.img";
 			data = /incbin/("images/kernel.img");
 			type = "kernel";
 			arch = "arm";
@@ -40,6 +42,7 @@
 
 		ramdisk@1 {
 			description = "Ramdisk for arm";
+			image = "ramdisk.img";
 			data = /incbin/("images/ramdisk.img");
 			type = "ramdisk";
 			arch = "arm";
@@ -53,6 +56,7 @@
 
 		resource@1 {
 			description = "Resource for arm";
+			image = "resource.img";
 			data = /incbin/("images/resource.img");
 			type = "multi";
 			arch = "arm";
