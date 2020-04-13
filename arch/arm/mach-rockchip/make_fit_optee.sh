@@ -16,6 +16,7 @@ cat << EOF
 	images {
 		uboot@1 {
 			description = "U-Boot";
+			image = "u-boot-nodtb.bin";
 			data = /incbin/("./u-boot-nodtb.bin");
 			type = "standalone";
 			os = "U-Boot";
@@ -34,6 +35,7 @@ cat << EOF
 		};
 		optee@1 {
 			description = "OP-TEE";
+			image = "tee.bin";
 			data = /incbin/("./tee.bin");
 			type = "firmware";
 			arch = "arm";
@@ -57,6 +59,7 @@ cat << EOF
 		};
 		fdt@1 {
 			description = "U-Boot dtb";
+			image = "u-boot.dtb";
 			data = /incbin/("./u-boot.dtb");
 			type = "flat_dt";
 			compression = "none";
