@@ -36,8 +36,8 @@ FIT_FDT_ADDR_PLACEHOLDER="0xffffff00"
 FIT_KERNEL_ADDR_PLACEHOLDER="0xffffff01"
 FIT_RAMDISK_ADDR_PLACEHOLDER="0xffffff02"
 # output
-FIT_IMG_UBOOT="uboot.fit"
-FIT_IMG_BOOT="boot.fit"
+FIT_IMG_UBOOT="uboot.img"
+FIT_IMG_BOOT="boot.img"
 
 function usage_pack()
 {
@@ -330,7 +330,7 @@ function fit_uboot_make_img()
 
 	if [ $THIS_BS -eq $FIT_MAX_BS ]; then
 		echo
-		echo "ERROR: $ITB_FILE is too big, maybe it's a .fit but not .itb ?"
+		echo "ERROR: $ITB_FILE is too big, maybe it's not a .itb ?"
 		exit 1
 	elif [ $THIS_BS -gt $ITB_MAX_BS ]; then
 		echo
@@ -423,7 +423,7 @@ function fit_resign()
 	cat $FIT_SIG     >> $FIT_ITB
 	cat $FIT_SIG_P3  >> $FIT_ITB
 
-	# generate .fit
+	# generate
 	echo
 	if [ "$FIT_UK" = "-u" ]; then
 		fit_uboot_make_img  $FIT_ITB
