@@ -476,9 +476,10 @@ function pack_uboot_image()
 			exit 1
 		fi
 		${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${uboot_load_addr} ${PLATFORM_UBOOT_IMG_SIZE}
-		ls u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.img u-boot-dtb.img -rf
-		echo "pack uboot okay! Input: u-boot.bin"
 	fi
+
+	ls u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.img u-boot-dtb.img -rf
+	echo "pack uboot okay! Input: u-boot.bin"
 }
 
 function pack_uboot_itb_image()
