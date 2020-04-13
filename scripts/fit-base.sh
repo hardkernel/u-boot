@@ -46,14 +46,7 @@ function usage_pack()
 	echo "    $0 [args]"
 	echo
 	echo "args:"
-	if [[ "$0" = *boot.sh ]]; then
-		echo "    --rollback-index-boot <decimal integer>"
-	elif [[ "$0" = *uboot.sh ]]; then
-		echo "    --rollback-index-uboot  <decimal integer>"
-	else
-		echo "    --rollback-index-boot <decimal integer>"
-		echo "    --rollback-index-uboot  <decimal integer>"
-	fi
+	echo "    --rollback-index  <decimal integer>"
 	echo "    --no-vboot"
 	echo
 }
@@ -95,13 +88,15 @@ function fit_process_args()
 				ARG_NO_REBUILD="y"
 				shift 1
 				;;
-			--rollback-index-boot)
-				ARG_ROLLBACK_IDX_BOOT=$2
-				arg_check_decimal $2
-				shift 2
-				;;
-			--rollback-index-uboot)
-				ARG_ROLLBACK_IDX_UBOOT=$2
+			--rollback-index)
+				if [[ "$0" = *fit-vboot-uboot.sh ]]; then
+					ARG_ROLLBACK_IDX_UBOOT=$2
+				elif [[ "$0" = *fit-vboot-boot.sh ]]; then
+					ARG_ROLLBACK_IDX_BOOT=$2
+				else
+					usage_pack
+					exit 1
+				fi
 				arg_check_decimal $2
 				shift 2
 				;;
