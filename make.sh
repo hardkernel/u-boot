@@ -640,7 +640,7 @@ function pack_arm32_trust_image()
 	else
 		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
 		ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
-		echo "pack uboot.fit (with uboot trust) okay! Input: $ini"
+		echo "pack uboot.img (with uboot trust) okay! Input: $ini"
 	fi
 }
 
