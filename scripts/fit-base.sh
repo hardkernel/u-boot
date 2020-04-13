@@ -46,17 +46,16 @@ function usage_pack()
 	echo "    $0 [args]"
 	echo
 	echo "args:"
-	echo "    --rollback-index  <decimal integer>"
+	if [[ "$0" = *fit-vboot-boot.sh ]]; then
+		echo "    --rollback-index-boot   <decimal integer>"
+	elif [[ "$0" = *fit-vboot-uboot.sh ]]; then
+		echo "    --rollback-index-uboot  <decimal integer>"
+	else
+		echo "    --rollback-index-boot   <decimal integer>"
+		echo "    --rollback-index-uboot  <decimal integer>"
+	fi
 	echo "    --no-vboot"
-	echo
-}
-
-function usage_resign()
-{
-	echo
-	echo "usage:"
-	echo "    $0 -i [itb_image] -s [sig] -u       // resign uboot"
-	echo "    $0 -i [itb_image] -s [sig] -b       // resign boot"
+	echo "    --no-check"
 	echo
 }
 
@@ -88,15 +87,17 @@ function fit_process_args()
 				ARG_NO_REBUILD="y"
 				shift 1
 				;;
-			--rollback-index)
-				if [[ "$0" = *fit-vboot-uboot.sh ]]; then
-					ARG_ROLLBACK_IDX_UBOOT=$2
-				elif [[ "$0" = *fit-vboot-boot.sh ]]; then
-					ARG_ROLLBACK_IDX_BOOT=$2
-				else
-					usage_pack
-					exit 1
-				fi
+			--no-check)
+				ARG_NO_CHECK="y"
+				shift 1
+				;;
+			--rollback-index-boot)
+				ARG_ROLLBACK_IDX_BOOT=$2
+				arg_check_decimal $2
+				shift 2
+				;;
+			--rollback-index-uboot)
+				ARG_ROLLBACK_IDX_UBOOT=$2
 				arg_check_decimal $2
 				shift 2
 				;;
@@ -123,7 +124,7 @@ function its_file_existence_check()
 function fit_rebuild()
 {
 	if [ "$ARG_NO_REBUILD" != "y" ]; then
-		./make.sh
+		./make.sh nopack
 	fi
 
 	if [ -d $FIT_DIR ]; then
@@ -142,6 +143,7 @@ function fit_uboot_make_itb()
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
+		./make.sh spl-s
 	else
 		SIGN_MSG="signed"
 
@@ -158,10 +160,10 @@ function fit_uboot_make_itb()
 			exit 1
 		fi
 
-		if grep  -q '^CONFIG_SPL_FIT_ROLLBACK_PROTECT=y' .config ; then
+		if grep -q '^CONFIG_SPL_FIT_ROLLBACK_PROTECT=y' .config ; then
 			SPL_ROLLBACK_PROTECT="y"
 			if [ -z $ARG_ROLLBACK_IDX_UBOOT ]; then
-				echo "ERROR: No args \"--rollback-index <n>\""
+				echo "ERROR: No args \"--rollback-index-uboot <n>\""
 				exit 1
 			fi
 		fi
@@ -170,6 +172,13 @@ function fit_uboot_make_itb()
 			sed -i "s/rollback-index = <0x0>/rollback-index = <$ARG_ROLLBACK_IDX_UBOOT>/g" u-boot.its
 		fi
 
+		# We need a u-boot.dtb with RSA pub-key insert
+		if ! fdtget -l u-boot.dtb /signature >/dev/null 2>&1 ; then
+			./tools/mkimage -f u-boot.its -k $KEY_DIR/ -K u-boot.dtb -E -p $FIT_S_OFFS_UBOOT -r $FIT_ITB_UBOOT
+			echo "Insert RSA pub into u-boot.dtb"
+		fi
+
+		# Pack
 		./tools/mkimage -f u-boot.its -k $KEY_DIR/ -K spl/u-boot-spl.dtb -E -p $FIT_S_OFFS_UBOOT -r $FIT_ITB_UBOOT
 		mv data2sign.bin $FIT_DATA2SIG_UBOOT
 
@@ -182,8 +191,9 @@ function fit_uboot_make_itb()
 			fi
 		fi
 
-		# host check sign
-		./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl.dtb -s
+		if [ "$ARG_NO_CHECK" != "y" ]; then
+			./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl.dtb -s
+		fi
 
 		# minimize spl dtb
 		if grep  -q '^CONFIG_SPL_FIT_HW_CRYPTO=y' .config ; then
@@ -199,7 +209,7 @@ function fit_uboot_make_itb()
 			fdtput -tx spl/u-boot-spl.dtb /signature/key-dev rsa,exponent-BN 0x0
 		fi
 
-		# repack spl
+		# repack spl which has rsa pub-key insert
 		ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
 		cat spl/u-boot-spl-nodtb.bin > spl/u-boot-spl.bin
 		if ! grep  -q '^CONFIG_SPL_SEPARATE_BSS=y' .config ; then
@@ -210,20 +220,19 @@ function fit_uboot_make_itb()
 	fi
 
 	# clean
-	ls u-boot.itb >/dev/null 2>&1 && rm u-boot.itb
 	mv u-boot.its $FIT_DIR
 	cp tee.bin $FIT_DIR
 	cp u-boot-nodtb.bin $FIT_DIR
 	cp u-boot.dtb $FIT_DIR
 	cp spl/u-boot-spl.bin $FIT_DIR
 	cp spl/u-boot-spl.dtb $FIT_DIR
+	ls u-boot.itb u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.itb u-boot.img u-boot-dtb.img -rf
 	./scripts/dtc/dtc -I dtb -O dts $FIT_ITB_UBOOT -o $FIT_UNMAP_ITB_UBOOT >/dev/null 2>&1
 	./scripts/dtc/dtc -I dtb -O dts spl/u-boot-spl.dtb -o $FIT_UNMAP_KEY_UBOOT >/dev/null 2>&1
 }
 
 function fit_boot_make_itb()
 {
-
 	if grep -q '^CONFIG_ARM64=y' .config ; then
 		FIT_ITS_BOOT="kernel_arm64.its"
 	else
@@ -239,7 +248,7 @@ function fit_boot_make_itb()
 		./tools/mkimage -f $FIT_ITS_BOOT -E -p $FIT_NS_OFFS_BOOT $FIT_ITB_BOOT
 	else
 		SIGN_MSG="signed"
-		# sanity
+
 		if [ ! -f $KEY_DIR/dev.key ]; then
 			echo "ERROR: No $KEY_DIR/dev.key"
 			exit 1
@@ -256,7 +265,7 @@ function fit_boot_make_itb()
 		if grep -q '^CONFIG_FIT_ROLLBACK_PROTECT=y' .config ; then
 			ROLLBACK_PROTECT="y"
 			if [ -z $ARG_ROLLBACK_IDX_BOOT ]; then
-				echo "ERROR: No args \"--rollback-index <n>\""
+				echo "ERROR: No args \"--rollback-index-boot <n>\""
 				exit 1
 			fi
 		fi
@@ -285,8 +294,9 @@ function fit_boot_make_itb()
 			fi
 		fi
 
-		# host check sign
-		./tools/fit_check_sign -f $FIT_ITB_BOOT -k u-boot.dtb
+		if [ "$ARG_NO_CHECK" != "y" ]; then
+			./tools/fit_check_sign -f $FIT_ITB_BOOT -k u-boot.dtb
+		fi
 
 		# minimize u-boot dtb
 		if grep  -q '^CONFIG_FIT_HW_CRYPTO=y' .config ; then
@@ -355,20 +365,24 @@ function fit_boot_make_img()
 	fi
 }
 
+function usage_resign()
+{
+	echo
+	echo "usage:"
+	echo "    $0 -f [itb_image] -s [sig]"
+	echo
+}
+
 function fit_resign()
 {
-	if [ $# -ne 5 ]; then
+	if [ $# -ne 4 ]; then
 		usage_resign
 		exit 1
 	fi
 
 	while [ $# -gt 0 ]; do
 		case $1 in
-			-b|-u)
-				FIT_UK=$1
-				shift 1
-				;;
-			-i)
+			-f)
 				FIT_ITB=$2
 				shift 2
 				;;
@@ -389,9 +403,6 @@ function fit_resign()
 		exit 1
 	elif [ ! -f $FIT_SIG ]; then
 		echo "ERROR: No $FIT_SIG"
-		exit 1
-	elif [ -z $FIT_UK ]; then
-		echo "ERROR: No args -u or -b"
 		exit 1
 	fi
 
@@ -422,7 +433,7 @@ function fit_resign()
 
 	# generate
 	echo
-	if [ "$FIT_UK" = "-u" ]; then
+	if fdtget -l $FIT_ITB /images/uboot@1 >/dev/null 2>&1 ; then
 		fit_uboot_make_img  $FIT_ITB
 		echo "Image(re-signed):  $FIT_IMG_UBOOT is ready"
 	else
