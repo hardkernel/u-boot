@@ -161,7 +161,7 @@ function fit_uboot_make_itb()
 		if grep  -q '^CONFIG_SPL_FIT_ROLLBACK_PROTECT=y' .config ; then
 			SPL_ROLLBACK_PROTECT="y"
 			if [ -z $ARG_ROLLBACK_IDX_UBOOT ]; then
-				echo "ERROR: No args \"--rollback-index-uboot <n>\""
+				echo "ERROR: No args \"--rollback-index <n>\""
 				exit 1
 			fi
 		fi
@@ -256,7 +256,7 @@ function fit_boot_make_itb()
 		if grep -q '^CONFIG_FIT_ROLLBACK_PROTECT=y' .config ; then
 			ROLLBACK_PROTECT="y"
 			if [ -z $ARG_ROLLBACK_IDX_BOOT ]; then
-				echo "ERROR: No args \"--rollback-index-boot <n>\""
+				echo "ERROR: No args \"--rollback-index <n>\""
 				exit 1
 			fi
 		fi
