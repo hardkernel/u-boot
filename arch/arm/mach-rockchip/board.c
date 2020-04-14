@@ -110,6 +110,15 @@ static int rockchip_set_serialno(void)
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 	ret = vendor_storage_read(VENDOR_SN_ID, serialno_str, (VENDOR_SN_MAX-1));
 	if (ret > 0) {
+		i = strlen(serialno_str);
+		for (; i > 0; i--) {
+			if ((serialno_str[i] >= 'a' && serialno_str[i] <= 'z') ||
+			    (serialno_str[i] >= 'A' && serialno_str[i] <= 'Z') ||
+			    (serialno_str[i] >= '0' && serialno_str[i] <= '9'))
+				break;
+		}
+
+		serialno_str[i + 1] = 0x0;
 		env_set("serial#", serialno_str);
 	} else {
 #endif
