@@ -33,8 +33,8 @@ enum rockchip_pinctrl_type {
 	RK3399,
 };
 
-#define RK_GENMASK_VAL(l, h, v) \
-	(GENMASK((h) + 16, (l) + 16) | (((v) << (l) & GENMASK(h, l))))
+#define RK_GENMASK_VAL(h, l, v) \
+	(GENMASK(((h) + 16), ((l) + 16)) | (((v) << (l)) & GENMASK((h), (l))))
 
 /**
  * Encode variants of iomux registers into a type variable
