@@ -15,8 +15,8 @@
 
 #define APLL_HZ		(600 * MHz)
 #define GPLL_HZ		(1188 * MHz)
-#define CPLL_HZ		(1000 * MHz)
-#define HPLL_HZ		(1600 * MHz)
+#define CPLL_HZ		(500 * MHz)
+#define HPLL_HZ		(1400 * MHz)
 #define PCLK_PDPMU_HZ	(100 * MHz)
 #define ACLK_PDBUS_HZ	(500 * MHz)
 #define HCLK_PDBUS_HZ	(200 * MHz)
