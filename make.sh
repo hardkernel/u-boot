@@ -509,6 +509,7 @@ function pack_uboot_itb_image()
 	else
 		tos_image=`sed -n "/TOS=/s/TOS=//p" $ini |tr -d '\r'`
 		tosta_image=`sed -n "/TOSTA=/s/TOSTA=//p" $ini |tr -d '\r'`
+		mcu_image=`sed -n "/MCU=/s/MCU=//p" $ini |tr -d '\r'`
 		if [ $tosta_image ]; then
 			cp ${RKBIN}/${tosta_image} tee.bin
 		elif [ $tos_image ]; then
@@ -516,6 +517,10 @@ function pack_uboot_itb_image()
 		else
 			echo "ERROR: No any tee bin"
 			exit 1
+		fi
+
+		if [ $mcu_image ]; then
+			cp ${RKBIN}/${mcu_image} mcu.bin
 		fi
 
 		tee_offset=`sed -n "/ADDR=/s/ADDR=//p" $ini |tr -d '\r'`
