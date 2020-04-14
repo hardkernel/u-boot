@@ -54,6 +54,10 @@ config PPC
 	select HAVE_PRIVATE_LIBGCC
 	select SUPPORT_OF_CONTROL
 
+config RISCV
+	bool "riscv architecture"
+	select SUPPORT_OF_CONTROL
+
 config SANDBOX
 	bool "Sandbox"
 	select BOARD_LATE_INIT

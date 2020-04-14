@@ -98,6 +98,7 @@ PLATFORM_SHA=
 PLATFORM_UBOOT_IMG_SIZE=
 PLATFORM_TRUST_IMG_SIZE=
 PACK_FORMAT="rk"
+NOPACK="n"
 
 #########################################################################################################
 function help()
@@ -147,7 +148,7 @@ function prepare()
 {
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*|nopack)
 		if [ ! -f .config ]; then
 			echo
 			echo "ERROR: No .config"
@@ -166,7 +167,7 @@ function prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*|nopack)
 		;;
 
 		*)
@@ -319,6 +320,10 @@ function sub_commands()
 		OPTION=${SUBCMD}
 		;;
 
+		nopack)
+		NOPACK="y"
+		;;
+
 		*)
 		# Search function and code position of address
 		RELOC_OFF=${FUNCADDR#*-}
@@ -453,6 +458,10 @@ function fixup_platform_configure()
 
 function pack_uboot_image()
 {
+	if [ "$PACK_FORMAT" != "rk" ]; then
+		return
+	fi
+
 	# Check file size
 	head_kb=2
 	uboot_kb=`ls -l u-boot.bin | awk '{print $5}'`
@@ -470,15 +479,12 @@ function pack_uboot_image()
 	fi
 
 	# Pack
-	if [ "$PACK_FORMAT" = "rk" ]; then
-		uboot_load_addr=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
-		if [ -z $uboot_load_addr ]; then
-			echo "ERROR: No CONFIG_SYS_TEXT_BASE for u-boot";
-			exit 1
-		fi
-		${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${uboot_load_addr} ${PLATFORM_UBOOT_IMG_SIZE}
+	uboot_load_addr=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
+	if [ -z $uboot_load_addr ]; then
+		echo "ERROR: No CONFIG_SYS_TEXT_BASE for u-boot";
+		exit 1
 	fi
-
+	${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${uboot_load_addr} ${PLATFORM_UBOOT_IMG_SIZE}
 	ls u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.img u-boot-dtb.img -rf
 	echo "pack uboot okay! Input: u-boot.bin"
 }
@@ -577,6 +583,10 @@ function pack_spl_loader_image()
 
 function pack_loader_image()
 {
+	if [ "$PACK_FORMAT" != "rk" ]; then
+		return
+	fi
+
 	if [ "$FILE" != "" ]; then
 		ini=$FILE;
 	else
@@ -595,13 +605,9 @@ function pack_loader_image()
 		image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
 		cp ${RKBIN}/${image} ./
 	else
-		if [ "$PACK_FORMAT" = "rk" ]; then
-			cd ${RKBIN}
-			${RKTOOLS}/boot_merger $ini
-			cd - && mv ${RKBIN}/*_loader_*.bin ./
-		else
-			./make.sh spl-s
-		fi
+		cd ${RKBIN}
+		${RKTOOLS}/boot_merger $ini
+		cd - && mv ${RKBIN}/*_loader_*.bin ./
 	fi
 
 	file=`ls *loader*.bin`
@@ -627,21 +633,15 @@ function pack_arm32_trust_image()
 	tee_load_addr=$((dram_base+tee_offset))
 	tee_load_addr=$(echo "obase=16;${tee_load_addr}"|bc) # Convert Dec to Hex
 
-	if [ "$PACK_FORMAT" = "rk" ]; then
-		if [ $tosta_image ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${tosta_image} ${tee_output} ${tee_load_addr} ${PLATFORM_TRUST_IMG_SIZE}
-		elif [ $tos_image ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${tos_image}   ${tee_output} ${tee_load_addr} ${PLATFORM_TRUST_IMG_SIZE}
-		else
-			echo "ERROR: No any tee bin"
-			exit 1
-		fi
-		echo "pack trust okay! Input: $ini"
+	if [ $tosta_image ]; then
+		${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${tosta_image} ${tee_output} ${tee_load_addr} ${PLATFORM_TRUST_IMG_SIZE}
+	elif [ $tos_image ]; then
+		${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${tos_image}   ${tee_output} ${tee_load_addr} ${PLATFORM_TRUST_IMG_SIZE}
 	else
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
-		ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
-		echo "pack uboot.img (with uboot trust) okay! Input: $ini"
+		echo "ERROR: No any tee bin"
+		exit 1
 	fi
+	echo "pack trust okay! Input: $ini"
 }
 
 function pack_arm64_trust_image()
@@ -655,6 +655,10 @@ function pack_arm64_trust_image()
 
 function pack_trust_image()
 {
+	if [ "$PACK_FORMAT" != "rk" ]; then
+		return
+	fi
+
 	ls trust*.img >/dev/null 2>&1 && rm trust*.img
 	if [ "$FILE" != "" ]; then
 		ini=$FILE;
@@ -685,6 +689,39 @@ function pack_trust_image()
 	fi
 }
 
+function pack_fit_image()
+{
+	./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
+	ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
+	echo "pack uboot.img (with uboot trust) okay! Input: $ini"
+}
+
+function pack_images()
+{
+	if [ "$NOPACK" != "y" ]; then
+		if [ "$PACK_FORMAT" = "rk" ]; then
+			pack_uboot_image
+			pack_trust_image
+			pack_loader_image
+		elif [ "$PACK_FORMAT" = "fit" ]; then
+			pack_fit_image
+		fi
+	fi
+}
+
+function clean_files()
+{
+	if [ -f spl/u-boot-spl.dtb ]; then
+		rm spl/u-boot-spl.dtb
+	fi
+	if [ -f tpl/u-boot-tpl.dtb ]; then
+		rm tpl/u-boot-tpl.dtb
+	fi
+	if [ -f u-boot.dtb ]; then
+		rm u-boot.dtb
+	fi
+}
+
 function finish()
 {
 	echo
@@ -702,8 +739,7 @@ select_toolchain
 select_chip_info
 fixup_platform_configure
 sub_commands
+clean_files
 make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
-pack_uboot_image
-pack_trust_image
-pack_loader_image
+pack_images
 finish

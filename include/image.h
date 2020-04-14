@@ -191,6 +191,7 @@ enum {
 	IH_ARCH_ARC,			/* Synopsys DesignWare ARC */
 	IH_ARCH_X86_64,			/* AMD x86_64, Intel and Via */
 	IH_ARCH_XTENSA,			/* Xtensa	*/
+	IH_ARCH_RISCV,			/* RISC-V */
 
 	IH_ARCH_COUNT,
 };
@@ -937,6 +938,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_SETUP_PROP		"setup"
 #define FIT_FPGA_PROP		"fpga"
 #define FIT_FIRMWARE_PROP	"firmware"
+#define FIT_STANDALONE_PROP	"standalone"
 
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
 
