@@ -628,7 +628,7 @@ function pack_arm32_trust_image()
 	fi
 
 	# OP-TEE is 132M(0x8400000) offset from DRAM base.
-	dram_base=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_Sdram_base=//p" include/autoconf.mk|tr -d '\r'`
+	dram_base=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" include/autoconf.mk|tr -d '\r'`
 	tee_load_addr=$((dram_base+tee_offset))
 	tee_load_addr=$(echo "obase=16;${tee_load_addr}"|bc) # Convert Dec to Hex
 
