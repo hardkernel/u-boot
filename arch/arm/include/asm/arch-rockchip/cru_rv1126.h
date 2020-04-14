@@ -25,6 +25,7 @@
 #define HCLK_PDPHP_HZ	(200 * MHz)
 #define HCLK_PDCORE_HZ	(200 * MHz)
 #define HCLK_PDAUDIO_HZ	(150 * MHz)
+#define CLK_OSC0_DIV_HZ	(32768)
 
 /* RV1126 pll id */
 enum rv1126_pll_id {
@@ -53,6 +54,7 @@ struct rv1126_clk_priv {
 	struct rv1126_grf *grf;
 	ulong gpll_hz;
 	ulong cpll_hz;
+	ulong hpll_hz;
 	ulong armclk_hz;
 	ulong armclk_enter_hz;
 	ulong armclk_init_hz;

@@ -196,6 +196,9 @@ static ulong rv1126_rtc32k_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 	struct rv1126_pmucru *pmucru = priv->pmucru;
 	unsigned long m, n, val;
 
+	rk_clrsetreg(&pmucru->pmu_clksel_con[0], RTC32K_SEL_MASK,
+		     RTC32K_SEL_OSC0_DIV32K << RTC32K_SEL_SHIFT);
+
 	rational_best_approximation(rate, OSC_HZ,
 				    GENMASK(16 - 1, 0),
 				    GENMASK(16 - 1, 0),
@@ -1304,6 +1307,10 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 		rate = rockchip_pll_get_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					     CPLL);
 		break;
+	case PLL_HPLL:
+		rate = rockchip_pll_get_rate(&rv1126_pll_clks[HPLL], priv->cru,
+					     HPLL);
+		break;
 	case HCLK_PDCORE_NIU:
 		rate = rv1126_pdcore_get_clk(priv);
 		break;
@@ -1390,6 +1397,10 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case PLL_CPLL:
 		ret = rockchip_pll_set_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					    CPLL, rate);
+		break;
+	case PLL_HPLL:
+		ret = rockchip_pll_set_rate(&rv1126_pll_clks[HPLL], priv->cru,
+					    HPLL, rate);
 		break;
 	case ACLK_PDBUS:
 	case HCLK_PDBUS:
@@ -1713,6 +1724,7 @@ static int rv1126_gpll_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 	}
 
 	rv1126_pdpmu_set_pmuclk(pmu_priv, PCLK_PDPMU_HZ);
+	rv1126_rtc32k_set_pmuclk(pmu_priv, CLK_OSC0_DIV_HZ);
 
 	return 0;
 }
@@ -1739,6 +1751,12 @@ static void rv1126_clk_init(struct rv1126_clk_priv *priv)
 					    CPLL, CPLL_HZ);
 		if (!ret)
 			priv->cpll_hz = CPLL_HZ;
+	}
+	if (priv->hpll_hz != HPLL_HZ) {
+		ret = rockchip_pll_set_rate(&rv1126_pll_clks[HPLL], priv->cru,
+					    HPLL, HPLL_HZ);
+		if (!ret)
+			priv->hpll_hz = HPLL_HZ;
 	}
 	if (priv->gpll_hz != GPLL_HZ)
 		rv1126_gpll_set_clk(priv, GPLL_HZ);
