@@ -509,7 +509,6 @@ function pack_uboot_itb_image()
 	else
 		tos_image=`sed -n "/TOS=/s/TOS=//p" $ini |tr -d '\r'`
 		tosta_image=`sed -n "/TOSTA=/s/TOSTA=//p" $ini |tr -d '\r'`
-		mcu_image=`sed -n "/MCU=/s/MCU=//p" $ini |tr -d '\r'`
 		if [ $tosta_image ]; then
 			cp ${RKBIN}/${tosta_image} tee.bin
 		elif [ $tos_image ]; then
@@ -519,13 +518,16 @@ function pack_uboot_itb_image()
 			exit 1
 		fi
 
-		if [ $mcu_image ]; then
-			cp ${RKBIN}/${mcu_image} mcu.bin
-		fi
-
 		tee_offset=`sed -n "/ADDR=/s/ADDR=//p" $ini |tr -d '\r'`
 		if [ "$tee_offset" = "" ]; then
 			tee_offset=0x8400000
+		fi
+
+		mcu_enabled=`awk -F"," '/MCU=/ { printf $3 }' $ini | tr -d ' '`
+		if [ "$mcu_enabled" = "enabled" ]; then
+			mcu_image=`awk -F"," '/MCU=/ { printf $1 }' $ini | tr -d ' ' | cut -c 5-`
+			mcu_offset=`awk -F"," '/MCU=/ { printf $2 }' $ini | tr -d ' '`
+			cp ${RKBIN}/${mcu_image} mcu.bin
 		fi
 
 		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
@@ -533,7 +535,7 @@ function pack_uboot_itb_image()
 			cp $SPL_FIT_SOURCE u-boot.its
 		else
 			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
-			$SPL_FIT_GENERATOR $tee_offset > u-boot.its
+			$SPL_FIT_GENERATOR $tee_offset $mcu_offset > u-boot.its
 		fi
 		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: $ini"
