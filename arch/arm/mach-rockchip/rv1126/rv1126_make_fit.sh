@@ -67,6 +67,31 @@ cat << EOF
 				algo = "sha256";
 			};
 		};
+EOF
+
+MCU_OFFSET=$2
+if [ "$MCU_OFFSET" != "" ]; then
+MCU_LOAD_ADDR=$((DARM_BASE+$MCU_OFFSET))
+MCU_LOAD_ADDR=$(echo "obase=16;${MCU_LOAD_ADDR}"|bc)
+cat  << EOF
+		mcu@1 {
+			description = "mcu";
+			image="mcu.bin";
+			data = /incbin/("./mcu.bin");
+			type = "standalone";
+			compression = "none";
+EOF
+echo "			load = <0x"$MCU_LOAD_ADDR">;"
+cat  << EOF
+			arch = "riscv";
+			hash@1 {
+				algo = "sha256";
+			};
+		};
+EOF
+fi
+
+cat  << EOF
 	};
 
 	configurations {
@@ -77,10 +102,25 @@ cat << EOF
 			firmware = "optee@1";
 			loadables = "uboot@1";
 			fdt = "fdt@1";
+EOF
+
+if [ "$MCU_OFFSET" != "" ]; then
+echo "			standalone = \"mcu@1\";"
+fi
+
+cat  << EOF
 			signature@1 {
 				algo = "sha256,rsa2048";
 				key-name-hint = "dev";
-				sign-images = "fdt", "firmware", "loadables";
+EOF
+
+if [ "$MCU_OFFSET" != "" ]; then
+echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\", \"standalone\";"
+else
+echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
+fi
+
+cat  << EOF
 			};
 		};
 	};
