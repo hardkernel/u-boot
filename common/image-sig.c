@@ -243,7 +243,8 @@ static int fit_image_verify_sig(const void *fit, int image_noffset,
 		goto error;
 	}
 
-	return verified ? 0 : -EPERM;
+	if (verified)
+		return 0;
 
 error:
 	printf(" error!\n%s for '%s' hash node in '%s' image node\n",
@@ -264,9 +265,8 @@ int fit_image_verify_required_sigs(const void *fit, int image_noffset,
 	*no_sigsp = 1;
 	sig_node = fdt_subnode_offset(sig_blob, 0, FIT_SIG_NODENAME);
 	if (sig_node < 0) {
-		debug("%s: No signature node found: %s\n", __func__,
-		      fdt_strerror(sig_node));
-		return 0;
+		printf("No RSA key found\n");
+		return -EINVAL;
 	}
 
 	fdt_for_each_subnode(noffset, sig_blob, sig_node) {
@@ -443,7 +443,7 @@ int fit_config_verify_required_sigs(const void *fit, int conf_noffset,
 	/* Work out what we need to verify */
 	sig_node = fdt_subnode_offset(sig_blob, 0, FIT_SIG_NODENAME);
 	if (sig_node < 0) {
-		printf("No signature node found: %s\n", fdt_strerror(sig_node));
+		printf("No RSA key found\n");
 		return -EINVAL;
 	}
 

@@ -524,12 +524,19 @@ function pack_uboot_itb_image()
 			tee_offset=0x8400000
 		fi
 
+		mcu_enabled=`awk -F"," '/MCU=/ { printf $3 }' $ini | tr -d ' '`
+		if [ "$mcu_enabled" = "enabled" ]; then
+			mcu_image=`awk -F"," '/MCU=/ { printf $1 }' $ini | tr -d ' ' | cut -c 5-`
+			mcu_offset=`awk -F"," '/MCU=/ { printf $2 }' $ini | tr -d ' '`
+			cp ${RKBIN}/${mcu_image} mcu.bin
+		fi
+
 		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
 		if [ ! -z $SPL_FIT_SOURCE ]; then
 			cp $SPL_FIT_SOURCE u-boot.its
 		else
 			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
-			$SPL_FIT_GENERATOR $tee_offset > u-boot.its
+			$SPL_FIT_GENERATOR $tee_offset $mcu_offset > u-boot.its
 		fi
 		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: $ini"
@@ -629,7 +636,7 @@ function pack_arm32_trust_image()
 	fi
 
 	# OP-TEE is 132M(0x8400000) offset from DRAM base.
-	dram_base=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_Sdram_base=//p" include/autoconf.mk|tr -d '\r'`
+	dram_base=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" include/autoconf.mk|tr -d '\r'`
 	tee_load_addr=$((dram_base+tee_offset))
 	tee_load_addr=$(echo "obase=16;${tee_load_addr}"|bc) # Convert Dec to Hex
 

@@ -69,14 +69,6 @@
 	u-boot,dm-pre-reloc;
 };
 
-&dwc3_typec0 {
-	u-boot,dm-pre-reloc;
-};
-
-&dwc3_typec1 {
-	u-boot,dm-pre-reloc;
-};
-
 &emmc_phy {
 	u-boot,dm-pre-reloc;
 };

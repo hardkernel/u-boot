@@ -15,6 +15,7 @@
 #define IOCTL_REQ_START		_IO('m', 0x01)
 #define IOCTL_REQ_STOP		_IO('m', 0x02)
 #define IOCTL_REQ_POLL		_IO('m', 0x03)
+#define IOCTL_REQ_CAPABILITY	_IO('m', 0x04)
 
 /*
  * Read the device to buffer, optional.

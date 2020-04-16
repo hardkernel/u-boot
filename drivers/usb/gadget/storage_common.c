@@ -593,6 +593,12 @@ fsg_ep_desc(struct usb_gadget *g, struct usb_endpoint_descriptor *fs,
 		speed_desc = fs;
 	}
 
+	/*
+	 * Config the ep maxpacket according to the right descriptors
+	 * for a given endpoint.
+	 */
+	ep->maxpacket = usb_endpoint_maxp(speed_desc) & USB_ENDPOINT_MAXP_MASK;
+
 	return speed_desc;
 }
 
