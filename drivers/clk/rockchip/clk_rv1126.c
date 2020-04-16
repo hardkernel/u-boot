@@ -2097,6 +2097,14 @@ static void rv1126_clk_init(struct rv1126_clk_priv *priv)
 	rv1126_pdphp_set_clk(priv, HCLK_PDPHP, HCLK_PDPHP_HZ);
 	rv1126_pdcore_set_clk(priv, HCLK_PDCORE_HZ);
 	rv1126_pdaudio_set_clk(priv, HCLK_PDAUDIO_HZ);
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+	rv1126_clk_pdvi_ispp_set_clk(priv, ACLK_PDVI, ACLK_PDVI_HZ);
+	rv1126_clk_isp_set_clk(priv, CLK_ISP_HZ);
+	rv1126_clk_pdvi_ispp_set_clk(priv, ACLK_PDISPP, ACLK_PDISPP_HZ);
+	rv1126_clk_pdvi_ispp_set_clk(priv, CLK_ISPP, CLK_ISPP_HZ);
+	rv1126_aclk_vop_set_clk(priv, ACLK_VOP_HZ);
+	rv1126_dclk_vop_set_clk(priv, DCLK_VOP_HZ);
+#endif
 }
 
 static int rv1126_clk_probe(struct udevice *dev)

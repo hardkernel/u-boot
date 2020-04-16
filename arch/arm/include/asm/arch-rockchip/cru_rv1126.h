@@ -26,6 +26,14 @@
 #define HCLK_PDCORE_HZ	(200 * MHz)
 #define HCLK_PDAUDIO_HZ	(150 * MHz)
 #define CLK_OSC0_DIV_HZ	(32768)
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+#define ACLK_PDVI_HZ	(500 * MHz)
+#define CLK_ISP_HZ	(500 * MHz)
+#define ACLK_PDISPP_HZ	(500 * MHz)
+#define CLK_ISPP_HZ	(400 * MHz)
+#define ACLK_VOP_HZ	(300 * MHz)
+#define DCLK_VOP_HZ	(65 * MHz)
+#endif
 
 /* RV1126 pll id */
 enum rv1126_pll_id {
