@@ -785,3 +785,18 @@ void autoboot_command_fail_handle(void)
 #endif
 #endif
 }
+
+int fit_board_verify_required_sigs(void)
+{
+	uint8_t vboot = 0;
+#ifdef CONFIG_OPTEE_CLIENT
+	int ret;
+
+	ret = trusty_read_vbootkey_enable_flag(&vboot);
+	if (ret) {
+		printf("Can't read verified-boot flag\n");
+		return 1;
+	}
+#endif
+	return vboot;
+}
