@@ -1518,6 +1518,39 @@ static ulong rv1126_clk_isp_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 
 	return rv1126_clk_isp_get_clk(priv);
 }
+
+static ulong rv1126_dclk_decom_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[25]);
+	div = (con & DCLK_DECOM_DIV_MASK) >> DCLK_DECOM_DIV_SHIFT;
+	sel = (con & DCLK_DECOM_SEL_MASK) >> DCLK_DECOM_SEL_SHIFT;
+	if (sel == DCLK_DECOM_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else if (sel == DCLK_DECOM_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_dclk_decom_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	assert(src_clk_div - 1 <= 127);
+	rk_clrsetreg(&cru->clksel_con[25],
+		     DCLK_DECOM_SEL_MASK | DCLK_DECOM_DIV_MASK,
+		     DCLK_DECOM_SEL_GPLL << DCLK_DECOM_SEL_SHIFT |
+		     (src_clk_div - 1) << DCLK_DECOM_DIV_SHIFT);
+
+	return rv1126_dclk_decom_get_clk(priv);
+}
 #endif
 
 static ulong rv1126_clk_get_rate(struct clk *clk)
@@ -1621,6 +1654,9 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 	case ACLK_PDISPP:
 	case CLK_ISPP:
 		rate = rv1126_clk_pdvi_ispp_get_clk(priv, clk->id);
+		break;
+	case DCLK_DECOM:
+		rate = rv1126_dclk_decom_get_clk(priv);
 		break;
 #endif
 	default:
@@ -1731,6 +1767,9 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_PDISPP:
 	case CLK_ISPP:
 		ret = rv1126_clk_pdvi_ispp_set_clk(priv, clk->id, rate);
+		break;
+	case DCLK_DECOM:
+		ret = rv1126_dclk_decom_set_clk(priv, rate);
 		break;
 #endif
 	default:
