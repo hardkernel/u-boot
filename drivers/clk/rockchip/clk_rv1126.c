@@ -1371,6 +1371,7 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 		break;
 	case CLK_SCR1_CORE:
 		rate = rv1126_scr1_get_clk(priv);
+		break;
 	default:
 		return -ENOENT;
 	}
@@ -1461,6 +1462,7 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case CLK_SCR1_CORE:
 		ret = rv1126_scr1_set_clk(priv, rate);
+		break;
 	default:
 		return -ENOENT;
 	}
