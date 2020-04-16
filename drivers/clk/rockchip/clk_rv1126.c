@@ -1396,6 +1396,130 @@ static ulong rv1126_pclk_gmac_get_clk(struct rv1126_clk_priv *priv)
 	return DIV_TO_RATE(parent, div);
 }
 
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+static ulong rv1126_clk_pdvi_ispp_get_clk(struct rv1126_clk_priv *priv,
+					  ulong clk_id)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent, con_id;
+
+	switch (clk_id) {
+	case ACLK_PDVI:
+		con_id = 49;
+		break;
+	case ACLK_PDISPP:
+		con_id = 68;
+		break;
+	case CLK_ISPP:
+		con_id = 69;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	con = readl(&cru->clksel_con[con_id]);
+	div = (con & ACLK_PDVI_DIV_MASK) >> ACLK_PDVI_DIV_SHIFT;
+	sel = (con & ACLK_PDVI_SEL_MASK) >> ACLK_PDVI_SEL_SHIFT;
+	if (sel == ACLK_PDVI_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else if (sel == ACLK_PDVI_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else if (sel == ACLK_PDVI_SEL_HPLL)
+		parent = priv->hpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_clk_pdvi_ispp_set_clk(struct rv1126_clk_priv *priv,
+					  ulong clk_id, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 parent, sel, src_clk_div, con_id;
+
+	switch (clk_id) {
+	case ACLK_PDVI:
+		con_id = 49;
+		break;
+	case ACLK_PDISPP:
+		con_id = 68;
+		break;
+	case CLK_ISPP:
+		con_id = 69;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	if (!(priv->cpll_hz % rate)) {
+		parent = priv->cpll_hz;
+		sel = ACLK_PDVI_SEL_CPLL;
+	} else if (!(priv->hpll_hz % rate)) {
+		parent = priv->hpll_hz;
+		sel = ACLK_PDVI_SEL_HPLL;
+	} else {
+		parent = priv->gpll_hz;
+		sel = ACLK_PDVI_SEL_GPLL;
+	}
+
+	src_clk_div = DIV_ROUND_UP(parent, rate);
+	assert(src_clk_div - 1 <= 31);
+	rk_clrsetreg(&cru->clksel_con[con_id],
+		     ACLK_PDVI_SEL_MASK | ACLK_PDVI_DIV_MASK,
+		     sel << ACLK_PDVI_SEL_SHIFT |
+		     (src_clk_div - 1) << ACLK_PDVI_DIV_SHIFT);
+
+	return rv1126_clk_pdvi_ispp_get_clk(priv, clk_id);
+}
+
+static ulong rv1126_clk_isp_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[50]);
+	div = (con & CLK_ISP_DIV_MASK) >> CLK_ISP_DIV_SHIFT;
+	sel = (con & CLK_ISP_SEL_MASK) >> CLK_ISP_SEL_SHIFT;
+	if (sel == CLK_ISP_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else if (sel == CLK_ISP_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else if (sel == CLK_ISP_SEL_HPLL)
+		parent = priv->hpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_clk_isp_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 parent, sel, src_clk_div;
+
+	if (!(priv->cpll_hz % rate)) {
+		parent = priv->cpll_hz;
+		sel = CLK_ISP_SEL_CPLL;
+	} else if (!(priv->hpll_hz % rate)) {
+		parent = priv->hpll_hz;
+		sel = CLK_ISP_SEL_HPLL;
+	} else {
+		parent = priv->gpll_hz;
+		sel = CLK_ISP_SEL_GPLL;
+	}
+
+	src_clk_div = DIV_ROUND_UP(parent, rate);
+	assert(src_clk_div - 1 <= 31);
+	rk_clrsetreg(&cru->clksel_con[50],
+		     CLK_ISP_SEL_MASK | CLK_ISP_DIV_MASK,
+		     sel << CLK_ISP_SEL_SHIFT |
+		     (src_clk_div - 1) << CLK_ISP_DIV_SHIFT);
+
+	return rv1126_clk_isp_get_clk(priv);
+}
+#endif
+
 static ulong rv1126_clk_get_rate(struct clk *clk)
 {
 	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
@@ -1489,6 +1613,16 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 	case PCLK_GMAC:
 		rate = rv1126_pclk_gmac_get_clk(priv);
 		break;
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+	case CLK_ISP:
+		rate = rv1126_clk_isp_get_clk(priv);
+		break;
+	case ACLK_PDVI:
+	case ACLK_PDISPP:
+	case CLK_ISPP:
+		rate = rv1126_clk_pdvi_ispp_get_clk(priv, clk->id);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -1589,6 +1723,16 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_GMAC_TX_RX:
 		ret = rv1126_gmac_tx_rx_set_clk(priv, rate);
 		break;
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+	case CLK_ISP:
+		ret = rv1126_clk_isp_set_clk(priv, rate);
+		break;
+	case ACLK_PDVI:
+	case ACLK_PDISPP:
+	case CLK_ISPP:
+		ret = rv1126_clk_pdvi_ispp_set_clk(priv, clk->id, rate);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
