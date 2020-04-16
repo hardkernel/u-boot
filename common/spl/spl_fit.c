@@ -401,6 +401,13 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 		return -1;
 	}
 
+	/* if board sigs verify required, check self */
+	if (fit_board_verify_required_sigs() &&
+	    !IS_ENABLED(CONFIG_SPL_FIT_SIGNATURE)) {
+		printf("Verified-boot requires CONFIG_SPL_FIT_SIGNATURE enabled\n");
+		hang();
+	}
+
 	/* verify the configure node by keys, if required */
 #ifdef CONFIG_SPL_FIT_SIGNATURE
 	int conf_noffset;

@@ -1925,6 +1925,13 @@ static const char *fit_get_image_type_property(int type)
 	return "unknown";
 }
 
+#ifndef USE_HOSTCC
+__weak int fit_board_verify_required_sigs(void)
+{
+	return 0;
+}
+#endif
+
 int fit_image_load_index(bootm_headers_t *images, ulong addr,
 			 const char **fit_unamep, const char **fit_uname_configp,
 			 int arch, int image_type, int image_index, int bootstage_id,
@@ -1945,6 +1952,15 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 #endif
 	const char *prop_name;
 	int ret;
+
+#ifndef USE_HOSTCC
+	/* If board required sigs, check self */
+	if (fit_board_verify_required_sigs() &&
+	    !IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
+		printf("Verified-boot requires CONFIG_FIT_SIGNATURE enabled\n");
+		hang();
+	}
+#endif
 
 	fit = map_sysmem(addr, 0);
 	fit_uname = fit_unamep ? *fit_unamep : NULL;
