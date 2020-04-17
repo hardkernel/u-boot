@@ -28,4 +28,7 @@ ifdef CONFIG_PS2KBD
 obj-y += keyboard.o pc_keyb.o
 obj-$(CONFIG_PS2MULT) += ps2mult.o ps2ser.o
 endif
+
+else
+obj-$(CONFIG_SPL_ADC_KEY) += spl_adc_key.o
 endif
