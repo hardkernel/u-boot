@@ -40,6 +40,7 @@ static struct rockchip_cpu_rate_table rv1126_cpu_rates[] = {
 static struct rockchip_pll_rate_table rv1126_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	RK3036_PLL_RATE(1600000000, 3, 200, 1, 1, 1, 0),
+	RK3036_PLL_RATE(1400000000, 3, 350, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1200000000, 1, 100, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1188000000, 1, 99, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1100000000, 3, 275, 2, 1, 1, 0),
