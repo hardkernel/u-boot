@@ -78,6 +78,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 struct rockchip_decom_priv {
 	void __iomem *base;
+	unsigned long soft_reset_base;
 	bool done;
 };
 
@@ -87,6 +88,9 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	struct decom_param *param = (struct decom_param *)buf;
 
 	priv->done = false;
+
+	writel(0x00800080, priv->soft_reset_base);
+	writel(0x00800000, priv->soft_reset_base);
 
 	if (param->mode == LZ4_MOD)
 		writel(LZ4_CONT_CSUM_CHECK_EN |
@@ -178,6 +182,9 @@ static int rockchip_decom_ofdata_to_platdata(struct udevice *dev)
 	priv->base = dev_read_addr_ptr(dev);
 	if (!priv->base)
 		return -ENOENT;
+
+	priv->soft_reset_base = dev_read_u32_default(dev, "soft-reset-addr", 0)
+					& 0xffffffff;
 
 	return 0;
 }
