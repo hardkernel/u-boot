@@ -13,10 +13,14 @@
 static int do_charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 			     char *const argv[])
 {
-	int on_soc, on_voltage, screen_voltage;
-	int ret, save[3];
-	struct udevice *dev;
+
 	struct charge_animation_pdata *pdata;
+	struct udevice *dev;
+	int screen_voltage;
+	int on_voltage;
+	int on_soc;
+	int save[3];
+	int ret;
 
 	if (argc != 4 && argc != 1)
 		return CMD_RET_USAGE;
