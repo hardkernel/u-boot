@@ -11,6 +11,13 @@ config ADC
 	  - support supply's phandle with auto-enable
 	  - supply polarity setting in fdt
 
+config ADC_REQ_REGULATOR
+	bool "Enable regulator control for ADC drivers"
+	depends on ADC
+	default n
+	help
+	  ADC may depend on regulator power supply and require control.
+
 config ADC_EXYNOS
 	bool "Enable Exynos 54xx ADC driver"
 	help
