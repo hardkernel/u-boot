@@ -436,6 +436,23 @@ static int reserve_malloc(void)
 	return 0;
 }
 
+#ifdef CONFIG_SYS_NONCACHED_MEMORY
+static int reserve_noncached(void)
+{
+	phys_addr_t start, end;
+	size_t size;
+
+	end = ALIGN(gd->start_addr_sp, MMU_SECTION_SIZE) - MMU_SECTION_SIZE;
+	size = ALIGN(CONFIG_SYS_NONCACHED_MEMORY, MMU_SECTION_SIZE);
+	start = end - size;
+	gd->start_addr_sp = start;
+	debug("Reserving %zu for noncached_alloc() at: %08lx\n",
+	      size, gd->start_addr_sp);
+
+	return 0;
+}
+#endif
+
 /* (permanently) allocate a Board Info struct */
 static int reserve_board(void)
 {
@@ -874,6 +891,9 @@ static const init_fnc_t init_sequence_f[] = {
 	reserve_trace,
 	reserve_uboot,
 	reserve_malloc,
+#ifdef CONFIG_SYS_NONCACHED_MEMORY
+	reserve_noncached,
+#endif
 	reserve_board,
 	setup_machine,
 	reserve_global_data,
