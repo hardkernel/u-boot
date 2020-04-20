@@ -339,12 +339,12 @@ config SPL_FIT_IMAGE_KB
 	depends on SPL_FIT
 	default 2048
 	help
-	  SPL FIT image size in KiB.
+	  SPL FIT image size in KiB, default 2048KB = 1024KB(u-boot) + 1024KB(tee/atf + others).
 
 config SPL_FIT_IMAGE_MULTIPLE
 	int "SPL FIT image multiple number"
 	depends on SPL_FIT
-	default 1
+	default 2
 	help
 	  SPL FIT image multiple number.
 
