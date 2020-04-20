@@ -267,9 +267,7 @@ function sub_commands()
 		;;
 
 		fit)
-		if [ "$opt" = "s" ]; then
-			./scripts/fit-vboot.sh
-		else
+		if [ "$opt" = "ns" ]; then
 			./scripts/fit-vboot.sh --no-vboot
 		fi
 		exit 0
@@ -697,9 +695,13 @@ function pack_trust_image()
 
 function pack_fit_image()
 {
-	./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
-	ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
-	echo "pack uboot.img (with uboot trust) okay! Input: $ini"
+	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
+		./scripts/fit-vboot.sh
+	else
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
+		ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
+		echo "pack uboot.img (with uboot trust) okay! Input: $ini"
+	fi
 }
 
 function pack_images()
