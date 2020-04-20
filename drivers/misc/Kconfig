@@ -86,6 +86,12 @@ config SPL_ROCKCHIP_SECURE_OTP
 	help
 	  Support read & write secure otp in spl.
 
+config SPL_ROCKCHIP_SECURE_OTP_V2
+	bool "Rockchip Secure OTP Version 2 Support in spl"
+	depends on SPL_MISC
+	help
+	  Support read & write secure otp in spl. Support platforms: rv1126.
+
 config CMD_CROS_EC
 	bool "Enable crosec command"
 	depends on CROS_EC
