@@ -7,6 +7,7 @@
 #include <android_image.h>
 #include <errno.h>
 #include <malloc.h>
+#include <misc.h>
 #include <misc_decompress.h>
 #include <spl.h>
 #include <spl_rkfw.h>
@@ -343,7 +344,7 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 	}
 #ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
 	struct udevice *dev;
-	u32 cap = GZIP_MOD;
+	u32 cap = DECOM_GZIP;
 
 	dev = misc_decompress_get_device(cap);
 

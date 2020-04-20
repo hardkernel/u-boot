@@ -6,17 +6,11 @@
 #ifndef _MISC_DECOMPRESS_H_
 #define _MISC_DECOMPRESS_H_
 
-enum decom_mod {
-	LZ4_MOD,
-	GZIP_MOD,
-	ZLIB_MOD,
-};
-
 struct decom_param {
 	unsigned long addr_src;
 	unsigned long addr_dst;
 	unsigned long size;
-	enum decom_mod mode;
+	enum misc_mode mode;
 };
 
 struct udevice *misc_decompress_get_device(u32 capability);
