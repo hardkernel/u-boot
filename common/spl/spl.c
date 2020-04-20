@@ -566,7 +566,9 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 #endif
 #if CONFIG_IS_ENABLED(OPTEE)
 	case IH_OS_OP_TEE:
-		printf("Jumping to U-Boot via OP-TEE\n");
+		printf("Jumping to U-Boot(0x%08lx) via OP-TEE(0x%08lx)\n\n",
+		       (ulong)spl_image.entry_point_os,
+		       (ulong)spl_image.entry_point);
 		spl_cleanup_before_jump(&spl_image);
 		spl_optee_entry(NULL, (void *)spl_image.entry_point_os,
 				(void *)spl_image.fdt_addr,
