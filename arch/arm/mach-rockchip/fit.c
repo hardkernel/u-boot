@@ -295,30 +295,30 @@ static void *fit_get_blob(struct blk_desc *dev_desc, disk_partition_t *part)
 		return NULL;
 
 	if (blk_dread(dev_desc, part->start, blknum, fdt) != blknum) {
-		FIT_I("Failed to read fdt header\n");
+		debug("Failed to read fdt header\n");
 		goto fail;
 	}
 
 	if (fdt_check_header(fdt)) {
-		FIT_I("Invalid fdt header\n");
+		debug("Invalid fdt header\n");
 		goto fail;
 	}
 
 	if (!fit_is_ext_type(fdt)) {
-		FIT_I("Not external type\n");
+		debug("Not external type\n");
 		goto fail;
 	}
 
 	blknum = DIV_ROUND_UP(fdt_totalsize(fdt), dev_desc->blksz);
 	fit = memalign(ARCH_DMA_MINALIGN, blknum * dev_desc->blksz);
 	if (!fit) {
-		FIT_I("No memory\n");
+		debug("No memory\n");
 		goto fail;
 	}
 
 	if (blk_dread(dev_desc, part->start, blknum, fit) != blknum) {
 		free(fit);
-		FIT_I("Failed to read fit\n");
+		debug("Failed to read fit\n");
 		goto fail;
 	}
 
@@ -504,7 +504,7 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 
 	fit = fit_get_blob(dev_desc, &part);
 	if (!fit) {
-		FIT_I("No fdt description\n");
+		FIT_I("No fdt blob\n");
 		return -EINVAL;
 	}
 
