@@ -10,6 +10,7 @@ BOARD=$1
 SUBCMD=$1
 FUNCADDR=$1
 FILE=$2
+ARGS=$*
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 
@@ -147,7 +148,7 @@ function prepare()
 {
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*|nopack)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*|fit*|nopack|--rollback-index*)
 		if [ ! -f .config ]; then
 			echo
 			echo "ERROR: No .config"
@@ -166,7 +167,7 @@ function prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*|nopack)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*|fit*|nopack|--rollback-index*)
 		;;
 
 		*)
@@ -180,6 +181,8 @@ function prepare()
 		else
 			echo "make for ${BOARD}_defconfig by -j${JOB}"
 			make ${BOARD}_defconfig ${OPTION}
+			# Skip 1st args
+			ARGS=`echo $ARGS | awk '{ $1=""; print $0 }'`
 		fi
 		;;
 	esac
@@ -234,8 +237,14 @@ function select_toolchain()
 
 function sub_commands()
 {
-	cmd=${SUBCMD%-*}
-	opt=${SUBCMD#*-}
+	# skip "--" parameter, such as "--rollback-index-..."
+	if [[ "$SUBCMD" != "--*" ]]; then
+		cmd=${SUBCMD%-*}
+		opt=${SUBCMD#*-}
+	else
+		cmd=$SUBCMD
+	fi
+
 	elf=u-boot
 	map=u-boot.map
 	sym=u-boot.sym
@@ -310,6 +319,11 @@ function sub_commands()
 
 		env)
 		make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools	
+		exit 0
+		;;
+
+		--rollback-index*)
+		pack_fit_image $ARGS
 		exit 0
 		;;
 
@@ -696,7 +710,7 @@ function pack_trust_image()
 function pack_fit_image()
 {
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		./scripts/fit-vboot.sh
+		./scripts/fit-vboot.sh $*
 	else
 		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
 		ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
@@ -712,7 +726,7 @@ function pack_images()
 			pack_trust_image
 			pack_loader_image
 		elif [ "$PACK_FORMAT" = "fit" ]; then
-			pack_fit_image
+			pack_fit_image $ARGS
 		fi
 	fi
 }
