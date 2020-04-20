@@ -1326,7 +1326,7 @@ int fit_image_verify_with_data(const void *fit, int image_noffset,
 		goto error;
 	}
 
-	return 1;
+	return 1; /* success */
 
 error:
 	printf(" error!\n%s for '%s' hash node in '%s' image node\n",
