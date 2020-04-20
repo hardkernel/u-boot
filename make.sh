@@ -711,8 +711,8 @@ function pack_fit_image()
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
 		./scripts/fit-vboot.sh $*
 	else
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
 		rm uboot.img trust*.img -rf
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
 		echo "pack uboot.img (with uboot trust) okay! Input: $ini"
 	fi
 }
