@@ -733,7 +733,7 @@ function finish()
 	echo
 	if [ ! -z "$OPTION" ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config ($OPTION)"
-	elif [ "$BOARD" = '' ]; then
+	elif [ "$BOARD" = '' -o "$BOARD" = 'nopack' ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
 	else
 		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(make ${BOARD}_defconfig)"
