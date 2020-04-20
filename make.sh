@@ -496,7 +496,7 @@ function pack_uboot_image()
 		exit 1
 	fi
 	${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${uboot_load_addr} ${PLATFORM_UBOOT_IMG_SIZE}
-	ls u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.img u-boot-dtb.img -rf
+	rm u-boot.img u-boot-dtb.img -rf
 	echo "pack uboot okay! Input: u-boot.bin"
 }
 
@@ -569,7 +569,7 @@ function pack_spl_loader_image()
 		return
 	fi
 
-	ls ${tmp_dir} >/dev/null 2>&1 && rm ${tmp_dir} -rf
+	rm ${tmp_dir} -rf
 	mkdir ${tmp_dir} -p
 	cp spl/u-boot-spl.bin ${tmp_dir}/
 	cp $ini $tmp_ini
@@ -589,7 +589,7 @@ function pack_spl_loader_image()
 	${RKTOOLS}/boot_merger $tmp_ini
 	rm ${tmp_dir} -rf
 	cd -
-	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
+	rm *_loader_*.bin -rf
 	mv ${RKBIN}/*_loader_*.bin ./
 
 	filename=`basename *_loader_*.bin`
@@ -616,8 +616,7 @@ function pack_loader_image()
 		return
 	fi
 
-	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
-
+	rm *_loader_*.bin -rf
 	numline=`cat $ini | wc -l`
 	if [ $numline -eq 1 ]; then
 		image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
@@ -677,7 +676,7 @@ function pack_trust_image()
 		return
 	fi
 
-	ls trust*.img >/dev/null 2>&1 && rm trust*.img
+	rm trust*.img -rf
 	if [ "$FILE" != "" ]; then
 		ini=$FILE;
 	else
@@ -713,7 +712,7 @@ function pack_fit_image()
 		./scripts/fit-vboot.sh $*
 	else
 		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild
-		ls uboot.img trust*.img >/dev/null 2>&1 && rm uboot.img trust*.img -rf
+		rm uboot.img trust*.img -rf
 		echo "pack uboot.img (with uboot trust) okay! Input: $ini"
 	fi
 }
@@ -734,13 +733,13 @@ function pack_images()
 function clean_files()
 {
 	if [ -f spl/u-boot-spl.dtb ]; then
-		rm spl/u-boot-spl.dtb
+		rm spl/u-boot-spl.dtb -rf
 	fi
 	if [ -f tpl/u-boot-tpl.dtb ]; then
-		rm tpl/u-boot-tpl.dtb
+		rm tpl/u-boot-tpl.dtb -rf
 	fi
 	if [ -f u-boot.dtb ]; then
-		rm u-boot.dtb
+		rm u-boot.dtb -rf
 	fi
 }
 
