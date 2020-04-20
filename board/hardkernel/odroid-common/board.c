@@ -73,6 +73,8 @@ static unsigned int get_hw_revision(void)
 #elif defined(CONFIG_ODROID_C4)
 	if (IS_RANGE(adc, 335, 345))		/* avg : 341 */
 		hwrev = BOARD_REVISION(2019, 11, 29);
+	else if (IS_RANGE(adc, 80, 100))	/* avg : 90 */
+		hwrev = BOARD_REVISION(2020, 1, 29);
 	else if (IS_RANGE(adc, 300, 320))	/* avg : 308 */
 		hwrev = BOARD_REVISION(2019, 12, 10);
 #endif
@@ -107,7 +109,8 @@ int board_is_odroidn2plus(void)
 #elif defined(CONFIG_ODROID_C4)
 int board_is_odroidc4(void)
 {
-	return (board_revision() == 0x20191129);
+	return (board_revision() == 0x20191129)
+		|| (board_revision() == 0x20200129);
 }
 
 int board_is_odroidhc4(void)
