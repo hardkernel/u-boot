@@ -1451,7 +1451,7 @@
 
 	nandc: nandc@ffc80000 {
 		compatible = "rockchip,rk-nandc";
-		reg = <0x0 0xffc80000 0x0 0x4000>;
+		reg = <0xffc80000 0x4000>;
 		interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
 		nandc_id = <0>;
 		clocks = <&cru CLK_NANDC>, <&cru HCLK_NANDC>;
