@@ -265,13 +265,10 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 #ifdef CONFIG_SPL_KERNEL_BOOT
 static int spl_rockchip_dnl_key_pressed(void)
 {
-	int key = false;
-#if defined(CONFIG_DM_KEY) && defined(CONFIG_SPL_INPUT)
-	key = key_read(KEY_VOLUMEUP);
-
-	return key_is_pressed(key);
+#if defined(CONFIG_SPL_INPUT)
+	return key_read(KEY_VOLUMEUP);
 #else
-	return key;
+	return 0;
 #endif
 }
 
