@@ -103,6 +103,10 @@ check_member(rockchip_sfc_reg, data, 0x108);
 
 #define SFC_MAX_TRB		(512 * 31)
 
+#define SFC_MAX_RATE		(150 * 1000 * 1000)
+#define SFC_DEFAULT_RATE	(80 * 1000 * 1000)
+#define SFC_MIN_RATE		(10 * 1000 * 1000)
+
 enum rockchip_sfc_if_type {
 	IF_TYPE_STD,
 	IF_TYPE_DUAL,
@@ -150,6 +154,9 @@ static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
 
 	plat->frequency = ofnode_read_u32_default(subnode, "spi-max-frequency",
 						  100000000);
+	if (plat->frequency > SFC_MAX_RATE || plat->frequency < SFC_MIN_RATE)
+		plat->frequency = SFC_DEFAULT_RATE;
+	sfc->max_freq = plat->frequency;
 
 	return 0;
 }
@@ -158,7 +165,10 @@ static int rockchip_sfc_probe(struct udevice *bus)
 {
 	struct rockchip_sfc_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
+	struct dm_spi_bus *dm_spi_bus;
 
+	dm_spi_bus = bus->uclass_priv;
+	dm_spi_bus->max_hz = plat->frequency;
 	sfc->regbase = (struct rockchip_sfc_reg *)plat->base;
 
 	return 0;
@@ -559,6 +569,8 @@ static int rockchip_sfc_set_speed(struct udevice *bus, uint speed)
 		speed = sfc->max_freq;
 
 	sfc->speed_hz = speed;
+	clk_set_rate(&sfc->clk, sfc->speed_hz);
+	SFC_DBG("%s clk= %ld\n", __func__, clk_get_rate(&sfc->clk));
 
 	return 0;
 }
