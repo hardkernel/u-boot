@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <dm.h>
 #include <fdtdec.h>
 #include <fdt_support.h>
 #include <inttypes.h>
@@ -80,6 +81,8 @@ struct rk_nand {
 	u8 chipnr;
 	u8 id[5];
 	u8 *databuf;
+	struct udevice *dev;
+	struct mtd_info *mtd;
 };
 
 struct rk_nand *g_rk_nand;
@@ -248,10 +251,175 @@ static void read_flash_id(struct rk_nand *rknand, uint8_t *id)
 	id[3] = readb(bank_base);
 	id[4] = readb(bank_base);
 	rockchip_nand_select_chip(rknand->regs, -1);
-	printf("%s %x %x %x %x %x\n", __func__, id[0], id[1], id[2], id[3],
-	       id[4]);
+	if (id[0] != 0xFF && id[0] != 0x00)
+		printf("NAND:%x %x\n", id[0], id[1]);
 }
 
+#ifdef CONFIG_NAND_ROCKCHIP_DT
+static const struct udevice_id rockchip_nandc_ids[] = {
+	{ .compatible = "rockchip,rk-nandc" },
+	{ }
+};
+
+static int spl_nand_block_isbad(struct mtd_info *mtd, loff_t ofs)
+{
+	return is_badblock(ofs / CONFIG_SYS_NAND_PAGE_SIZE);
+}
+
+static int spl_nand_read_page(struct mtd_info *mtd, loff_t from, size_t len,
+			      size_t *retlen, u_char *buf)
+{
+	int read_size, offset, read_len;
+	unsigned int page;
+	unsigned int max_pages = CONFIG_SYS_NAND_SIZE /
+				CONFIG_SYS_NAND_PAGE_SIZE;
+
+	/* Convert to page number */
+	page = from / CONFIG_SYS_NAND_PAGE_SIZE;
+	offset = from & (CONFIG_SYS_NAND_PAGE_SIZE - 1);
+	read_len = len;
+	*retlen = 0;
+
+	while (read_len) {
+		read_size = CONFIG_SYS_NAND_PAGE_SIZE - offset;
+		if (read_size > read_len)
+			read_size = read_len;
+		if (offset || read_size < CONFIG_SYS_NAND_PAGE_SIZE) {
+			if (nandc_read_page(page, g_rk_nand->databuf) < 0)
+				return -EIO;
+			memcpy(buf, g_rk_nand->databuf + offset, read_size);
+			offset = 0;
+		} else {
+			if (nandc_read_page(page, buf) < 0)
+				return -EIO;
+		}
+		page++;
+		read_len -= read_size;
+		buf += read_size;
+		if (page >= max_pages)
+			return -EIO;
+	}
+
+	*retlen = len;
+
+	return 0;
+}
+
+static int rockchip_nandc_probe(struct udevice *dev)
+{
+	const void *blob = gd->fdt_blob;
+	struct rk_nand *rknand = dev_get_priv(dev);
+	struct mtd_info *mtd = dev_get_uclass_priv(dev);
+	fdt_addr_t regs;
+	int ret = -ENODEV;
+	int node;
+
+	g_rk_nand = rknand;
+	rknand->dev = dev;
+
+	node = fdtdec_next_compatible(blob, 0, COMPAT_ROCKCHIP_NANDC);
+
+	if (node < 0) {
+		printf("Nand node not found\n");
+		return -ENODEV;
+	}
+
+	if (!fdtdec_get_is_enabled(blob, node)) {
+		debug("Nand disabled in device tree\n");
+		return -ENODEV;
+	}
+
+	regs = fdt_get_base_address(blob, node);
+	if (!regs) {
+		debug("Nand address not found\n");
+		return -ENODEV;
+	}
+
+	rknand->regs = (void *)regs;
+
+	nandc_init(g_rk_nand);
+	read_flash_id(g_rk_nand, g_rk_nand->id);
+
+	if (g_rk_nand->id[0] == g_rk_nand->id[1])
+		return -ENODEV;
+
+	if (g_rk_nand->id[1] == 0xA1 || g_rk_nand->id[1] == 0xF1 ||
+	    g_rk_nand->id[1] == 0xD1 || g_rk_nand->id[1] == 0xAA ||
+	    g_rk_nand->id[1] == 0xDA || g_rk_nand->id[1] == 0xAC ||
+	    g_rk_nand->id[1] == 0xDC || g_rk_nand->id[1] == 0xA3 ||
+	    g_rk_nand->id[1] == 0xD3 || g_rk_nand->id[1] == 0x95 ||
+	    g_rk_nand->id[1] == 0x48) {
+		g_rk_nand->chipnr = 1;
+		g_rk_nand->databuf = kzalloc(CONFIG_SYS_NAND_PAGE_SIZE,
+					     GFP_KERNEL);
+		if (!g_rk_nand)
+			return -ENOMEM;
+		mtd->_block_isbad = spl_nand_block_isbad;
+		mtd->_read = spl_nand_read_page;
+		mtd->size = CONFIG_SYS_NAND_SIZE;
+		mtd->writesize = CONFIG_SYS_NAND_PAGE_SIZE;
+		mtd->type = MTD_NANDFLASH;
+		mtd->dev = rknand->dev;
+		mtd->priv = rknand;
+		add_mtd_device(mtd);
+		mtd->name = "rk-nand";
+		rknand->mtd = mtd;
+		ret = 0;
+	}
+
+	return ret;
+}
+
+static int rockchip_nandc_bind(struct udevice *udev)
+{
+	int ret = 0;
+
+#ifdef CONFIG_MTD_BLK
+	struct udevice *bdev;
+
+	ret = blk_create_devicef(udev, "mtd_blk", "blk", IF_TYPE_MTD,
+				 BLK_MTD_NAND, 512, 0, &bdev);
+	if (ret)
+		printf("Cannot create block device\n");
+#endif
+	return ret;
+}
+
+U_BOOT_DRIVER(rk_nandc_v6) = {
+	.name           = "rk_nandc_v6",
+	.id             = UCLASS_MTD,
+	.of_match       = rockchip_nandc_ids,
+	.bind		= rockchip_nandc_bind,
+	.probe          = rockchip_nandc_probe,
+	.priv_auto_alloc_size = sizeof(struct rk_nand),
+};
+
+void board_nand_init(void)
+{
+	struct udevice *dev;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_MTD,
+					  DM_GET_DRIVER(rk_nandc_v6),
+					  &dev);
+	if (ret && ret != -ENODEV)
+		pr_err("Failed to initialize NAND controller. (error %d)\n",
+		       ret);
+}
+
+int nand_spl_load_image(u32 offs, u32 size, void *buf)
+{
+	return -EIO;
+}
+
+void nand_init(void){};
+
+int rk_nand_init(void)
+{
+	return -ENODEV;
+}
+
+#else
 void board_nand_init(void)
 {
 	const void *blob = gd->fdt_blob;
@@ -271,18 +439,18 @@ void board_nand_init(void)
 
 	if (node < 0) {
 		printf("Nand node not found\n");
-		goto err;
+		return;
 	}
 
 	if (!fdtdec_get_is_enabled(blob, node)) {
 		debug("Nand disabled in device tree\n");
-		goto err;
+		return;
 	}
 
 	regs = fdt_get_base_address(blob, node);
-	if (regs == FDT_ADDR_T_NONE) {
+	if (!regs) {
 		debug("Nand address not found\n");
-		goto err;
+		return;
 	}
 
 	g_rk_nand = kzalloc(sizeof(*g_rk_nand), GFP_KERNEL);
@@ -290,12 +458,24 @@ void board_nand_init(void)
 	g_rk_nand->databuf = kzalloc(CONFIG_SYS_NAND_PAGE_SIZE, GFP_KERNEL);
 	nandc_init(g_rk_nand);
 	read_flash_id(g_rk_nand, g_rk_nand->id);
-	if (g_rk_nand->id[0] != 0xFF && g_rk_nand->id[1] != 0xFF &&
-	    g_rk_nand->id[0] != 0x00 && g_rk_nand->id[1] != 0x00)
+
+	if (g_rk_nand->id[0] == g_rk_nand->id[1])
+		goto err;
+
+	if (g_rk_nand->id[1] == 0xA1 || g_rk_nand->id[1] == 0xF1 ||
+	    g_rk_nand->id[1] == 0xD1 || g_rk_nand->id[1] == 0xAA ||
+	    g_rk_nand->id[1] == 0xDA || g_rk_nand->id[1] == 0xAC ||
+	    g_rk_nand->id[1] == 0xDC || g_rk_nand->id[1] == 0xA3 ||
+	    g_rk_nand->id[1] == 0xD3 || g_rk_nand->id[1] == 0x95 ||
+	    g_rk_nand->id[1] == 0x48) {
 		g_rk_nand->chipnr = 1;
-	return;
+		return;
+	}
+
 err:
+	kfree(g_rk_nand->databuf);
 	kfree(g_rk_nand);
+	g_rk_nand = NULL;
 }
 
 int nand_spl_load_image(u32 offs, u32 size, void *buf)
@@ -351,5 +531,7 @@ int rk_nand_init(void)
 	else
 		return -ENODEV;
 }
+#endif
 
 void nand_deselect(void) {}
+

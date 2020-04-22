@@ -8,9 +8,6 @@ obj-$(CONFIG_$(SPL_TPL_)SYSRESET) += sysreset-uclass.o
 
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_SYSRESET) += sysreset-syscon-reboot.o
-endif
-
-ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_SYSRESET_PSCI) += sysreset_psci.o
 endif
 

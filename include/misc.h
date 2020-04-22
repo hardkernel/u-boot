@@ -17,6 +17,14 @@
 #define IOCTL_REQ_POLL		_IO('m', 0x03)
 #define IOCTL_REQ_CAPABILITY	_IO('m', 0x04)
 
+enum misc_mode {
+	DECOM_LZ4	= BIT(0),
+	DECOM_GZIP	= BIT(1),
+	DECOM_ZLIB	= BIT(2),
+	OTP_S		= BIT(3),
+	OTP_NS		= BIT(4),
+};
+
 /*
  * Read the device to buffer, optional.
  *

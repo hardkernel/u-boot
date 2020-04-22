@@ -79,7 +79,7 @@ int misc_decompress_start(struct udevice *dev, unsigned long src,
 	param.addr_src = src;
 	param.size = size;
 	if (misc_gzip_parse_header((unsigned char *)src, 0xffff) > 0) {
-		param.mode = GZIP_MOD;
+		param.mode = DECOM_GZIP;
 	} else {
 		printf("Unsupported decompression format.\n");
 		return -EPERM;

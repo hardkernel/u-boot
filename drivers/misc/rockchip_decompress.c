@@ -63,6 +63,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DECOM_GZIP_MODE		BIT(4)
 #define DECOM_ZLIB_MODE		BIT(5)
 #define DECOM_DEFLATE_MODE	BIT(0)
+#define DECOM_LZ4_MODE		0
 
 #define DECOM_ENABLE		0x1
 #define DECOM_DISABLE		0x0
@@ -92,17 +93,17 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	writel(0x00800080, priv->soft_reset_base);
 	writel(0x00800000, priv->soft_reset_base);
 
-	if (param->mode == LZ4_MOD)
+	if (param->mode == DECOM_LZ4)
 		writel(LZ4_CONT_CSUM_CHECK_EN |
 		       LZ4_HEAD_CSUM_CHECK_EN |
 		       LZ4_BLOCK_CSUM_CHECK_EN |
-		       LZ4_MOD, priv->base + DECOM_CTRL);
+		       DECOM_LZ4_MODE, priv->base + DECOM_CTRL);
 
-	if (param->mode == GZIP_MOD)
+	if (param->mode == DECOM_GZIP)
 		writel(DECOM_DEFLATE_MODE | DECOM_GZIP_MODE,
 		       priv->base + DECOM_CTRL);
 
-	if (param->mode == ZLIB_MOD)
+	if (param->mode == DECOM_ZLIB)
 		writel(DECOM_DEFLATE_MODE | DECOM_ZLIB_MODE,
 		       priv->base + DECOM_CTRL);
 
@@ -145,7 +146,7 @@ static int rockchip_decom_done_poll(struct udevice *dev)
 
 static int rockchip_decom_ability(void)
 {
-	return GZIP_MOD;
+	return DECOM_GZIP;
 }
 
 /* Caller must fill in param @buf which represent struct decom_param */
