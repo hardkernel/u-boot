@@ -85,7 +85,7 @@ typedef struct {
 	line_t*     code472Path;
 	int         loaderNum;
 	name_entry* loader;
-	char        outPath[MAX_LINE_LEN];
+	char        outPath[MAX_LINE_LEN * 2];
 } options;
 
 
