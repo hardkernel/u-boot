@@ -7,8 +7,35 @@
 #include <common.h>
 #include <optee_include/OpteeClientApiLib.h>
 #include <optee_include/OpteeClientMem.h>
+#include <optee_include/OpteeClientRPC.h>
 #include <optee_include/OpteeClientSMC.h>
 #include <optee_include/OpteeClientRkFs.h>
+#include <optee_include/teesmc.h>
+#include <optee_include/teesmc_optee.h>
+#include <optee_include/teesmc_v2.h>
+
+#define OPTEE_MSG_REVISION_MAJOR        2
+#define OPTEE_MSG_REVISION_MINOR        0
+
+static bool optee_api_revision_is_compatible(void)
+{
+	ARM_SMC_ARGS ArmSmcArgs = {0};
+
+	ArmSmcArgs.Arg0 = OPTEE_SMC_CALLS_REVISION;
+
+	tee_smc_call(&ArmSmcArgs);
+
+	if (ArmSmcArgs.Arg0 == OPTEE_MSG_REVISION_MAJOR &&
+	    ArmSmcArgs.Arg1 >= OPTEE_MSG_REVISION_MINOR) {
+		printf("optee api revision: %d.%d\n",
+		       ArmSmcArgs.Arg0, ArmSmcArgs.Arg1);
+		return true;
+	} else {
+		printf("optee check api revision fail: %d.%d\n",
+		       ArmSmcArgs.Arg0, ArmSmcArgs.Arg1);
+		return false;
+	}
+}
 
 /*
  * Initlialize the library
@@ -16,6 +43,10 @@
 TEEC_Result OpteeClientApiLibInitialize(void)
 {
 	TEEC_Result status = TEEC_SUCCESS;
+
+	/* check api revision compatibility */
+	if (!optee_api_revision_is_compatible())
+		panic("optee api revision is too low");
 
 	status = OpteeClientMemInit();
 	if (status != TEEC_SUCCESS) {

@@ -143,12 +143,7 @@ int OpteeClientMemInit(void)
 {
 	ARM_SMC_ARGS ArmSmcArgs = {0};
 
-#ifdef CONFIG_OPTEE_V1
-	ArmSmcArgs.Arg0 = TEESMC32_OPTEE_FASTCALL_GET_SHM_CONFIG;
-#endif
-#ifdef CONFIG_OPTEE_V2
 	ArmSmcArgs.Arg0 = OPTEE_SMC_GET_SHM_CONFIG_V2;
-#endif
 
 	tee_smc_call(&ArmSmcArgs);
 

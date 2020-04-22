@@ -56,13 +56,7 @@ TEEC_Result TEEC_SMC_OpenSession(TEEC_Context *context,
 
 	t_teesmc_meta_open_session *TeeSmcMetaSession = NULL;
 
-#ifdef CONFIG_OPTEE_V1
-	uint32_t MetaNum = 1;
-#endif
-
-#ifdef CONFIG_OPTEE_V2
 	uint32_t MetaNum = 2;
-#endif
 
 	*error_origin = TEEC_ORIGIN_API;
 
@@ -104,27 +98,20 @@ TEEC_Result TEEC_SMC_OpenSession(TEEC_Context *context,
 	TeeSmc32Param[0].u.memref.size = sizeof(*TeeSmcMetaSession);
 
 #ifdef CONFIG_OPTEE_V1
-#ifdef CONFIG_ARM64
-	TeeSmc32Param[0].attr = TEESMC_ATTR_TYPE_MEMREF_INPUT |
-				TEESMC_ATTR_META              |
-				TEEC_SMC_DEFAULT_CACHE_ATTRIBUTES;
-#else
-	TeeSmc32Param[0].attr = TEESMC_ATTR_TYPE_MEMREF_INPUT |
-				TEESMC_ATTR_META;
-#endif
+	memcpy((void *)&TeeSmc32Param[0].u.value, &TeeSmcMetaSession->uuid, sizeof(TeeSmcMetaSession->uuid));
 #endif
 
 #ifdef CONFIG_OPTEE_V2
 	uint8_t * session_uuid = (uint8_t *)&TeeSmcMetaSession->uuid;
 	tee_uuid_to_octets(session_uuid, destination);
 	memcpy((void *)&TeeSmc32Param[0].u.value, &TeeSmcMetaSession->uuid, sizeof(TeeSmcMetaSession->uuid));
+#endif
 	TeeSmc32Param[1].u.value.c = TeeSmcMetaSession->clnt_login;
 
 	TeeSmc32Param[0].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT_V2 |
 				OPTEE_MSG_ATTR_META_V2;
 	TeeSmc32Param[1].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT_V2 |
 				OPTEE_MSG_ATTR_META_V2;
-#endif
 
 	SetTeeSmc32Params(operation, TeeSmc32Param + MetaNum);
 
@@ -293,19 +280,8 @@ void SetTeeSmc32Params(TEEC_Operation *operation,
 			attr == TEEC_MEMREF_TEMP_OUTPUT ||
 			attr == TEEC_MEMREF_TEMP_INOUT) {
 
-#ifdef CONFIG_OPTEE_V1
-#ifdef CONFIG_ARM64
-			attr |= TEEC_SMC_DEFAULT_CACHE_ATTRIBUTES;
-			debug("TEEC: OPTEE_OS_V1 ARCH64 attr %x\n", attr);
-#else
-			debug("TEEC: OPTEE_OS_V1 ARCH32 attr %x\n", attr);
-#endif
-#endif
-
-#ifdef CONFIG_OPTEE_V2
 			attr += (OPTEE_MSG_ATTR_TYPE_TMEM_INPUT_V2 - TEEC_MEMREF_TEMP_INPUT);
 			debug("TEEC: OPTEE_OS_V2 ARCH64 attr %x\n", attr);
-#endif
 
 			TeeSmc32Param[ParamCount].attr = attr;
 			TeeSmc32Param[ParamCount].u.memref.buf_ptr =
@@ -355,16 +331,9 @@ TEEC_Result OpteeSmcCall(t_teesmc32_arg *TeeSmc32Arg)
 	TEEC_Result TeecResult = TEEC_SUCCESS;
 	ARM_SMC_ARGS ArmSmcArgs = {0};
 
-#ifdef CONFIG_OPTEE_V1
-	ArmSmcArgs.Arg0 = TEESMC32_CALL_WITH_ARG;
-	ArmSmcArgs.Arg1 = (uint32_t) (size_t)TeeSmc32Arg;
-#endif
-
-#ifdef CONFIG_OPTEE_V2
 	ArmSmcArgs.Arg0 = OPTEE_SMC_CALL_WITH_ARG_V2;
 	ArmSmcArgs.Arg1 = 0;
 	ArmSmcArgs.Arg2 = (uint32_t) (size_t)TeeSmc32Arg;
-#endif
 
 	while (1) {
 		tee_smc_call(&ArmSmcArgs);

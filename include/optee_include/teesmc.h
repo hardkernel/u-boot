@@ -647,19 +647,6 @@ struct teesmc_meta_open_session {
 
 typedef struct teesmc_meta_open_session t_teesmc_meta_open_session;
 
-#ifdef CONFIG_OPTEE_V1
-
-typedef struct teesmc32_arg             t_teesmc32_arg;
-typedef struct teesmc32_param           t_teesmc32_param;
-
-#define TEESMC32_GET_PARAMS(x) \
-	(struct teesmc32_param *)(((struct teesmc32_arg *)(x)) + 1)
-
-#define TEESMC32_GET_ARG_SIZE(num_params) \
-	(sizeof(struct teesmc32_arg) + \
-	 sizeof(struct teesmc32_param) * (num_params))
-
-#endif
 void tee_smc_call(ARM_SMC_ARGS *param);
 
 #endif /* TEESMC_H */

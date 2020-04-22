@@ -50,7 +50,6 @@ struct optee_msg_arg_v2 {
 	struct optee_msg_param_v2 params[];
 };
 
-#ifdef CONFIG_OPTEE_V2
 typedef struct optee_msg_arg_v2        t_teesmc32_arg;
 typedef struct optee_msg_param_v2      t_teesmc32_param;
 
@@ -60,8 +59,6 @@ typedef struct optee_msg_param_v2      t_teesmc32_param;
 
 #define TEESMC32_GET_PARAMS(x) \
 	(struct optee_msg_param_v2 *)(((struct optee_msg_arg_v2 *)(x)) + 1)
-
-#endif
 
 #define OPTEE_MSG_ATTR_TYPE_NONE_V2		0x0
 #define OPTEE_MSG_ATTR_TYPE_VALUE_INPUT_V2		0x1
@@ -96,10 +93,17 @@ typedef struct optee_msg_param_v2      t_teesmc32_param;
 #define OPTEE_SMC_FUNC_MASK_V2		0xFFFF
 
 #define OPTEE_SMC_OWNER_TRUSTED_OS_V2	50
+#define OPTEE_SMC_OWNER_TRUSTED_OS_API	63
 
 #define OPTEE_SMC_FUNCID_GET_SHM_CONFIG_V2	7
 #define OPTEE_SMC_GET_SHM_CONFIG_V2 \
 	OPTEE_SMC_FAST_CALL_VAL_V2(OPTEE_SMC_FUNCID_GET_SHM_CONFIG_V2)
+
+#define OPTEE_SMC_FUNCID_CALLS_REVISION	0xFF03
+#define OPTEE_SMC_CALLS_REVISION \
+	OPTEE_SMC_CALL_VAL_V2(OPTEE_SMC_32_V2, OPTEE_SMC_FAST_CALL_V2, \
+			      OPTEE_SMC_OWNER_TRUSTED_OS_API, \
+			      OPTEE_SMC_FUNCID_CALLS_REVISION)
 
 #define OPTEE_SMC_FAST_CALL_VAL_V2(func_num) \
 	OPTEE_SMC_CALL_VAL_V2(OPTEE_SMC_32_V2, OPTEE_SMC_FAST_CALL_V2, \
