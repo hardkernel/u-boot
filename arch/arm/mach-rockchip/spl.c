@@ -302,3 +302,12 @@ int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
 #endif
 	return 0;
 }
+
+void spl_hang_reset(void)
+{
+	printf("# Reset the board to bootrom #\n");
+#if defined(CONFIG_SPL_SYSRESET) && defined(CONFIG_SPL_DRIVERS_MISC_SUPPORT)
+	writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+	do_reset(NULL, 0, 0, NULL);
+#endif
+}
