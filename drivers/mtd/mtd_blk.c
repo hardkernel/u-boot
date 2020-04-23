@@ -18,6 +18,113 @@
 #define MTD_PART_INFO_MAX_SIZE		512
 #define MTD_SINGLE_PART_INFO_MAX_SIZE	40
 
+static int *mtd_map_blk_table;
+
+int mtd_blk_map_table_init(struct blk_desc *desc,
+			   loff_t offset,
+			   size_t length)
+{
+	u32 blk_total, blk_begin, blk_cnt;
+	struct mtd_info *mtd = NULL;
+	int i, j;
+
+	if (!desc)
+		return -ENODEV;
+
+	if (desc->devnum == BLK_MTD_NAND) {
+#if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
+		mtd = dev_get_priv(desc->bdev->parent);
+#endif
+	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
+#if defined(CONFIG_MTD_SPI_NAND) && !defined(CONFIG_SPL_BUILD)
+		mtd = desc->bdev->priv;
+#endif
+	}
+
+	if (!mtd) {
+		return -ENODEV;
+	} else {
+		blk_total = mtd->size / mtd->erasesize;
+		if (!mtd_map_blk_table) {
+			mtd_map_blk_table = (int *)malloc(blk_total * 4);
+			for (i = 0; i < blk_total; i++)
+				mtd_map_blk_table[i] = i;
+		}
+
+		blk_begin = (u32)offset / mtd->erasesize;
+		blk_cnt = (u32)length / mtd->erasesize;
+		j = 0;
+		 /* should not across blk_cnt */
+		for (i = 0; i < blk_cnt; i++) {
+			if (j >= blk_cnt)
+				mtd_map_blk_table[blk_begin + i] = -1;
+			for (; j < blk_cnt; j++) {
+				if (!mtd_block_isbad(mtd, (blk_begin + j) * mtd->erasesize)) {
+					mtd_map_blk_table[blk_begin + i] = blk_begin + j;
+					j++;
+					if (j == blk_cnt)
+						j++;
+					break;
+				}
+			}
+		}
+
+		return 0;
+	}
+}
+
+static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
+				       size_t *length, size_t *actual,
+				       loff_t lim, u_char *buffer)
+{
+	size_t left_to_read = *length;
+	u_char *p_buffer = buffer;
+	u32 erasesize = mtd->erasesize;
+	int rval;
+
+	while (left_to_read > 0) {
+		size_t block_offset = offset & (erasesize - 1);
+		size_t read_length;
+		loff_t mapped_offset;
+
+		if (offset >= mtd->size)
+			return 0;
+
+		mapped_offset = offset;
+		if (mtd_map_blk_table)  {
+			mapped_offset = (loff_t)((u32)mtd_map_blk_table[(u64)offset /
+				erasesize] * erasesize + block_offset);
+		} else {
+			if (mtd_block_isbad(mtd, offset & ~(erasesize - 1))) {
+				printf("Skip bad block 0x%08llx\n",
+				       offset & ~(erasesize - 1));
+				offset += erasesize - block_offset;
+				continue;
+			}
+		}
+
+		if (left_to_read < (erasesize - block_offset))
+			read_length = left_to_read;
+		else
+			read_length = erasesize - block_offset;
+
+		rval = mtd_read(mtd, mapped_offset, read_length, &read_length,
+				p_buffer);
+		if (rval && rval != -EUCLEAN) {
+			printf("NAND read from offset %llx failed %d\n",
+			       mapped_offset, rval);
+			*length -= left_to_read;
+			return rval;
+		}
+
+		left_to_read -= read_length;
+		offset       += read_length;
+		p_buffer     += read_length;
+	}
+
+	return 0;
+}
+
 char *mtd_part_parse(void)
 {
 	char mtd_part_info_temp[MTD_SINGLE_PART_INFO_MAX_SIZE] = {0};
@@ -122,27 +229,22 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		ret = nand_read_skip_bad(mtd, off, &rwsize,
 					 NULL, mtd->size,
 					 (u_char *)(dst));
+#else
+		ret = mtd_map_read(mtd, off, &rwsize,
+				   NULL, mtd->size,
+				   (u_char *)(dst));
+#endif
 		if (!ret)
 			return blkcnt;
 		else
-#endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-#if defined(CONFIG_MTD_SPI_NAND) && !defined(CONFIG_SPL_BUILD)
-		ret = nand_read_skip_bad(mtd, off, &rwsize,
-					 NULL, mtd->size,
-					 (u_char *)(dst));
+		ret = mtd_map_read(mtd, off, &rwsize,
+				   NULL, mtd->size,
+				   (u_char *)(dst));
 		if (!ret)
 			return blkcnt;
 		else
-#elif defined(CONFIG_SPL_BUILD)
-		size_t retlen;
-
-		mtd_read(mtd, off, rwsize, &retlen, dst);
-		if (retlen == rwsize)
-			return blkcnt;
-		else
-#endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
 #if defined(CONFIG_SPI_FLASH_MTD) || defined(CONFIG_SPL_BUILD)
