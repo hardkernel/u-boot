@@ -378,8 +378,31 @@ static int rockchip_efuse_read(struct udevice *dev, int offset,
 	return (*efuse_read)(dev, offset, buf, size);
 }
 
+static int rockchip_efuse_capatiblity(struct udevice *dev, u32 *buf)
+{
+	*buf = device_is_compatible(dev, "rockchip,rk3288-secure-efuse") ?
+	       OTP_S : OTP_NS;
+
+	return 0;
+}
+
+static int rockchip_efuse_ioctl(struct udevice *dev, unsigned long request,
+				void *buf)
+{
+	int ret = -EINVAL;
+
+	switch (request) {
+	case IOCTL_REQ_CAPABILITY:
+		ret = rockchip_efuse_capatiblity(dev, buf);
+		break;
+	}
+
+	return ret;
+}
+
 static const struct misc_ops rockchip_efuse_ops = {
 	.read = rockchip_efuse_read,
+	.ioctl = rockchip_efuse_ioctl,
 };
 
 static int rockchip_efuse_ofdata_to_platdata(struct udevice *dev)
