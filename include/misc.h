@@ -77,6 +77,17 @@ int misc_call(struct udevice *dev, int msgid, void *tx_msg, int tx_size,
 	      void *rx_msg, int rx_size);
 
 /*
+ * Get a misc device by capability
+ *
+ * The caller can get a misc device according to capability request, the driver
+ * must implement the IOCTL_REQ_CAPABILITY callback.
+ *
+ * @capability: the value of enum misc_mode.
+ * @return the require device if OK, NULL on error
+ */
+struct udevice *misc_get_device_by_capability(u32 capability);
+
+/*
  * struct misc_ops - Driver model Misc operations
  *
  * The uclass interface is implemented by all miscellaneous devices which
