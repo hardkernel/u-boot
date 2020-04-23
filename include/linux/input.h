@@ -149,5 +149,6 @@
 #define KEY_RIGHTMETA		126
 #define KEY_COMPOSE		127
 #define KEY_FN			0x1d0
+#define KEY_REPLY               232     /* AC Reply */
 
 #endif
