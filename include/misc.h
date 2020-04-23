@@ -129,4 +129,23 @@ struct misc_ops {
 		    void *rx_msg, int rx_size);
 };
 
+/* generic layer for otp */
+struct udevice *misc_otp_get_device(u32 capability);
+int misc_otp_read(struct udevice *dev, int offset, void *buf, int size);
+int misc_otp_write(struct udevice *dev, int offset, const void *buf, int size);
+
+/* generic layer for decompress */
+struct decom_param {
+	unsigned long addr_src;
+	unsigned long addr_dst;
+	unsigned long size;
+	enum misc_mode mode;
+};
+
+struct udevice *misc_decompress_get_device(u32 capability);
+int misc_decompress_start(struct udevice *dev, unsigned long src,
+			  unsigned long dst, unsigned long size);
+int misc_decompress_stop(struct udevice *dev);
+int misc_decompress_is_complete(struct udevice *dev);
+
 #endif	/* _MISC_H_ */

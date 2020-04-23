@@ -7,7 +7,6 @@
 #include <dm.h>
 #include <linux/bitops.h>
 #include <misc.h>
-#include <misc_decompress.h>
 #include <irq-generic.h>
 
 DECLARE_GLOBAL_DATA_PTR;

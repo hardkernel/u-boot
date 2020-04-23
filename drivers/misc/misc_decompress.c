@@ -6,7 +6,6 @@
 #include <dm.h>
 #include <dm/uclass.h>
 #include <misc.h>
-#include <misc_decompress.h>
 
 #define HEAD_CRC		2
 #define EXTRA_FIELD		4
