@@ -1288,6 +1288,114 @@ static ulong rv1126_scr1_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 	return rv1126_scr1_get_clk(priv);
 }
 
+static ulong rv1126_gmac_src_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[63]);
+	div = (con & CLK_GMAC_SRC_DIV_MASK) >> CLK_GMAC_SRC_DIV_SHIFT;
+	sel = (con & CLK_GMAC_SRC_SEL_MASK) >> CLK_GMAC_SRC_SEL_SHIFT;
+	if (sel == CLK_GMAC_SRC_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else if (sel == CLK_GMAC_SRC_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_gmac_src_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	assert(src_clk_div - 1 <= 31);
+	rk_clrsetreg(&cru->clksel_con[63],
+		     CLK_GMAC_SRC_SEL_MASK | CLK_GMAC_SRC_DIV_MASK,
+		     CLK_GMAC_SRC_SEL_CPLL << CLK_GMAC_SRC_SEL_SHIFT |
+		     (src_clk_div - 1) << CLK_GMAC_SRC_DIV_SHIFT);
+
+	return rv1126_gmac_src_get_clk(priv);
+}
+
+static ulong rv1126_gmac_out_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[61]);
+	div = (con & CLK_GMAC_OUT_DIV_MASK) >> CLK_GMAC_OUT_DIV_SHIFT;
+	sel = (con & CLK_GMAC_OUT_SEL_MASK) >> CLK_GMAC_OUT_SEL_SHIFT;
+	if (sel == CLK_GMAC_OUT_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else if (sel == CLK_GMAC_OUT_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_gmac_out_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	assert(src_clk_div - 1 <= 31);
+	rk_clrsetreg(&cru->clksel_con[61],
+		     CLK_GMAC_OUT_SEL_MASK | CLK_GMAC_OUT_DIV_MASK,
+		     CLK_GMAC_OUT_SEL_CPLL << CLK_GMAC_OUT_SEL_SHIFT |
+		     (src_clk_div - 1) << CLK_GMAC_OUT_DIV_SHIFT);
+
+	return rv1126_gmac_out_get_clk(priv);
+}
+
+static ulong rv1126_gmac_tx_rx_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 con, sel, div_sel;
+
+	con = readl(&cru->gmac_con);
+	sel = (con & GMAC_MODE_SEL_MASK) >> GMAC_MODE_SEL_SHIFT;
+
+	if (sel == GMAC_RGMII_MODE) {
+		if (rate == 2500000)
+			div_sel = RGMII_CLK_DIV50;
+		else if (rate == 25000000)
+			div_sel = RGMII_CLK_DIV5;
+		else
+			div_sel = RGMII_CLK_DIV0;
+		rk_clrsetreg(&cru->gmac_con, RGMII_CLK_SEL_MASK,
+			     div_sel << RGMII_CLK_SEL_SHIFT);
+	} else if (sel == GMAC_RMII_MODE) {
+		if (rate == 2500000)
+			div_sel = RMII_CLK_DIV20;
+		else
+			div_sel = RMII_CLK_DIV2;
+		rk_clrsetreg(&cru->gmac_con, RMII_CLK_SEL_MASK,
+			     div_sel << RMII_CLK_SEL_SHIFT);
+	}
+
+	return 0;
+}
+
+static ulong rv1126_pclk_gmac_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	parent = rv1126_pdphp_get_clk(priv, ACLK_PDPHP);
+
+	con = readl(&cru->clksel_con[63]);
+	div = (con & PCLK_GMAC_DIV_MASK) >> PCLK_GMAC_DIV_SHIFT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
 static ulong rv1126_clk_get_rate(struct clk *clk)
 {
 	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
@@ -1371,6 +1479,15 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 		break;
 	case CLK_SCR1_CORE:
 		rate = rv1126_scr1_get_clk(priv);
+		break;
+	case CLK_GMAC_SRC:
+		rate = rv1126_gmac_src_get_clk(priv);
+		break;
+	case CLK_GMAC_ETHERNET_OUT:
+		rate = rv1126_gmac_out_get_clk(priv);
+		break;
+	case PCLK_GMAC:
+		rate = rv1126_pclk_gmac_get_clk(priv);
 		break;
 	default:
 		return -ENOENT;
@@ -1462,6 +1579,15 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case CLK_SCR1_CORE:
 		ret = rv1126_scr1_set_clk(priv, rate);
+		break;
+	case CLK_GMAC_SRC:
+		ret = rv1126_gmac_src_set_clk(priv, rate);
+		break;
+	case CLK_GMAC_ETHERNET_OUT:
+		ret = rv1126_gmac_out_set_clk(priv, rate);
+		break;
+	case CLK_GMAC_TX_RX:
+		ret = rv1126_gmac_tx_rx_set_clk(priv, rate);
 		break;
 	default:
 		return -ENOENT;
@@ -1643,6 +1769,21 @@ static int rv1126_gmac_src_m1_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
+static int rv1126_gmac_tx_rx_set_parent(struct clk *clk, struct clk *parent)
+{
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_cru *cru = priv->cru;
+
+	if (parent->id == RGMII_MODE_CLK)
+		rk_clrsetreg(&cru->gmac_con, GMAC_MODE_SEL_MASK,
+			     GMAC_RGMII_MODE << GMAC_MODE_SEL_SHIFT);
+	else
+		rk_clrsetreg(&cru->gmac_con, GMAC_MODE_SEL_MASK,
+			     GMAC_RMII_MODE << GMAC_MODE_SEL_SHIFT);
+
+	return 0;
+}
+
 static int rv1126_clk_set_parent(struct clk *clk, struct clk *parent)
 {
 	switch (clk->id) {
@@ -1652,6 +1793,8 @@ static int rv1126_clk_set_parent(struct clk *clk, struct clk *parent)
 		return rv1126_gmac_src_m0_set_parent(clk, parent);
 	case CLK_GMAC_SRC_M1:
 		return rv1126_gmac_src_m1_set_parent(clk, parent);
+	case CLK_GMAC_TX_RX:
+		return rv1126_gmac_tx_rx_set_parent(clk, parent);
 	default:
 		return -ENOENT;
 	}
