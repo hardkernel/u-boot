@@ -110,7 +110,12 @@ static inline void mmu_setup(void)
 	int i;
 	u32 reg;
 
+#ifndef CONFIG_SPL_BUILD
+	/* bootrom and ddr didn't initial dcache,
+	 * skip this to save boot time.
+	 */
 	arm_init_before_mmu();
+#endif
 	/* Set up an identity-mapping for all 4GB, rw for everyone */
 	for (i = 0; i < ((4096ULL * 1024 * 1024) >> MMU_SECTION_SHIFT); i++)
 		set_section_dcache(i, DCACHE_OFF);
