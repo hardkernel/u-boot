@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <malloc.h>
 #include <misc.h>
-#include <misc_decompress.h>
 #include <spl.h>
 #include <spl_rkfw.h>
 #include <linux/kernel.h>

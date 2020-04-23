@@ -77,6 +77,17 @@ int misc_call(struct udevice *dev, int msgid, void *tx_msg, int tx_size,
 	      void *rx_msg, int rx_size);
 
 /*
+ * Get a misc device by capability
+ *
+ * The caller can get a misc device according to capability request, the driver
+ * must implement the IOCTL_REQ_CAPABILITY callback.
+ *
+ * @capability: the value of enum misc_mode.
+ * @return the require device if OK, NULL on error
+ */
+struct udevice *misc_get_device_by_capability(u32 capability);
+
+/*
  * struct misc_ops - Driver model Misc operations
  *
  * The uclass interface is implemented by all miscellaneous devices which
@@ -128,5 +139,24 @@ struct misc_ops {
 	int (*call)(struct udevice *dev, int msgid, void *tx_msg, int tx_size,
 		    void *rx_msg, int rx_size);
 };
+
+/* generic layer for otp */
+struct udevice *misc_otp_get_device(u32 capability);
+int misc_otp_read(struct udevice *dev, int offset, void *buf, int size);
+int misc_otp_write(struct udevice *dev, int offset, const void *buf, int size);
+
+/* generic layer for decompress */
+struct decom_param {
+	unsigned long addr_src;
+	unsigned long addr_dst;
+	unsigned long size;
+	enum misc_mode mode;
+};
+
+struct udevice *misc_decompress_get_device(u32 capability);
+int misc_decompress_start(struct udevice *dev, unsigned long src,
+			  unsigned long dst, unsigned long size);
+int misc_decompress_stop(struct udevice *dev);
+int misc_decompress_is_complete(struct udevice *dev);
 
 #endif	/* _MISC_H_ */

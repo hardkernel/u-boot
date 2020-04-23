@@ -7,7 +7,6 @@
 #include <dm.h>
 #include <linux/bitops.h>
 #include <misc.h>
-#include <misc_decompress.h>
 #include <irq-generic.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -144,9 +143,11 @@ static int rockchip_decom_done_poll(struct udevice *dev)
 	return -EINVAL;
 }
 
-static int rockchip_decom_ability(void)
+static int rockchip_decom_capability(u32 *buf)
 {
-	return DECOM_GZIP;
+	*buf = DECOM_GZIP;
+
+	return 0;
 }
 
 /* Caller must fill in param @buf which represent struct decom_param */
@@ -166,7 +167,7 @@ static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 		ret = rockchip_decom_stop(dev);
 		break;
 	case IOCTL_REQ_CAPABILITY:
-		ret = rockchip_decom_ability();
+		ret = rockchip_decom_capability(buf);
 	}
 
 	return ret;
