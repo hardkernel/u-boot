@@ -52,10 +52,11 @@ function args_process()
 
 function gen_images()
 {
-	printf "\n## Unpack $file to directory $output/\n"
+	printf "\n# Unpack $file to directory $output/\n"
 	fdtget -l $file /images > $output/unpack.txt
 	cat $output/unpack.txt | while read line
 	do
+		# generate image
 		node="/images/${line}"
 		name=`fdtget -ts $file $node image`
 		offs=`fdtget -ti $file $node data-position`
@@ -64,13 +65,42 @@ function gen_images()
 			continue;
 		fi
 
-		printf "    %-15s: %d bytes\n" ${name} $size
 		if [ $size -ne 0 ]; then
 			dd if=$file of=$output/dd.tmp  bs=$offs skip=1  >/dev/null 2>&1
 			dd if=$output/dd.tmp of=$output/$name bs=$size count=1 >/dev/null 2>&1
 			rm $output/dd.tmp
 		else
 			touch $output/$name
+		fi
+
+		# hash verify
+		algo=`fdtget -ts $file $node/hash@1 algo`
+		if [ -z $algo ]; then
+			printf "    %-20s: %d bytes" $name $size
+			continue;
+		fi
+
+		data=`fdtget -tx $file $node/hash@1 value`
+		data=`echo " "$data | sed "s/ / 0x/g"`
+		csum=`"$algo"sum $output/$name | awk '{ print $1}'`
+
+		hash=""
+		for((i=1;;i++));
+		do
+			hex=`echo $data | awk -v idx=$i '{ print $idx }'`
+			if [ -z $hex ]; then
+				break;
+			fi
+
+			hex=`printf "%08x" $hex` # align !!
+			hash="$hash$hex"
+		done
+
+		printf "  %-20s: %d bytes... %s" $name $size $algo
+		if [ "$csum" = "$hash" -o $size -eq 0 ]; then
+			echo "+"
+		else
+			echo "-"
 		fi
 	done
 
@@ -80,3 +110,4 @@ function gen_images()
 
 args_process $*
 gen_images
+
