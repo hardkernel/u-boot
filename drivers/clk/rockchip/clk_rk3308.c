@@ -889,6 +889,43 @@ static ulong rk3308_rtc32k_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 	return rk3308_rtc32k_get_clk(priv, clk_id);
 }
 
+static ulong rk3308_sclk_sfc_get_clk(struct rk3308_clk_priv *priv)
+{
+	struct rk3308_cru *cru = priv->cru;
+	u32 div, con, sel, parent;
+
+	con = readl(&cru->clksel_con[42]);
+	div = (con & SCLK_SFC_DIV_MASK) >> SCLK_SFC_DIV_SHIFT;
+	sel = (con & SCLK_SFC_SEL_MASK) >> SCLK_SFC_SEL_SHIFT;
+
+	if (sel == SCLK_SFC_SEL_DPLL)
+		parent = priv->dpll_hz;
+	else if (sel == SCLK_SFC_SEL_VPLL0)
+		parent = priv->vpll0_hz;
+	else if (sel == SCLK_SFC_SEL_VPLL1)
+		parent = priv->vpll1_hz;
+	else
+		return -EINVAL;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_sclk_sfc_set_clk(struct rk3308_clk_priv *priv, uint hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->vpll0_hz, hz);
+	assert(src_clk_div - 1 <= 127);
+
+	rk_clrsetreg(&cru->clksel_con[42],
+		     SCLK_SFC_SEL_MASK | SCLK_SFC_DIV_MASK,
+		     SCLK_SFC_SEL_VPLL0 << SCLK_SFC_SEL_SHIFT |
+		     (src_clk_div - 1) << SCLK_SFC_DIV_SHIFT);
+
+	return rk3308_sclk_sfc_get_clk(priv);
+}
+
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
@@ -964,6 +1001,9 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 		break;
 	case SCLK_RTC32K:
 		rate = rk3308_rtc32k_get_clk(priv, clk->id);
+		break;
+	case SCLK_SFC:
+		rate = rk3308_sclk_sfc_get_clk(priv);
 		break;
 	default:
 		return -ENOENT;
@@ -1045,6 +1085,9 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case SCLK_RTC32K:
 		ret = rk3308_rtc32k_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_SFC:
+		ret = rk3308_sclk_sfc_set_clk(priv, rate);
 		break;
 	default:
 		return -ENOENT;
