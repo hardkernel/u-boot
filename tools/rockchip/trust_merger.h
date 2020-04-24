@@ -114,7 +114,8 @@ typedef struct {
 typedef struct {
 	uint32_t HashData[8];
 	uint32_t LoadAddr;
-	uint32_t reserved[3];
+	uint32_t LoadSize;
+	uint32_t reserved[2];
 } COMPONENT_DATA, *PCOMPONENT_DATA;
 
 

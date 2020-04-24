@@ -606,6 +606,7 @@ static bool mergetrust(void)
 		pComponent->ComponentID = pEntry->id;
 		pComponent->StorageAddr = (OutFileSize >> 9);
 		pComponent->ImageSize = (pEntry->align_size >> 9);
+		pComponentData->LoadSize = pComponent->ImageSize;
 
 		LOGD("bl3%c: LoadAddr = 0x%08x, StorageAddr = %d, ImageSize = %d\n",
 		     (char)((pEntry->id & 0xFF000000) >> 24), pComponentData->LoadAddr,
