@@ -8,6 +8,7 @@
 #include <debug_uart.h>
 #include <dm.h>
 #include <key.h>
+#include <misc.h>
 #include <ram.h>
 #include <spl.h>
 #include <optee_include/OpteeClientInterface.h>
@@ -310,4 +311,22 @@ void spl_hang_reset(void)
 	writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
 	do_reset(NULL, 0, 0, NULL);
 #endif
+}
+
+int fit_board_verify_required_sigs(void)
+{
+	uint8_t vboot = 0;
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_v2)
+	struct udevice *dev;
+
+	dev = misc_otp_get_device(OTP_S);
+	if (!dev)
+		return 1;
+
+	if (misc_otp_read(dev, 0, &vboot, 1)) {
+		printf("Can't read verified-boot flag\n");
+		return 1;
+	}
+#endif
+	return vboot;
 }
