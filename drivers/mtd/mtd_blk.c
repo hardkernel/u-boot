@@ -44,7 +44,7 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 	if (!mtd) {
 		return -ENODEV;
 	} else {
-		blk_total = mtd->size / mtd->erasesize;
+		blk_total = (mtd->size + mtd->erasesize - 1) / mtd->erasesize;
 		if (!mtd_map_blk_table) {
 			mtd_map_blk_table = (int *)malloc(blk_total * 4);
 			for (i = 0; i < blk_total; i++)
@@ -52,7 +52,9 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 		}
 
 		blk_begin = (u32)offset / mtd->erasesize;
-		blk_cnt = (u32)length / mtd->erasesize;
+		blk_cnt = ((u32)(offset % mtd->erasesize + length) / mtd->erasesize);
+		if ((blk_begin + blk_cnt) > blk_total)
+			blk_cnt = blk_total - blk_begin;
 		j = 0;
 		 /* should not across blk_cnt */
 		for (i = 0; i < blk_cnt; i++) {
@@ -86,15 +88,20 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 		size_t block_offset = offset & (erasesize - 1);
 		size_t read_length;
 		loff_t mapped_offset;
+		bool mapped;
 
 		if (offset >= mtd->size)
 			return 0;
 
 		mapped_offset = offset;
+		mapped = false;
 		if (mtd_map_blk_table)  {
+			mapped = true;
 			mapped_offset = (loff_t)((u32)mtd_map_blk_table[(u64)offset /
 				erasesize] * erasesize + block_offset);
-		} else {
+		}
+
+		if (!mapped) {
 			if (mtd_block_isbad(mtd, offset & ~(erasesize - 1))) {
 				printf("Skip bad block 0x%08llx\n",
 				       offset & ~(erasesize - 1));
