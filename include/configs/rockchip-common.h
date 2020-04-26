@@ -113,6 +113,11 @@
 	"name=security,size=2M,uuid=${uuid_gpt_security};" \
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};\0"
 
+#ifdef CONFIG_DM_RAMDISK
+#define RKIMG_DET_BOOTDEV \
+	"rkimg_bootdev=" \
+	"setenv devtype ramdisk; setenv devnum 0; \0"
+#else
 #define RKIMG_DET_BOOTDEV \
 	"rkimg_bootdev=" \
 	"if mmc dev 1 && rkimgtest mmc 1; then " \
@@ -132,6 +137,7 @@
 	"elif rksfc dev 1; then " \
 		"setenv devtype spinor; setenv devnum 1;" \
 	"fi; \0"
+#endif
 
 #if defined(CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE)
 #define RKIMG_BOOTCOMMAND			\
