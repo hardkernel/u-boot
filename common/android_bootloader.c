@@ -122,18 +122,6 @@ static int get_partition_unique_uuid(char *partition,
 	return 0;
 }
 
-static void reset_cpu_if_android_ab(void)
-{
-	printf("Reset in AB system.\n");
-	flushc();
-	/*
-	 * Since we use the retry-count in ab system, then can
-	 * try reboot if verify fail until the retry-count is
-	 * equal to zero.
-	 */
-	reset_cpu(0);
-}
-
 static void update_root_uuid_if_android_ab(void)
 {
 	/*
@@ -226,9 +214,24 @@ static int decrease_tries_if_android_ab(char *slot_suffix)
 	return 0;
 }
 #else
-static inline void reset_cpu_if_android_ab(void) {}
 static inline void update_root_uuid_if_android_ab(void) {}
 static inline int decrease_tries_if_android_ab(char *slot_suffix) { return 0; }
+#endif
+
+#if defined(CONFIG_ANDROID_AB) && defined(CONFIG_ANDROID_AVB)
+static void reset_cpu_if_android_ab(void)
+{
+	printf("Reset in AB system.\n");
+	flushc();
+	/*
+	 * Since we use the retry-count in ab system, then can
+	 * try reboot if verify fail until the retry-count is
+	 * equal to zero.
+	 */
+	reset_cpu(0);
+}
+#else
+static inline void reset_cpu_if_android_ab(void) {}
 #endif
 
 int android_bootloader_message_load(
