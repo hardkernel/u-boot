@@ -43,7 +43,7 @@ config DM_RAMDISK
 
 config RAMDISK_RO
         bool "Enable read only ramdisk support"
-        depends on DM_RAMDISK
+        depends on DM_RAMDISK && RKPARM_PARTITION
         help
           This enables the read only ramdisk support.
 
