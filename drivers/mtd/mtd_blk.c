@@ -18,6 +18,9 @@
 #define MTD_PART_INFO_MAX_SIZE		512
 #define MTD_SINGLE_PART_INFO_MAX_SIZE	40
 
+#define MTD_BLK_TABLE_BLOCK_UNKNOWN	(-2)
+#define MTD_BLK_TABLE_BLOCK_SHIFT	(-1)
+
 static int *mtd_map_blk_table;
 
 int mtd_blk_map_table_init(struct blk_desc *desc,
@@ -47,19 +50,23 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 		blk_total = (mtd->size + mtd->erasesize - 1) / mtd->erasesize;
 		if (!mtd_map_blk_table) {
 			mtd_map_blk_table = (int *)malloc(blk_total * 4);
-			for (i = 0; i < blk_total; i++)
-				mtd_map_blk_table[i] = i;
+			memset(mtd_map_blk_table, MTD_BLK_TABLE_BLOCK_UNKNOWN,
+			       blk_total * 4);
 		}
 
 		blk_begin = (u32)offset / mtd->erasesize;
 		blk_cnt = ((u32)(offset % mtd->erasesize + length) / mtd->erasesize);
 		if ((blk_begin + blk_cnt) > blk_total)
 			blk_cnt = blk_total - blk_begin;
+
+		if (mtd_map_blk_table[blk_begin] != MTD_BLK_TABLE_BLOCK_UNKNOWN)
+			return 0;
+
 		j = 0;
 		 /* should not across blk_cnt */
 		for (i = 0; i < blk_cnt; i++) {
 			if (j >= blk_cnt)
-				mtd_map_blk_table[blk_begin + i] = -1;
+				mtd_map_blk_table[blk_begin + i] = MTD_BLK_TABLE_BLOCK_SHIFT;
 			for (; j < blk_cnt; j++) {
 				if (!mtd_block_isbad(mtd, (blk_begin + j) * mtd->erasesize)) {
 					mtd_map_blk_table[blk_begin + i] = blk_begin + j;
@@ -95,7 +102,9 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 
 		mapped_offset = offset;
 		mapped = false;
-		if (mtd_map_blk_table)  {
+		if (mtd_map_blk_table &&
+		    mtd_map_blk_table[(u64)offset / erasesize] !=
+		    MTD_BLK_TABLE_BLOCK_UNKNOWN)  {
 			mapped = true;
 			mapped_offset = (loff_t)((u32)mtd_map_blk_table[(u64)offset /
 				erasesize] * erasesize + block_offset);
