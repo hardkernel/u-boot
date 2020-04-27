@@ -151,10 +151,9 @@ function fit_uboot_make_itb()
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
-		./make.sh spl-s $ARG_INI_LOADER
+		./make.sh loader $ARG_INI_LOADER
 	else
 		SIGN_MSG="signed"
-
 		if [ ! -f $KEY_DIR/dev.key ]; then
 			echo "ERROR: No $KEY_DIR/dev.key"
 			exit 1
