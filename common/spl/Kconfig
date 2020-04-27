@@ -800,7 +800,7 @@ config SPL_OPTEE
 
 config SPL_AB
 	bool "Support AB system boot"
-	depends on SPL
+	depends on SPL && SPL_EFI_PARTITION
 	help
 	  Enable this config to support AB system boot.
 

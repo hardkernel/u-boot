@@ -688,11 +688,11 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	part_drv = part_driver_lookup_type(dev_desc);
 	if (!part_drv)
 		return -1;
-
+#ifndef CONFIG_SPL_BUILD
 	/* 1. Query partition with A/B slot suffix */
 	if (rk_avb_append_part_slot(name, name_slot))
 		return -1;
-
+#endif
 retry:
 	debug("## Query partition(%d): %s\n", none_slot_try, name_slot);
 

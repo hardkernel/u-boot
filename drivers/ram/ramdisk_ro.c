@@ -63,3 +63,7 @@ U_BOOT_DRIVER(ramdisk_ro) = {
 	.of_match	= ramdisk_ro_ids,
 	.bind		= ramdisk_ro_bind,
 };
+
+U_BOOT_DEVICE(ramdisk_ro) = {
+	.name		= "ramdisk-ro",
+};
