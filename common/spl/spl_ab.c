@@ -242,26 +242,24 @@ out:
 	return 0;
 }
 
-int spl_get_partitions_sector(struct blk_desc *dev_desc, char *partition,
-			       u32 *sectors)
+int spl_ab_append_part_slot(struct blk_desc *dev_desc,
+			    const char *part_name,
+			    char *new_name)
 {
-	disk_partition_t part_info;
-	char part[10] = {0};
-	char slot[3] = {0};
+	char slot_suffix[3] = {0};
 
-	if (!partition || !sectors)
-		return -EFAULT;
+	if (!strcmp(part_name, "misc")) {
+		strcat(new_name, part_name);
+		return 0;
+	}
 
-	spl_get_current_slot(dev_desc, "misc", slot);
-	if (strlen(partition) > 8)
-		return -ENOMEM;
+	if (spl_get_current_slot(dev_desc, "misc", slot_suffix)) {
+		printf("%s: failed to get slot suffix !\n", __func__);
+		return -1;
+	}
 
-	strcat(part, partition);
-	strcat(part, slot);
-	if (part_get_info_by_name(dev_desc, part, &part_info) < 0)
-		return -ENODEV;
-
-	*sectors = part_info.start;
+	strcpy(new_name, part_name);
+	strcat(new_name, slot_suffix);
 
 	return 0;
 }
