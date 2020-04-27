@@ -127,6 +127,7 @@ struct rockchip_sfc {
 	u32 cmd;
 	u32 addr;
 	u8 addr_bits;
+	u8 addr_xbits_ext;
 	u8 dummy_bits;
 	u8 rw;
 	u32 trb;
@@ -263,6 +264,9 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 	if (sfc->addr_bits == SFC_ADDR_24BITS ||
 	    sfc->addr_bits == SFC_ADDR_32BITS)
 		data_width = rockchip_sfc_get_if_type(sfc);
+
+	if (sfc->addr_bits & SFC_ADDR_XBITS)
+		writel(sfc->addr_xbits_ext - 1, &regs->abit);
 
 	val |= (data_width << SFC_DATA_WIDTH_SHIFT);
 
@@ -524,11 +528,13 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 			break;
 		case 3: /* Nand prog,  */
 			sfc->addr_bits = SFC_ADDR_XBITS;
+			sfc->addr_xbits_ext = 16;
 			sfc->dummy_bits = 0;
 			sfc->addr = pcmd[2] | pcmd[1] << 8;
 			break;
 		case 2: /* Nand read/write feature */
 			sfc->addr_bits = SFC_ADDR_XBITS;
+			sfc->addr_xbits_ext = 8;
 			sfc->dummy_bits = 0;
 			sfc->addr = pcmd[1];
 			break;
