@@ -11,6 +11,9 @@
 #include <ide.h>
 #include <malloc.h>
 #include <part.h>
+#ifdef CONFIG_SPL_AB
+#include <spl_ab.h>
+#endif
 #include <ubifs_uboot.h>
 #ifdef CONFIG_ANDROID_AB
 #include <android_avb/avb_ops_user.h>
@@ -671,7 +674,6 @@ cleanup:
 	return ret;
 }
 
-#ifdef CONFIG_ANDROID_AB
 /*
  * For android A/B system, we append the current slot suffix quietly,
  * this takes over the responsibility of slot suffix appending from
@@ -688,14 +690,18 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	part_drv = part_driver_lookup_type(dev_desc);
 	if (!part_drv)
 		return -1;
-#ifndef CONFIG_SPL_BUILD
+#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_SPL_BUILD)
 	/* 1. Query partition with A/B slot suffix */
 	if (rk_avb_append_part_slot(name, name_slot))
 		return -1;
+#elif defined(CONFIG_SPL_AB) && defined(CONFIG_SPL_BUILD)
+	if (spl_ab_append_part_slot(dev_desc, name, name_slot))
+		return -1;
+#else
+	strcpy(name_slot, name);
 #endif
 retry:
 	debug("## Query partition(%d): %s\n", none_slot_try, name_slot);
-
 	for (i = 1; i < part_drv->max_entries; i++) {
 		ret = part_drv->get_info(dev_desc, i, info);
 		if (ret != 0) {
@@ -717,33 +723,6 @@ retry:
 
 	return -1;
 }
-
-#else
-int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
-			  disk_partition_t *info)
-{
-	struct part_driver *part_drv;
-	int ret;
-	int i;
-
-	part_drv = part_driver_lookup_type(dev_desc);
-	if (!part_drv)
-		return -1;
-	for (i = 1; i < part_drv->max_entries; i++) {
-		ret = part_drv->get_info(dev_desc, i, info);
-		if (ret != 0) {
-			/* no more entries in table */
-			break;
-		}
-		if (strcmp(name, (const char *)info->name) == 0) {
-			/* matched */
-			return i;
-		}
-	}
-
-	return -1;
-}
-#endif
 
 void part_set_generic_name(const struct blk_desc *dev_desc,
 	int part_num, char *name)
