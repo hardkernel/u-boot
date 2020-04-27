@@ -91,6 +91,14 @@ function fit_process_args()
 				ARG_NO_CHECK="y"
 				shift 1
 				;;
+			--ini-trust)
+				ARG_INI_TRUST=$2
+				shift 2
+				;;
+			--ini-loader)
+				ARG_INI_LOADER=$2
+				shift 2
+				;;
 			--rollback-index-boot)
 				ARG_ROLLBACK_IDX_BOOT=$2
 				arg_check_decimal $2
@@ -136,14 +144,14 @@ function fit_rebuild()
 
 function fit_uboot_make_itb()
 {
-	./make.sh itb
+	./make.sh itb $ARG_INI_TRUST
 	its_file_existence_check u-boot.its
 
 	# output uboot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
-		./make.sh spl-s
+		./make.sh spl-s $ARG_INI_LOADER
 	else
 		SIGN_MSG="signed"
 
@@ -216,7 +224,7 @@ function fit_uboot_make_itb()
 			cat spl/u-boot-spl-pad.bin >> spl/u-boot-spl.bin
 		fi
 		cat spl/u-boot-spl.dtb >> spl/u-boot-spl.bin
-		./make.sh spl-s
+		./make.sh spl-s $ARG_INI_LOADER
 	fi
 
 	# clean
