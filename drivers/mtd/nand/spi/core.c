@@ -1078,6 +1078,7 @@ static int spinand_init(struct spinand_device *spinand)
 			goto err_free_bufs;
 	}
 
+	nand->bbt.option = NANDDEV_BBT_USE_FLASH;
 	ret = nanddev_init(nand, &spinand_ops, THIS_MODULE);
 	if (ret)
 		goto err_manuf_cleanup;
