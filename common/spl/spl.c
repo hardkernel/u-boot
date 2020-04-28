@@ -253,9 +253,9 @@ static int spl_dcache_enable(void)
 		free_bd = true;
 	}
 #endif
-	/* TLB memory should be 64KB base align and 4KB end align */
+	/* TLB memory should be SZ_16K base align and 4KB end align */
 	gd->arch.tlb_size = PGTABLE_SIZE;
-	gd->arch.tlb_addr = (ulong)memalign(SZ_64K, ALIGN(PGTABLE_SIZE, SZ_4K));
+	gd->arch.tlb_addr = (ulong)memalign(SZ_16K, ALIGN(PGTABLE_SIZE, SZ_4K));
 	if (!gd->arch.tlb_addr) {
 		debug("spl: no TLB memory\n");
 		return -ENOMEM;
