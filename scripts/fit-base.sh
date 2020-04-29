@@ -56,6 +56,7 @@ function usage_pack()
 	fi
 	echo "    --no-vboot"
 	echo "    --no-check"
+	echo "    --new-spl"
 	echo
 }
 
@@ -79,25 +80,29 @@ function fit_process_args()
 {
 	while [ $# -gt 0 ]; do
 		case $1 in
-			--no-vboot)
+			--no-vboot)     # Force to build non-vboot image
 				ARG_NO_VBOOT="y"
 				shift 1
 				;;
-			--no-rebuild)
+			--no-rebuild)   # No rebuild with "./make.sh"
 				ARG_NO_REBUILD="y"
 				shift 1
 				;;
-			--no-check)
+			--no-check)     # No hostcc fit signature check
 				ARG_NO_CHECK="y"
 				shift 1
 				;;
-			--ini-trust)
+			--ini-trust)    # Assign trust ini file
 				ARG_INI_TRUST=$2
 				shift 2
 				;;
-			--ini-loader)
+			--ini-loader)   # Assign loader ini file
 				ARG_INI_LOADER=$2
 				shift 2
+				;;
+			--new-spl)      # Use current build u-boot-spl.bin to pack loader
+				ARG_NEW_SPL="y"
+				shift 1
 				;;
 			--rollback-index-boot)
 				ARG_ROLLBACK_IDX_BOOT=$2
@@ -117,7 +122,7 @@ function fit_process_args()
 	done
 }
 
-function its_file_existence_check()
+function its_file_check()
 {
 	cat $1 | while read line
 	do
@@ -145,13 +150,18 @@ function fit_rebuild()
 function fit_uboot_make_itb()
 {
 	./make.sh itb $ARG_INI_TRUST
-	its_file_existence_check u-boot.its
+	its_file_check u-boot.its
 
 	# output uboot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
-		./make.sh loader $ARG_INI_LOADER
+		if [ "$ARG_NEW_SPL" = "y" ]; then
+			./make.sh spl-s $ARG_INI_LOADER
+			echo "pack loader with: spl/u-boot-spl.bin"
+		else
+			./make.sh loader $ARG_INI_LOADER
+		fi
 	else
 		SIGN_MSG="signed"
 		if [ ! -f $KEY_DIR/dev.key ]; then
@@ -199,7 +209,21 @@ function fit_uboot_make_itb()
 		fi
 
 		if [ "$ARG_NO_CHECK" != "y" ]; then
-			./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl.dtb -s
+			if [ "$ARG_NEW_SPL" = "y" ]; then
+				./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl.dtb -s
+			else
+				# unpack legacy u-boot-spl.dtb
+				spl_file="../rkbin/"`sed -n "/FlashBoot=/s/FlashBoot=//p" $ARG_INI_LOADER |tr -d '\r'`
+				offs=`fdtdump -s $spl_file | head -1 | awk -F ":" '{ print $2 }' | sed "s/ found fdt at offset //g" | tr -d " "`
+				if [ -z $offs ]; then
+					echo "ERROR: invalid $spl_file, unable to find fdt blob"
+				fi
+				offs=`printf %d $offs` # hex -> dec
+				dd if=$spl_file of=spl/u-boot-spl-legacy.dtb bs=$offs skip=1  >/dev/null 2>&1
+
+				# check
+				./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl-legacy.dtb -s
+			fi
 		fi
 
 		# minimize spl dtb
@@ -217,13 +241,19 @@ function fit_uboot_make_itb()
 		fi
 
 		# repack spl which has rsa pub-key insert
-		ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
-		cat spl/u-boot-spl-nodtb.bin > spl/u-boot-spl.bin
-		if ! grep  -q '^CONFIG_SPL_SEPARATE_BSS=y' .config ; then
-			cat spl/u-boot-spl-pad.bin >> spl/u-boot-spl.bin
+		rm *_loader_*.bin -rf
+		if [ "$ARG_NEW_SPL" = "y" ]; then
+			cat spl/u-boot-spl-nodtb.bin > spl/u-boot-spl.bin
+			if ! grep  -q '^CONFIG_SPL_SEPARATE_BSS=y' .config ; then
+				cat spl/u-boot-spl-pad.bin >> spl/u-boot-spl.bin
+			fi
+			cat spl/u-boot-spl.dtb >> spl/u-boot-spl.bin
+
+			./make.sh spl-s $ARG_INI_LOADER
+			echo "pack loader with: spl/u-boot-spl.bin"
+		else
+			./make.sh loader $ARG_INI_LOADER
 		fi
-		cat spl/u-boot-spl.dtb >> spl/u-boot-spl.bin
-		./make.sh spl-s $ARG_INI_LOADER
 	fi
 
 	# clean
@@ -233,7 +263,7 @@ function fit_uboot_make_itb()
 	cp u-boot.dtb $FIT_DIR
 	cp spl/u-boot-spl.bin $FIT_DIR
 	cp spl/u-boot-spl.dtb $FIT_DIR
-	ls u-boot.itb u-boot.img u-boot-dtb.img >/dev/null 2>&1 && rm u-boot.itb u-boot.img u-boot-dtb.img -rf
+	rm u-boot.itb u-boot.img u-boot-dtb.img -rf
 	./scripts/dtc/dtc -I dtb -O dts $FIT_ITB_UBOOT -o $FIT_UNMAP_ITB_UBOOT >/dev/null 2>&1
 	./scripts/dtc/dtc -I dtb -O dts spl/u-boot-spl.dtb -o $FIT_UNMAP_KEY_UBOOT >/dev/null 2>&1
 }
@@ -247,7 +277,7 @@ function fit_boot_make_itb()
 	fi
 
 	cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
-	its_file_existence_check $FIT_ITS_BOOT
+	its_file_check $FIT_ITS_BOOT
 
 	# output boot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
@@ -351,7 +381,7 @@ function fit_uboot_make_img()
 	fi
 
 	# multiple backup
-	ls $FIT_IMG_UBOOT >/dev/null 2>&1 && rm $FIT_IMG_UBOOT
+	rm $FIT_IMG_UBOOT -rf
 	for ((i = 0; i < $ITB_MAX_NUM; i++));
 	do
 		cat $ITB_FILE >> $FIT_IMG_UBOOT
