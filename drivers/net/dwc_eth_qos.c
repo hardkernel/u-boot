@@ -313,6 +313,7 @@ struct eqos_priv {
 	struct eqos_tegra186_regs *tegra186_regs;
 	struct reset_ctl reset_ctl;
 	struct gpio_desc phy_reset_gpio;
+	u32 reset_delays[3];
 	struct clk clk_master_bus;
 	struct clk clk_rx;
 	struct clk clk_ptp_ref;
@@ -738,6 +739,15 @@ static int eqos_start_resets_stm32(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 	if (dm_gpio_is_valid(&eqos->phy_reset_gpio)) {
+		ret = dm_gpio_set_value(&eqos->phy_reset_gpio, 0);
+		if (ret < 0) {
+			pr_err("dm_gpio_set_value(phy_reset, deassert) failed: %d",
+			       ret);
+			return ret;
+		}
+
+		udelay(eqos->reset_delays[0]);
+
 		ret = dm_gpio_set_value(&eqos->phy_reset_gpio, 1);
 		if (ret < 0) {
 			pr_err("dm_gpio_set_value(phy_reset, assert) failed: %d",
@@ -745,7 +755,7 @@ static int eqos_start_resets_stm32(struct udevice *dev)
 			return ret;
 		}
 
-		udelay(2);
+		udelay(eqos->reset_delays[1]);
 
 		ret = dm_gpio_set_value(&eqos->phy_reset_gpio, 0);
 		if (ret < 0) {
@@ -753,6 +763,8 @@ static int eqos_start_resets_stm32(struct udevice *dev)
 			       ret);
 			return ret;
 		}
+
+		udelay(eqos->reset_delays[2]);
 	}
 	debug("%s: OK\n", __func__);
 
@@ -1863,9 +1875,27 @@ static int eqos_probe_resources_stm32(struct udevice *dev)
 		if (ret)
 			pr_warn("gpio_request_by_name(phy reset) not provided %d",
 				ret);
+		else
+			eqos->reset_delays[1] = 2;
 
 		eqos->phyaddr = ofnode_read_u32_default(phandle_args.node,
 							"reg", -1);
+	}
+
+	if (!dm_gpio_is_valid(&eqos->phy_reset_gpio)) {
+		int reset_flags = GPIOD_IS_OUT;
+
+		if (dev_read_bool(dev, "snps,reset-active-low"))
+			reset_flags |= GPIOD_ACTIVE_LOW;
+
+		ret = gpio_request_by_name(dev, "snps,reset-gpio", 0,
+					   &eqos->phy_reset_gpio, reset_flags);
+		if (ret == 0)
+			ret = dev_read_u32_array(dev, "snps,reset-delays-us",
+						 eqos->reset_delays, 3);
+		else
+			pr_warn("gpio_request_by_name(snps,reset-gpio) failed: %d",
+				ret);
 	}
 
 	debug("%s: OK\n", __func__);
