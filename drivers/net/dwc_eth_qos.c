@@ -1888,8 +1888,7 @@ static phy_interface_t eqos_get_interface_stm32(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
-	phy_mode = fdt_getprop(gd->fdt_blob, dev_of_offset(dev), "phy-mode",
-			       NULL);
+	phy_mode = dev_read_string(dev, "phy-mode");
 	if (phy_mode)
 		interface = phy_get_interface_by_name(phy_mode);
 
@@ -1990,9 +1989,9 @@ static int eqos_probe(struct udevice *dev)
 	eqos->dev = dev;
 	eqos->config = (void *)dev_get_driver_data(dev);
 
-	eqos->regs = devfdt_get_addr(dev);
+	eqos->regs = dev_read_addr(dev);
 	if (eqos->regs == FDT_ADDR_T_NONE) {
-		pr_err("devfdt_get_addr() failed");
+		pr_err("dev_read_addr() failed");
 		return -ENODEV;
 	}
 	eqos->mac_regs = (void *)(eqos->regs + EQOS_MAC_REGS_BASE);
