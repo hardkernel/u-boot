@@ -433,6 +433,13 @@ config ROCKCHIP_RV1126
 	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
 	  and a risc-v core.
 
+config ROCKCHIP_RV1109
+	bool "Support Rockchip RV1109"
+	select ROCKCHIP_RV1126
+	help
+	  The Rockchip RV1109 is a ARM-based SoC with a dual-core Cortex-A7
+	  and a risc-v core.
+
 config SPL_ROCKCHIP_BACK_TO_BROM
 	bool "SPL returns to bootrom"
 	default y if ROCKCHIP_RK3036
