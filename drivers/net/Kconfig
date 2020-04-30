@@ -276,7 +276,7 @@ config PIC32_ETH
 
 config GMAC_ROCKCHIP
 	bool "Rockchip Synopsys Designware Ethernet MAC"
-	depends on DM_ETH && ETH_DESIGNWARE
+	depends on DM_ETH && (ETH_DESIGNWARE || DWC_ETH_QOS)
 	help
 	  This driver provides Rockchip SoCs network support based on the
 	  Synopsys Designware driver.
