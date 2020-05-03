@@ -24,6 +24,10 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/mach-imx/sys_proto.h>
+#include <asm-generic/gpio.h>
+
+#include "fec_mxc.h"
+#include <eth_phy.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -1245,13 +1249,28 @@ static int fecmxc_probe(struct udevice *dev)
 	}
 
 	fec_reg_setup(priv);
-	priv->dev_id = (dev_id == -1) ? 0 : dev_id;
 
-	bus = fec_get_miibus(dev, dev_id);
+	priv->dev_id = dev->seq;
+
+#ifdef CONFIG_DM_ETH_PHY
+	bus = eth_phy_get_mdio_bus(dev);
+#endif
+
+	if (!bus) {
+#ifdef CONFIG_FEC_MXC_MDIO_BASE
+		bus = fec_get_miibus((ulong)CONFIG_FEC_MXC_MDIO_BASE, dev->seq);
+#else
+		bus = fec_get_miibus((ulong)priv->eth, dev->seq);
+#endif
+	}
 	if (!bus) {
 		ret = -ENOMEM;
 		goto err_mii;
 	}
+
+#ifdef CONFIG_DM_ETH_PHY
+	eth_phy_set_mdio_bus(dev, bus);
+#endif
 
 	priv->bus = bus;
 	priv->xcv_type = CONFIG_FEC_XCV_TYPE;
