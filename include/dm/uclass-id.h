@@ -37,6 +37,7 @@ enum uclass_id {
 	UCLASS_DISPLAY,		/* Display (e.g. DisplayPort, HDMI) */
 	UCLASS_DMA,		/* Direct Memory Access */
 	UCLASS_ETH,		/* Ethernet device */
+	UCLASS_ETH_PHY,		/* Ethernet PHY device */
 	UCLASS_GPIO,		/* Bank of general-purpose I/O pins */
 	UCLASS_FIRMWARE,	/* Firmware */
 	UCLASS_I2C,		/* I2C bus */

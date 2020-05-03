@@ -23,6 +23,12 @@ config DM_MDIO
 	  This is currently implemented in net/mdio-uclass.c
 	  Look in include/miiphy.h for details.
 
+config DM_ETH_PHY
+	bool "Enable Driver Model for Ethernet Generic PHY drivers"
+	depends on DM
+	help
+	  Enable driver model for Ethernet Generic PHY .
+
 menuconfig NETDEVICES
 	bool "Network device support"
 	depends on NET
