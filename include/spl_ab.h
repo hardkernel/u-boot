@@ -24,13 +24,16 @@ int spl_get_current_slot(struct blk_desc *dev_desc, char *partition,
 			 char *slot);
 
 /*
- * spl_get_partitions_sector
+ * spl_ab_append_part_slot
  *
  * @dev_desc: block description
- * @partition: partition name
- * @sectors: firmware load address
+ * @part_name: partition name
+ * @new_name: append the slot suffix
+ *
+ * return: 0 success, others fail.
  */
-int spl_get_partitions_sector(struct blk_desc *dev_desc, char *partition,
-			       u32 *sectors);
+int spl_ab_append_part_slot(struct blk_desc *dev_desc,
+			    const char *part_name,
+			    char *new_name);
 
  #endif
