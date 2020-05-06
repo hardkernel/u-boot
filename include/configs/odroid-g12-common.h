@@ -158,6 +158,7 @@
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
+        "cramfsaddr=0x20000000\0" \
         "fb_addr=0x3d800000\0" \
         "fb_width=1920\0" \
         "fb_height=1080\0" \
@@ -198,10 +199,17 @@
                 "recovery_part=recovery recovery_offset=0; "\
             "for n in ${mmc_list}; do "\
                 "mmc dev ${n}; " \
+                "movi read dtbs 0 ${cramfsaddr}; " \
+                "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
+                "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
+                    "cramfsload ${loadaddr} " CONFIG_DEVICE_PRODUCT "-opp.dtbo;" \
+                    "fdt addr ${dtb_mem_addr};" \
+                    "fdt resize 8192;" \
+                    "fdt apply ${loadaddr};" \
+                "fi;" \
                 "movi read recovery 0 ${loadaddr}; " \
-                "movi read dtbs 0 ${dtb_mem_addr}; " \
                 "booti ${loadaddr} - ${dtb_mem_addr}; " \
-                "bootm;" \
+                "bootm ${loadaddr};" \
             "done\0" \
         "boot_rawimage=" \
 	    "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
@@ -211,10 +219,17 @@
             "androidboot.hardware=" CONFIG_DEVICE_PRODUCT "; " \
             "for n in ${mmc_list}; do " \
                 "mmc dev ${n}; " \
+	        "movi read dtbs 0 ${cramfsaddr}; " \
+	        "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
+            "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
+                "cramfsload ${loadaddr} " CONFIG_DEVICE_PRODUCT "-opp.dtbo;" \
+                "fdt addr ${dtb_mem_addr};" \
+                "fdt resize 8192;" \
+                "fdt apply ${loadaddr};" \
+            "fi;" \
 	        "movi read boot 0 ${loadaddr}; " \
-	        "movi read dtbs 0 ${dtb_mem_addr}; " \
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
-	        "bootm; " \
+	        "bootm ${loadaddr}; " \
             "done\0" \
         "init_display="\
             "osd open; osd clear; " \
