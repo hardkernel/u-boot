@@ -243,47 +243,6 @@ static int fit_image_load_one(void *fit, struct blk_desc *dev_desc,
 	return 0;
 }
 
-static int fit_image_load_fdt(void *fit, struct blk_desc *dev_desc,
-			      disk_partition_t *part, int images,
-			      int defconf, void *dst)
-{
-	return fit_image_load_one(fit, dev_desc, part, images,
-				  defconf, FIT_FDT_PROP, dst);
-}
-
-#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-static int fit_image_load_resource(void *fit, struct blk_desc *dev_desc,
-				   disk_partition_t *part, int images,
-				   int defconf, ulong *addr)
-{
-	ulong fdt_addr_r, dst;
-	int offset, size;
-	int err;
-
-	err = fit_get_load_and_data(fit, images, defconf, FIT_MULTI_PROP,
-				    NULL, &offset, &size);
-	if (err)
-		return err;
-
-	fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
-	if (!fdt_addr_r)
-		return -EINVAL;
-
-	/* reserve enough space before fdt */
-	dst = fdt_addr_r -
-		ALIGN(size, dev_desc->blksz) - CONFIG_SYS_FDT_PAD;
-
-	if (!sysmem_alloc_base(MEM_RESOURCE, (phys_addr_t)dst,
-			       ALIGN(size, dev_desc->blksz)))
-		return -ENOMEM;
-
-	*addr = dst;
-
-	return fit_image_load_one(fit, dev_desc, part, images, defconf,
-				  FIT_MULTI_PROP, (void *)dst);
-}
-#endif
-
 static void *fit_get_blob(struct blk_desc *dev_desc, disk_partition_t *part)
 {
 	void *fit, *fdt;
@@ -327,6 +286,47 @@ static void *fit_get_blob(struct blk_desc *dev_desc, disk_partition_t *part)
 fail:
 	free(fdt);
 	return NULL;
+}
+
+#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+static int fit_image_load_resource(void *fit, struct blk_desc *dev_desc,
+				   disk_partition_t *part, int images,
+				   int defconf, ulong *addr)
+{
+	ulong fdt_addr_r, dst;
+	int offset, size;
+	int err;
+
+	err = fit_get_load_and_data(fit, images, defconf, FIT_MULTI_PROP,
+				    NULL, &offset, &size);
+	if (err)
+		return err;
+
+	fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
+	if (!fdt_addr_r)
+		return -EINVAL;
+
+	/* reserve enough space before fdt */
+	dst = fdt_addr_r -
+		ALIGN(size, dev_desc->blksz) - CONFIG_SYS_FDT_PAD;
+
+	if (!sysmem_alloc_base(MEM_RESOURCE, (phys_addr_t)dst,
+			       ALIGN(size, dev_desc->blksz)))
+		return -ENOMEM;
+
+	*addr = dst;
+
+	return fit_image_load_one(fit, dev_desc, part, images, defconf,
+				  FIT_MULTI_PROP, (void *)dst);
+}
+#else
+
+static int fit_image_load_fdt(void *fit, struct blk_desc *dev_desc,
+			      disk_partition_t *part, int images,
+			      int defconf, void *dst)
+{
+	return fit_image_load_one(fit, dev_desc, part, images,
+				  defconf, FIT_FDT_PROP, dst);
 }
 
 static int fit_image_get_fdt_hash(void *fit, int images, int defconf,
@@ -386,6 +386,7 @@ static int fit_image_get_fdt_hash(void *fit, int images, int defconf,
 
 	return 0;
 }
+#endif
 
 ulong fit_image_get_bootable_size(void *fit)
 {
@@ -470,8 +471,10 @@ static void verbose_msg(void *fit, int defconf)
 	      fit_is_signed(fit, gd_fdt_blob()) ? "" : "no ",
 	      fit_is_required(fit, gd_fdt_blob()) ? "" : "no ");
 
+#ifndef CONFIG_ROCKCHIP_RESOURCE_IMAGE
 	printf("DTB: %s\n",
 	       (char *)fdt_getprop(fit, defconf, FIT_FDT_PROP, NULL));
+#endif
 }
 
 int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
@@ -480,10 +483,10 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 	disk_partition_t part;
 	char *part_name;
 	void *fit;
-	ulong rsce;
+	ulong rsce __maybe_unused;
 	int images;
 	int defconf;
-	int err;
+	int ret;
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -496,10 +499,10 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 	else
 		part_name = PART_BOOT;
 
-	err = part_get_info_by_name(dev_desc, part_name, &part);
-	if (err < 0) {
+	ret = part_get_info_by_name(dev_desc, part_name, &part);
+	if (ret < 0) {
 		FIT_I("No %s partition\n", part_name);
-		return err;
+		return ret;
 	}
 
 	fit = fit_get_blob(dev_desc, &part);
@@ -510,41 +513,43 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 
 	if (fit_get_image_defconf_node(fit, &images, &defconf)) {
 		FIT_I("Failed to get /images and /configures default\n");
-		err = -ENODEV;
+		ret = -ENODEV;
 		goto out;
 	}
 
-	if (fit_image_load_fdt(fit, dev_desc, &part,
-			       images, defconf, fdt_addr)) {
-		FIT_I("Failed to load fdt\n");
-		err = -EINVAL;
-		goto out;
-	}
-
-	err = fit_image_get_fdt_hash(fit, images, defconf, hash, hash_size);
-	if (err && err != -ENODEV) {
-		FIT_I("Failed to get fdt hash\n");
-		err = -EINVAL;
-		goto out;
-	}
-
-	verbose_msg(fit, defconf);
-
-	/* load resource file */
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-	err = fit_image_load_resource(fit, dev_desc, &part,
+	ret = fit_image_load_resource(fit, dev_desc, &part,
 				      images, defconf, &rsce);
-	if (!err) {
-		if (resource_create_ram_list(dev_desc, (void *)rsce))
-			FIT_I("Failed to create resource list\n");
-	} else if (err == -ENODEV) {
-		FIT_I("No resource file\n");
-	} else {
-		FIT_I("Failed to load resource file\n");
+	if (ret) {
+		FIT_I("Failed to load resource\n");
+		goto out;
+	}
+
+	ret = resource_create_ram_list(dev_desc, (void *)rsce);
+	if (ret) {
+		FIT_I("Failed to create resource list\n");
+		goto out;
+	}
+
+	ret = rockchip_read_resource_dtb(fdt_addr, hash, hash_size);
+#else
+	ret = fit_image_load_fdt(fit, dev_desc, &part, images,
+				 defconf, fdt_addr);
+	if (ret) {
+		FIT_I("Failed to load fdt\n");
+		goto out;
+	}
+
+	ret = fit_image_get_fdt_hash(fit, images, defconf, hash, hash_size);
+	if (ret) {
+		FIT_I("Failed to get fdt hash\n");
+		goto out;
 	}
 #endif
+
+	verbose_msg(fit, defconf);
 out:
 	free(fit);
 
-	return err;
+	return ret;
 }
