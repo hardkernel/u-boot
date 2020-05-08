@@ -178,15 +178,18 @@ function process_args()
 				;;
 
 			--rollback-index-uboot)
-				ARG_ROLLBACK_IDX_UBOOT="--rollback-index-uboot "$2
+				ARG_ROLLBACK_IDX_UBOOT="$1 "$2
 				shift 2
 				;;
 
 			--rollback-index-boot)
-				ARG_ROLLBACK_IDX_BOOT="--rollback-index-boot "$2
+				ARG_ROLLBACK_IDX_BOOT="$1 "$2
 				shift 2
 				;;
-
+			--boot_img)
+				ARG_EXT_BOOT_IMG="$1 "$2
+				shift 2
+				;;
 			--new-spl)
 				ARG_NEW_SPL=$1
 				shift 1
@@ -307,7 +310,7 @@ function sub_commands()
 
 		fit)
 			if [ "$opt" = "ns" ]; then
-				./scripts/fit-vboot.sh --no-vboot --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_NEW_SPL
+				./scripts/fit-vboot.sh --no-vboot --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_NEW_SPL $ARG_EXT_BOOT_IMG
 			fi
 			exit 0
 			;;
@@ -353,7 +356,7 @@ function sub_commands()
 			;;
 
 		--rollback-index*)
-			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL
+			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL $ARG_EXT_BOOT_IMG
 			exit 0
 			;;
 
@@ -731,10 +734,10 @@ function pack_trust_image()
 function pack_fit_image()
 {
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		./scripts/fit-vboot.sh $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_NEW_SPL
+		./scripts/fit-vboot.sh $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_NEW_SPL $ARG_EXT_BOOT_IMG
 	else
 		rm uboot.img trust*.img -rf
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL $ARG_EXT_BOOT_IMG
 		echo "pack uboot.img (with uboot trust) okay! Input: $INI_TRUST"
 	fi
 }
@@ -747,7 +750,7 @@ function pack_images()
 			pack_trust_image
 			pack_loader_image
 		elif [ "$IMAGE_FORMAT" = "FIT" ]; then
-			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL
+			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_NEW_SPL $ARG_EXT_BOOT_IMG
 		fi
 	fi
 }
