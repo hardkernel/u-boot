@@ -6,6 +6,8 @@
 #
 set -e
 
+IMAGE_ITS="image.its"
+
 function usage()
 {
 	echo
@@ -104,10 +106,39 @@ function gen_images()
 		fi
 	done
 
-	rm $output/unpack.txt
 	echo
+}
+
+function gen_its()
+{
+	./scripts/dtc/dtc -I dtb -O dts $IMAGE -o $IMAGE_DIR/$IMAGE_ITS >/dev/null 2>&1
+
+	FIT_IMAGE_ITS=$IMAGE_DIR/$IMAGE_ITS
+
+	# remove
+	sed -i "/memreserve/d"       $FIT_IMAGE_ITS
+	sed -i "/data-size/d"        $FIT_IMAGE_ITS
+	sed -i "/data-position/d"    $FIT_IMAGE_ITS
+	sed -i "/value/d"            $FIT_IMAGE_ITS
+	sed -i "/hashed-strings/d"   $FIT_IMAGE_ITS
+	sed -i "/hashed-nodes/d"     $FIT_IMAGE_ITS
+	sed -i "/signer-version/d"   $FIT_IMAGE_ITS
+	sed -i "/signer-name/d"      $FIT_IMAGE_ITS
+	sed -i "/timestamp/d"        $FIT_IMAGE_ITS
+
+	# add placeholder
+	sed -i '/image = /a\	\	\	data = /incbin/("IMAGE_PATH");' $FIT_IMAGE_ITS
+
+	# fixup placeholder: "data = /incbin/("...");"
+	num=`grep 'image =' $FIT_IMAGE_ITS | wc -l`
+	for ((i = 1; i <= $num; i++));
+	do
+		NAME=`grep 'image =' $FIT_IMAGE_ITS | sed -n ''${i}p'' | awk '{ printf $3 }' | tr -d '";'`
+		sed -i ''$i',/IMAGE_PATH/{s/IMAGE_PATH/.\/'$NAME'/}'  $FIT_IMAGE_ITS
+	done
 }
 
 args_process $*
 gen_images
+gen_its
 
