@@ -26,12 +26,20 @@ extern void board_odroid_recovery(void);
 extern int board_check_power(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
+#define WIFI_EN_GPIO	110 /* GPIO3_B6 */
 
 void board_alive_led(void)
 {
 	gpio_request(ALIVE_LED_GPIO, "alive_led");
 	gpio_direction_output(ALIVE_LED_GPIO, 1);
 	gpio_free(ALIVE_LED_GPIO);
+}
+
+void board_wifi_en(void)
+{
+	gpio_request(WIFI_EN_GPIO, "wifi_enable");
+	gpio_direction_output(WIFI_EN_GPIO, 1);
+	gpio_free(WIFI_EN_GPIO);
 }
 
 int board_check_autotest(void)
@@ -140,6 +148,9 @@ int rk_board_late_init(void)
 {
 	/* turn on blue led */
 	board_alive_led();
+
+	/* set wifi_en as default high */
+	board_wifi_en();
 
 	/* set uart2-m1 port as a default debug console */
 	board_debug_uart2m1();
