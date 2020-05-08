@@ -30,6 +30,7 @@ FIT_UNMAP_ITB_BOOT="fit/boot_unmap_itb.dts"
 FIT_UNMAP_KEY_UBOOT="fit/uboot_unmap_key.dts"
 FIT_UNMAP_KEY_BOOT="fit/boot_unmap_key.dts"
 # file
+FIT_ITS_BOOT="kernel_arm.its"
 CHIP_FILE="arch/arm/lib/.asm-offsets.s.cmd"
 # placeholder address
 FIT_FDT_ADDR_PLACEHOLDER="0xffffff00"
@@ -270,12 +271,6 @@ function fit_uboot_make_itb()
 
 function fit_boot_make_itb()
 {
-	if grep -q '^CONFIG_ARM64=y' .config ; then
-		FIT_ITS_BOOT="kernel_arm64.its"
-	else
-		FIT_ITS_BOOT="kernel_arm.its"
-	fi
-
 	cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
 	its_file_check $FIT_ITS_BOOT
 
@@ -315,6 +310,11 @@ function fit_boot_make_itb()
 		sed -i "s/$FIT_FDT_ADDR_PLACEHOLDER/$FDT_ADDR_R/g"         $FIT_ITS_BOOT
 		sed -i "s/$FIT_KERNEL_ADDR_PLACEHOLDER/$KERNEL_ADDR_R/g"   $FIT_ITS_BOOT
 		sed -i "s/$FIT_RAMDISK_ADDR_PLACEHOLDER/$RMADISK_ADDR_R/g" $FIT_ITS_BOOT
+
+		if grep -q '^CONFIG_ARM64=y' .config ; then
+			sed -i 's/arch = "arm";/arch = "arm64";/g' $FIT_ITS_BOOT
+		fi
+
 		if [ "$ROLLBACK_PROTECT" = "y" ]; then
 			sed -i "s/rollback-index = <0x0>/rollback-index = <$ARG_ROLLBACK_IDX_BOOT>/g" $FIT_ITS_BOOT
 		fi
