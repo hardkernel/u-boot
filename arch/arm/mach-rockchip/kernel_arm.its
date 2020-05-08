@@ -8,12 +8,12 @@
 
 /dts-v1/;
 / {
-	description = "U-Boot FIT source file for arm";
+	description = "FIT source file for Linux";
 	#address-cells = <1>;
 
 	images {
 		fdt@1 {
-			description = "Device tree blob for arm";
+			description = "Device tree blob";
 			image = "rk-kernel.dtb";
 			data = /incbin/("images/rk-kernel.dtb");
 			type = "flat_dt";
@@ -26,7 +26,7 @@
 		};
 
 		kernel@1 {
-			description = "Kernel for arm";
+			description = "Kernel Image";
 			image = "kernel.img";
 			data = /incbin/("images/kernel.img");
 			type = "kernel";
@@ -41,7 +41,7 @@
 		};
 
 		ramdisk@1 {
-			description = "Ramdisk for arm";
+			description = "Ramdisk Image";
 			image = "ramdisk.img";
 			data = /incbin/("images/ramdisk.img");
 			type = "ramdisk";
@@ -55,7 +55,7 @@
 		};
 
 		resource@1 {
-			description = "Resource for arm";
+			description = "Resource Image";
 			image = "resource.img";
 			data = /incbin/("images/resource.img");
 			type = "multi";
