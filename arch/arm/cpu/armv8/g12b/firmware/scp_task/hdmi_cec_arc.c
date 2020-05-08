@@ -451,7 +451,7 @@ void cec_routing_change(void)
 {
 	unsigned char phy_addr_ab = (readl(P_AO_DEBUG_REG1) >> 8) & 0xff;
 	unsigned char phy_addr_cd = readl(P_AO_DEBUG_REG1) & 0xff;
-	cec_dbg_print(", phy_addr_ab:0x", phy_addr_ab);
+	cec_dbg_print("0x80, phy_addr_ab:0x", phy_addr_ab);
 	cec_dbg_print(", phy_addr_cd:0x", phy_addr_cd);
 	cec_dbg_print(", msg[4]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[4]);
 	cec_dbg_print(", msg[5]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[5]);
@@ -462,6 +462,26 @@ void cec_routing_change(void)
 			/* wake up if routing destination is self */
 			if ((phy_addr_ab == cec_msg.buf[cec_msg.rx_read_pos].msg[4]) &&
 				(phy_addr_cd == cec_msg.buf[cec_msg.rx_read_pos].msg[5]))
+				cec_msg.cec_power = 0x1;
+		}
+	}
+}
+
+static void cec_routing_information(void)
+{
+	unsigned char phy_addr_ab = (readl(P_AO_DEBUG_REG1) >> 8) & 0xff;
+	unsigned char phy_addr_cd = readl(P_AO_DEBUG_REG1) & 0xff;
+	cec_dbg_print("0x81, phy_addr_ab:0x", phy_addr_ab);
+	cec_dbg_print(", phy_addr_cd:0x", phy_addr_cd);
+	cec_dbg_print(", msg[2]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[2]);
+	cec_dbg_print(", msg[3]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[3]);
+	cec_dbg_prints("\n");
+
+	if ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) {
+		if ((hdmi_cec_func_config >> STREAMPATH_POWER_ON_MASK) & 0x1) {
+			/* wake up if routing destination is self */
+			if ((phy_addr_ab == cec_msg.buf[cec_msg.rx_read_pos].msg[2]) &&
+				(phy_addr_cd == cec_msg.buf[cec_msg.rx_read_pos].msg[3]))
 				cec_msg.cec_power = 0x1;
 		}
 	}
@@ -591,6 +611,9 @@ static unsigned int cec_handle_message(void)
 		case CEC_OC_ROUTING_CHANGE:
 			cec_routing_change();
 			break;
+		case CEC_OC_ROUTING_INFORMATION:
+			cec_routing_information();
+			break;
 		case CEC_OC_GIVE_DEVICE_POWER_STATUS:
 			cec_report_device_power_status(source);
 			break;
@@ -614,7 +637,7 @@ static unsigned int cec_handle_message(void)
 			dest = cec_msg.buf[cec_msg.rx_read_pos].msg[0] & 0xf;
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
 			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
-			    (dest == CEC_TV_ADDR)) {
+			    (source == CEC_TV_ADDR)) {
 				/* request active source needed */
 				phy_addr = 0xffff;
 				cec_msg.cec_power = 0x1;
@@ -629,8 +652,8 @@ static unsigned int cec_handle_message(void)
 			phy_addr = (cec_msg.buf[cec_msg.rx_read_pos].msg[2] << 8) |
 				   (cec_msg.buf[cec_msg.rx_read_pos].msg[3] << 0);
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
-			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
-			    (dest == CEC_TV_ADDR && check_addr(phy_addr))) {
+			    ((hdmi_cec_func_config >> ACTIVE_SOURCE_MASK) & 0x1) &&
+			    (source == CEC_TV_ADDR && (dest == CEC_BROADCAST_ADDR || check_addr(phy_addr)))) {
 				cec_msg.cec_power = 0x1;
 				wake =  (phy_addr << 0) |
 					(source << 16);
