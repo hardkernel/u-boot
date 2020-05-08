@@ -6,31 +6,32 @@
 #
 set -e
 
-FIT_DIR="fit"
 KEY_DIR="keys"
+FIT_DIR="fit"
+FIT_DIR_UNPACK="$FIT_DIR/unpack"
+# offset
 FIT_NS_OFFS_UBOOT="0xa00"
 FIT_NS_OFFS_BOOT="0x800"
 FIT_S_OFFS_UBOOT="0xc00"
 FIT_S_OFFS_BOOT="0xc00"
 # itb
-FIT_ITB_UBOOT="fit/uboot.itb"
-FIT_ITB_BOOT="fit/boot.itb"
+FIT_ITB_UBOOT="$FIT_DIR/uboot.itb"
+FIT_ITB_BOOT="$FIT_DIR/boot.itb"
 # resign
-FIT_ITB_RESIG="fit/sig-new.itb"
-FIT_ITB_RESIG_BACKUP="fit/sig-backup.itb"
-FIT_SIG_P1="fit/sig.p1"
-FIT_SIG_P2="fit/sig.p2.sig"
-FIT_SIG_P3="fit/sig.p3"
-# data to be signed
-FIT_DATA2SIG_UBOOT="fit/uboot.data2sign"
-FIT_DATA2SIG_BOOT="fit/boot.data2sign"
+FIT_ITB_RESIG="$FIT_DIR/sig-new.itb"
+FIT_ITB_RESIG_BACKUP="$FIT_DIR/sig-backup.itb"
+FIT_SIG_P1="$FIT_DIR/sig.p1"
+FIT_SIG_P2="$FIT_DIR/sig.p2.sig"
+FIT_SIG_P3="$FIT_DIR/sig.p3"
+# data to sign
+FIT_DATA2SIG_UBOOT="$FIT_DIR/uboot.data2sign"
+FIT_DATA2SIG_BOOT="$FIT_DIR/boot.data2sign"
 # unmap
-FIT_UNMAP_ITB_UBOOT="fit/uboot_unmap_itb.dts"
-FIT_UNMAP_ITB_BOOT="fit/boot_unmap_itb.dts"
-FIT_UNMAP_KEY_UBOOT="fit/uboot_unmap_key.dts"
-FIT_UNMAP_KEY_BOOT="fit/boot_unmap_key.dts"
+FIT_UNMAP_ITB_UBOOT="$FIT_DIR/uboot_unmap_itb.its"
+FIT_UNMAP_KEY_UBOOT="$FIT_DIR/uboot_unmap_key.its"
+FIT_UNMAP_ITB_BOOT="$FIT_DIR/boot_unmap_itb.its"
+FIT_UNMAP_KEY_BOOT="$FIT_DIR/boot_unmap_key.its"
 # file
-FIT_ITS_BOOT="kernel_arm.its"
 CHIP_FILE="arch/arm/lib/.asm-offsets.s.cmd"
 # placeholder address
 FIT_FDT_ADDR_PLACEHOLDER="0xffffff00"
@@ -115,6 +116,10 @@ function fit_process_args()
 				arg_check_decimal $2
 				shift 2
 				;;
+			--boot_img)
+				ARGS_EXT_BOOT_IMG=$2
+				shift 2
+				;;
 			*)
 				usage_pack
 				exit 1
@@ -146,6 +151,7 @@ function fit_rebuild()
 	fi
 
 	mkdir -p $FIT_DIR
+	mkdir -p $FIT_DIR_UNPACK
 }
 
 function fit_uboot_make_itb()
@@ -271,8 +277,14 @@ function fit_uboot_make_itb()
 
 function fit_boot_make_itb()
 {
-	cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
-	its_file_check $FIT_ITS_BOOT
+	if [ ! -z $ARGS_EXT_BOOT_IMG ]; then
+		./scripts/fit-unpack.sh -f $ARGS_EXT_BOOT_IMG -o $FIT_DIR/unpack
+		FIT_ITS_BOOT="$FIT_DIR/unpack/image.its"
+	else
+		FIT_ITS_BOOT="kernel_arm.its"
+		cp arch/arm/mach-rockchip/$FIT_ITS_BOOT ./
+		its_file_check $FIT_ITS_BOOT
+	fi
 
 	# output boot.itb
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
