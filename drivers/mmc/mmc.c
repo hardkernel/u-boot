@@ -572,7 +572,17 @@ static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 
 	err = mmc_send_cmd(mmc, &cmd, &data);
 	memcpy(mmc_ext_csd, ext_csd, 512);
+#if defined(CONFIG_MMC_USE_PRE_CONFIG) && defined(CONFIG_SPL_BUILD)
+	char *mmc_ecsd_base = NULL;
+	ulong mmc_ecsd;
 
+	mmc_ecsd = dev_read_u32_default(mmc->dev, "mmc-ecsd", 0);
+	mmc_ecsd_base = (char *)mmc_ecsd;
+	if (mmc_ecsd_base) {
+		memcpy(mmc_ecsd_base, ext_csd, 512);
+		*(unsigned int *)(mmc_ecsd_base + 512) = 0x55aa55aa;
+	}
+#endif
 	return err;
 }
 
