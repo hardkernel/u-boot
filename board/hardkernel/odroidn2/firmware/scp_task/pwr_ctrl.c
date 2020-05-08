@@ -182,6 +182,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned int is_gpiokey = 0;
 #endif
 
+	backup_remote_register();
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 		if (hdmi_cec_func_config & 0x1) {
@@ -249,6 +250,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			__switch_idle_task();
 	} while (1);
+
+	restore_remote_register();
 
 	return exit_reason;
 }
