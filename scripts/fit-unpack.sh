@@ -24,11 +24,11 @@ function args_process()
 	while [ $# -gt 0 ]; do
 		case $1 in
 			-f)
-				file=$2
+				IMAGE=$2
 				shift 2
 				;;
 			-o)
-				output=$2
+				IMAGE_DIR=$2
 				shift 2
 				;;
 			*)
@@ -38,51 +38,51 @@ function args_process()
 		esac
 	done
 
-	if [ ! -f $file ]; then
-		echo "ERROR: No $file"
+	if [ ! -f $IMAGE ]; then
+		echo "ERROR: No $IMAGE"
 		exit 1
 	fi
 
-	if [ -z $output ]; then
-		output="out"
+	if [ -z $IMAGE_DIR ]; then
+		IMAGE_DIR="out"
 	fi
 
-	mkdir -p $output
+	mkdir -p $IMAGE_DIR
 }
 
 function gen_images()
 {
-	printf "\n# Unpack $file to directory $output/\n"
-	fdtget -l $file /images > $output/unpack.txt
-	cat $output/unpack.txt | while read line
+	printf "\n# Unpack $IMAGE to directory $IMAGE_DIR/\n"
+	fdtget -l $IMAGE /images > $IMAGE_DIR/unpack.txt
+	cat $IMAGE_DIR/unpack.txt | while read line
 	do
 		# generate image
-		node="/images/${line}"
-		name=`fdtget -ts $file $node image`
-		offs=`fdtget -ti $file $node data-position`
-		size=`fdtget -ti $file $node data-size`
-		if [ -z $offs ]; then
+		NODE="/images/${line}"
+		NAME=`fdtget -ts $IMAGE $NODE image`
+		OFFS=`fdtget -ti $IMAGE $NODE data-position`
+		SIZE=`fdtget -ti $IMAGE $NODE data-size`
+		if [ -z $OFFS ]; then
 			continue;
 		fi
 
-		if [ $size -ne 0 ]; then
-			dd if=$file of=$output/dd.tmp  bs=$offs skip=1  >/dev/null 2>&1
-			dd if=$output/dd.tmp of=$output/$name bs=$size count=1 >/dev/null 2>&1
-			rm $output/dd.tmp
+		if [ $SIZE -ne 0 ]; then
+			dd if=$IMAGE of=$IMAGE_DIR/dd.tmp  bs=$OFFS skip=1  >/dev/null 2>&1
+			dd if=$IMAGE_DIR/dd.tmp of=$IMAGE_DIR/$NAME bs=$SIZE count=1 >/dev/null 2>&1
+			rm $IMAGE_DIR/dd.tmp
 		else
-			touch $output/$name
+			touch $IMAGE_DIR/$NAME
 		fi
 
 		# hash verify
-		algo=`fdtget -ts $file $node/hash@1 algo`
+		algo=`fdtget -ts $IMAGE $NODE/hash@1 algo`
 		if [ -z $algo ]; then
-			printf "    %-20s: %d bytes" $name $size
+			printf "    %-20s: %d bytes" $NAME $SIZE
 			continue;
 		fi
 
-		data=`fdtget -tx $file $node/hash@1 value`
+		data=`fdtget -tx $IMAGE $NODE/hash@1 value`
 		data=`echo " "$data | sed "s/ / 0x/g"`
-		csum=`"$algo"sum $output/$name | awk '{ print $1}'`
+		csum=`"$algo"sum $IMAGE_DIR/$NAME | awk '{ print $1}'`
 
 		hash=""
 		for((i=1;;i++));
@@ -96,8 +96,8 @@ function gen_images()
 			hash="$hash$hex"
 		done
 
-		printf "  %-20s: %d bytes... %s" $name $size $algo
-		if [ "$csum" = "$hash" -o $size -eq 0 ]; then
+		printf "  %-20s: %d bytes... %s" $NAME $SIZE $algo
+		if [ "$csum" = "$hash" -o $SIZE -eq 0 ]; then
 			echo "+"
 		else
 			echo "-"
