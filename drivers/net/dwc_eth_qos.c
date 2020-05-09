@@ -1183,10 +1183,12 @@ static int eqos_init(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
-	ret = eqos->config->ops->eqos_start_clks(dev);
-	if (ret < 0) {
-		pr_err("eqos_start_clks() failed: %d", ret);
-		goto err;
+	if (eqos->config->ops->eqos_start_clks) {
+		ret = eqos->config->ops->eqos_start_clks(dev);
+		if (ret < 0) {
+			pr_err("eqos_start_clks() failed: %d", ret);
+			goto err;
+		}
 	}
 
 	ret = eqos->config->ops->eqos_start_resets(dev);
@@ -1276,7 +1278,8 @@ err_shutdown_phy:
 err_stop_resets:
 	eqos->config->ops->eqos_stop_resets(dev);
 err_stop_clks:
-	eqos->config->ops->eqos_stop_clks(dev);
+	if (eqos->config->ops->eqos_stop_clks)
+		eqos->config->ops->eqos_stop_clks(dev);
 err:
 	pr_err("FAILED: %d", ret);
 	return ret;
@@ -1575,7 +1578,8 @@ static void eqos_stop(struct udevice *dev)
 		phy_shutdown(eqos->phy);
 	}
 	eqos->config->ops->eqos_stop_resets(dev);
-	eqos->config->ops->eqos_stop_clks(dev);
+	if (eqos->config->ops->eqos_stop_clks)
+		eqos->config->ops->eqos_stop_clks(dev);
 
 	debug("%s: OK\n", __func__);
 }
