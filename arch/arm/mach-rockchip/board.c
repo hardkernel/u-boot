@@ -238,12 +238,30 @@ static void env_fixup(void)
 		}
 	}
 #endif
-	/* If bl32 is disabled, maybe kernel can be load to lower address. */
+	/* If BL32 is disabled, move kernel to lower address. */
 	if (!(gd->flags & GD_FLG_BL32_ENABLED)) {
 		addr_r = env_get("kernel_addr_no_bl32_r");
 		if (addr_r)
 			env_set("kernel_addr_r", addr_r);
-	/* If bl32 is enlarged, we move ramdisk addr right behind it */
+
+		/*
+		 * 0x0a200000 and 0x08400000 are rockchip traditional address
+		 * of BL32 and ramdisk:
+		 *
+		 * |------------|------------|
+		 * |    BL32    |  ramdisk   |
+		 * |------------|------------|
+		 *
+		 * Move ramdisk to BL32 address to fix sysmem alloc failed
+		 * issue on the board with critical memory(ie. 256MB).
+		 */
+		if (gd->ram_size > SZ_128M && gd->ram_size <= SZ_256M) {
+			u_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
+			if (u_addr_r == 0x0a200000)
+				env_set("ramdisk_addr_r", "0x08400000");
+		}
+
+	/* If BL32 is enlarged, move ramdisk right behind it */
 	} else {
 		mem = param_parse_optee_mem();
 		end = mem.base + mem.size;
