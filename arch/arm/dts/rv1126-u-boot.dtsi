@@ -26,6 +26,7 @@
 };
 
 &emmc {
+	mmc-ecsd = <0x0020f000>;
 	u-boot,dm-spl;
 };
 
