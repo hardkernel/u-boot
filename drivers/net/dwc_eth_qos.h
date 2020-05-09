@@ -12,9 +12,9 @@
 #define EQOS_MAC_RXQ_CTRL0_RXQ0EN_ENABLED_DCB		2
 #define EQOS_MAC_RXQ_CTRL0_RXQ0EN_ENABLED_AV		1
 
+#define EQOS_MAC_MDIO_ADDRESS_CR_100_150		1
 #define EQOS_MAC_MDIO_ADDRESS_CR_20_35			2
 #define EQOS_MAC_MDIO_ADDRESS_CR_250_300		5
-
 
 struct eqos_config {
 	bool reg_access_always_ok;
