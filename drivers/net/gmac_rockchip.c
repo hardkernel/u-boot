@@ -16,6 +16,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/hardware.h>
 #ifdef CONFIG_DWC_ETH_QOS
+#include <asm/arch/grf_rv1126.h>
 #include "dwc_eth_qos.h"
 #else
 #include <asm/arch/grf_px30.h>
@@ -417,6 +418,43 @@ static int rv1108_set_rmii_speed(struct rockchip_eth_dev *dev)
 
 	return 0;
 }
+#else
+static int rv1126_set_rgmii_speed(struct rockchip_eth_dev *dev)
+{
+	struct eqos_priv *priv = &dev->eqos;
+	struct clk clk_speed;
+	int ret;
+
+	ret = clk_get_by_name(priv->phy->dev, "clk_mac_speed",
+			      &clk_speed);
+	if (ret) {
+			printf("%s~(ret=%d):\n", __func__, ret);
+		return ret;
+	}
+
+	switch ( priv->phy->speed) {
+	case 10:
+		ret = clk_set_rate(&clk_speed, 2500000);
+		if (ret)
+			return ret;
+		break;
+	case 100:
+		ret = clk_set_rate(&clk_speed, 25000000);
+		if (ret)
+			return ret;
+		break;
+	case 1000:
+		ret = clk_set_rate(&clk_speed, 125000000);
+		if (ret)
+			return ret;
+		break;
+	default:
+		debug("Unknown phy speed: %d\n", priv->phy->speed);
+		return -EINVAL;
+	}
+
+	return 0;
+}
 #endif
 
 #ifndef CONFIG_DWC_ETH_QOS
@@ -673,6 +711,73 @@ static void rv1108_gmac_set_to_rmii(struct gmac_rockchip_platdata *pdata)
 		     RV1108_GMAC_PHY_INTF_SEL_MASK,
 		     RV1108_GMAC_PHY_INTF_SEL_RMII);
 }
+#else
+static void rv1126_set_to_rgmii(struct gmac_rockchip_platdata *pdata)
+{
+	struct rv1126_grf *grf;
+
+	enum {
+		RV1126_GMAC_PHY_INTF_SEL_SHIFT = 4,
+		RV1126_GMAC_PHY_INTF_SEL_MASK  = GENMASK(6, 4),
+		RV1126_GMAC_PHY_INTF_SEL_RGMII = BIT(4),
+
+		RV1126_RXCLK_M1_DLY_ENA_GMAC_MASK = BIT(3),
+		RV1126_RXCLK_M1_DLY_ENA_GMAC_DISABLE = 0,
+		RV1126_RXCLK_M1_DLY_ENA_GMAC_ENABLE = BIT(3),
+
+		RV1126_TXCLK_M1_DLY_ENA_GMAC_MASK = BIT(2),
+		RV1126_TXCLK_M1_DLY_ENA_GMAC_DISABLE = 0,
+		RV1126_TXCLK_M1_DLY_ENA_GMAC_ENABLE = BIT(2),
+
+		RV1126_RXCLK_M0_DLY_ENA_GMAC_MASK = BIT(1),
+		RV1126_RXCLK_M0_DLY_ENA_GMAC_DISABLE = 0,
+		RV1126_RXCLK_M0_DLY_ENA_GMAC_ENABLE = BIT(1),
+
+		RV1126_TXCLK_M0_DLY_ENA_GMAC_MASK = BIT(0),
+		RV1126_TXCLK_M0_DLY_ENA_GMAC_DISABLE = 0,
+		RV1126_TXCLK_M0_DLY_ENA_GMAC_ENABLE = BIT(0),
+	};
+	enum {
+		RV1126_M0_CLK_RX_DL_CFG_GMAC_SHIFT = 0x8,
+		RV1126_M0_CLK_RX_DL_CFG_GMAC_MASK = GENMASK(14, 8),
+
+		RV1126_M0_CLK_TX_DL_CFG_GMAC_SHIFT = 0x0,
+		RV1126_M0_CLK_TX_DL_CFG_GMAC_MASK = GENMASK(6, 0),
+	};
+	enum {
+		RV1126_M1_CLK_RX_DL_CFG_GMAC_SHIFT = 0x8,
+		RV1126_M1_CLK_RX_DL_CFG_GMAC_MASK = GENMASK(14, 8),
+
+		RV1126_M1_CLK_TX_DL_CFG_GMAC_SHIFT = 0x0,
+		RV1126_M1_CLK_TX_DL_CFG_GMAC_MASK = GENMASK(6, 0),
+	};
+
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+	rk_clrsetreg(&grf->mac_con0,
+		     RV1126_TXCLK_M0_DLY_ENA_GMAC_MASK |
+		     RV1126_RXCLK_M0_DLY_ENA_GMAC_MASK |
+		     RV1126_TXCLK_M1_DLY_ENA_GMAC_MASK |
+		     RV1126_RXCLK_M1_DLY_ENA_GMAC_MASK |
+		     RV1126_GMAC_PHY_INTF_SEL_MASK,
+		     RV1126_TXCLK_M0_DLY_ENA_GMAC_ENABLE |
+		     RV1126_RXCLK_M0_DLY_ENA_GMAC_ENABLE |
+		     RV1126_TXCLK_M1_DLY_ENA_GMAC_ENABLE |
+		     RV1126_RXCLK_M1_DLY_ENA_GMAC_ENABLE |
+		     RV1126_GMAC_PHY_INTF_SEL_RGMII);
+
+	rk_clrsetreg(&grf->mac_con1,
+		     RV1126_M0_CLK_RX_DL_CFG_GMAC_MASK |
+		     RV1126_M0_CLK_TX_DL_CFG_GMAC_MASK,
+		     pdata->rx_delay << RV1126_M0_CLK_RX_DL_CFG_GMAC_SHIFT |
+		     pdata->tx_delay << RV1126_M0_CLK_TX_DL_CFG_GMAC_SHIFT);
+
+	rk_clrsetreg(&grf->mac_con2,
+		     RV1126_M1_CLK_RX_DL_CFG_GMAC_MASK |
+		     RV1126_M1_CLK_TX_DL_CFG_GMAC_MASK,
+		     pdata->rx_delay << RV1126_M1_CLK_RX_DL_CFG_GMAC_SHIFT |
+		     pdata->tx_delay << RV1126_M1_CLK_TX_DL_CFG_GMAC_SHIFT);
+}
 #endif
 
 static int gmac_rockchip_probe(struct udevice *dev)
@@ -894,6 +999,20 @@ const struct rk_gmac_ops rv1108_gmac_ops = {
 	.fix_mac_speed = rv1108_set_rmii_speed,
 	.set_to_rmii = rv1108_gmac_set_to_rmii,
 };
+#else
+const struct rk_gmac_ops rv1126_gmac_ops = {
+	.config = {
+		.reg_access_always_ok = false,
+		.mdio_wait = 10000,
+		.swr_wait = 200,
+		.config_mac = EQOS_MAC_RXQ_CTRL0_RXQ0EN_NOT_ENABLED,
+		.config_mac_mdio = EQOS_MAC_MDIO_ADDRESS_CR_100_150,
+		.ops = &eqos_rockchip_ops
+	},
+
+	.fix_mac_speed = rv1126_set_rgmii_speed,
+	.set_to_rgmii = rv1126_set_to_rgmii,
+};
 #endif
 
 static const struct udevice_id rockchip_gmac_ids[] = {
@@ -916,6 +1035,9 @@ static const struct udevice_id rockchip_gmac_ids[] = {
 	  .data = (ulong)&rk3399_gmac_ops },
 	{ .compatible = "rockchip,rv1108-gmac",
 	  .data = (ulong)&rv1108_gmac_ops },
+#else
+	{ .compatible = "rockchip,rv1126-gmac",
+	  .data = (ulong)&rv1126_gmac_ops },
 #endif
 	{ }
 };
