@@ -84,4 +84,6 @@ int eqos_recv(struct udevice *dev, int flags, uchar **packetp);
 int eqos_free_pkt(struct udevice *dev, uchar *packet, int length);
 int eqos_write_hwaddr(struct udevice *dev);
 
+extern struct eqos_ops eqos_rockchip_ops;
+
 #endif
