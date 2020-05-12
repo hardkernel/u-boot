@@ -1,0 +1,131 @@
+/*
+ * (C) Copyright 2020 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/ {
+	aliases {
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
+	};
+
+	chosen {
+		stdout-path = &uart2;
+		u-boot,spl-boot-order = &spi_nand, &spi_nor, &nandc, &emmc;
+	};
+};
+
+&uart2 {
+	clock-frequency = <24000000>;
+	u-boot,dm-spl;
+};
+
+&sdmmc {
+	u-boot,dm-spl;
+};
+
+&emmc {
+	mmc-ecsd = <0x0020f000>;
+	u-boot,dm-spl;
+};
+
+&pmu {
+	u-boot,dm-spl;
+};
+
+&pmugrf {
+	u-boot,dm-spl;
+};
+
+&pmucru {
+	u-boot,dm-spl;
+};
+
+&cru {
+	u-boot,dm-spl;
+};
+
+&crypto {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&grf {
+	u-boot,dm-spl;
+};
+
+&saradc {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&sfc {
+	u-boot,dm-spl;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	spi_nand: flash@0 {
+		u-boot,dm-spl;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <4>;
+		spi-max-frequency = <96000000>;
+	};
+
+	spi_nor: flash@1 {
+		u-boot,dm-spl;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <4>;
+		spi-max-frequency = <96000000>;
+	};
+};
+
+&nandc {
+	u-boot,dm-spl;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	nand@0 {
+		u-boot,dm-spl;
+		reg = <0>;
+		nand-ecc-mode = "hw_syndrome";
+		nand-ecc-strength = <16>;
+		nand-ecc-step-size = <1024>;
+	};
+};
+
+&hw_decompress {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&secure_otp {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&u2phy0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&u2phy_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usbdrd {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};

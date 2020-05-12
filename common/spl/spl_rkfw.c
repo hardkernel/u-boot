@@ -463,6 +463,7 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 		printf("Load trust image failed! ret=%d\n", ret);
 		goto out;
 	}
+
 #ifdef CONFIG_SPL_KERNEL_BOOT
 	if (spl_image->next_stage == SPL_NEXT_STAGE_UBOOT) {
 #endif

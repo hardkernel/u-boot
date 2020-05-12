@@ -63,8 +63,8 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 
 	irq_install_handler(fall_irq, rk8xx_pwron_fall_handler, dev);
 	irq_install_handler(rise_irq, rk8xx_pwron_rise_handler, dev);
-	irq_handler_enable(fall_irq);
-	irq_handler_enable(rise_irq);
+	irq_handler_enable_suspend_only(fall_irq);
+	irq_handler_enable_suspend_only(rise_irq);
 
 	return 0;
 }

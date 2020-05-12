@@ -32,7 +32,7 @@
 #include <linux/list.h>
 #include <u-boot/sha1.h>
 #include <u-boot/sha256.h>
-#include <linux/usb/phy-rockchip-inno-usb2.h>
+#include <linux/usb/phy-rockchip-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

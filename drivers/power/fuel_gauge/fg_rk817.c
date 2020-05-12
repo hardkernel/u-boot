@@ -16,7 +16,7 @@
 #include <power/charge_animation.h>
 #include <power/fuel_gauge.h>
 #include <power/rk8xx_pmic.h>
-#include <linux/usb/phy-rockchip-inno-usb2.h>
+#include <linux/usb/phy-rockchip-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

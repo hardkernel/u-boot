@@ -5,7 +5,12 @@
 #
 
 obj-y += irq-gic.o
+
+ifdef CONFIG_IRQ2GPIO_V2
+obj-y += irq-gpio-v2.o
+else
 obj-y += irq-gpio.o
+endif
 obj-y += irq-generic.o
 obj-y += irq-gpio-switch.o
 obj-y += virq.o

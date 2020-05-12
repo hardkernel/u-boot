@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Fuzhou Rockchip Electronics Co., Ltd.
+ */
+
+/dts-v1/;
+#include "rv1126-evb.dts"
+
+/ {
+	model = "Rockchip RV1109 Evaluation Board";
+	compatible = "rockchip,rv1109-evb", "rockchip,rv1109";
+};

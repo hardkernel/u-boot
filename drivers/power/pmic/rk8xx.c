@@ -195,7 +195,15 @@ static const struct pmic_child_info rk817_codec_info[] = {
 
 static int rk8xx_reg_count(struct udevice *dev)
 {
-	return RK808_NUM_OF_REGS;
+	struct rk8xx_priv *priv = dev_get_priv(dev);
+
+	switch (priv->variant) {
+	case RK809_ID:
+	case RK817_ID:
+		return RK817_NUM_OF_REGS;
+	default:
+		return RK808_NUM_OF_REGS;
+	}
 }
 
 static int rk8xx_write(struct udevice *dev, uint reg, const uint8_t *buff,
