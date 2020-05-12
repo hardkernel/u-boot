@@ -58,7 +58,7 @@ function usage_pack()
 	fi
 	echo "    --no-vboot"
 	echo "    --no-check"
-	echo "    --new-spl"
+	echo "    --spl-new"
 	echo
 }
 
@@ -102,8 +102,8 @@ function fit_process_args()
 				ARG_INI_LOADER=$2
 				shift 2
 				;;
-			--new-spl)      # Use current build u-boot-spl.bin to pack loader
-				ARG_NEW_SPL="y"
+			--spl-new)      # Use current build u-boot-spl.bin to pack loader
+				ARG_SPL_NEW="y"
 				shift 1
 				;;
 			--rollback-index-boot)
@@ -163,7 +163,7 @@ function fit_uboot_make_itb()
 	if [ "$ARG_NO_VBOOT" = "y" ]; then
 		SIGN_MSG="no-signed"
 		./tools/mkimage -f u-boot.its -E -p $FIT_NS_OFFS_UBOOT $FIT_ITB_UBOOT
-		if [ "$ARG_NEW_SPL" = "y" ]; then
+		if [ "$ARG_SPL_NEW" = "y" ]; then
 			./make.sh spl-s $ARG_INI_LOADER
 			echo "pack loader with: spl/u-boot-spl.bin"
 		else
@@ -216,7 +216,7 @@ function fit_uboot_make_itb()
 		fi
 
 		if [ "$ARG_NO_CHECK" != "y" ]; then
-			if [ "$ARG_NEW_SPL" = "y" ]; then
+			if [ "$ARG_SPL_NEW" = "y" ]; then
 				./tools/fit_check_sign -f $FIT_ITB_UBOOT -k spl/u-boot-spl.dtb -s
 			else
 				# unpack legacy u-boot-spl.dtb
@@ -249,7 +249,7 @@ function fit_uboot_make_itb()
 
 		# repack spl which has rsa pub-key insert
 		rm *_loader_*.bin -rf
-		if [ "$ARG_NEW_SPL" = "y" ]; then
+		if [ "$ARG_SPL_NEW" = "y" ]; then
 			cat spl/u-boot-spl-nodtb.bin > spl/u-boot-spl.bin
 			if ! grep  -q '^CONFIG_SPL_SEPARATE_BSS=y' .config ; then
 				cat spl/u-boot-spl-pad.bin >> spl/u-boot-spl.bin
