@@ -420,9 +420,11 @@ static int initr_spi(void)
 /* go init the NAND */
 static int initr_nand(void)
 {
+#ifndef CONFIG_USING_KERNEL_DTB
 	puts("NAND:  ");
 	nand_init();
 	printf("%lu MiB\n", nand_size() / 1024);
+#endif
 	return 0;
 }
 #endif
