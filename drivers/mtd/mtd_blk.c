@@ -47,15 +47,15 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 	if (!mtd) {
 		return -ENODEV;
 	} else {
-		blk_total = (mtd->size + mtd->erasesize - 1) / mtd->erasesize;
+		blk_total = (mtd->size + mtd->erasesize - 1) >> mtd->erasesize_shift;
 		if (!mtd_map_blk_table) {
 			mtd_map_blk_table = (int *)malloc(blk_total * 4);
 			memset(mtd_map_blk_table, MTD_BLK_TABLE_BLOCK_UNKNOWN,
 			       blk_total * 4);
 		}
 
-		blk_begin = (u32)offset / mtd->erasesize;
-		blk_cnt = ((u32)(offset % mtd->erasesize + length) / mtd->erasesize);
+		blk_begin = (u32)offset >> mtd->erasesize_shift;
+		blk_cnt = ((u32)((offset & mtd->erasesize_mask) + length) >> mtd->erasesize_shift);
 		if ((blk_begin + blk_cnt) > blk_total)
 			blk_cnt = blk_total - blk_begin;
 
@@ -68,7 +68,7 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 			if (j >= blk_cnt)
 				mtd_map_blk_table[blk_begin + i] = MTD_BLK_TABLE_BLOCK_SHIFT;
 			for (; j < blk_cnt; j++) {
-				if (!mtd_block_isbad(mtd, (blk_begin + j) * mtd->erasesize)) {
+				if (!mtd_block_isbad(mtd, (blk_begin + j) << mtd->erasesize_shift)) {
 					mtd_map_blk_table[blk_begin + i] = blk_begin + j;
 					j++;
 					if (j == blk_cnt)
@@ -103,11 +103,11 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 		mapped_offset = offset;
 		mapped = false;
 		if (mtd_map_blk_table &&
-		    mtd_map_blk_table[(u64)offset / erasesize] !=
+		    mtd_map_blk_table[(u64)offset >> mtd->erasesize_shift] !=
 		    MTD_BLK_TABLE_BLOCK_UNKNOWN)  {
 			mapped = true;
-			mapped_offset = (loff_t)((u32)mtd_map_blk_table[(u64)offset /
-				erasesize] * erasesize + block_offset);
+			mapped_offset = (loff_t)(((u32)mtd_map_blk_table[(u64)offset >>
+				mtd->erasesize_shift] << mtd->erasesize_shift) + block_offset);
 		}
 
 		if (!mapped) {
