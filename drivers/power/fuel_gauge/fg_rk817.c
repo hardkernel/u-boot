@@ -992,6 +992,8 @@ static int rk817_bat_get_usb_state(struct rk817_battery_device *battery)
 
 static int rk817_bat_get_charger_type(struct rk817_battery_device *battery)
 {
+	u32 chrg_type;
+
 	/* check by ic hardware: this check make check work safer */
 	if ((rk817_bat_read(battery, PMIC_SYS_STS) & PLUG_IN_STS) == 0)
 		return NO_CHARGER;
@@ -1001,7 +1003,11 @@ static int rk817_bat_get_charger_type(struct rk817_battery_device *battery)
 		return DC_CHARGER;
 
 	/* check USB secondly */
-	return rk817_bat_get_usb_state(battery);
+	chrg_type = rk817_bat_get_usb_state(battery);
+	if (chrg_type != NO_CHARGER && battery->rsoc / 1000 >= 100)
+		chrg_type = CHARGE_FINISH;
+
+	return chrg_type;
 }
 
 static void rk817_bat_set_input_current(struct rk817_battery_device *battery,
