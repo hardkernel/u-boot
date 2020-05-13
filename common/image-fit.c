@@ -1223,8 +1223,8 @@ int calculate_hash(const void *data, int data_len, const char *algo,
 #endif
 #endif
 
-static int fit_image_check_hash(const void *fit, int noffset, const void *data,
-				size_t size, char **err_msgp)
+int fit_image_check_hash(const void *fit, int noffset, const void *data,
+			 size_t size, char **err_msgp)
 {
 	uint8_t value[FIT_MAX_HASH_LEN];
 	int value_len;
