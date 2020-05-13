@@ -176,22 +176,12 @@ function process_args()
 				ARG_SUBCMD=$1
 				shift 1
 				;;
-
-			--rollback-index-uboot)
-				ARG_ROLLBACK_IDX_UBOOT="$1 "$2
+			--boot_img|--rollback-index-boot|--rollback-index-uboot)
+				ARG_FIT_TOTAL="$ARG_FIT_TOTAL $1 $2 "
 				shift 2
 				;;
-
-			--rollback-index-boot)
-				ARG_ROLLBACK_IDX_BOOT="$1 "$2
-				shift 2
-				;;
-			--boot_img)
-				ARG_EXT_BOOT_IMG="$1 "$2
-				shift 2
-				;;
-			--spl-new)
-				ARG_SPL_NEW=$1
+			--spl-new|--no-check)
+				ARG_FIT_TOTAL="$ARG_FIT_TOTAL $1 "
 				shift 1
 				;;
 			map|sym|elf*)
@@ -310,7 +300,7 @@ function sub_commands()
 
 		fit)
 			if [ "$opt" = "ns" ]; then
-				./scripts/fit-vboot.sh --no-vboot --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_SPL_NEW $ARG_EXT_BOOT_IMG
+				./scripts/fit-vboot.sh --no-vboot $ARG_FIT_TOTAL
 			fi
 			exit 0
 			;;
@@ -356,7 +346,7 @@ function sub_commands()
 			;;
 
 		--rollback-index*)
-			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_SPL_NEW $ARG_EXT_BOOT_IMG
+			pack_fit_image $ARG_FIT_TOTAL
 			exit 0
 			;;
 
@@ -514,6 +504,11 @@ function select_ini_file()
 	if [ "$ARG_INI_LOADER" != "" ]; then
 		INI_LOADER=$ARG_INI_LOADER
 	fi
+}
+
+function handle_args_late()
+{
+	ARG_FIT_TOTAL="$ARG_FIT_TOTAL --ini-trust $INI_TRUST --ini-loader $INI_LOADER"
 }
 
 function pack_uboot_image()
@@ -734,10 +729,10 @@ function pack_trust_image()
 function pack_fit_image()
 {
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		./scripts/fit-vboot.sh $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER $ARG_SPL_NEW $ARG_EXT_BOOT_IMG
+		./scripts/fit-vboot.sh $ARG_FIT_TOTAL
 	else
 		rm uboot.img trust*.img -rf
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_SPL_NEW $ARG_EXT_BOOT_IMG
+		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild $ARG_FIT_TOTAL
 		echo "pack uboot.img (with uboot trust) okay! Input: $INI_TRUST"
 	fi
 }
@@ -750,7 +745,7 @@ function pack_images()
 			pack_trust_image
 			pack_loader_image
 		elif [ "$IMAGE_FORMAT" = "FIT" ]; then
-			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT --ini-trust $INI_TRUST --ini-loader $INI_LOADER  $ARG_SPL_NEW $ARG_EXT_BOOT_IMG
+			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT $ARG_FIT_TOTAL
 		fi
 	fi
 }
@@ -786,6 +781,7 @@ select_toolchain
 select_chip_info
 fixup_platform_configure
 select_ini_file
+handle_args_late
 sub_commands
 clean_files
 make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
