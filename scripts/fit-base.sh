@@ -193,7 +193,8 @@ function fit_uboot_make_itb()
 		fi
 
 		if [ "$SPL_ROLLBACK_PROTECT" = "y" ]; then
-			sed -i "s/rollback-index = <0x0>/rollback-index = <$ARG_ROLLBACK_IDX_UBOOT>/g" u-boot.its
+			version=`grep 'rollback-index' u-boot.its | awk -F '=' '{ printf $2 }' `
+			sed -i "s/$version/ <$ARG_ROLLBACK_IDX_UBOOT>;/g" u-boot.its
 		fi
 
 		# We need a u-boot.dtb with RSA pub-key insert
@@ -328,7 +329,8 @@ function fit_boot_make_itb()
 		fi
 
 		if [ "$ROLLBACK_PROTECT" = "y" ]; then
-			sed -i "s/rollback-index = <0x0>/rollback-index = <$ARG_ROLLBACK_IDX_BOOT>/g" $FIT_ITS_BOOT
+			version=`grep 'rollback-index' $FIT_ITS_BOOT | awk -F '=' '{ printf $2 }' `
+			sed -i "s/$version/ <$ARG_ROLLBACK_IDX_BOOT>;/g" $FIT_ITS_BOOT
 		fi
 
 		./tools/mkimage -f $FIT_ITS_BOOT -k $KEY_DIR/ -K u-boot.dtb -E -p $FIT_S_OFFS_BOOT -r $FIT_ITB_BOOT
