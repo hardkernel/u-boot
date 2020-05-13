@@ -30,7 +30,7 @@ static void *do_boot_fit_ram(char *const argv[], ulong *data_size)
 		return NULL;
 	}
 
-	size = fit_image_get_bootable_size(fit);
+	size = fit_image_get_bootables_size(fit);
 	if (!size) {
 		FIT_I("Failed to get bootable image size\n");
 		return NULL;
@@ -83,8 +83,8 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		goto out;
 	}
 
-	/* reserve memory to avoid memory overlap and fixup entry & load !! */
-	if (fit_image_fixup_and_sysmem_rsv(fit))
+	/* fixup entry/load and alloc sysmem */
+	if (fit_image_pre_process(fit))
 		goto out;
 
 	env_set("bootm-no-reloc", "y");
@@ -104,7 +104,7 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		BOOTM_STATE_OS_GO, &images, 1);
 
 	if (ret && argc != 1) {
-		fit_sysmem_free_each(fit);
+		fit_image_fail_process(fit);
 		goto out;
 	}
 

@@ -20,23 +20,24 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 #define FIT_FDT_MAX_SIZE		SZ_4K
 
-static int fit_is_ext_type(void *fit)
+static int fit_is_ext_type(const void *fit)
 {
 	return fdt_totalsize(fit) < FIT_FDT_MAX_SIZE;
 }
 
-static int fit_is_signed(void *fit, const void *sig_blob)
+static int fit_is_signed(const void *fit, const void *sig_blob)
 {
 	return fdt_subnode_offset(sig_blob, 0, FIT_SIG_NODENAME) < 0 ? 0 : 1;
 }
 
-static inline int fit_is_placeholder_addr(ulong addr)
+static inline int fit_image_addr_is_placeholder(ulong addr)
 {
 	return (addr & 0xffffff00) == FIT_PLACEHOLDER_ADDR;
 }
 
-static int fit_is_required(void *fit, const void *sig_blob)
+static int fit_sig_require_conf(const void *fit, const void *sig_blob)
 {
+	const char *required;
 	int sig_node;
 	int noffset;
 
@@ -45,8 +46,6 @@ static int fit_is_required(void *fit, const void *sig_blob)
 		return 0;
 
 	fdt_for_each_subnode(noffset, sig_blob, sig_node) {
-		const char *required;
-
 		required = fdt_getprop(sig_blob, noffset, "required", NULL);
 		if (required && !strcmp(required, "conf"))
 			return 1;
@@ -55,159 +54,197 @@ static int fit_is_required(void *fit, const void *sig_blob)
 	return 0;
 }
 
-int fit_fixup_load_entry(void *fit, int images, int defconf,
-			 char *name, ulong *load, ulong new_addr)
+static int fit_image_get_subnode(const void *fit, int noffset, const char *name)
 {
-	const char *uname;
-	int uname_cfg;
-	int err;
+	int sub_noffset;
 
-	if (!fit_is_placeholder_addr(*load) ||
-		fit_is_required(fit, gd_fdt_blob()))
+	fdt_for_each_subnode(sub_noffset, fit, noffset) {
+		if (!strncmp(fit_get_name(fit, sub_noffset, NULL),
+			     name, strlen(name)))
+			return sub_noffset;
+	}
+
+	return -ENOENT;
+}
+
+int fit_default_conf_get_node(const void *fit, const char *prop_name)
+{
+	int conf_noffset;
+
+	conf_noffset = fit_conf_get_node(fit, NULL); /* NULL for default conf */
+	if (conf_noffset < 0)
+		return conf_noffset;
+
+	return fit_conf_get_prop_node(fit, conf_noffset, prop_name);
+}
+
+int fix_image_set_addr(const void *fit, const char *prop_name,
+		       ulong old, ulong new)
+{
+	int noffset;
+
+	/* do not fix if verified-boot */
+	if (!fit_image_addr_is_placeholder(old) ||
+	     fit_sig_require_conf(fit, gd_fdt_blob()))
 		return 0;
 
-	*load = new_addr;
-
-	uname = fdt_getprop(fit, defconf, name, NULL);
-	if (!uname)
-		return -ENODEV;
-
-	uname_cfg = fdt_subnode_offset(fit, images, uname);
-	if (uname_cfg < 0)
-		return -ENODEV;
-
-	err = fit_image_set_load(fit, uname_cfg, new_addr);
-	if (err)
-		return err;
-
-	fit_image_set_entry(fit, uname_cfg, new_addr);
-
-	return 0;
-}
-
-static int fit_get_load_and_data(void *fit, int images, int defconf,
-				 const char *name, ulong *load,
-				 int *offset, int *size)
-{
-	const char *uname;
-	int uname_cfg;
-	int off, sz;
-	int err;
-
-	uname = fdt_getprop(fit, defconf, name, NULL);
-	if (!uname)
-		return -ENODEV;
-
-	uname_cfg = fdt_subnode_offset(fit, images, uname);
-	if (uname_cfg < 0)
-		return -ENODEV;
-
-	err = fit_image_get_data_size(fit, uname_cfg, &sz);
-	if (err)
-		return err;
-
-	err = fit_image_get_data_position(fit, uname_cfg, &off);
-	if (!err) {
-		off -= fdt_totalsize(fit);
-	} else {
-		err = fit_image_get_data_offset(fit, uname_cfg, &off);
-		if (err)
-			return err;
-	}
+	noffset = fit_default_conf_get_node(fit, prop_name);
+	if (noffset < 0)
+		return noffset;
 
 	/* optional */
-	if (load) {
-		err = fit_image_get_load(fit, uname_cfg, load);
-		if (err)
-			return err;
+	fit_image_set_entry(fit, noffset, new);
+
+	return fit_image_set_load(fit, noffset, new);
+}
+
+static int fdt_image_get_offset_size(const void *fit, const char *prop_name,
+				     int *offset, int *size)
+{
+	int sz, offs;
+	int noffset;
+	int ret;
+
+	noffset = fit_default_conf_get_node(fit, prop_name);
+	if (noffset < 0)
+		return noffset;
+
+	ret = fit_image_get_data_size(fit, noffset, &sz);
+	if (ret)
+		return ret;
+
+	ret = fit_image_get_data_position(fit, noffset, &offs);
+	if (!ret)
+		offs -= fdt_totalsize(fit);
+	else
+		ret = fit_image_get_data_offset(fit, noffset, &offs);
+
+	*offset = offs;
+	*size = sz;
+
+	return ret;
+}
+
+static int fdt_image_get_load(const void *fit, const char *prop_name,
+			      ulong *load)
+{
+	int noffset;
+
+	noffset = fit_default_conf_get_node(fit, prop_name);
+	if (noffset < 0)
+		return noffset;
+
+	return fit_image_get_load(fit, noffset, load);
+}
+
+static int fit_image_get_param(const void *fit, const char *prop_name,
+			       ulong *load, int *offset, int *size)
+{
+	int ret;
+
+	ret = fdt_image_get_offset_size(fit, prop_name, offset, size);
+	if (ret < 0)
+		return ret;
+
+	return fdt_image_get_load(fit, prop_name, load);
+}
+
+static void *fit_get_blob(struct blk_desc *dev_desc, disk_partition_t *part)
+{
+	void *fit, *fdt;
+	int blk_num;
+
+	blk_num = DIV_ROUND_UP(sizeof(struct fdt_header), dev_desc->blksz);
+	fdt = memalign(ARCH_DMA_MINALIGN, blk_num * dev_desc->blksz);
+	if (!fdt)
+		return NULL;
+
+	if (blk_dread(dev_desc, part->start, blk_num, fdt) != blk_num) {
+		debug("Failed to read fdt header\n");
+		goto fail;
 	}
 
-	*offset = off;
-	*size = sz;
+	if (fdt_check_header(fdt)) {
+		debug("No fdt header\n");
+		goto fail;
+	}
+
+	if (!fit_is_ext_type(fdt)) {
+		debug("Not external type\n");
+		goto fail;
+	}
+
+	blk_num = DIV_ROUND_UP(fdt_totalsize(fdt), dev_desc->blksz);
+	fit = memalign(ARCH_DMA_MINALIGN, blk_num * dev_desc->blksz);
+	if (!fit) {
+		debug("No memory\n");
+		goto fail;
+	}
+
+	if (blk_dread(dev_desc, part->start, blk_num, fit) != blk_num) {
+		free(fit);
+		debug("Failed to read fit blob\n");
+		goto fail;
+	}
+
+	return fit;
+
+fail:
+	free(fdt);
+	return NULL;
+}
+
+static int fit_image_fixup_alloc(const void *fit, const char *prop_name,
+				 const char *addr_name, enum memblk_id mem)
+{
+	ulong load, addr;
+	int offset, size = 0;
+	int ret;
+
+	addr = env_get_ulong(addr_name, 16, 0);
+	if (!addr)
+		return -EINVAL;
+
+	ret = fit_image_get_param(fit, prop_name, &load, &offset, &size);
+	if (ret)
+		return (ret == -FDT_ERR_NOTFOUND) ? 0 : ret;
+
+	if (!size)
+		return 0;
+
+	ret = fix_image_set_addr(fit, prop_name, load, addr);
+	if (ret)
+		return ret;
+
+	if (!sysmem_alloc_base(mem, (phys_addr_t)addr,
+			       ALIGN(size, RK_BLK_SIZE)))
+		return -ENOMEM;
 
 	return 0;
 }
 
-int fit_image_fixup_and_sysmem_rsv(void *fit)
+int fit_image_pre_process(const void *fit)
 {
-	ulong load, kaddr, faddr, raddr;
-	int images, defconf;
-	int offset, size;
-	int err;
-
-	faddr = env_get_ulong("fdt_addr_r", 16, 0);
-	kaddr = env_get_ulong("kernel_addr_r", 16, 0);
-	raddr = env_get_ulong("ramdisk_addr_r", 16, 0);
-
-	if (!faddr || !kaddr || !raddr)
-		return -EINVAL;
-
-	if (fit_get_image_defconf_node(fit, &images, &defconf)) {
-		FIT_I("Failed to get default config\n");
-		return -ENODEV;
-	}
-
-	/* fdt */
-	if (fit_get_load_and_data(fit, images, defconf, FIT_FDT_PROP,
-				  &load, &offset, &size)) {
-		FIT_I("Invalid fdt node\n");
-		return -ENOENT;
-	}
+	int ret;
 
 #ifdef CONFIG_USING_KERNEL_DTB
 	sysmem_free((phys_addr_t)gd->fdt_blob);
 #endif
-	if (fit_fixup_load_entry(fit, images, defconf,
-				 FIT_FDT_PROP, &load, faddr)) {
-		FIT_I("Failed to fixup fdt load addr\n");
-		return -EINVAL;
-	}
+	ret = fit_image_fixup_alloc(fit, FIT_FDT_PROP,
+				    "fdt_addr_r", MEM_FDT);
+	if (ret < 0)
+		return ret;
 
-	if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)load,
-			       ALIGN(size, RK_BLK_SIZE)))
-		return -ENOMEM;
+	ret = fit_image_fixup_alloc(fit, FIT_KERNEL_PROP,
+				    "kernel_addr_r", MEM_KERNEL);
+	if (ret < 0)
+		return ret;
 
-	/* kernel */
-	if (fit_get_load_and_data(fit, images, defconf, FIT_KERNEL_PROP,
-				  &load, &offset, &size)) {
-		FIT_I("Invalid kernel node\n");
-		return -EINVAL;
-	}
-
-	if (fit_fixup_load_entry(fit, images, defconf,
-				 FIT_KERNEL_PROP, &load, kaddr)) {
-		FIT_I("Failed to fixup kernel load addr\n");
-		return -EINVAL;
-	}
-
-	if (!sysmem_alloc_base(MEM_KERNEL, (phys_addr_t)load,
-			       ALIGN(size, RK_BLK_SIZE)))
-		return -ENOMEM;
-
-	/* ramdisk(optional) */
-	err = fit_get_load_and_data(fit, images, defconf, FIT_RAMDISK_PROP,
-				    &load, &offset, &size);
-	if (err && err != -ENODEV) {
-		FIT_I("Invalid ramdisk node\n");
-		return err;
-	}
-
-	if (size) {
-		if (fit_fixup_load_entry(fit, images, defconf,
-					 FIT_RAMDISK_PROP, &load, raddr)) {
-			FIT_I("Failed to fixup ramdisk load addr\n");
-			return -EINVAL;
-		}
-
-		if (!sysmem_alloc_base(MEM_RAMDISK, (phys_addr_t)load,
-				       ALIGN(size, RK_BLK_SIZE)))
-			return -ENOMEM;
-	}
-
-	return 0;
+	return fit_image_fixup_alloc(fit, FIT_RAMDISK_PROP,
+				     "ramdisk_addr_r", MEM_RAMDISK);
 }
 
-int fit_sysmem_free_each(void *fit)
+int fit_image_fail_process(const void *fit)
 {
 	ulong raddr, kaddr, faddr;
 
@@ -223,191 +260,90 @@ int fit_sysmem_free_each(void *fit)
 	return 0;
 }
 
-static int fit_image_load_one(void *fit, struct blk_desc *dev_desc,
-			      disk_partition_t *part, int images,
-			      int defconf, char *name, void *dst)
+static int fit_image_load_one(const void *fit, struct blk_desc *dev_desc,
+			      disk_partition_t *part, char *prop_name,
+			      void *data, int check_hash)
 {
-	u32 blknum, blkoff;
+	u32 blk_num, blk_off;
 	int offset, size;
+	int noffset, ret;
+	char *msg = "";
 
-	if (fit_get_load_and_data(fit, images, defconf, name,
-				  NULL, &offset, &size))
-		return -EINVAL;
+	ret = fdt_image_get_offset_size(fit, prop_name, &offset, &size);
+	if (ret)
+		return ret;
 
-	blkoff = (FIT_ALIGN(fdt_totalsize(fit)) + offset) / dev_desc->blksz;
-	blknum = DIV_ROUND_UP(size, dev_desc->blksz);
-
-	if (blk_dread(dev_desc, part->start + blkoff, blknum, dst) != blknum)
+	blk_off = (FIT_ALIGN(fdt_totalsize(fit)) + offset) / dev_desc->blksz;
+	blk_num = DIV_ROUND_UP(size, dev_desc->blksz);
+	if (blk_dread(dev_desc, part->start + blk_off, blk_num, data) != blk_num)
 		return -EIO;
 
+	if (check_hash) {
+		int hash_noffset;
+
+		noffset = fit_default_conf_get_node(fit, prop_name);
+		if (noffset < 0)
+			return noffset;
+
+		hash_noffset = fit_image_get_subnode(fit, noffset,
+						     FIT_HASH_NODENAME);
+		if (hash_noffset < 0)
+			return hash_noffset;
+
+		printf("%s: ", fdt_get_name(fit, noffset, NULL));
+		ret = fit_image_check_hash(fit, hash_noffset, data, size, &msg);
+		if (ret)
+			return ret;
+
+		puts("+\n");
+	}
+
 	return 0;
-}
-
-static void *fit_get_blob(struct blk_desc *dev_desc, disk_partition_t *part)
-{
-	void *fit, *fdt;
-	int blknum;
-
-	blknum = DIV_ROUND_UP(sizeof(struct fdt_header), dev_desc->blksz);
-	fdt = memalign(ARCH_DMA_MINALIGN, blknum * dev_desc->blksz);
-	if (!fdt)
-		return NULL;
-
-	if (blk_dread(dev_desc, part->start, blknum, fdt) != blknum) {
-		debug("Failed to read fdt header\n");
-		goto fail;
-	}
-
-	if (fdt_check_header(fdt)) {
-		debug("Invalid fdt header\n");
-		goto fail;
-	}
-
-	if (!fit_is_ext_type(fdt)) {
-		debug("Not external type\n");
-		goto fail;
-	}
-
-	blknum = DIV_ROUND_UP(fdt_totalsize(fdt), dev_desc->blksz);
-	fit = memalign(ARCH_DMA_MINALIGN, blknum * dev_desc->blksz);
-	if (!fit) {
-		debug("No memory\n");
-		goto fail;
-	}
-
-	if (blk_dread(dev_desc, part->start, blknum, fit) != blknum) {
-		free(fit);
-		debug("Failed to read fit\n");
-		goto fail;
-	}
-
-	return fit;
-
-fail:
-	free(fdt);
-	return NULL;
 }
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-static int fit_image_load_resource(void *fit, struct blk_desc *dev_desc,
-				   disk_partition_t *part, int images,
-				   int defconf, ulong *addr)
+static int fit_image_load_resource(const void *fit, struct blk_desc *dev_desc,
+				   disk_partition_t *part, ulong *addr)
 {
-	ulong fdt_addr_r, dst;
 	int offset, size;
-	int err;
+	int ret;
+	void *data;
 
-	err = fit_get_load_and_data(fit, images, defconf, FIT_MULTI_PROP,
-				    NULL, &offset, &size);
-	if (err)
-		return err;
+	ret = fdt_image_get_offset_size(fit, FIT_MULTI_PROP, &offset, &size);
+	if (ret)
+		return ret;
 
-	fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
-	if (!fdt_addr_r)
-		return -EINVAL;
-
-	/* reserve enough space before fdt */
-	dst = fdt_addr_r -
-		ALIGN(size, dev_desc->blksz) - CONFIG_SYS_FDT_PAD;
-
-	if (!sysmem_alloc_base(MEM_RESOURCE, (phys_addr_t)dst,
-			       ALIGN(size, dev_desc->blksz)))
+	data = malloc(ALIGN(size, dev_desc->blksz));
+	if (!data)
 		return -ENOMEM;
 
-	*addr = dst;
+	*addr = (ulong)data;
 
-	return fit_image_load_one(fit, dev_desc, part, images, defconf,
-				  FIT_MULTI_PROP, (void *)dst);
+	return fit_image_load_one(fit, dev_desc, part, FIT_MULTI_PROP, data, 1);
 }
+
 #else
-
-static int fit_image_load_fdt(void *fit, struct blk_desc *dev_desc,
-			      disk_partition_t *part, int images,
-			      int defconf, void *dst)
+static int fit_image_load_fdt(const void *fit, struct blk_desc *dev_desc,
+			      disk_partition_t *part, void *data)
 {
-	return fit_image_load_one(fit, dev_desc, part, images,
-				  defconf, FIT_FDT_PROP, dst);
-}
-
-static int fit_image_get_fdt_hash(void *fit, int images, int defconf,
-				  char **hash, int *hash_size)
-{
-	const char *fdt_name;
-	const char *name;
-	uint8_t *fit_value2;
-	uint8_t *fit_value;
-	int fit_value_len;
-	int hash_off;
-	int fdt_off;
-	int found = 0;
-	char *algo;
-
-	fdt_name = fdt_getprop(fit, defconf, FIT_FDT_PROP, NULL);
-	if (!fdt_name)
-		return -EBADF;
-
-	fdt_off = fdt_subnode_offset(fit, images, fdt_name);
-	if (fdt_off < 0)
-		return -EBADF;
-
-	fdt_for_each_subnode(hash_off, fit, fdt_off) {
-		name = fit_get_name(fit, hash_off, NULL);
-		if (!strncmp(name, FIT_HASH_NODENAME,
-			     strlen(FIT_HASH_NODENAME))) {
-			found = 1;
-			break;
-		}
-	}
-
-	if (!found)
-		return -ENODEV;
-
-	if (fit_image_hash_get_algo(fit, hash_off, &algo))
-		return -EINVAL;
-
-	if (fit_image_hash_get_value(fit, hash_off, &fit_value,
-				     &fit_value_len))
-		return -EINVAL;
-
-	if (!strcmp(algo, "sha1"))
-		*hash_size = 20;
-	else if (!strcmp(algo, "sha256"))
-		*hash_size = 32;
-	else
-		return -EINVAL;
-
-	/* avoid freed */
-	fit_value2 = malloc(fit_value_len);
-	if (!fit_value2)
-		return -ENOMEM;
-
-	memcpy(fit_value2, fit_value, fit_value_len);
-	*hash = (char *)fit_value2;
-
-	return 0;
+	return fit_image_load_one(fit, dev_desc, part, FIT_FDT_PROP, data, 1);
 }
 #endif
 
-ulong fit_image_get_bootable_size(void *fit)
+/* Calculate what we really need */
+ulong fit_image_get_bootables_size(const void *fit)
 {
 	ulong off[3] = { 0, 0, 0 };
 	ulong max_off, load;
-	int images, defconf;
 	int offset, size;
 
-	if (fit_get_image_defconf_node(fit, &images, &defconf))
-		return -ENODEV;
-
-	if (!fit_get_load_and_data(fit, images, defconf, FIT_FDT_PROP,
-				   &load, &offset, &size))
+	if (!fit_image_get_param(fit, FIT_FDT_PROP, &load, &offset, &size))
 		off[0] = offset + FIT_ALIGN(size);
 
-	if (!fit_get_load_and_data(fit, images, defconf, FIT_KERNEL_PROP,
-				   &load, &offset, &size))
+	if (!fit_image_get_param(fit, FIT_KERNEL_PROP, &load, &offset, &size))
 		off[1] = offset + FIT_ALIGN(size);
 
-	if (!fit_get_load_and_data(fit, images, defconf, FIT_RAMDISK_PROP,
-				   &load, &offset, &size))
+	if (!fit_image_get_param(fit, FIT_RAMDISK_PROP, &load, &offset, &size))
 		off[2] = offset + FIT_ALIGN(size);
 
 	max_off = max(off[0],  off[1]);
@@ -421,14 +357,12 @@ void *fit_image_load_bootables(ulong *size)
 	struct blk_desc *dev_desc;
 	disk_partition_t part;
 	char *part_name;
-	int blknum;
+	int blk_num;
 	void *fit;
 
 	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		FIT_I("No dev_desc\n");
+	if (!dev_desc)
 		return NULL;
-	}
 
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
 		part_name = PART_RECOVERY;
@@ -446,18 +380,18 @@ void *fit_image_load_bootables(ulong *size)
 		return NULL;
 	}
 
-	*size = fit_image_get_bootable_size(fit);
+	*size = fit_image_get_bootables_size(fit);
 	if (*size == 0) {
-		FIT_I("No bootable image size\n");
+		FIT_I("No bootable image\n");
 		return NULL;
 	}
 
-	blknum = DIV_ROUND_UP(*size, dev_desc->blksz);
-	fit = sysmem_alloc(MEM_FIT, blknum * dev_desc->blksz);
+	blk_num = DIV_ROUND_UP(*size, dev_desc->blksz);
+	fit = sysmem_alloc(MEM_FIT, blk_num * dev_desc->blksz);
 	if (!fit)
 		return NULL;
 
-	if (blk_dread(dev_desc, part.start, blknum, fit) != blknum) {
+	if (blk_dread(dev_desc, part.start, blk_num, fit) != blk_num) {
 		FIT_I("Failed to load bootable images\n");
 		return NULL;
 	}
@@ -465,27 +399,28 @@ void *fit_image_load_bootables(ulong *size)
 	return fit;
 }
 
-static void verbose_msg(void *fit, int defconf)
+static void fit_msg(const void *fit)
 {
-	FIT_I("%ssigned, %sconf-required\n",
+	FIT_I("%ssigned, %sconf required\n",
 	      fit_is_signed(fit, gd_fdt_blob()) ? "" : "no ",
-	      fit_is_required(fit, gd_fdt_blob()) ? "" : "no ");
+	      fit_sig_require_conf(fit, gd_fdt_blob()) ? "" : "no ");
 
 #ifndef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-	printf("DTB: %s\n",
-	       (char *)fdt_getprop(fit, defconf, FIT_FDT_PROP, NULL));
+	int noffset;
+
+	noffset = fit_default_conf_get_node(fit, FIT_FDT_PROP);
+	printf("DTB: %s\n", fdt_get_name(fit, noffset, NULL));
 #endif
 }
 
 int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 {
+	int conf_noffset __maybe_unused;
+	ulong rsce __maybe_unused;
 	struct blk_desc *dev_desc;
 	disk_partition_t part;
 	char *part_name;
 	void *fit;
-	ulong rsce __maybe_unused;
-	int images;
-	int defconf;
 	int ret;
 
 	dev_desc = rockchip_get_bootdev();
@@ -511,15 +446,20 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 		return -EINVAL;
 	}
 
-	if (fit_get_image_defconf_node(fit, &images, &defconf)) {
-		FIT_I("Failed to get /images and /configures default\n");
-		ret = -ENODEV;
-		goto out;
-	}
+#ifdef CONFIG_FIT_SIGNATURE
+	conf_noffset = fit_conf_get_node(fit, NULL); /* NULL for default conf */
+	if (conf_noffset < 0)
+		return conf_noffset;
+
+	printf("%s: ", fdt_get_name(fit, conf_noffset, NULL));
+	if (fit_config_verify(fit, conf_noffset))
+		return -EACCES;
+
+	puts("\n");
+#endif
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-	ret = fit_image_load_resource(fit, dev_desc, &part,
-				      images, defconf, &rsce);
+	ret = fit_image_load_resource(fit, dev_desc, &part, &rsce);
 	if (ret) {
 		FIT_I("Failed to load resource\n");
 		goto out;
@@ -533,21 +473,14 @@ int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size)
 
 	ret = rockchip_read_resource_dtb(fdt_addr, hash, hash_size);
 #else
-	ret = fit_image_load_fdt(fit, dev_desc, &part, images,
-				 defconf, fdt_addr);
+	ret = fit_image_load_fdt(fit, dev_desc, &part, fdt_addr);
 	if (ret) {
 		FIT_I("Failed to load fdt\n");
 		goto out;
 	}
-
-	ret = fit_image_get_fdt_hash(fit, images, defconf, hash, hash_size);
-	if (ret) {
-		FIT_I("Failed to get fdt hash\n");
-		goto out;
-	}
 #endif
 
-	verbose_msg(fit, defconf);
+	fit_msg(fit);
 out:
 	free(fit);
 
