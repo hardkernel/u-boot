@@ -308,13 +308,82 @@ static ulong rockchip_mmc_set_clk(struct rk3036_cru *cru, uint clk_general_rate,
 	return rockchip_mmc_get_clk(cru, clk_general_rate, periph);
 }
 
+static ulong rockchip_dclk_lcdc_get_clk(struct rk3036_cru *cru,
+					uint clk_general_rate)
+{
+	u32 con, div, sel, parent;
+
+	con = readl(&cru->cru_clksel_con[28]);
+	div = (con & LCDC_DCLK_DIV_MASK) >> LCDC_DCLK_DIV_SHIFT;
+	sel = (con & LCDC_DCLK_SEL_MASK) >> LCDC_DCLK_SEL_SHIFT;
+	if (sel == LCDC_DCLK_SEL_GPLL)
+		parent = clk_general_rate;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rockchip_dclk_lcdc_set_clk(struct rk3036_cru *cru,
+					uint clk_general_rate, uint freq)
+{
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(clk_general_rate, freq);
+	assert(src_clk_div - 1 <= 255);
+
+	rk_clrsetreg(&cru->cru_clksel_con[28],
+		     LCDC_DCLK_SEL_MASK | LCDC_DCLK_DIV_MASK,
+		     LCDC_DCLK_SEL_GPLL << LCDC_DCLK_SEL_SHIFT |
+		     (src_clk_div - 1) << LCDC_DCLK_DIV_SHIFT);
+
+	return rockchip_dclk_lcdc_get_clk(cru, clk_general_rate);
+}
+
+static ulong rockchip_aclk_lcdc_get_clk(struct rk3036_cru *cru,
+					uint clk_general_rate)
+{
+	u32 con, div, sel, parent;
+
+	con = readl(&cru->cru_clksel_con[31]);
+	div = (con & LCDC_ACLK_DIV_MASK) >> LCDC_ACLK_DIV_SHIFT;
+	sel = (con & LCDC_ACLK_SEL_MASK) >> LCDC_ACLK_SEL_SHIFT;
+	if (sel == LCDC_ACLK_SEL_GPLL)
+		parent = clk_general_rate;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rockchip_aclk_lcdc_set_clk(struct rk3036_cru *cru,
+					uint clk_general_rate, uint freq)
+{
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(clk_general_rate, freq);
+	assert(src_clk_div - 1 <= 31);
+
+	rk_clrsetreg(&cru->cru_clksel_con[31],
+		     LCDC_ACLK_SEL_MASK | LCDC_ACLK_DIV_MASK,
+		     LCDC_ACLK_SEL_GPLL << LCDC_ACLK_SEL_SHIFT |
+		     (src_clk_div - 1) << LCDC_ACLK_DIV_SHIFT);
+
+	return rockchip_aclk_lcdc_get_clk(cru, clk_general_rate);
+}
+
 static ulong rk3036_clk_get_rate(struct clk *clk)
 {
 	struct rk3036_clk_priv *priv = dev_get_priv(clk->dev);
+	ulong gclk_rate = rkclk_pll_get_rate(priv->cru, CLK_GENERAL);
 
 	switch (clk->id) {
 	case 0 ... 63:
 		return rkclk_pll_get_rate(priv->cru, clk->id);
+	case SCLK_LCDC:
+		return rockchip_dclk_lcdc_get_clk(priv->cru, gclk_rate);
+	case ACLK_LCDC:
+		return rockchip_aclk_lcdc_get_clk(priv->cru, gclk_rate);
 	default:
 		return -ENOENT;
 	}
@@ -333,6 +402,14 @@ static ulong rk3036_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_EMMC:
 		new_rate = rockchip_mmc_set_clk(priv->cru, gclk_rate,
 						clk->id, rate);
+		break;
+	case SCLK_LCDC:
+		new_rate = rockchip_dclk_lcdc_set_clk(priv->cru, gclk_rate,
+						      rate);
+		break;
+	case ACLK_LCDC:
+		new_rate = rockchip_aclk_lcdc_set_clk(priv->cru, gclk_rate,
+						      rate);
 		break;
 	default:
 		return -ENOENT;
