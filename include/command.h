@@ -221,4 +221,14 @@ int board_run_command(const char *cmdline);
 	U_BOOT_CMD_MKENT_COMPLETE(_name, _maxargs, _rep, _cmd,		\
 					_usage, _help, NULL)
 
+#ifdef CONFIG_U_BOOT_CMD_ALWAYS
+#define U_BOOT_CMD_ALWAYS(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+	ll_entry_declare(cmd_tbl_t, _name, cmd) =			\
+			{ #_name, _maxargs, _rep, _cmd, _usage,		\
+				_CMD_HELP(_help) _CMD_COMPLETE(NULL) }
+#else
+#define U_BOOT_CMD_ALWAYS(_name, _maxargs, _rep, _cmd, _usage, _help)	\
+		U_BOOT_CMD(_name, _maxargs, _rep, _cmd, _usage, _help)
+#endif
+
 #endif	/* __COMMAND_H */

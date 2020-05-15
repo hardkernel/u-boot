@@ -30,6 +30,14 @@ config SYS_PROMPT
 	  This string is displayed in the command line to the left of the
 	  cursor.
 
+config U_BOOT_CMD_ALWAYS
+	bool "Enable cmd with U_BOOT_CMD_ALWAYS() declared"
+	depends on !CMDLINE
+	help
+	  This function is used to support some special U-Boot commands with
+	  U_BOOT_CMD_ALWAYS() declared even when CONFIG_CMDLINE is disabled.
+	  It reduces the image size and works with simple CLI.
+
 menu "Autoboot options"
 
 config AUTOBOOT
