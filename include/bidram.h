@@ -19,6 +19,7 @@ struct bidram {
 	u64 size_u64[MEM_RESV_COUNT];
 };
 
+#ifdef CONFIG_BIDRAM
 /**
  * bidram_initr() - Initial bidram after relocation.
  *
@@ -104,5 +105,25 @@ parse_fn_t board_bidram_parse_fn(void);
  * @return 0 on success, otherwise error
  */
 int board_bidram_reserve(struct bidram *bidram);
+#else
+static inline int bidram_initr(void) { return 0; }
+static inline phys_size_t bidram_get_ram_size(void) { return 0; }
+static inline void bidram_gen_gd_bi_dram(void) { }
+static inline int bidram_reserve(enum memblk_id id, phys_addr_t base,
+				 phys_size_t size) { return 0; }
+static inline int bidram_reserve_by_name(const char *name, phys_addr_t base,
+					 phys_size_t size) { return 0; }
+static inline void bidram_dump(void) {}
+static inline int bidram_fixup(void) { return 0; }
+static inline u64 bidram_append_size(void) { return 0; }
+static inline parse_fn_t board_bidram_parse_fn(void) { return NULL; }
+static inline int board_bidram_reserve(struct bidram *bidram) { return 0; }
+static inline struct memblock *
+	bidram_reserved_is_overlap(phys_addr_t base, phys_size_t size)
+{
+	return NULL;
+}
+
+#endif
 
 #endif /* _BIDRAM_H */
