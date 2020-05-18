@@ -171,17 +171,8 @@ function process_args()
 				help
 				exit 0
 				;;
-
 			''|loader|trust|uboot|spl*|debug*|itb|env|EXT_DTB=*|nopack|fit*)
 				ARG_SUBCMD=$1
-				shift 1
-				;;
-			--boot_img|--rollback-index-boot|--rollback-index-uboot)
-				ARG_FIT_TOTAL="$ARG_FIT_TOTAL $1 $2 "
-				shift 2
-				;;
-			--spl-new|--no-check)
-				ARG_FIT_TOTAL="$ARG_FIT_TOTAL $1 "
 				shift 1
 				;;
 			map|sym|elf*)
@@ -192,8 +183,7 @@ function process_args()
 				fi
 				shift 1
 				;;
-
-			*.ini|*.INI)
+			*.ini)
 				if [ ! -f $1 ]; then
 					echo "ERROR: No $1"
 				fi
@@ -204,11 +194,18 @@ function process_args()
 				fi
 				shift 1
 				;;
-
 			*)
+				# out scripts args
+				NUM=$(./scripts/fit-mkimg.sh --p-check $1)
+				if [ $NUM -ne 0 ]; then
+					[ $NUM -eq 1 ] && ARG_FIT="${ARG_FIT} $1"
+					[ $NUM -eq 2 ] && ARG_FIT="${ARG_FIT} $1 $2"
+					shift ${NUM}
+					continue
 				# FUNC address
-				if [ -z $(echo $1 | sed 's/[0-9,a-f,A-F,x,X,-]//g') ]; then
+				elif [ -z $(echo $1 | sed 's/[0-9,a-f,A-F,x,X,-]//g') ]; then
 					ARG_FUNCADDR=$1
+				# xxx_defconfig
 				else
 					ARG_BOARD=$1
 					if [ ! -f configs/${ARG_BOARD}_defconfig ]; then
@@ -300,7 +297,7 @@ function sub_commands()
 
 		fit)
 			if [ "$opt" = "ns" ]; then
-				./scripts/fit-vboot.sh --no-vboot $ARG_FIT_TOTAL
+				./scripts/fit-mkimg.sh --uboot --boot --no-vboot ${ARG_FIT}
 			fi
 			exit 0
 			;;
@@ -346,7 +343,7 @@ function sub_commands()
 			;;
 
 		--rollback-index*)
-			pack_fit_image $ARG_FIT_TOTAL
+			pack_fit_image ${ARG_FIT}
 			exit 0
 			;;
 
@@ -508,7 +505,7 @@ function select_ini_file()
 
 function handle_args_late()
 {
-	ARG_FIT_TOTAL="$ARG_FIT_TOTAL --ini-trust $INI_TRUST --ini-loader $INI_LOADER"
+	ARG_FIT="${ARG_FIT} --ini-trust $INI_TRUST --ini-loader $INI_LOADER"
 }
 
 function pack_uboot_image()
@@ -729,11 +726,11 @@ function pack_trust_image()
 function pack_fit_image()
 {
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		./scripts/fit-vboot.sh $ARG_FIT_TOTAL
+		./scripts/fit-mkimg.sh --uboot --boot ${ARG_FIT}
 	else
 		rm uboot.img trust*.img -rf
-		./scripts/fit-vboot-uboot.sh --no-vboot --no-rebuild $ARG_FIT_TOTAL
-		echo "pack uboot.img (with uboot trust) okay! Input: $INI_TRUST"
+		./scripts/fit-mkimg.sh --uboot --no-vboot --no-rebuild ${ARG_FIT}
+		echo "pack uboot.img okay! Input: $INI_TRUST"
 	fi
 }
 
@@ -745,7 +742,7 @@ function pack_images()
 			pack_trust_image
 			pack_loader_image
 		elif [ "$IMAGE_FORMAT" = "FIT" ]; then
-			pack_fit_image $ARG_ROLLBACK_IDX_UBOOT $ARG_ROLLBACK_IDX_BOOT $ARG_FIT_TOTAL
+			pack_fit_image ${ARG_FIT}
 		fi
 	fi
 }
@@ -787,3 +784,4 @@ clean_files
 make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
 pack_images
 finish
+
