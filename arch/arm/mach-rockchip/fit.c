@@ -319,7 +319,8 @@ static int fit_image_load_resource(const void *fit, struct blk_desc *dev_desc,
 
 	*addr = (ulong)data;
 
-	return fit_image_load_one(fit, dev_desc, part, FIT_MULTI_PROP, data, 1);
+	return fit_image_load_one(fit, dev_desc, part, FIT_MULTI_PROP,
+				  data, IS_ENABLED(CONFIG_FIT_SIGNATURE));
 }
 
 #else
