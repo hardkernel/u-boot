@@ -12,7 +12,7 @@
 	#address-cells = <1>;
 
 	images {
-		fdt@1 {
+		fdt {
 			description = "Device tree blob";
 			image = "rk-kernel.dtb";
 			data = /incbin/("images/rk-kernel.dtb");
@@ -20,12 +20,12 @@
 			arch = "arm";
 			compression = "none";
 			load  = <0xffffff00>;
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
 
-		kernel@1 {
+		kernel {
 			description = "Kernel Image";
 			image = "kernel.img";
 			data = /incbin/("images/kernel.img");
@@ -35,12 +35,12 @@
 			compression = "none";
 			entry = <0xffffff01>;
 			load  = <0xffffff01>;
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
 
-		ramdisk@1 {
+		ramdisk {
 			description = "Ramdisk Image";
 			image = "ramdisk.img";
 			data = /incbin/("images/ramdisk.img");
@@ -49,34 +49,34 @@
 			os = "linux";
 			compression = "none";
 			load  = <0xffffff02>;
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
 
-		resource@1 {
+		resource {
 			description = "Resource Image";
 			image = "resource.img";
 			data = /incbin/("images/resource.img");
 			type = "multi";
 			arch = "arm";
 			compression = "none";
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
 	};
 
 	configurations {
-		default = "conf@1";
-		conf@1 {
+		default = "conf";
+		conf {
 			description = "Boot Linux kernel with FDT blob";
 			rollback-index = <0x0>;
-			fdt = "fdt@1";
-			kernel = "kernel@1";
-			ramdisk = "ramdisk@1";
-			multi = "resource@1";
-			signature@1 {
+			fdt = "fdt";
+			kernel = "kernel";
+			ramdisk = "ramdisk";
+			multi = "resource";
+			signature {
 				algo = "sha256,rsa2048";
 				key-name-hint = "dev";
 				sign-images = "fdt", "kernel", "ramdisk", "multi";

@@ -14,7 +14,7 @@ cat << EOF
 	#address-cells = <1>;
 
 	images {
-		uboot@1 {
+		uboot {
 			description = "U-Boot";
 			image = "u-boot-nodtb.bin";
 			data = /incbin/("./u-boot-nodtb.bin");
@@ -29,11 +29,11 @@ DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR
 UBOOT_BASE=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 echo "			load = <"$UBOOT_BASE">;"
 cat << EOF
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
-		optee@1 {
+		optee {
 			description = "OP-TEE";
 			image = "tee.bin";
 			data = /incbin/("./tee.bin");
@@ -53,17 +53,17 @@ TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 echo "			load = <0x"$TEE_LOAD_ADDR">;"
 echo "			entry = <0x"$TEE_LOAD_ADDR">;"
 cat << EOF
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
-		fdt@1 {
+		fdt {
 			description = "U-Boot dtb";
 			image = "u-boot.dtb";
 			data = /incbin/("./u-boot.dtb");
 			type = "flat_dt";
 			compression = "none";
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -74,7 +74,7 @@ if [ "$MCU_OFFSET" != "" ]; then
 MCU_LOAD_ADDR=$((DARM_BASE+$MCU_OFFSET))
 MCU_LOAD_ADDR=$(echo "obase=16;${MCU_LOAD_ADDR}"|bc)
 cat  << EOF
-		mcu@1 {
+		mcu {
 			description = "mcu";
 			image="mcu.bin";
 			data = /incbin/("./mcu.bin");
@@ -84,7 +84,7 @@ EOF
 echo "			load = <0x"$MCU_LOAD_ADDR">;"
 cat  << EOF
 			arch = "riscv";
-			hash@1 {
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -95,21 +95,21 @@ cat  << EOF
 	};
 
 	configurations {
-		default = "conf@1";
-		conf@1 {
+		default = "conf";
+		conf {
 			description = "Rockchip armv7 with OP-TEE";
 			rollback-index = <0x0>;
-			firmware = "optee@1";
-			loadables = "uboot@1";
-			fdt = "fdt@1";
+			firmware = "optee";
+			loadables = "uboot";
+			fdt = "fdt";
 EOF
 
 if [ "$MCU_OFFSET" != "" ]; then
-echo "			standalone = \"mcu@1\";"
+echo "			standalone = \"mcu\";"
 fi
 
 cat  << EOF
-			signature@1 {
+			signature {
 				algo = "sha256,rsa2048";
 				key-name-hint = "dev";
 EOF
