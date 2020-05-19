@@ -259,7 +259,7 @@ cleanup_rkusb:
 	return rc;
 }
 
-U_BOOT_CMD(rockusb, 4, 1, do_rkusb,
-	   "Use the rockusb Protocol",
-	   "<USB_controller> <devtype> <dev[:part]>  e.g. rockusb 0 mmc 0\n"
+U_BOOT_CMD_ALWAYS(rockusb, 4, 1, do_rkusb,
+		  "Use the rockusb Protocol",
+		  "<USB_controller> <devtype> <dev[:part]>  e.g. rockusb 0 mmc 0\n"
 );
