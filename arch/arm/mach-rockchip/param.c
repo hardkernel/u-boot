@@ -222,6 +222,24 @@ int param_parse_bootdev(char **devtype, char **devnum)
 			*devnum = "0";
 			break;
 #endif
+#ifdef CONFIG_NAND
+		case BOOT_TYPE_MTD_BLK_NAND:
+			*devtype = "mtd";
+			*devnum = "0";
+			break;
+#endif
+#ifdef CONFIG_MTD_SPI_NAND
+		case BOOT_TYPE_MTD_BLK_SPI_NAND:
+			*devtype = "mtd";
+			*devnum = "1";
+			break;
+#endif
+#ifdef CONFIG_SPI_FLASH_MTD
+		case BOOT_TYPE_MTD_BLK_SPI_NOR:
+			*devtype = "mtd";
+			*devnum = "2";
+			break;
+#endif
 		default:
 			printf("Unknown bootdev type: 0x%x\n",
 			       t->u.bootdev.devtype);
