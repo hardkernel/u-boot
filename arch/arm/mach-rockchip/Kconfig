@@ -423,12 +423,12 @@ endif
 config ROCKCHIP_RV1126
 	bool "Support Rockchip RV1126"
 	select CPU_V7
-	select GICV2
-	select ARM_SMCCC
-	select BOARD_LATE_INIT
-	select SUPPORT_SPL
+	select GICV2 if !SUPPORT_USBPLUG
+	select ARM_SMCCC if !SUPPORT_USBPLUG
 	select SUPPORT_TPL
-	select SPL
+	select SUPPORT_SPL
+	select SPL if !SUPPORT_USBPLUG
+	select BOARD_LATE_INIT if !SUPPORT_USBPLUG
 	help
 	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
 	  and a risc-v core.

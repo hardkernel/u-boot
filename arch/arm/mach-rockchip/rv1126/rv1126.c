@@ -56,6 +56,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SGRF_CON_SCR1_BOOT_ADDR	0x0b0
 #define SGRF_SOC_CON3		0x00c
 #define SCR1_START_ADDR		0x208000
+#define CRU_SOFTRST_CON11	0xFF49032C
+#define PMUGRF_SOC_CON1		0xFE020104
 
 void board_debug_uart_init(void)
 {
@@ -64,7 +66,7 @@ void board_debug_uart_init(void)
 
 int arch_cpu_init(void)
 {
-#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG)
 	/* Just set region 0 to unsecure */
 	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
 #endif
@@ -139,6 +141,16 @@ int arch_cpu_init(void)
 	writel(0x101, VDPU_PRIORITY_REG);
 	writel(0x101, JPEG_PRIORITY_REG);
 	writel(0x101, CRYPTO_PRIORITY_REG);
+#endif
+
+#if defined(CONFIG_SUPPORT_USBPLUG)
+	/* reset usbphy_otg usbphypor_otg */
+	writel(((0x1 << 6 | (1 << 8)) << 16) | (0x1 << 6) | (1 << 8), CRU_SOFTRST_CON11);
+	udelay(50);
+	writel(((0x1 << 6 | (1 << 8)) << 16) | (0), CRU_SOFTRST_CON11);
+
+	/* hold pmugrf's io reset */
+	writel(0x1 << 7 | 1 << 23, PMUGRF_SOC_CON1);
 #endif
 
 	return 0;
