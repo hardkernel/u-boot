@@ -320,6 +320,11 @@ static int gic_irq_resume(void)
 	gicd_writel(gicd_save.ctlr, GICD_CTLR);
 	dsb();
 
+#if defined(CONFIG_GICV3)
+	asm volatile("msr " __stringify(ICC_IGRPEN1_EL1) ", %0" : : "r" (1));
+	dsb();
+#endif
+
 	return 0;
 }
 
