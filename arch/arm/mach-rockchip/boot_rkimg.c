@@ -330,6 +330,8 @@ out:
 	run_command("run bootcmd", 0);
 }
 
+#if defined(CONFIG_USING_KERNEL_DTB) || defined(CONFIG_CMD_BOOTM) || \
+    defined(CONFIG_CMD_BOOTZ) || defined(CONFIG_CMD_BOOTI)
 #ifdef CONFIG_ROCKCHIP_DTB_VERIFY
 #ifdef CONFIG_DM_CRYPTO
 static int crypto_csum(u32 cap, char *input, u32 input_len, u8 *output)
@@ -512,3 +514,4 @@ int rockchip_read_dtb_file(void *fdt_addr)
 
 	return 0;
 }
+#endif
