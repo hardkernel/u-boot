@@ -96,12 +96,9 @@ void set_board_info(void)
 
 #if defined(CONFIG_TARGET_ODROID_XU4) || defined(CONFIG_TARGET_ODROID_XU3)
 	/* save board_name for select dtb */
-	if (!strncmp("xu3-lite" , bdtype, 8))
-		setenv("board_name", "xu3l");
-	else if (!strncmp("xu3", bdtype, 3))
-		setenv("board_name", "xu3");
-	else
-		setenv("board_name", "xu4");
+	setenv("board_name", "xu4");
+	if (!strncmp("xu3", bdtype, 3))
+		setenv("board_name", bdtype);
 
 	/* save board_id_value (adc value) */
 	{
