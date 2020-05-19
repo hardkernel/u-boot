@@ -561,7 +561,17 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 			data_buf = NULL;
 		}
 
-		ret = rockchip_sfc_do_xfer(sfc, data_buf, len);
+		if (sfc->cmd == 0x9f && len == 4) {
+			/* SPI Nand read id */
+			sfc->addr_bits = SFC_ADDR_XBITS;
+			sfc->addr_xbits_ext = 8;
+			sfc->dummy_bits = 0;
+			sfc->addr = 0;
+			((u8 *)data_buf)[0] = 0xff;
+			ret = rockchip_sfc_do_xfer(sfc, &((u8 *)data_buf)[1], 3);
+		} else {
+			ret = rockchip_sfc_do_xfer(sfc, data_buf, len);
+		}
 	}
 
 	return ret;
