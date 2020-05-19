@@ -8,6 +8,8 @@
 # core
 ifndef CONFIG_SPL_BUILD
 obj-y += init/
+obj-$(CONFIG_SUPPORT_USBPLUG) += usbplug/
+
 obj-y += main.o
 obj-y += exports.o
 obj-$(CONFIG_HASH) += hash.o
@@ -21,7 +23,9 @@ endif
 
 # # boards
 obj-y += board_f.o
+ifndef CONFIG_SUPPORT_USBPLUG
 obj-y += board_r.o
+endif
 obj-$(CONFIG_DISPLAY_BOARDINFO) += board_info.o
 obj-$(CONFIG_DISPLAY_BOARDINFO_LATE) += board_info.o
 

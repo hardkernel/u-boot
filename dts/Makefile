@@ -63,7 +63,7 @@ $(obj)/dt-spl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep)
 endif
 
-ifeq ($(CONFIG_USING_KERNEL_DTB),y)
+ifneq ($(CONFIG_USING_KERNEL_DTB)$(CONFIG_SUPPORT_USBPLUG),)
 $(obj)/dt.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep)
 else

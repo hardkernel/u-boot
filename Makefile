@@ -771,6 +771,7 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check
+ALL-$(CONFIG_SUPPORT_USBPLUG) += usbplug.bin
 
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
@@ -919,6 +920,11 @@ endif
 
 else
 u-boot.bin: u-boot-nodtb.bin FORCE
+	$(call if_changed,copy)
+endif
+
+ifeq ($(CONFIG_SUPPORT_USBPLUG),y)
+usbplug.bin: u-boot.bin
 	$(call if_changed,copy)
 endif
 
@@ -1355,12 +1361,21 @@ prepare: prepare0
 # Generate some files
 # ---------------------------------------------------------------------------
 
+ifeq ($(CONFIG_SUPPORT_USBPLUG),)
 define filechk_version.h
 	(echo \#define PLAIN_VERSION \"$(UBOOTRELEASE)\"; \
 	echo \#define U_BOOT_VERSION \"U-Boot \" PLAIN_VERSION; \
 	echo \#define CC_VERSION_STRING \"$$(LC_ALL=C $(CC) --version | head -n 1)\"; \
 	echo \#define LD_VERSION_STRING \"$$(LC_ALL=C $(LD) --version | head -n 1)\"; )
 endef
+else
+define filechk_version.h
+        (echo \#define PLAIN_VERSION \"$(UBOOTRELEASE)\"; \
+        echo \#define U_BOOT_VERSION \"USB-PLUG \" PLAIN_VERSION; \
+        echo \#define CC_VERSION_STRING \"$$(LC_ALL=C $(CC) --version | head -n 1)\"; \
+        echo \#define LD_VERSION_STRING \"$$(LC_ALL=C $(LD) --version | head -n 1)\"; )
+endef
+endif
 
 # The SOURCE_DATE_EPOCH mechanism requires a date that behaves like GNU date.
 # The BSD date on the other hand behaves different and would produce errors

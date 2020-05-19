@@ -674,3 +674,4 @@ config HASH
 endmenu
 
 source "common/spl/Kconfig"
+source "common/usbplug/Kconfig"
