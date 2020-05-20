@@ -265,7 +265,7 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 	    sfc->addr_bits == SFC_ADDR_32BITS)
 		data_width = rockchip_sfc_get_if_type(sfc);
 
-	if (sfc->addr_bits & SFC_ADDR_XBITS)
+	if (sfc->addr_bits == SFC_ADDR_XBITS)
 		writel(sfc->addr_xbits_ext - 1, &regs->abit);
 
 	val |= (data_width << SFC_DATA_WIDTH_SHIFT);
