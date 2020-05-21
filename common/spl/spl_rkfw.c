@@ -12,6 +12,7 @@
 #include <spl_rkfw.h>
 #include <linux/kernel.h>
 #include <asm/arch/spl_resource_img.h>
+#include <boot_rkimg.h>
 
 #ifdef CONFIG_SPL_ATF
 static const __aligned(16) struct s_fip_name_id fip_name_id[] = {
@@ -207,7 +208,7 @@ static int rkfw_load_trust(struct spl_load_info *info, u32 image_sector,
 
 	return ret;
 }
-#else
+#else /* op-tee */
 static int rkfw_load_trust(struct spl_load_info *info, u32 image_sector,
 			   struct spl_image_info *spl_image,
 			   int *found_rkfw, u32 try_count)
@@ -455,41 +456,52 @@ out:
 }
 
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
-			struct spl_load_info *info,
-			u32 trust_sector, u32 uboot_sector,
-			u32 boot_sector)
+			struct spl_load_info *info)
 {
+	u32 uboot_sector = CONFIG_RKFW_U_BOOT_SECTOR;
+	u32 trust_sector = CONFIG_RKFW_TRUST_SECTOR;
+	u32 boot_sector  = CONFIG_RKFW_BOOT_SECTOR;
 	int ret, try_count = RKFW_RETRY_SECTOR_TIMES;
 	int found_rkfw = 0;
+	char *part_name;
+#ifdef CONFIG_SPL_LIBDISK_SUPPORT
+	struct blk_desc *dev_desc = info->dev;
+	disk_partition_t part_info;
+
+	if (dev_desc) {
+		if (part_get_info_by_name(dev_desc, PART_UBOOT, &part_info) > 0)
+			uboot_sector = part_info.start;
+		if (part_get_info_by_name(dev_desc, PART_TRUST, &part_info) > 0)
+			trust_sector = part_info.start;
+		if (part_get_info_by_name(dev_desc, PART_BOOT, &part_info) > 0)
+			boot_sector = part_info.start;
+	}
+#endif
+	/* u-boot or boot */
+	if (spl_image->next_stage != SPL_NEXT_STAGE_UBOOT)
+		uboot_sector = 0;
 
 	ret = rkfw_load_trust(info, trust_sector, spl_image,
 			      &found_rkfw, try_count);
 	if (ret) {
-		printf("Load trust image failed! ret=%d\n", ret);
+		part_name = PART_TRUST;
 		goto out;
 	}
 
-#ifdef CONFIG_SPL_KERNEL_BOOT
-	if (spl_image->next_stage == SPL_NEXT_STAGE_UBOOT) {
-#endif
+	if (uboot_sector) {
 		ret = rkfw_load_uboot(info, uboot_sector, spl_image, try_count);
-		if (ret)
-			printf("Load uboot image failed! ret=%d\n", ret);
-		else
-			goto boot;
-#ifdef CONFIG_SPL_KERNEL_BOOT
-	} else if (spl_image->next_stage == SPL_NEXT_STAGE_KERNEL) {
-#endif
-		ret = rkfw_load_kernel(info, boot_sector, spl_image, try_count);
 		if (ret) {
-			printf("Load kernel image failed! ret=%d\n", ret);
+			part_name = PART_UBOOT;
 			goto out;
 		}
-#ifdef CONFIG_SPL_KERNEL_BOOT
+	} else {
+		ret = rkfw_load_kernel(info, boot_sector, spl_image, try_count);
+		if (ret) {
+			part_name = PART_BOOT;
+			goto out;
+		}
 	}
-#endif
 
-boot:
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	spl_image->fdt_addr = 0;
 #endif
@@ -500,6 +512,9 @@ boot:
 #endif
 
 out:
+	if (ret)
+		printf("Load %s part failed! ret=%d\n", part_name, ret);
+
 	/* If not found rockchip firmware, try others outside */
 	return found_rkfw ? ret : -EAGAIN;
 }

@@ -102,7 +102,5 @@ typedef struct tag_second_loader_hdr {
  * spl_load_rkfw_image - Load rockchip image(trust and U-Boot) and jump to bl31.
  */
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
-			struct spl_load_info *info,
-			u32 trust_sector, u32 uboot_sector,
-			u32 boot_sector);
+			struct spl_load_info *info);
 #endif
