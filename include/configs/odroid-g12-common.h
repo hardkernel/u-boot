@@ -189,7 +189,7 @@
         "boot_recovery="\
             "hdmitx edid; "\
             "if test ${hdmimode} = custombuilt; then setenv cmode modeline=${modeline} customwidth=${customwidth} customheight=${customheight}; fi; "\
-            "if test ${hdmimode} = 2160p30hz || test ${hdmimode} = 2160p60hz; then setenv hdmimode 1080p60hz; fi; "\
+            "if test ${hdmimode} == 2160p*; then setenv hdmimode 1080p60hz; fi; "\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} "\
                 "vout=${hdmimode},enable hdmimode=${hdmimode} ${cmode} voutmode=${voutmode} "\
                 "cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
