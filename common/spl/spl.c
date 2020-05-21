@@ -83,7 +83,10 @@ void __weak spl_perform_fixups(struct spl_image_info *spl_image)
 }
 
 /* Get the next stage process */
-__weak void spl_next_stage(struct spl_image_info *spl) {}
+__weak void spl_next_stage(struct spl_image_info *spl)
+{
+	spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+}
 
 /* Weak default function for arch/board-specific preppare before jumping */
 int __weak spl_board_prepare_for_jump(struct spl_image_info *spl_image)
