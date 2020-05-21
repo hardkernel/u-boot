@@ -8,6 +8,7 @@
  */
 #include <common.h>
 #include <dm.h>
+#include <part.h>
 #include <spl.h>
 #include <spl_rkfw.h>
 #include <linux/compiler.h>
@@ -48,9 +49,7 @@ static int mmc_load_legacy(struct spl_image_info *spl_image, struct mmc *mmc,
 static ulong h_spl_load_read(struct spl_load_info *load, ulong sector,
 			     ulong count, void *buf)
 {
-	struct mmc *mmc = load->dev;
-
-	return blk_dread(mmc_get_blk_desc(mmc), sector, count, buf);
+	return blk_dread(load->dev, sector, count, buf);
 }
 
 static __maybe_unused
@@ -60,27 +59,6 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 	unsigned long count;
 	struct image_header *header;
 	int ret = 0;
-
-#ifdef CONFIG_SPL_LOAD_RKFW
-	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
-	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
-	u32 boot_sectors = CONFIG_RKFW_BOOT_SECTOR;
-	struct spl_load_info load;
-
-	load.dev = mmc;
-	load.priv = NULL;
-	load.filename = NULL;
-	load.bl_len = mmc->read_bl_len;
-	load.read = h_spl_load_read;
-
-	ret = spl_load_rkfw_image(spl_image, &load,
-				  trust_sectors,
-				  uboot_sectors,
-				  boot_sectors);
-	/* If boot successfully or can't try others, just go end */
-	if (!ret || ret != -EAGAIN)
-		goto end;
-#endif
 
 	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
 					 sizeof(struct image_header));
@@ -104,7 +82,7 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 		struct spl_load_info load;
 
 		debug("Found FIT\n");
-		load.dev = mmc;
+		load.dev = mmc_get_blk_desc(mmc);
 		load.priv = NULL;
 		load.filename = NULL;
 		load.bl_len = mmc->read_bl_len;
@@ -320,6 +298,19 @@ int spl_mmc_load_image(struct spl_image_info *spl_image,
 		return err;
 	}
 
+#ifdef CONFIG_SPL_LOAD_RKFW
+	struct spl_load_info load;
+
+	load.dev = mmc_get_blk_desc(mmc);
+	load.priv = NULL;
+	load.filename = NULL;
+	load.bl_len = mmc->read_bl_len;
+	load.read = h_spl_load_read;
+
+	err = spl_load_rkfw_image(spl_image, &load);
+	if (!err || err != -EAGAIN)
+		return err;
+#endif
 	boot_mode = spl_boot_mode(bootdev->boot_device);
 	err = -EINVAL;
 	switch (boot_mode) {
