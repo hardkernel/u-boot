@@ -20,13 +20,18 @@ ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 # inside of boot_mode.c when CONFIG_BOOT_MODE_REG is 0.  This way,
 # we can have the preprocessor correctly recognise both 0x0 and 0
 # meaning "turn it off".
+
+obj-y += chip_info.o
+ifndef CONFIG_SUPPORT_USBPLUG
 obj-y += boot_mode.o
 obj-y += boot_rkimg.o
 obj-y += board.o
-obj-y += chip_info.o
 obj-y += iomem.o
 obj-y += memblk.o
 obj-y += hotkey.o
+else
+obj-y += usbplug.o
+endif
 
 obj-$(CONFIG_USING_KERNEL_DTB) += kernel_dtb.o
 obj-$(CONFIG_ROCKCHIP_FIT_IMAGE) += fit.o
