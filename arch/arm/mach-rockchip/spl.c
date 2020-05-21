@@ -316,7 +316,7 @@ void spl_hang_reset(void)
 int fit_board_verify_required_sigs(void)
 {
 	uint8_t vboot = 0;
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_v2)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2)
 	struct udevice *dev;
 
 	dev = misc_otp_get_device(OTP_S);
