@@ -78,12 +78,8 @@ static ulong mtd_spl_load_read(struct spl_load_info *load, ulong sector,
 #ifdef CONFIG_SPL_LOAD_RKFW
 int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 {
-	int ret = -1;
-
-	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
-	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
-	u32 boot_sectors = CONFIG_RKFW_BOOT_SECTOR;
 	struct spl_load_info load;
+	int ret;
 
 	load.dev = desc;
 	load.priv = NULL;
@@ -91,20 +87,7 @@ int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 	load.bl_len = desc->blksz;
 	load.read = mtd_spl_load_read;
 
-#ifdef CONFIG_SPL_AB
-	char trust_partition[] = "trust";
-	char uboot_partition[] = "uboot";
-
-	spl_get_partitions_sector(desc, trust_partition,
-				  &trust_sectors);
-	spl_get_partitions_sector(desc, uboot_partition,
-				  &uboot_sectors);
-#endif
-
-	ret = spl_load_rkfw_image(spl_image, &load,
-				  trust_sectors,
-				  uboot_sectors,
-				  boot_sectors);
+	ret = spl_load_rkfw_image(spl_image, &load);
 	if (ret) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl_mtd_load_rkfw: mtd block read error\n");
@@ -112,7 +95,7 @@ int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 		return -1;
 	}
 
-	return ret;
+	return 0;
 }
 #endif
 
