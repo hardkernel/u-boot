@@ -78,8 +78,10 @@ int arch_cpu_init(void)
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0)
-			break;
+		if (delay == 0) {
+			printf("Fail to set domain.");
+			hang();
+		}
 	} while (readl(PMU_BASE_ADDR + PMU_PWR_DWN_ST));
 
 	/* release all idle request */
@@ -91,8 +93,10 @@ int arch_cpu_init(void)
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0)
-			break;
+		if (delay == 0) {
+			printf("Fail to get ack on domain.\n");
+			hang();
+		}
 	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ACK));
 
 	delay = 1000;
@@ -100,8 +104,10 @@ int arch_cpu_init(void)
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0)
-			break;
+		if (delay == 0) {
+			printf("Fail to set idle on domain.\n");
+			hang();
+		}
 	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ST));
 
 	writel(0x303, USB_HOST_PRIORITY_REG);
