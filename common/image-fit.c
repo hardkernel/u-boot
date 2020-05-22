@@ -1971,15 +1971,6 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 	const char *prop_name;
 	int ret;
 
-#ifndef USE_HOSTCC
-	/* If board required sigs, check self */
-	if (fit_board_verify_required_sigs() &&
-	    !IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
-		printf("Verified-boot requires CONFIG_FIT_SIGNATURE enabled\n");
-		hang();
-	}
-#endif
-
 	fit = map_sysmem(addr, 0);
 	fit_uname = fit_unamep ? *fit_unamep : NULL;
 	fit_uname_config = fit_uname_configp ? *fit_uname_configp : NULL;
@@ -2020,6 +2011,14 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 		fit_base_uname_config = fdt_get_name(fit, cfg_noffset, NULL);
 		printf("   Using '%s' configuration\n", fit_base_uname_config);
 		if (image_type == IH_TYPE_KERNEL) {
+#ifndef USE_HOSTCC
+			/* If board required sigs, check self */
+			if (fit_board_verify_required_sigs() &&
+			    !IS_ENABLED(CONFIG_FIT_SIGNATURE)) {
+				printf("Verified-boot requires CONFIG_FIT_SIGNATURE enabled\n");
+				hang();
+			}
+#endif
 			/* Remember (and possibly verify) this config */
 			images->fit_uname_cfg = fit_base_uname_config;
 			if (IMAGE_ENABLE_VERIFY) {

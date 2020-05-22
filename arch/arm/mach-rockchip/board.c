@@ -836,7 +836,7 @@ int fit_board_verify_required_sigs(void)
 
 	ret = trusty_read_vbootkey_enable_flag(&vboot);
 	if (ret) {
-		printf("Can't read verified-boot flag\n");
+		printf("Can't read verified-boot flag, ret=%d\n", ret);
 		return 1;
 	}
 #endif
