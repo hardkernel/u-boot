@@ -202,4 +202,52 @@ struct rv1126_grf {
 
 check_member(rv1126_grf, usb_id_con, 0x1031c);
 
+struct rv1126_pmugrf {
+	unsigned int gpio0a_iomux_l;
+	unsigned int gpio0a_iomux_h;
+	unsigned int gpio0b_iomux_l;
+	unsigned int gpio0b_iomux_h;
+	unsigned int gpio0c_iomux_l;
+	unsigned int reserved0[3];
+	unsigned int gpio0a_ds_l;
+	unsigned int gpio0a_ds_h;
+	unsigned int gpio0b_ds_l;
+	unsigned int gpio0b_ds_h;
+	unsigned int gpio0c_ds_l;
+	unsigned int osc_ds;
+	unsigned int reserved1[2];
+	unsigned int gpio0a_p;
+	unsigned int gpio0b_p;
+	unsigned int gpio0c_p_l;
+	unsigned int reserved2[1];
+	unsigned int gpio0a_ie;
+	unsigned int gpio0b_ie;
+	unsigned int gpio0c_ie_l;
+	unsigned int reserved3[1];
+	unsigned int gpio0a_smt;
+	unsigned int gpio0b_smt;
+	unsigned int gpio0c_smt_l;
+	unsigned int reserved4[(0x100 - 0x68) / 4 - 1];
+	unsigned int soc_con[7];
+	unsigned int reserved5[(0x140 - 0x118) / 4 - 1];
+	unsigned int io_vsel;
+	unsigned int io_vret;
+	unsigned int reserved6[(0x180 - 0x144) / 4 - 1];
+	unsigned int pmupvtm_clkdiv;
+	unsigned int reserved7[(0x200 - 0x180) / 4 - 1];
+	unsigned int os_reg[12];
+	unsigned int rstfunc_status;
+	unsigned int rstfunc_clr;
+	unsigned int reserved8[(0x380 - 0x234) / 4 - 1];
+	unsigned int sd_detect_con;
+	unsigned int reserved9[3];
+	unsigned int sd_detect_status;
+	unsigned int reserved10[3];
+	unsigned int sd_detect_clr;
+	unsigned int reserved11[3];
+	unsigned int sd_det_count;
+};
+
+check_member(rv1126_pmugrf, sd_det_count, 0x3b0);
+
 #endif
