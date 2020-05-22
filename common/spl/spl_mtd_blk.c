@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <image.h>
 #include <malloc.h>
+#include <mtd_blk.h>
 #include <part.h>
 #include <spl.h>
 #include <spl_ab.h>
@@ -125,7 +126,9 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 	desc = find_mtd_device(spl_mtd_get_device_index(bootdev->boot_device));
 	if (!desc)
 		return -ENODEV;
-
+#ifdef CONFIG_SPL_LIBDISK_SUPPORT
+	mtd_blk_map_partitions(desc);
+#endif
 	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT)) {
 		header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
 					 sizeof(struct image_header));
