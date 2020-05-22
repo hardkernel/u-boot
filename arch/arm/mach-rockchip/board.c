@@ -816,6 +816,8 @@ int fit_board_verify_required_sigs(void)
 		return 1;
 	}
 #endif
+	printf("## Verified-boot: %d\n", vboot);
+
 	return vboot;
 }
 
