@@ -115,7 +115,6 @@ TEEC_Result TEEC_SMC_OpenSession(TEEC_Context *context,
 #endif
 
 #ifdef CONFIG_OPTEE_V2
-#if defined CONFIG_ARM64 || defined CONFIG_ARM64_BOOT_AARCH32
 	uint8_t * session_uuid = (uint8_t *)&TeeSmcMetaSession->uuid;
 	tee_uuid_to_octets(session_uuid, destination);
 	memcpy((void *)&TeeSmc32Param[0].u.value, &TeeSmcMetaSession->uuid, sizeof(TeeSmcMetaSession->uuid));
@@ -125,9 +124,6 @@ TEEC_Result TEEC_SMC_OpenSession(TEEC_Context *context,
 				OPTEE_MSG_ATTR_META_V2;
 	TeeSmc32Param[1].attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT_V2 |
 				OPTEE_MSG_ATTR_META_V2;
-#else
-	printf("TEEC: Not support! All rockchips use optee v2.5 are 64 bits! \n");
-#endif
 #endif
 
 	SetTeeSmc32Params(operation, TeeSmc32Param + MetaNum);
@@ -307,12 +303,8 @@ void SetTeeSmc32Params(TEEC_Operation *operation,
 #endif
 
 #ifdef CONFIG_OPTEE_V2
-#if defined CONFIG_ARM64 || defined CONFIG_ARM64_BOOT_AARCH32
 			attr += (OPTEE_MSG_ATTR_TYPE_TMEM_INPUT_V2 - TEEC_MEMREF_TEMP_INPUT);
 			debug("TEEC: OPTEE_OS_V2 ARCH64 attr %x\n", attr);
-#else
-			printf("TEEC: Not support! All rockchips use optee v2 are 64 bits! \n");
-#endif
 #endif
 
 			TeeSmc32Param[ParamCount].attr = attr;
