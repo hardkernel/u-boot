@@ -1094,6 +1094,24 @@ int fit_set_timestamp(void *fit, int noffset, time_t timestamp)
 	return 0;
 }
 
+int fit_set_totalsize(void *fit, int noffset, time_t totalsize)
+{
+	uint32_t t;
+	int ret;
+
+	t = cpu_to_uimage(totalsize);
+	ret = fdt_setprop(fit, noffset, FIT_TOTALSIZE_PROP, &t,
+				sizeof(uint32_t));
+	if (ret) {
+		printf("Can't set '%s' property for '%s' node (%s)\n",
+		      FIT_TOTALSIZE_PROP, fit_get_name(fit, noffset, NULL),
+		      fdt_strerror(ret));
+		return ret == -FDT_ERR_NOSPACE ? -ENOSPC : -1;
+	}
+
+	return 0;
+}
+
 int fit_get_image_defconf_node(const void *fit, int *images_noffset, int *def_noffset)
 {
 	int images_node, confs_node, defconf_node;

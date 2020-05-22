@@ -919,6 +919,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_DATA_OFFSET_PROP	"data-offset"
 #define FIT_DATA_SIZE_PROP	"data-size"
 #define FIT_TIMESTAMP_PROP	"timestamp"
+#define FIT_TOTALSIZE_PROP	"totalsize"
 #define FIT_DESC_PROP		"description"
 #define FIT_ARCH_PROP		"arch"
 #define FIT_TYPE_PROP		"type"
@@ -1025,6 +1026,7 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 			 size_t size, char **err_msgp);
 
 int fit_set_timestamp(void *fit, int noffset, time_t timestamp);
+int fit_set_totalsize(void *fit, int noffset, time_t totalsize);
 
 int fit_get_image_defconf_node(const void *fit,
 			       int *images_noffset, int *def_noffset);
