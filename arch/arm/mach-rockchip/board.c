@@ -22,6 +22,7 @@
 #include <memblk.h>
 #include <misc.h>
 #include <of_live.h>
+#include <mtd_blk.h>
 #include <ram.h>
 #include <rockchip_debugger.h>
 #include <syscon.h>
@@ -345,6 +346,17 @@ static void board_debug_init(void)
 		printf("CLI: off\n");
 }
 
+#ifdef CONFIG_MTD_BLK
+static void board_mtd_blk_map_partitions(void)
+{
+	struct blk_desc *dev_desc;
+
+	dev_desc = rockchip_get_bootdev();
+	if (dev_desc)
+		mtd_blk_map_partitions(dev_desc);
+}
+#endif
+
 int board_init(void)
 {
 	board_debug_init();
@@ -354,6 +366,9 @@ int board_init(void)
 #endif
 
 #ifdef CONFIG_USING_KERNEL_DTB
+#ifdef CONFIG_MTD_BLK
+	board_mtd_blk_map_partitions();
+#endif
 	init_kernel_dtb();
 #endif
 	early_download();
