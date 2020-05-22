@@ -150,7 +150,9 @@ static int spl_mmc_find_device(struct mmc **mmcp, u32 boot_device)
 
 #ifdef CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION
 static int mmc_load_image_raw_partition(struct spl_image_info *spl_image,
-					struct mmc *mmc, int partition)
+					struct mmc *mmc,
+					const char *partition_name,
+					int partition)
 {
 	disk_partition_t info;
 	int err;
@@ -169,8 +171,11 @@ static int mmc_load_image_raw_partition(struct spl_image_info *spl_image,
 		}
 	}
 #endif
-
-	err = part_get_info(mmc_get_blk_desc(mmc), partition, &info);
+	if (strcmp(partition_name, ""))
+		err = part_get_info_by_name(mmc_get_blk_desc(mmc),
+					    partition_name, &info);
+	else
+		err = part_get_info(mmc_get_blk_desc(mmc), partition, &info);
 	if (err) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl: partition error\n");
@@ -347,6 +352,7 @@ int spl_mmc_load_image(struct spl_image_info *spl_image,
 		}
 #ifdef CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION
 		err = mmc_load_image_raw_partition(spl_image, mmc,
+			CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_NAME,
 			CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION);
 		if (!err)
 			return err;

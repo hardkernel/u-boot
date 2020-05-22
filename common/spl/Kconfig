@@ -172,6 +172,7 @@ config SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR
 
 config SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION
 	bool "MMC Raw mode: by partition"
+	depends on SPL_LIBDISK_SUPPORT
 	help
 	  Use a partition for loading U-Boot when using MMC/SD in raw mode.
 
@@ -190,6 +191,14 @@ config SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION_TYPE
 	  Use partition type for specifying U-Boot partition on MMC/SD in
 	  raw mode. U-Boot will be loaded from the first partition of this
 	  type to be found.
+
+config SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_NAME
+	string "Partition Name on the MMC to load U-Boot from"
+	depends on SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION
+	default "uboot"
+	help
+          Partition Name on the MMC to load U-Boot from, when the MMC is being
+          used in raw mode.
 
 config SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_TYPE
 	hex "Partition Type on the MMC to load U-Boot from"
