@@ -103,6 +103,30 @@ static bool get_mtd_blk_map_address(struct mtd_info *mtd, loff_t *off)
 	return mapped;
 }
 
+void mtd_blk_map_partitions(struct blk_desc *desc)
+{
+	disk_partition_t info;
+	int i, ret;
+
+	if (!desc)
+		return;
+
+	if (desc->if_type != IF_TYPE_MTD)
+		return;
+
+	for (i = 1; i < MAX_SEARCH_PARTITIONS; i++) {
+		ret = part_get_info(desc, i, &info);
+		if (ret != 0)
+			continue;
+
+		if (mtd_blk_map_table_init(desc,
+					   info.start << 9,
+					   info.size << 9)) {
+			printf("mtd block map table fail\n");
+		}
+	}
+}
+
 static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 				       size_t *length, size_t *actual,
 				       loff_t lim, u_char *buffer)

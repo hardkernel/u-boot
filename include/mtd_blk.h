@@ -15,5 +15,6 @@ char *mtd_part_parse(void);
 int mtd_blk_map_table_init(struct blk_desc *desc,
 			   loff_t offset,
 			   size_t length);
+void mtd_blk_map_partitions(struct blk_desc *desc);
 
 #endif
