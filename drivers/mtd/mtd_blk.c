@@ -82,6 +82,27 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 	}
 }
 
+static bool get_mtd_blk_map_address(struct mtd_info *mtd, loff_t *off)
+{
+	bool mapped;
+	loff_t offset = *off;
+	size_t block_offset = offset & (mtd->erasesize - 1);
+
+	mapped = false;
+	if (!mtd_map_blk_table ||
+	    mtd_map_blk_table[(u64)offset >> mtd->erasesize_shift] ==
+	    MTD_BLK_TABLE_BLOCK_UNKNOWN ||
+	    mtd_map_blk_table[(u64)offset >> mtd->erasesize_shift] ==
+	    0xffffffff)
+		return mapped;
+
+	mapped = true;
+	*off = (loff_t)(((u32)mtd_map_blk_table[(u64)offset >>
+		mtd->erasesize_shift] << mtd->erasesize_shift) + block_offset);
+
+	return mapped;
+}
+
 static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 				       size_t *length, size_t *actual,
 				       loff_t lim, u_char *buffer)
@@ -94,23 +115,11 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 	while (left_to_read > 0) {
 		size_t block_offset = offset & (erasesize - 1);
 		size_t read_length;
-		loff_t mapped_offset;
-		bool mapped;
 
 		if (offset >= mtd->size)
 			return 0;
 
-		mapped_offset = offset;
-		mapped = false;
-		if (mtd_map_blk_table &&
-		    mtd_map_blk_table[(u64)offset >> mtd->erasesize_shift] !=
-		    MTD_BLK_TABLE_BLOCK_UNKNOWN)  {
-			mapped = true;
-			mapped_offset = (loff_t)(((u32)mtd_map_blk_table[(u64)offset >>
-				mtd->erasesize_shift] << mtd->erasesize_shift) + block_offset);
-		}
-
-		if (!mapped) {
+		if (!get_mtd_blk_map_address(mtd, &offset)) {
 			if (mtd_block_isbad(mtd, offset & ~(erasesize - 1))) {
 				printf("Skip bad block 0x%08llx\n",
 				       offset & ~(erasesize - 1));
@@ -124,11 +133,11 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 		else
 			read_length = erasesize - block_offset;
 
-		rval = mtd_read(mtd, mapped_offset, read_length, &read_length,
+		rval = mtd_read(mtd, offset, read_length, &read_length,
 				p_buffer);
 		if (rval && rval != -EUCLEAN) {
 			printf("NAND read from offset %llx failed %d\n",
-			       mapped_offset, rval);
+			       offset, rval);
 			*length -= left_to_read;
 			return rval;
 		}
