@@ -711,6 +711,13 @@ config ROCKCHIP_FIT_IMAGE_PACK
 	help
 	  This enable fit image pack of U-Boot and TEE, it's used for make.sh script.
 
+config ROCKCHIP_UART_MUX_SEL_M
+	int "UART mux select"
+	default 0
+	depends on TPL
+	help
+	  This select uart multiplexer for debug uart iomux in board_debug_uart_init.
+
 config GICV2
 	bool "ARM GICv2"
 
