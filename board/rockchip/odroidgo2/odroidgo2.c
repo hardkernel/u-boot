@@ -172,7 +172,8 @@ int rk_board_late_init(void)
 	}
 
 #ifdef CONFIG_DM_CHARGE_DISPLAY
-	charge_display();
+	if (CMD_RET_SUCCESS != run_command("fatload mmc 1:1 $loadaddr manufacture", 0))
+		charge_display();
 #endif
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
