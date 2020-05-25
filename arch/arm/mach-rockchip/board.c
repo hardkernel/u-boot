@@ -406,11 +406,11 @@ int board_fdt_fixup(void *blob)
  *
  * What ever U-Boot is 64-bit or 32-bit mode, the OP-TEE is always 64-bit mode.
  *
- * Command for OP-TEE:
+ * Common for OP-TEE:
  *	64-bit mode: dcache is always enabled;
  *	32-bit mode: dcache is always disabled(Due to some unknown issue);
  *
- * Command for U-Boot:
+ * Common for U-Boot:
  *	64-bit mode: MMU table is static defined in rkxxx.c file, all memory
  *		     regions are mapped. That's good to match OP-TEE MMU policy.
  *
