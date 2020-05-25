@@ -13,8 +13,6 @@
 
 	images {
 		fdt {
-			description = "Device tree blob";
-			image = "rk-kernel.dtb";
 			data = /incbin/("images/rk-kernel.dtb");
 			type = "flat_dt";
 			arch = "arm";
@@ -26,8 +24,6 @@
 		};
 
 		kernel {
-			description = "Kernel Image";
-			image = "kernel.img";
 			data = /incbin/("images/kernel.img");
 			type = "kernel";
 			arch = "arm";
@@ -41,8 +37,6 @@
 		};
 
 		ramdisk {
-			description = "Ramdisk Image";
-			image = "ramdisk.img";
 			data = /incbin/("images/ramdisk.img");
 			type = "ramdisk";
 			arch = "arm";
@@ -55,8 +49,6 @@
 		};
 
 		resource {
-			description = "Resource Image";
-			image = "resource.img";
 			data = /incbin/("images/resource.img");
 			type = "multi";
 			arch = "arm";

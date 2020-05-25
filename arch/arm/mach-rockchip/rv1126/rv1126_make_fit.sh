@@ -16,7 +16,6 @@ cat << EOF
 	images {
 		uboot {
 			description = "U-Boot";
-			image = "u-boot-nodtb.bin";
 			data = /incbin/("./u-boot-nodtb.bin");
 			type = "standalone";
 			os = "U-Boot";
@@ -35,7 +34,6 @@ cat << EOF
 		};
 		optee {
 			description = "OP-TEE";
-			image = "tee.bin";
 			data = /incbin/("./tee.bin");
 			type = "firmware";
 			arch = "arm";
@@ -59,7 +57,6 @@ cat << EOF
 		};
 		fdt {
 			description = "U-Boot dtb";
-			image = "u-boot.dtb";
 			data = /incbin/("./u-boot.dtb");
 			type = "flat_dt";
 			compression = "none";
@@ -76,7 +73,6 @@ MCU_LOAD_ADDR=$(echo "obase=16;${MCU_LOAD_ADDR}"|bc)
 cat  << EOF
 		mcu {
 			description = "mcu";
-			image="mcu.bin";
 			data = /incbin/("./mcu.bin");
 			type = "standalone";
 			compression = "none";
