@@ -328,7 +328,7 @@ int fit_board_verify_required_sigs(void)
 		return 1;
 	}
 #endif
-	printf("## Verified-boot: %d\n", vboot);
+	printf("## Verified-boot: %d\n", vboot == 0xff);
 
 	return vboot == 0xff;
 }
