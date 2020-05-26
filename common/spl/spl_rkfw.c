@@ -385,6 +385,10 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 			udelay(10);
 		}
 
+		ret = misc_decompress_stop(dev);
+		if (ret)
+			goto out;
+
 		ret = misc_decompress_start(dev,
 					    CONFIG_SPL_RAMDISK_COMPRESS_ADDR,
 					    CONFIG_SPL_RAMDISK_ADDR,
