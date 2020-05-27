@@ -933,7 +933,7 @@ static init_fnc_t init_sequence_r[] = {
 	initr_onenand,
 #endif
 #ifdef CONFIG_MTD_BLK
-	initr_mtd_blk
+	initr_mtd_blk,
 #endif
 #ifdef CONFIG_MMC
 	initr_mmc,
