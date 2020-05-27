@@ -144,6 +144,19 @@ config ROCKCHIP_GPIO
 	  The GPIOs for a device are defined in the device tree with one node
 	  for each bank.
 
+config ROCKCHIP_GPIO_V2
+	bool "Rockchip GPIO driver version 2.0"
+	depends on ROCKCHIP_GPIO
+	default n
+	help
+	  Support GPIO access on Rockchip SoCs. The GPIOs are arranged into
+	  a number of banks (different for each SoC type) each with 32 GPIOs.
+	  The GPIOs for a device are defined in the device tree with one node
+	  for each bank.
+
+	  Support version 2.0 GPIO controller, which support write enable bits
+	  for some registers, such as dr, ddr.
+
 config SANDBOX_GPIO
 	bool "Enable sandbox GPIO driver"
 	depends on SANDBOX && DM && DM_GPIO
