@@ -84,7 +84,7 @@ source (ulong addr, const char *fit_uname)
 		 * past the zero-terminated sequence of image lengths to get
 		 * to the actual image data
 		 */
-		while (*data++);
+		while (*data++ != IMAGE_PARAM_INVAL);
 		break;
 #endif
 #if defined(CONFIG_FIT)
