@@ -101,6 +101,7 @@ static int rockchip_gpio_probe(struct udevice *dev)
 	struct gpio_dev_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct rockchip_gpio_priv *priv = dev_get_priv(dev);
 	char *end;
+	int pins_num;
 	int ret;
 
 	priv->regs = dev_read_addr_ptr(dev);
@@ -113,6 +114,10 @@ static int rockchip_gpio_probe(struct udevice *dev)
 	priv->bank = trailing_strtoln(dev->name, end);
 	priv->name[0] = 'A' + priv->bank;
 	uc_priv->bank_name = priv->name;
+
+	pins_num = pinctrl_get_pins_count(priv->pinctrl);
+	if ((priv->bank + 1) * ROCKCHIP_GPIOS_PER_BANK >= pins_num)
+		uc_priv->gpio_count = pins_num - priv->bank * ROCKCHIP_GPIOS_PER_BANK;
 
 	return 0;
 }
