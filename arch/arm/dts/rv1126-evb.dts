@@ -20,11 +20,18 @@
 		u-boot,dm-spl;
 		status = "okay";
 
-		vol-up-key {
+		volumeup-key {
 			u-boot,dm-spl;
 			linux,code = <KEY_VOLUMEUP>;
 			label = "volume up";
 			press-threshold-microvolt = <0>;
+		};
+
+		menu-key {
+			u-boot,dm-spl;
+			linux,code = <KEY_MENU>;
+			label = "menu";
+			press-threshold-microvolt = <1198828>;
 		};
 	};
 };
