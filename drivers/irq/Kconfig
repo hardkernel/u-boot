@@ -5,9 +5,3 @@ config IRQ
 	help
 	  Provide IRQ support for platforms
 
-config IRQ2GPIO_V2
-	bool "Enable irq to gpio v2 transfer"
-	depends on IRQ
-	help
-	  Some platform with new GPIO IP implements the low/high
-	  registers with write mask. This configure handles it.
