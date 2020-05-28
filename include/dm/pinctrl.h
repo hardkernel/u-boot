@@ -329,4 +329,14 @@ int pinctrl_decode_pin_config(const void *blob, int node);
 */
 int pinctrl_get_gpio_mux(struct udevice *dev, int banknum, int index);
 
+/**
+ * pinctrl_get_pins_count() - get the total pins count for all GPIOs
+ *
+ * This allows the total pins count for all GPIO to be obtained.
+ *
+ * @dev:	Pinctrl device to use
+ * @return pins count
+*/
+int pinctrl_get_pins_count(struct udevice *dev);
+
 #endif /* __PINCTRL_H */
