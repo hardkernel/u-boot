@@ -429,6 +429,7 @@ config ROCKCHIP_RV1126
 	select SUPPORT_SPL
 	select SPL if !SUPPORT_USBPLUG
 	select BOARD_LATE_INIT if !SUPPORT_USBPLUG
+	select ROCKCHIP_GPIO_V2
 	help
 	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
 	  and a risc-v core.
