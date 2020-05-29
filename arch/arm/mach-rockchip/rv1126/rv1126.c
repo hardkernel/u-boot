@@ -58,6 +58,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SCR1_START_ADDR		0x208000
 #define CRU_SOFTRST_CON11	0xFF49032C
 #define PMUGRF_SOC_CON1		0xFE020104
+#define GRF_IOFUNC_CON3		0xFF01026C
 
 void board_debug_uart_init(void)
 {
@@ -70,6 +71,9 @@ int arch_cpu_init(void)
 	/* Just set region 0 to unsecure */
 	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
 #endif
+
+	/* disable force jtag mux route to both group0 and group1 */
+	writel(0x00300000, GRF_IOFUNC_CON3);
 
 #if !defined(CONFIG_TPL_BUILD)
 	int delay;
