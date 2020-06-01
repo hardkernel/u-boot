@@ -581,6 +581,7 @@ static int dwmci_init(struct mmc *mmc)
 {
 	struct dwmci_host *host = mmc->priv;
 	uint32_t use_dma;
+	uint32_t verid;
 
 	if (host->board_init)
 		host->board_init(host);
@@ -594,6 +595,10 @@ static int dwmci_init(struct mmc *mmc)
 #else
 	dwmci_writel(host, DWMCI_PWREN, 1);
 #endif
+
+	verid = dwmci_readl(host, DWMCI_VERID) & 0x0000ffff;
+	if (verid >= DW_MMC_240A)
+		dwmci_writel(host, DWMCI_CARDTHRCTL, DWMCI_CDTHRCTRL_CONFIG);
 
 	if (!dwmci_wait_reset(host, DWMCI_RESET_ALL)) {
 		debug("%s[%d] Fail-reset!!\n", __func__, __LINE__);
