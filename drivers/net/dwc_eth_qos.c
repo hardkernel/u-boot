@@ -1114,7 +1114,7 @@ static int eqos_read_rom_hwaddr(struct udevice *dev)
 int eqos_init(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
-	int ret;
+	int ret, limit = 10;
 	ulong rate;
 	u32 val;
 
@@ -1138,10 +1138,17 @@ int eqos_init(struct udevice *dev)
 
 	eqos->reg_access_ok = true;
 
-	ret = wait_for_bit_le32(&eqos->dma_regs->mode,
-				EQOS_DMA_MODE_SWR, false,
-				eqos->config->swr_wait, false);
-	if (ret) {
+	/* DMA SW reset */
+	val = readl(&eqos->dma_regs->mode);
+	val |= EQOS_DMA_MODE_SWR;
+	writel(val, &eqos->dma_regs->mode);
+	while (limit--) {
+		if (!(readl(&eqos->dma_regs->mode) & EQOS_DMA_MODE_SWR))
+			break;
+		mdelay(10);
+	}
+
+	if (limit < 0) {
 		pr_err("EQOS_DMA_MODE_SWR stuck");
 		goto err_stop_resets;
 	}
