@@ -1026,7 +1026,7 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 			 size_t size, char **err_msgp);
 
 int fit_set_timestamp(void *fit, int noffset, time_t timestamp);
-int fit_set_totalsize(void *fit, int noffset, time_t totalsize);
+int fit_set_totalsize(void *fit, int noffset, int totalsize);
 
 int fit_get_image_defconf_node(const void *fit,
 			       int *images_noffset, int *def_noffset);
