@@ -122,7 +122,7 @@ void mtd_blk_map_partitions(struct blk_desc *desc)
 		if (mtd_blk_map_table_init(desc,
 					   info.start << 9,
 					   info.size << 9)) {
-			printf("mtd block map table fail\n");
+			pr_debug("mtd block map table fail\n");
 		}
 	}
 }
@@ -171,6 +171,90 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 		left_to_read -= read_length;
 		offset       += read_length;
 		p_buffer     += read_length;
+	}
+
+	return 0;
+}
+
+static __maybe_unused int mtd_map_write(struct mtd_info *mtd, loff_t offset,
+					size_t *length, size_t *actual,
+					loff_t lim, u_char *buffer, int flags)
+{
+	int rval = 0, blocksize;
+	size_t left_to_write = *length;
+	u_char *p_buffer = buffer;
+	struct erase_info ei;
+
+	blocksize = mtd->erasesize;
+
+	/*
+	 * nand_write() handles unaligned, partial page writes.
+	 *
+	 * We allow length to be unaligned, for convenience in
+	 * using the $filesize variable.
+	 *
+	 * However, starting at an unaligned offset makes the
+	 * semantics of bad block skipping ambiguous (really,
+	 * you should only start a block skipping access at a
+	 * partition boundary).  So don't try to handle that.
+	 */
+	if ((offset & (mtd->writesize - 1)) != 0) {
+		printf("Attempt to write non page-aligned data\n");
+		*length = 0;
+		return -EINVAL;
+	}
+
+	while (left_to_write > 0) {
+		size_t block_offset = offset & (mtd->erasesize - 1);
+		size_t write_size, truncated_write_size;
+		loff_t mapped_offset;
+
+		if (offset >= mtd->size)
+			return 0;
+
+		mapped_offset = offset;
+		if (!get_mtd_blk_map_address(mtd, &mapped_offset)) {
+			if (mtd_block_isbad(mtd, mapped_offset &
+					    ~(mtd->erasesize - 1))) {
+				printf("Skipping bad block 0x%08llx\n",
+				       offset & ~(mtd->erasesize - 1));
+				offset += mtd->erasesize - block_offset;
+				continue;
+			}
+		}
+
+		if (!(mapped_offset & mtd->erasesize_mask)) {
+			memset(&ei, 0, sizeof(struct erase_info));
+			ei.addr = mapped_offset;
+			ei.len  = mtd->erasesize;
+			rval = mtd_erase(mtd, &ei);
+			if (rval) {
+				pr_info("error %d while erasing %llx\n", rval,
+					mapped_offset);
+				return rval;
+			}
+		}
+
+		if (left_to_write < (blocksize - block_offset))
+			write_size = left_to_write;
+		else
+			write_size = blocksize - block_offset;
+
+		truncated_write_size = write_size;
+		rval = mtd_write(mtd, mapped_offset, truncated_write_size,
+				 (size_t *)(&truncated_write_size), p_buffer);
+
+		offset += write_size;
+		p_buffer += write_size;
+
+		if (rval != 0) {
+			printf("NAND write to offset %llx failed %d\n",
+			       offset, rval);
+			*length -= left_to_write;
+			return rval;
+		}
+
+		left_to_write -= write_size;
 	}
 
 	return 0;
@@ -271,6 +355,8 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 	if (blkcnt == 0)
 		return 0;
 
+	pr_debug("mtd dread %s %lx %lx\n", mtd->name, start, blkcnt);
+
 	if (desc->devnum == BLK_MTD_NAND) {
 #if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
 		mtd = dev_get_priv(udev->parent);
@@ -315,7 +401,40 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 		 lbaint_t blkcnt, const void *src)
 {
-	/* Not implemented */
+	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+#if defined(CONFIG_NAND) || defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_SPI_FLASH_MTD)
+	loff_t off = (loff_t)(start * 512);
+	size_t rwsize = blkcnt * 512;
+#endif
+	struct mtd_info *mtd;
+	int ret = 0;
+
+	if (!desc)
+		return ret;
+
+	mtd = desc->bdev->priv;
+	if (!mtd)
+		return 0;
+
+	pr_debug("mtd dwrite %s %lx %lx\n", mtd->name, start, blkcnt);
+
+	if (blkcnt == 0)
+		return 0;
+
+	if (desc->devnum == BLK_MTD_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NOR) {
+		ret = mtd_map_write(mtd, off, &rwsize,
+				    NULL, mtd->size,
+				    (u_char *)(src), 0);
+		if (!ret)
+			return blkcnt;
+		else
+			return 0;
+	} else {
+		return 0;
+	}
+
 	return 0;
 }
 
