@@ -133,31 +133,33 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 {
 	size_t left_to_read = *length;
 	u_char *p_buffer = buffer;
-	u32 erasesize = mtd->erasesize;
 	int rval;
 
 	while (left_to_read > 0) {
-		size_t block_offset = offset & (erasesize - 1);
+		size_t block_offset = offset & (mtd->erasesize - 1);
 		size_t read_length;
+		loff_t mapped_offset;
 
 		if (offset >= mtd->size)
 			return 0;
 
-		if (!get_mtd_blk_map_address(mtd, &offset)) {
-			if (mtd_block_isbad(mtd, offset & ~(erasesize - 1))) {
-				printf("Skip bad block 0x%08llx\n",
-				       offset & ~(erasesize - 1));
-				offset += erasesize - block_offset;
+		mapped_offset = offset;
+		if (!get_mtd_blk_map_address(mtd, &mapped_offset)) {
+			if (mtd_block_isbad(mtd, mapped_offset &
+					    ~(mtd->erasesize - 1))) {
+				printf("Skipping bad block 0x%08llx\n",
+				       offset & ~(mtd->erasesize - 1));
+				offset += mtd->erasesize - block_offset;
 				continue;
 			}
 		}
 
-		if (left_to_read < (erasesize - block_offset))
+		if (left_to_read < (mtd->erasesize - block_offset))
 			read_length = left_to_read;
 		else
-			read_length = erasesize - block_offset;
+			read_length = mtd->erasesize - block_offset;
 
-		rval = mtd_read(mtd, offset, read_length, &read_length,
+		rval = mtd_read(mtd, mapped_offset, read_length, &read_length,
 				p_buffer);
 		if (rval && rval != -EUCLEAN) {
 			printf("NAND read from offset %llx failed %d\n",
