@@ -6,6 +6,7 @@
 #ifndef _DWC_ETH_QOS_H
 #define _DWC_ETH_QOS_H
 
+#include <asm/gpio.h>
 #include <reset.h>
 
 #define EQOS_MAC_RXQ_CTRL0_RXQ0EN_NOT_ENABLED		0

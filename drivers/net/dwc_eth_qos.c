@@ -38,7 +38,6 @@
 #include <phy.h>
 #include <reset.h>
 #include <wait_bit.h>
-#include <asm/gpio.h>
 #include <asm/io.h>
 #include <eth_phy.h>
 #ifdef CONFIG_ARCH_IMX8M
