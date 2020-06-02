@@ -284,6 +284,7 @@ void spl_next_stage(struct spl_image_info *spl)
 
 	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 	switch (reg_boot_mode) {
+	case BOOT_COLD:
 	case BOOT_PANIC:
 	case BOOT_WATCHDOG:
 	case BOOT_NORMAL:
