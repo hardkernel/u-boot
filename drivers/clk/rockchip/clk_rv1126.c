@@ -1577,6 +1577,10 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 		rate = rockchip_pll_get_rate(&rv1126_pll_clks[HPLL], priv->cru,
 					     HPLL);
 		break;
+	case PLL_DPLL:
+		rate = rockchip_pll_get_rate(&rv1126_pll_clks[DPLL], priv->cru,
+					     DPLL);
+		break;
 	case HCLK_PDCORE_NIU:
 		rate = rv1126_pdcore_get_clk(priv);
 		break;
