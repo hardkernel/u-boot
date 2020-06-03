@@ -343,7 +343,7 @@ static void board_debug_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_CONSOLE_DISABLE_CLI))
-		printf("CLI: off\n");
+		printf("Cmd interface: disabled\n");
 }
 
 #ifdef CONFIG_MTD_BLK
