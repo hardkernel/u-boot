@@ -37,7 +37,6 @@ enum uclass_id {
 	UCLASS_DISPLAY,		/* Display (e.g. DisplayPort, HDMI) */
 	UCLASS_DMA,		/* Direct Memory Access */
 	UCLASS_ETH,		/* Ethernet device */
-	UCLASS_ETH_PHY,		/* Ethernet PHY device */
 	UCLASS_GPIO,		/* Bank of general-purpose I/O pins */
 	UCLASS_FIRMWARE,	/* Firmware */
 	UCLASS_I2C,		/* I2C bus */
@@ -52,7 +51,6 @@ enum uclass_id {
 	UCLASS_LPC,		/* x86 'low pin count' interface */
 	UCLASS_MAILBOX,		/* Mailbox controller */
 	UCLASS_MASS_STORAGE,	/* Mass storage device */
-	UCLASS_MDIO,		/* MDIO bus */
 	UCLASS_MISC,		/* Miscellaneous device */
 	UCLASS_MMC,		/* SD / MMC card or chip */
 	UCLASS_MOD_EXP,		/* RSA Mod Exp device */
@@ -99,6 +97,7 @@ enum uclass_id {
 	UCLASS_VIDEO_CONSOLE,	/* Text console driver for video device */
 	UCLASS_VIDEO_CRTC,	/* Display Controller */
 	UCLASS_WDT,		/* Watchdot Timer driver */
+
 	UCLASS_FG,		/* Fuel gauge */
 	UCLASS_KEY,		/* Key */
 	UCLASS_RC,		/* Remote Controller */
@@ -106,6 +105,8 @@ enum uclass_id {
 	UCLASS_DVFS,		/* DVFS policy */
 	UCLASS_IO_DOMAIN,	/* IO domain */
 	UCLASS_CRYPTO,		/* Crypto */
+	UCLASS_ETH_PHY,		/* Ethernet PHY device */
+	UCLASS_MDIO,		/* MDIO bus */
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,
 };
