@@ -31,6 +31,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DECOM_DICTID		0x44
 #define DECOM_CSL		0x48
 #define DECOM_CSH		0x4c
+#define DECOM_LMTSL             0x50
+#define DECOM_LMTSH             0x54
 
 #define LZ4_HEAD_CSUM_CHECK_EN	BIT(1)
 #define LZ4_BLOCK_CSUM_CHECK_EN	BIT(2)
@@ -86,6 +88,8 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
 	struct decom_param *param = (struct decom_param *)buf;
+	unsigned long limit_lo = param->size & 0xffffffff;
+	unsigned long limit_hi = param->size >> 32;
 
 	priv->done = false;
 
@@ -108,6 +112,9 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 
 	writel(param->addr_src, priv->base + DECOM_RADDR);
 	writel(param->addr_dst, priv->base + DECOM_WADDR);
+
+	writel(limit_lo, priv->base + DECOM_LMTSL);
+	writel(limit_hi, priv->base + DECOM_LMTSH);
 
 	writel(DECOM_INT_MASK, priv->base + DECOM_IEN);
 	writel(DECOM_ENABLE, priv->base + DECOM_ENR);
