@@ -201,8 +201,8 @@
                 "mmc dev ${n}; " \
                 "movi read dtbs 0 ${cramfsaddr}; " \
                 "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
-                "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
-                    "cramfsload ${loadaddr} " CONFIG_DEVICE_PRODUCT "-opp.dtbo;" \
+                "if test ${variant} != c4; then " \
+                    "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
                     "fdt addr ${dtb_mem_addr};" \
                     "fdt resize 8192;" \
                     "fdt apply ${loadaddr};" \
@@ -221,8 +221,8 @@
                 "mmc dev ${n}; " \
 	        "movi read dtbs 0 ${cramfsaddr}; " \
 	        "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
-            "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
-                "cramfsload ${loadaddr} " CONFIG_DEVICE_PRODUCT "-opp.dtbo;" \
+            "if test ${variant} != c4; then " \
+                "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
                 "fdt addr ${dtb_mem_addr};" \
                 "fdt resize 8192;" \
                 "fdt apply ${loadaddr};" \
