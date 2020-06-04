@@ -691,7 +691,7 @@ static int spinand_mtd_block_isbad(struct mtd_info *mtd, loff_t offs)
 static int spinand_markbad(struct nand_device *nand, const struct nand_pos *pos)
 {
 	struct spinand_device *spinand = nand_to_spinand(nand);
-	u8 marker[2] = { };
+	u8 marker[2] = { 0, 0 };
 	struct nand_page_io_req req = {
 		.pos = *pos,
 		.ooboffs = 0,
