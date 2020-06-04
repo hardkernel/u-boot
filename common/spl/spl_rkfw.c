@@ -351,7 +351,8 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 		goto out;
 
 	ret = misc_decompress_start(dev, CONFIG_SPL_KERNEL_COMPRESS_ADDR,
-				    CONFIG_SPL_KERNEL_ADDR, hdr->kernel_size);
+				    CONFIG_SPL_KERNEL_ADDR,
+				    CONFIG_SPL_KERNEL_DECOM_LIMIT_SIZE);
 	if (ret)
 		goto out;
 
@@ -392,7 +393,7 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 		ret = misc_decompress_start(dev,
 					    CONFIG_SPL_RAMDISK_COMPRESS_ADDR,
 					    CONFIG_SPL_RAMDISK_ADDR,
-					    hdr->kernel_size);
+					    CONFIG_SPL_RAMDISK_DECOM_LIMIT_SIZE);
 		if (ret)
 			goto out;
 #endif
