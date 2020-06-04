@@ -147,7 +147,7 @@
 	ENV_BOOT_DEFAULT \
 	ENV_BOOT_ATTEMPT_DEFAULT \
 	"console=" CONFIG_DEFAULT_CONSOLE \
-        "loadaddr=1080000\0"\
+        "loadaddr=0x1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
         "display_width=1920\0" \
