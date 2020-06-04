@@ -423,15 +423,15 @@ endif
 config ROCKCHIP_RV1126
 	bool "Support Rockchip RV1126"
 	select CPU_V7
-	select GICV2 if !SUPPORT_USBPLUG
-	select ARM_SMCCC if !SUPPORT_USBPLUG
 	select SUPPORT_TPL
 	select SUPPORT_SPL
-	select TPL if !SUPPORT_USBPLUG
-	select SPL if !SUPPORT_USBPLUG
-	select BOARD_LATE_INIT if !SUPPORT_USBPLUG
 	select TPL_TINY_FRAMEWORK if TPL
 	select DEBUG_UART_BOARD_INIT
+	imply TPL
+	imply SPL
+	imply GICV2
+	imply ARM_SMCCC
+	imply BOARD_LATE_INIT
 	imply ROCKCHIP_GPIO_V2
 	imply TPL_SERIAL_SUPPORT
 	help
