@@ -182,7 +182,11 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 		rsv_addr = fdtdec_get_addr_size_auto_noparent(fdt_blob, offset,
 							      "reg", 0,
 							      &rsv_size, false);
-		if (rsv_addr == FDT_ADDR_T_NONE || !rsv_size)
+		/*
+		 * kernel will alloc reserved memory dynamically for the node
+		 * with start address from 0.
+		 */
+		if (rsv_addr == FDT_ADDR_T_NONE || !rsv_addr || !rsv_size)
 			continue;
 		debug("  sysmem: 'reserved-memory' %s: addr=%llx size=%llx\n",
 		      fdt_get_name(fdt_blob, offset, NULL),
