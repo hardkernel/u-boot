@@ -389,8 +389,8 @@ int board_late_init(void)
 	board_cvbs_probe();
 #endif
 
-	setenv("variant", board_is_odroidn2plus() ? "_plus" : "");
-	board_set_dtbfile("meson64_odroidn2%s.dtb");
+	setenv("variant", board_is_odroidn2plus() ? "n2_plus" : "n2");
+	board_set_dtbfile("meson64_odroid%s.dtb");
 
 	/* boot logo display - 1080p60hz */
 	run_command("showlogo", 0);
