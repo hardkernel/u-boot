@@ -222,13 +222,24 @@ function process_args()
 				# xxx_defconfig
 				else
 					ARG_BOARD=$1
-					if [ ! -f configs/${ARG_BOARD}_defconfig ]; then
+					if [ ! -f configs/${ARG_BOARD}_defconfig -a ! -f configs/${ARG_BOARD}.config ]; then
 						echo -e "\n${SUPPORT_LIST}\n"
 						echo "ERROR: No configs/${ARG_BOARD}_defconfig"
 						exit 1
+					elif [ -f configs/${ARG_BOARD}.config ]; then
+						BASE_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}.config |tr -d '\r' | tr -d '"'`
+						MAKE_CMD="make ${BASE_DEFCONFIG} ${ARG_BOARD}.config -j${JOB}"
+						echo "## ${MAKE_CMD}"
+						make ${BASE_DEFCONFIG} ${ARG_BOARD}.config ${OPTION}
 					else
-						echo "make for ${ARG_BOARD}_defconfig by -j${JOB}"
-						make ${ARG_BOARD}_defconfig
+						BASE_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}_defconfig |tr -d '\r' | tr -d '"'`
+						if [ "${BASE_DEFCONFIG}" == "${ARG_BOARD}_defconfig" ]; then
+							echo "ERROR: configs/${ARG_BOARD}_defconfig is base defconfig for other [...].config"
+							exit 1
+						fi
+						MAKE_CMD="make ${ARG_BOARD}_defconfig -j${JOB}"
+						echo "## ${MAKE_CMD}"
+						make ${ARG_BOARD}_defconfig ${OPTION}
 					fi
 				fi
 				shift 1
@@ -794,7 +805,7 @@ function finish()
 	if [ "${ARG_BOARD}" == "" ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
 	else
-		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(make ${ARG_BOARD}_defconfig)"
+		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(${MAKE_CMD})"
 	fi
 }
 
