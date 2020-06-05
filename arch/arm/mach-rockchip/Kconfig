@@ -427,9 +427,13 @@ config ROCKCHIP_RV1126
 	select ARM_SMCCC if !SUPPORT_USBPLUG
 	select SUPPORT_TPL
 	select SUPPORT_SPL
+	select TPL if !SUPPORT_USBPLUG
 	select SPL if !SUPPORT_USBPLUG
 	select BOARD_LATE_INIT if !SUPPORT_USBPLUG
+	select TPL_TINY_FRAMEWORK if TPL
+	select DEBUG_UART_BOARD_INIT
 	imply ROCKCHIP_GPIO_V2
+	imply TPL_SERIAL_SUPPORT
 	help
 	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
 	  and a risc-v core.
@@ -440,6 +444,18 @@ config ROCKCHIP_RV1109
 	help
 	  The Rockchip RV1109 is a ARM-based SoC with a dual-core Cortex-A7
 	  and a risc-v core.
+
+if ROCKCHIP_RV1126
+
+config TPL_LDSCRIPT
+	default "arch/arm/mach-rockchip/u-boot-tpl.lds"
+
+config TPL_TEXT_BASE
+	default 0xff701000
+
+config TPL_MAX_SIZE
+	default 32768
+endif
 
 config SPL_ROCKCHIP_BACK_TO_BROM
 	bool "SPL returns to bootrom"
