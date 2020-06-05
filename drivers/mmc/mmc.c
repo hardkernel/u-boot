@@ -263,6 +263,37 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 	return blkcnt;
 }
 
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+static int mmc_read_blocks_prepare(struct mmc *mmc, void *dst, lbaint_t start,
+				   lbaint_t blkcnt)
+{
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+
+	if (blkcnt > 1)
+		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
+	else
+		cmd.cmdidx = MMC_CMD_READ_SINGLE_BLOCK;
+
+	if (mmc->high_capacity)
+		cmd.cmdarg = start;
+	else
+		cmd.cmdarg = start * mmc->read_bl_len;
+
+	cmd.resp_type = MMC_RSP_R1;
+
+	data.dest = dst;
+	data.blocks = blkcnt;
+	data.blocksize = mmc->read_bl_len;
+	data.flags = MMC_DATA_READ;
+
+	if (mmc_send_cmd_prepare(mmc, &cmd, &data))
+		return 0;
+
+	return blkcnt;
+}
+#endif
+
 #if CONFIG_IS_ENABLED(BLK)
 ulong mmc_bread(struct udevice *dev, lbaint_t start, lbaint_t blkcnt, void *dst)
 #else
@@ -338,6 +369,77 @@ re_init_retry:
 
 	return blkcnt;
 }
+
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+#if CONFIG_IS_ENABLED(BLK)
+ulong mmc_bread_prepare(struct udevice *dev, lbaint_t start, lbaint_t blkcnt, void *dst)
+#else
+ulong mmc_bread_prepare(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
+			void *dst)
+#endif
+{
+#if CONFIG_IS_ENABLED(BLK)
+	struct blk_desc *block_dev = dev_get_uclass_platdata(dev);
+#endif
+	int dev_num = block_dev->devnum;
+	int timeout = 0;
+	int err;
+
+	if (blkcnt == 0)
+		return 0;
+
+	struct mmc *mmc = find_mmc_device(dev_num);
+
+	if (!mmc)
+		return 0;
+
+	if (CONFIG_IS_ENABLED(MMC_TINY))
+		err = mmc_switch_part(mmc, block_dev->hwpart);
+	else
+		err = blk_dselect_hwpart(block_dev, block_dev->hwpart);
+
+	if (err < 0)
+		return 0;
+
+	if ((start + blkcnt) > block_dev->lba) {
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+		printf("MMC: block number 0x" LBAF " exceeds max(0x" LBAF ")\n",
+		       start + blkcnt, block_dev->lba);
+#endif
+		return 0;
+	}
+
+	if (mmc_set_blocklen(mmc, mmc->read_bl_len)) {
+		debug("%s: Failed to set blocklen\n", __func__);
+		return 0;
+	}
+
+	if (mmc_read_blocks_prepare(mmc, dst, start, blkcnt) != blkcnt) {
+		debug("%s: Failed to read blocks\n", __func__);
+re_init_retry:
+		timeout++;
+		/*
+		 * Try re-init seven times.
+		 */
+		if (timeout > 7) {
+			printf("Re-init retry timeout\n");
+			return 0;
+		}
+
+		mmc->has_init = 0;
+		if (mmc_init(mmc))
+			return 0;
+
+		if (mmc_read_blocks_prepare(mmc, dst, start, blkcnt) != blkcnt) {
+			printf("%s: Re-init mmc_read_blocks_prepare error\n",
+			       __func__);
+			goto re_init_retry;
+		}
+	}
+
+	return blkcnt;
+}
+#endif
 
 void mmc_set_clock(struct mmc *mmc, uint clock)
 {

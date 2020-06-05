@@ -14,6 +14,10 @@
 
 extern int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 			struct mmc_data *data);
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+int mmc_send_cmd_prepare(struct mmc *mmc, struct mmc_cmd *cmd,
+			 struct mmc_data *data);
+#endif
 extern int mmc_send_status(struct mmc *mmc, int timeout);
 extern int mmc_set_blocklen(struct mmc *mmc, int len);
 #ifdef CONFIG_FSL_ESDHC_ADAPTER_IDENT
@@ -23,9 +27,17 @@ void mmc_adapter_card_type_ident(void);
 #if CONFIG_IS_ENABLED(BLK)
 ulong mmc_bread(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 		void *dst);
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+ulong mmc_bread_prepare(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+			void *dst);
+#endif
 #else
 ulong mmc_bread(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
 		void *dst);
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+ulong mmc_bread_prepare(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
+			void *dst);
+#endif
 #endif
 
 #if !(defined(CONFIG_SPL_BUILD) && !defined(CONFIG_SPL_SAVEENV))

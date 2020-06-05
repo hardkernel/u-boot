@@ -454,6 +454,20 @@ unsigned long blk_dread(struct blk_desc *block_dev, lbaint_t start,
 	return blks_read;
 }
 
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+unsigned long blk_dread_prepare(struct blk_desc *block_dev, lbaint_t start,
+				lbaint_t blkcnt, void *buffer)
+{
+	struct udevice *dev = block_dev->bdev;
+	const struct blk_ops *ops = blk_get_ops(dev);
+
+	if (!ops->read)
+		return -ENOSYS;
+
+	return ops->read_prepare(dev, start, blkcnt, buffer);
+}
+#endif
+
 unsigned long blk_dwrite(struct blk_desc *block_dev, lbaint_t start,
 			 lbaint_t blkcnt, const void *buffer)
 {
