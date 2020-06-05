@@ -149,7 +149,7 @@ int misc_otp_write(struct udevice *dev, int offset, const void *buf, int size);
 struct decom_param {
 	unsigned long addr_src;
 	unsigned long addr_dst;
-	unsigned long size;
+	u64 size;
 	enum misc_mode mode;
 };
 

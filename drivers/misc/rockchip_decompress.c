@@ -88,8 +88,8 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
 	struct decom_param *param = (struct decom_param *)buf;
-	unsigned long limit_lo = param->size & 0xffffffff;
-	unsigned long limit_hi = param->size >> 32;
+	unsigned int limit_lo = param->size & 0xffffffff;
+	unsigned int limit_hi = param->size >> 32;
 
 	priv->done = false;
 
