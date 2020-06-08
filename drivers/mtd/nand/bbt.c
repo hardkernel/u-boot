@@ -77,7 +77,7 @@ static int nanddev_read_bbt(struct nand_device *nand, u32 block, bool update)
 	bbt_info = (struct nanddev_bbt_info *)(data_buf + nbytes);
 
 	memset(&ops, 0, sizeof(struct mtd_oob_ops));
-	ops.mode = MTD_OPS_RAW;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.datbuf = data_buf;
 	ops.len = bbt_page_num * mtd->writesize;
 	ops.oobbuf = oob_buf;
@@ -159,7 +159,7 @@ static int nanddev_write_bbt(struct nand_device *nand, u32 block)
 		goto out;
 
 	memset(&ops, 0, sizeof(struct mtd_oob_ops));
-	ops.mode = MTD_OPS_RAW;
+	ops.mode = MTD_OPS_PLACE_OOB;
 	ops.datbuf = data_buf;
 	ops.len = bbt_page_num * mtd->writesize;
 	ops.oobbuf = oob_buf;
