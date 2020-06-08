@@ -137,8 +137,12 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 						  CONFIG_SYS_NAND_U_BOOT_OFFS,
 						  header);
 		}
+	}
 
-	} else if (IS_ENABLED(CONFIG_SPL_LOAD_RKFW)) {
+	if (!ret)
+		return 0;
+
+	if (IS_ENABLED(CONFIG_SPL_LOAD_RKFW)) {
 #ifdef CONFIG_SPL_LOAD_RKFW
 		ret = spl_mtd_load_rkfw(spl_image, desc);
 #endif
