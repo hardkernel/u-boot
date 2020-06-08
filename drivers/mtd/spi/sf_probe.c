@@ -42,6 +42,10 @@ static int spi_flash_probe_slave(struct spi_flash *flash)
 		return ret;
 	}
 
+#if !CONFIG_IS_ENABLED(SPI_FLASH_TINY)
+	flash->mtd.name = (char *)ofnode_read_string(spi->dev->node, "label");
+#endif
+
 	ret = spi_nor_scan(flash);
 	if (ret)
 		goto err_read_id;
