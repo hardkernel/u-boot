@@ -137,7 +137,6 @@ static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
 {
 	struct rockchip_sfc_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
-	ofnode subnode;
 	int ret;
 
 	plat->base = dev_read_addr_ptr(bus);
@@ -146,18 +145,6 @@ static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
 		printf("Could not get clock for %s: %d\n", bus->name, ret);
 		return ret;
 	}
-
-	subnode = dev_read_first_subnode(bus);
-	if (!ofnode_valid(subnode)) {
-		printf("Error: subnode with SPI flash config missing!\n");
-		return -ENODEV;
-	}
-
-	plat->frequency = ofnode_read_u32_default(subnode, "spi-max-frequency",
-						  100000000);
-	if (plat->frequency > SFC_MAX_RATE || plat->frequency < SFC_MIN_RATE)
-		plat->frequency = SFC_DEFAULT_RATE;
-	sfc->max_freq = plat->frequency;
 
 	return 0;
 }
@@ -171,6 +158,9 @@ static int rockchip_sfc_probe(struct udevice *bus)
 	dm_spi_bus = bus->uclass_priv;
 	dm_spi_bus->max_hz = plat->frequency;
 	sfc->regbase = (struct rockchip_sfc_reg *)plat->base;
+	sfc->max_freq = SFC_MAX_RATE;
+	sfc->speed_hz = SFC_DEFAULT_RATE;
+	clk_set_rate(&sfc->clk, sfc->speed_hz);
 
 	return 0;
 }
