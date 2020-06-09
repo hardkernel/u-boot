@@ -371,6 +371,32 @@ static ulong rk3128_bus_set_clk(struct rk3128_clk_priv *priv,
 	return rk3128_bus_get_clk(priv, clk_id);
 }
 
+static ulong rk3128_spi_get_clk(struct rk3128_clk_priv *priv)
+{
+	struct rk3128_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	con = readl(&cru->cru_clksel_con[25]);
+	div = (con & SPI_DIV_MASK) >> SPI_DIV_SHIFT;
+	parent = priv->gpll_hz;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3128_spi_set_clk(struct rk3128_clk_priv *priv, ulong hz)
+{
+	struct rk3128_cru *cru = priv->cru;
+	int div;
+
+	div = DIV_ROUND_UP(priv->gpll_hz, hz);
+	assert(div - 1 < 128);
+	rk_clrsetreg(&cru->cru_clksel_con[25],
+		     SPI_PLL_SEL_MASK | SPI_DIV_MASK,
+		     SPI_PLL_SEL_GPLL << SPI_PLL_SEL_SHIFT |
+		     (div - 1) << SPI_DIV_SHIFT);
+	return rk3128_spi_get_clk(priv);
+}
+
 #ifndef CONFIG_SPL_BUILD
 static ulong rk3128_saradc_get_clk(struct rk3128_clk_priv *priv)
 {
@@ -541,6 +567,9 @@ static ulong rk3128_clk_get_rate(struct clk *clk)
 	case PCLK_CPU:
 		rate = rk3128_bus_get_clk(priv, clk->id);
 		break;
+	case SCLK_SPI0:
+		rate = rk3128_spi_get_clk(priv);
+		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_SARADC:
 		rate = rk3128_saradc_get_clk(priv);
@@ -607,6 +636,9 @@ static ulong rk3128_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_CPU:
 	case PCLK_CPU:
 		ret = rk3128_bus_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_SPI0:
+		rate = rk3128_spi_set_clk(priv, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_SARADC:
