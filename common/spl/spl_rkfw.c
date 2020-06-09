@@ -399,7 +399,21 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 			goto out;
 #endif
 	}
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+	else {
+		int timeout = 10000;
 
+		while (misc_decompress_is_complete(dev)) {
+			if (timeout < 0) {
+				ret = -EIO;
+				goto out;
+			}
+
+			timeout--;
+			udelay(10);
+		}
+	}
+#endif
 	/* Load resource, and checkout the dtb */
 	if (hdr->second_size) {
 		struct resource_img_hdr *head =
