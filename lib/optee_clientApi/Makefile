@@ -11,7 +11,9 @@ obj-y += OpteeClientRPC.o
 obj-y += tee_smc-arm64.o
 
 ifdef CONFIG_OPTEE_V1
-obj-y += OpteeClientRkFs.o
+obj-y += OpteeClientRkFs_common.o
+obj-y += OpteeClientRkFs_v1.o
+obj-y += OpteeClientRkFs_v2.o
 endif
 
 ifdef CONFIG_OPTEE_V2
