@@ -723,6 +723,7 @@ config ROCKCHIP_PRELOADER_SERIAL
 
 config ROCKCHIP_FIT_IMAGE_PACK
 	bool "Rockchip fit image pack of U-Boot and TEE"
+	depends on ROCKCHIP_FIT_IMAGE
 	default n
 	help
 	  This enable fit image pack of U-Boot and TEE, it's used for make.sh script.
