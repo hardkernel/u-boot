@@ -19,7 +19,7 @@
 #include <optee_include/OpteeClientRkFs.h>
 #endif
 #ifdef CONFIG_OPTEE_V2
-#include <optee_include/OpteeClientRkFs-v2.h>
+#include <optee_include/OpteeClientRkNewFs.h>
 #endif
 
 /*
@@ -524,7 +524,7 @@ TEEC_Result OpteeRpcCmdFs(t_teesmc32_arg *TeeSmc32Arg)
 							TeeSmc32Param[0].u.memref.size);
 #endif
 #ifdef CONFIG_OPTEE_V2
-	TeecResult = tee_supp_rk_fs_process((size_t)TeeSmc32Arg->num_params,
+	TeecResult = OpteeClientRkFsProcess((size_t)TeeSmc32Arg->num_params,
 							(struct tee_ioctl_param *)TeeSmc32Param);
 #endif
 

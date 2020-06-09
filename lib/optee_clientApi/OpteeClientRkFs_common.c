@@ -10,7 +10,12 @@
 #include <command.h>
 #include <boot_rkimg.h>
 #include <part.h>
+#ifdef CONFIG_OPTEE_V1
 #include <optee_include/OpteeClientRkFs.h>
+#endif
+#ifdef CONFIG_OPTEE_V2
+#include <optee_include/OpteeClientRkNewFs.h>
+#endif
 
 static int rkss_version;
 static int get_rkss_version(void)
@@ -79,6 +84,7 @@ int OpteeClientRkFsInit(void)
 		return -1;
 }
 
+#ifdef CONFIG_OPTEE_V1
 int OpteeClientRkFsProcess(void *cmd, size_t cmd_size)
 {
 	int version;
@@ -92,3 +98,21 @@ int OpteeClientRkFsProcess(void *cmd, size_t cmd_size)
 	else
 		return -1;
 }
+#endif
+
+#ifdef CONFIG_OPTEE_V2
+int OpteeClientRkFsProcess(size_t num_params,
+			struct tee_ioctl_param *params)
+{
+	int version;
+
+	version = get_rkss_version();
+	debug("TEEC: OpteeClientRkFsProcess version=%d\n", version);
+	if (version == RKSS_VERSION_V1)
+		return tee_supp_rk_fs_process_v1(num_params, params);
+	else if (version == RKSS_VERSION_V2)
+		return tee_supp_rk_fs_process_v2(num_params, params);
+	else
+		return -1;
+}
+#endif

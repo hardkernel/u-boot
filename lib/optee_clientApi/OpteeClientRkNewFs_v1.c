@@ -1,84 +1,22 @@
 /*
- * Copyright (c) 2016, Fuzhou Rockchip Electronics Co.,Ltd.
- * All rights reserved.
+ * Copyright 2020, Rockchip Electronics Co., Ltd
+ * hisping lin, <hisping.lin@rock-chips.com>
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier:	GPL-2.0+
  */
+
 #include <common.h>
 #include <stdlib.h>
 #include <command.h>
-#include <optee_include/OpteeClientRkFs-v2.h>
+#include <boot_rkimg.h>
+#include <part.h>
+#include <optee_include/OpteeClientRkNewFs.h>
 #include <optee_include/tee_client_api.h>
 
 /*
  *#define DEBUG_RKFSS
  *#define DEBUG_CLEAN_RKSS
  */
-
-/*
- * Operations and defines shared with TEE.
- */
-#define OPTEE_MRF_OPEN			0
-#define OPTEE_MRF_CREATE		1
-#define OPTEE_MRF_CLOSE			2
-#define OPTEE_MRF_READ			3
-#define OPTEE_MRF_WRITE			4
-#define OPTEE_MRF_TRUNCATE		5
-#define OPTEE_MRF_REMOVE		6
-#define OPTEE_MRF_RENAME		7
-#define OPTEE_MRF_OPENDIR		8
-#define OPTEE_MRF_CLOSEDIR		9
-#define OPTEE_MRF_READDIR		10
-
-/*
- * Open flags, defines shared with TEE.
- */
-#define TEE_FS_O_RDONLY 0x1
-#define TEE_FS_O_WRONLY 0x2
-#define TEE_FS_O_RDWR   0x4
-#define TEE_FS_O_CREAT  0x8
-#define TEE_FS_O_EXCL   0x10
-#define TEE_FS_O_APPEND 0x20
-
-/*
- * Seek flags, defines shared with TEE.
- */
-#define TEE_FS_SEEK_SET 0x1
-#define TEE_FS_SEEK_END 0x2
-#define TEE_FS_SEEK_CUR 0x4
-
-/*
- * Mkdir flags, defines shared with TEE.
- */
-#define TEE_FS_S_IWUSR 0x1
-#define TEE_FS_S_IRUSR 0x2
-
-/*
- * Access flags, X_OK not supported, defines shared with TEE.
- */
-#define TEE_FS_R_OK    0x1
-#define TEE_FS_W_OK    0x2
-#define TEE_FS_F_OK    0x4
 
 /*
  *	RK Secure Storage Ctrl
@@ -105,11 +43,11 @@
  *
  */
 #define RKSS_DATA_SECTION_COUNT		1024
-#define RKSS_DATA_LEN			512
+#define RKSS_DATA_SECTION_LEN			512
 #define RKSS_PARTITION_TABLE_COUNT	128		/* total size 512 * 128*/
-#define RKSS_EACH_FILEFOLDER_COUNT	4		/* 504 / 126 = 4*/
-#define RKSS_NAME_MAX_LENGTH		117		/* 116 char + "\0"*/
-#define RKSS_USEDFLAGS_INDEX		RKSS_PARTITION_TABLE_COUNT
+#define RKSS_EACH_SECTION_FILECOUNT	4		/* 504 / 126 = 4*/
+#define RKSS_MAX_NAME_LENGTH		117		/* 116 char + "\0"*/
+#define RKSS_USED_FLAGS_INDEX		RKSS_PARTITION_TABLE_COUNT
 #define RKSS_BACKUP_INDEX		RKSS_DATA_SECTION_COUNT
 #define RKSS_BACKUP_COUNT		256
 
@@ -131,13 +69,9 @@ struct rkss_backup_info {
 	unsigned int backup_usedflag;
 };
 
-#define RK_FS_R    0x1
-#define RK_FS_W    0x2
-#define RK_FS_D    0x8
-
 typedef struct rkss_file_info {
 	uint8_t		used;
-	char 		name[RKSS_NAME_MAX_LENGTH];
+	char 		name[RKSS_MAX_NAME_LENGTH];
 	uint16_t	index;	/* from 129 to 1023*/
 	uint16_t	size;	/* size of data*/
 	uint16_t	father;
@@ -145,7 +79,6 @@ typedef struct rkss_file_info {
 	uint8_t		flags;
 } rkss_file_info; /* 126 byte for each*/
 
-#define RKSS_VERSION		((uint32_t)0x1)
 #define RKSS_CHECK_STR	((uint32_t)0x12345678)
 #define RKSS_CHECK_PT		((uint8_t)0xFC)
 typedef struct rkss_file_verification {
@@ -155,27 +88,18 @@ typedef struct rkss_file_verification {
 
 typedef struct rk_secure_storage {
 	unsigned long index;
-	unsigned char data[RKSS_DATA_LEN];
+	unsigned char data[RKSS_DATA_SECTION_LEN];
 } rk_secure_storage;
 
-/* Path to all secure storage dev. */
-#define RKSS_DEV_NAND "/dev/block/rknand_security"
-#define RKSS_DEV_EMMC "/dev/block/by-name/security"
-
-/* Function Defines */
-#define UNREFERENCED_PARAMETER(P) (P = P)
-#define CHECKFLAG(flags, flag) (flags & flag)
-#define ADDFLAG(flags, flag) (flags | flag)
-
 /* RK Secure Storage Calls */
-static char dir_cache[RKSS_NAME_MAX_LENGTH][12];
+static char dir_cache[RKSS_MAX_NAME_LENGTH][12];
 static int dir_num;
 static int dir_seek;
 
-static struct blk_desc *dev_desc = NULL;
+static struct blk_desc *dev_desc;
 static disk_partition_t part_info;
 
-int check_security_exist(int print_flag)
+static int check_security_exist(int print_flag)
 {
 	if (!dev_desc) {
 		dev_desc = rockchip_get_bootdev();
@@ -214,7 +138,7 @@ int check_security_exist(int print_flag)
  */
 static int rkss_begin_commit(void)
 {
-	unsigned char data[RKSS_DATA_LEN];
+	unsigned char data[RKSS_DATA_SECTION_LEN];
 	struct rkss_backup_verification p;
 	unsigned long ret;
 
@@ -239,7 +163,7 @@ static int rkss_begin_commit(void)
 
 static int rkss_finish_commit(void)
 {
-	unsigned char data[RKSS_DATA_LEN];
+	unsigned char data[RKSS_DATA_SECTION_LEN];
 	unsigned long ret;
 
 	if (check_security_exist(1) < 0)
@@ -258,7 +182,7 @@ static int rkss_finish_commit(void)
 
 static int rkss_backup_sections(unsigned long index, unsigned int num)
 {
-	unsigned char data[RKSS_DATA_LEN];
+	unsigned char data[RKSS_DATA_SECTION_LEN];
 	unsigned char *backup_data = NULL;
 	struct rkss_backup_verification p;
 	struct rkss_backup_info info_last, info_current;
@@ -300,7 +224,7 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 		debug("TEEC: %s index=0x%lx num=0x%x backup_data_index=0x%x\n",
 		      __func__, index, num, info_current.backup_data_index);
 
-		backup_data = malloc(num * RKSS_DATA_LEN);
+		backup_data = malloc(num * RKSS_DATA_SECTION_LEN);
 		if (!backup_data) {
 			printf("TEEC: malloc backup_data fail\n");
 			goto error;
@@ -344,7 +268,7 @@ error:
 
 static int rkss_resume(void)
 {
-	unsigned char data[RKSS_DATA_LEN];
+	unsigned char data[RKSS_DATA_SECTION_LEN];
 	unsigned char *backup_data = NULL;
 	struct rkss_backup_verification p;
 	struct rkss_backup_info info_current;
@@ -388,7 +312,7 @@ static int rkss_resume(void)
 					goto error;
 				}
 				backup_data = malloc(info_current.backup_num *
-						     RKSS_DATA_LEN);
+						     RKSS_DATA_SECTION_LEN);
 				if (!backup_data) {
 					printf("TEEC: malloc backup_data fail\n");
 					goto error;
@@ -502,7 +426,7 @@ static void rkss_dump_ptable(void)
 	struct rkss_file_info *p;
 	unsigned char *table_data;
 
-	table_data = malloc(RKSS_PARTITION_TABLE_COUNT * RKSS_DATA_LEN);
+	table_data = malloc(RKSS_PARTITION_TABLE_COUNT * RKSS_DATA_SECTION_LEN);
 	if (table_data == NULL) {
 		printf("TEEC: malloc table_data fail\n");
 		return;
@@ -516,14 +440,14 @@ static void rkss_dump_ptable(void)
 	printf("-------------- DUMP ptable --------------\n");
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
 		rkss.index = i;
-		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_LEN, RKSS_DATA_LEN);
+		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_SECTION_LEN, RKSS_DATA_SECTION_LEN);
 
-		for (n = 0; n < RKSS_EACH_FILEFOLDER_COUNT; n++) {
+		for (n = 0; n < RKSS_EACH_SECTION_FILECOUNT; n++) {
 			pdata = rkss.data;
 			p = (struct rkss_file_info *)pdata;
 			p += n;
 			printf("[%02d][%c] %s , inx:%d, size:%d",
-					i*RKSS_EACH_FILEFOLDER_COUNT+n, p->used == 0 ? 'F':'T', p->name,
+					i*RKSS_EACH_SECTION_FILECOUNT+n, p->used == 0 ? 'F':'T', p->name,
 					p->index, p->size);
 		}
 	}
@@ -536,13 +460,13 @@ static void rkss_dump_usedflags(void)
 	struct rk_secure_storage rkss = {0};
 	int ret;
 
-	rkss.index = RKSS_USEDFLAGS_INDEX;
+	rkss.index = RKSS_USED_FLAGS_INDEX;
 	ret = rkss_read_multi_sections(rkss.data, rkss.index, 1);
 	if (ret < 0) {
 		printf("TEEC: rkss_read_multi_sections fail ! ret: %d.\n", ret);
 		return;
 	}
-	rkss_dump(rkss.data, RKSS_DATA_LEN);
+	rkss_dump(rkss.data, RKSS_DATA_SECTION_LEN);
 }
 #endif
 
@@ -553,16 +477,16 @@ static int rkss_verify_ptable(unsigned char *table_data)
 	int ret, i;
 
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
-		cp = table_data + (i * RKSS_DATA_LEN);
-		vp = cp + RKSS_DATA_LEN - sizeof(struct rkss_file_verification);
+		cp = table_data + (i * RKSS_DATA_SECTION_LEN);
+		vp = cp + RKSS_DATA_SECTION_LEN - sizeof(struct rkss_file_verification);
 		verify = (struct rkss_file_verification *)(void *)vp;
 
-		if (verify->version != RKSS_VERSION
+		if (verify->version != RKSS_VERSION_V1
 				|| verify->checkstr != RKSS_CHECK_STR) {
 			printf("TEEC: verify [%d] fail, cleanning ....", i);
-			memset(cp, 0, RKSS_DATA_LEN);
+			memset(cp, 0, RKSS_DATA_SECTION_LEN);
 			verify->checkstr = RKSS_CHECK_STR;
-			verify->version = RKSS_VERSION;
+			verify->version = RKSS_VERSION_V1;
 		}
 	}
 	ret = rkss_write_multi_sections(table_data, 0, RKSS_PARTITION_TABLE_COUNT);
@@ -585,7 +509,7 @@ static int rkss_verify_usedflags(struct rk_secure_storage *rkss)
 		flag = i & 0x1 ? duel & 0x0F : (duel & 0xF0) >> 4;
 		if (flag != 0x1) {
 			debug("TEEC: init usedflags section ...\n");
-			memset(rkss->data, 0x00, RKSS_DATA_LEN);
+			memset(rkss->data, 0x00, RKSS_DATA_SECTION_LEN);
 			for (n = 0; n < RKSS_PARTITION_TABLE_COUNT + 1; n++) {
 				flagw = (uint8_t *)rkss->data + (int)n/2;
 				value = 0x1;
@@ -607,8 +531,8 @@ static int rkss_verify_usedflags(struct rk_secure_storage *rkss)
 
 static int rkss_get_fileinfo_by_index(int fd, struct rkss_file_info *pfileinfo)
 {
-	int i = fd / RKSS_EACH_FILEFOLDER_COUNT;
-	int n = fd - (RKSS_EACH_FILEFOLDER_COUNT * i);
+	int i = fd / RKSS_EACH_SECTION_FILECOUNT;
+	int n = fd - (RKSS_EACH_SECTION_FILECOUNT * i);
 	struct rk_secure_storage rkss = {0};
 	int ret;
 	void *pdata;
@@ -654,12 +578,12 @@ static int rkss_get_fileinfo_by_name(
 	int size_in, size_sv;
 
 	len = strlen(filename);
-	if (len > RKSS_NAME_MAX_LENGTH - 1) {
+	if (len > RKSS_MAX_NAME_LENGTH - 1) {
 		printf("TEEC: filename is too long. length:%u\n", len);
 		return TEEC_ERROR_GENERIC;
 	}
 
-	table_data = malloc(RKSS_DATA_LEN * RKSS_PARTITION_TABLE_COUNT);
+	table_data = malloc(RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
 	if (table_data == NULL) {
 		printf("TEEC: malloc table_data fail\n");
 		return TEEC_ERROR_GENERIC;
@@ -672,9 +596,9 @@ static int rkss_get_fileinfo_by_name(
 
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
 		rkss.index = i;
-		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_LEN, RKSS_DATA_LEN);
+		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_SECTION_LEN, RKSS_DATA_SECTION_LEN);
 
-		for (n = 0; n < RKSS_EACH_FILEFOLDER_COUNT; n++) {
+		for (n = 0; n < RKSS_EACH_SECTION_FILECOUNT; n++) {
 			pdata = rkss.data;
 			p = (struct rkss_file_info *)pdata;
 			p += n;
@@ -685,10 +609,10 @@ static int rkss_get_fileinfo_by_name(
 			/* Full Matching*/
 			if (!strcmp(p->name, filename)) {
 				debug("TEEC: rkss_get_fileinfo_by_name: hit table[%d/%d], index[%d/%d]\n",
-						i, RKSS_PARTITION_TABLE_COUNT, n, RKSS_EACH_FILEFOLDER_COUNT);
+						i, RKSS_PARTITION_TABLE_COUNT, n, RKSS_EACH_SECTION_FILECOUNT);
 				memcpy(pfileinfo, p, sizeof(struct rkss_file_info));
 				free(table_data);
-				return i * RKSS_EACH_FILEFOLDER_COUNT + n;
+				return i * RKSS_EACH_SECTION_FILECOUNT + n;
 			}
 
 			/* Folder Matching*/
@@ -737,12 +661,12 @@ static int rkss_get_dirs_by_name(char *filename)
 	char *chk, *file, *subdir;
 
 	len = strlen(filename);
-	if (len > RKSS_NAME_MAX_LENGTH - 1) {
+	if (len > RKSS_MAX_NAME_LENGTH - 1) {
 		printf("TEEC: filename is too long. length:%u\n", len);
 		return TEEC_ERROR_GENERIC;
 	}
 
-	table_data = malloc(RKSS_DATA_LEN * RKSS_PARTITION_TABLE_COUNT);
+	table_data = malloc(RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
 	if (table_data == NULL) {
 		printf("TEEC: malloc table_data fail\n");
 		return TEEC_ERROR_GENERIC;
@@ -756,9 +680,9 @@ static int rkss_get_dirs_by_name(char *filename)
 	dir_num = 0;
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
 		rkss.index = i;
-		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_LEN, RKSS_DATA_LEN);
+		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_SECTION_LEN, RKSS_DATA_SECTION_LEN);
 
-		for (n = 0; n < RKSS_EACH_FILEFOLDER_COUNT; n++) {
+		for (n = 0; n < RKSS_EACH_SECTION_FILECOUNT; n++) {
 			pdata = rkss.data;
 			p = (struct rkss_file_info *)pdata;
 			p += n;
@@ -769,7 +693,7 @@ static int rkss_get_dirs_by_name(char *filename)
 			/* Full Matching*/
 			ret = memcmp(p->name, filename, strlen(filename));
 			debug("TEEC: comparing [fd:%d] : %s ?= %s , ret:%d\n",
-					i*RKSS_EACH_FILEFOLDER_COUNT+n, p->name, filename, ret);
+					i*RKSS_EACH_SECTION_FILECOUNT+n, p->name, filename, ret);
 			if (!ret && strlen(p->name) > strlen(filename)) {
 				chk = p->name + strlen(filename);
 				if (*chk == '/') {
@@ -794,7 +718,7 @@ static int rkss_get_empty_section_from_usedflags(int section_size)
 	uint8_t *flag;
 	uint8_t value;
 
-	rkss.index = RKSS_USEDFLAGS_INDEX;
+	rkss.index = RKSS_USED_FLAGS_INDEX;
 	ret = rkss_read_multi_sections(rkss.data, rkss.index, 1);
 	if (ret < 0) {
 		printf("TEEC: rkss_read_multi_sections fail ! ret: %d.\n", ret);
@@ -829,7 +753,7 @@ static int rkss_incref_multi_usedflags_sections(unsigned int index, unsigned int
 		return TEEC_ERROR_GENERIC;
 	}
 
-	rkss.index = RKSS_USEDFLAGS_INDEX;
+	rkss.index = RKSS_USED_FLAGS_INDEX;
 	ret = rkss_read_multi_sections(rkss.data, rkss.index, 1);
 	if (ret < 0) {
 		printf("TEEC: rkss_read_multi_sections fail ! ret: %d.\n", ret);
@@ -865,7 +789,7 @@ static int rkss_decref_multi_usedflags_sections(unsigned int index, unsigned int
 		return TEEC_ERROR_GENERIC;
 	}
 
-	rkss.index = RKSS_USEDFLAGS_INDEX;
+	rkss.index = RKSS_USED_FLAGS_INDEX;
 	ret = rkss_read_multi_sections(rkss.data, rkss.index, 1);
 	if (ret < 0) {
 		printf("TEEC: rkss_read_multi_sections fail ! ret: %d.\n", ret);
@@ -897,7 +821,7 @@ static int rkss_write_empty_ptable(struct rkss_file_info *pfileinfo)
 	void *pdata;
 	struct rkss_file_info *p;
 
-	table_data = malloc(RKSS_DATA_LEN * RKSS_PARTITION_TABLE_COUNT);
+	table_data = malloc(RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
 	if (table_data == NULL) {
 		printf("TEEC: malloc table_data fail\n");
 		return TEEC_ERROR_GENERIC;
@@ -911,8 +835,8 @@ static int rkss_write_empty_ptable(struct rkss_file_info *pfileinfo)
 
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
 		rkss.index = i;
-		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_LEN, RKSS_DATA_LEN);
-		for (n = 0; n < RKSS_EACH_FILEFOLDER_COUNT; n++) {
+		memcpy(rkss.data, table_data + rkss.index * RKSS_DATA_SECTION_LEN, RKSS_DATA_SECTION_LEN);
+		for (n = 0; n < RKSS_EACH_SECTION_FILECOUNT; n++) {
 			pdata = rkss.data;
 			p = (struct rkss_file_info *)pdata;
 			p += n;
@@ -932,7 +856,7 @@ static int rkss_write_empty_ptable(struct rkss_file_info *pfileinfo)
 				}
 
 				free(table_data);
-				return i * RKSS_EACH_FILEFOLDER_COUNT + n;
+				return i * RKSS_EACH_SECTION_FILECOUNT + n;
 			}
 		}
 	}
@@ -943,8 +867,8 @@ static int rkss_write_empty_ptable(struct rkss_file_info *pfileinfo)
 
 static int rkss_write_back_ptable(int fd, struct rkss_file_info *pfileinfo)
 {
-	int i = fd / RKSS_EACH_FILEFOLDER_COUNT;
-	int n = fd - (RKSS_EACH_FILEFOLDER_COUNT * i);
+	int i = fd / RKSS_EACH_SECTION_FILECOUNT;
+	int n = fd - (RKSS_EACH_SECTION_FILECOUNT * i);
 	struct rk_secure_storage rkss = {0};
 	int ret;
 	void *pdata;
@@ -991,7 +915,7 @@ static uint32_t ree_fs_new_open(size_t num_params,
 	if (!filename)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	if (strlen(filename) > RKSS_NAME_MAX_LENGTH) {
+	if (strlen(filename) > RKSS_MAX_NAME_LENGTH) {
 		printf("TEEC: ree_fs_new_open: file name too long. %s\n", filename);
 		return TEEC_ERROR_BAD_PARAMETERS;
 	}
@@ -1031,7 +955,7 @@ static TEEC_Result ree_fs_new_create(size_t num_params,
 	if (!filename)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	if (strlen(filename) > RKSS_NAME_MAX_LENGTH) {
+	if (strlen(filename) > RKSS_MAX_NAME_LENGTH) {
 		printf("TEEC: ree_fs_new_create: file name too long. %s\n", filename);
 		return TEEC_ERROR_BAD_PARAMETERS;
 	}
@@ -1041,7 +965,7 @@ static TEEC_Result ree_fs_new_create(size_t num_params,
 	if (fd >= 0) {
 		debug("TEEC: ree_fs_new_create : file exist, clear it. %s\n", filename);
 		/* decrease ref from usedflags */
-		num = p.size / RKSS_DATA_LEN + 1;
+		num = p.size / RKSS_DATA_SECTION_LEN + 1;
 		ret = rkss_decref_multi_usedflags_sections(p.index, num);
 		if (ret < 0) {
 			printf("TEEC: rkss_decref_multi_usedflags_sections error !\n");
@@ -1124,8 +1048,8 @@ static TEEC_Result ree_fs_new_read(size_t num_params,
 	if (offs >= p.size)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	section_num = p.size / RKSS_DATA_LEN + 1;
-	temp_file_data = malloc(section_num * RKSS_DATA_LEN);
+	section_num = p.size / RKSS_DATA_SECTION_LEN + 1;
+	temp_file_data = malloc(section_num * RKSS_DATA_SECTION_LEN);
 	ret = rkss_read_multi_sections(temp_file_data, p.index, section_num);
 	if (ret < 0) {
 		printf("TEEC: unavailable file index!\n");
@@ -1150,7 +1074,7 @@ static TEEC_Result ree_fs_new_write(size_t num_params,
 	struct rkss_file_info p = {0};
 	int ret, fd, new_size;
 	int section_num;
-	uint8_t *file_data=0, *temp_file_data=0;
+	uint8_t *file_data = 0, *temp_file_data = 0;
 
 	ret = rkss_begin_commit();
 	if (ret < 0) {
@@ -1183,8 +1107,8 @@ static TEEC_Result ree_fs_new_write(size_t num_params,
 
 	if (p.size != 0) {
 		/* Read old file data out */
-		section_num = p.size / RKSS_DATA_LEN + 1;
-		temp_file_data = malloc(section_num * RKSS_DATA_LEN);
+		section_num = p.size / RKSS_DATA_SECTION_LEN + 1;
+		temp_file_data = malloc(section_num * RKSS_DATA_SECTION_LEN);
 		ret = rkss_read_multi_sections(temp_file_data, p.index, section_num);
 		if (ret < 0) {
 			printf("TEEC: unavailable file index %d section_num %d\n", p.index, section_num);
@@ -1205,7 +1129,7 @@ static TEEC_Result ree_fs_new_write(size_t num_params,
 	/* update new file info */
 	memcpy(file_data + offs, data, len);
 	p.size = new_size;
-	section_num = new_size / RKSS_DATA_LEN + 1;
+	section_num = new_size / RKSS_DATA_SECTION_LEN + 1;
 	p.index = rkss_get_empty_section_from_usedflags(section_num);
 	debug("TEEC: Get Empty section in %d\n", p.index);
 	p.used = 1;
@@ -1224,8 +1148,8 @@ static TEEC_Result ree_fs_new_write(size_t num_params,
 	}
 
 	/* write new file data */
-	temp_file_data = malloc(section_num * RKSS_DATA_LEN);
-	memset(temp_file_data, 0, section_num * RKSS_DATA_LEN);
+	temp_file_data = malloc(section_num * RKSS_DATA_SECTION_LEN);
+	memset(temp_file_data, 0, section_num * RKSS_DATA_SECTION_LEN);
 	memcpy(temp_file_data, file_data, p.size);
 	rkss_write_multi_sections(temp_file_data, p.index, section_num);
 	free(temp_file_data);
@@ -1280,8 +1204,8 @@ static TEEC_Result ree_fs_new_truncate(size_t num_params,
 		printf("TEEC: truncate error!\n");
 		return TEEC_ERROR_GENERIC;
 	}
-	section_num_old = p.size / RKSS_DATA_LEN + 1;
-	section_num_new = len / RKSS_DATA_LEN + 1;
+	section_num_old = p.size / RKSS_DATA_SECTION_LEN + 1;
+	section_num_new = len / RKSS_DATA_SECTION_LEN + 1;
 	ret = rkss_decref_multi_usedflags_sections(p.index + section_num_new, section_num_old - section_num_new);
 	if (ret < 0) {
 		printf("TEEC: rkss_decref_multi_usedflags_sections error !\n");
@@ -1332,7 +1256,7 @@ static TEEC_Result ree_fs_new_remove(size_t num_params,
 	debug("TEEC: ree_fs_new_remove! %s fd:%d index:%d size:%d\n", filename, fd, p.index, p.size);
 
 	/* decrease ref from usedflags */
-	num = p.size / RKSS_DATA_LEN + 1;
+	num = p.size / RKSS_DATA_SECTION_LEN + 1;
 	ret = rkss_decref_multi_usedflags_sections(p.index, num);
 	if (ret < 0) {
 		printf("TEEC: rkss_decref_multi_usedflags_sections error !\n");
@@ -1386,7 +1310,7 @@ static TEEC_Result ree_fs_new_rename(size_t num_params,
 	if (!new_fname)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	if (strlen(new_fname) > RKSS_NAME_MAX_LENGTH) {
+	if (strlen(new_fname) > RKSS_MAX_NAME_LENGTH) {
 		printf("TEEC: new file name too long. %s\n", new_fname);
 		return TEEC_ERROR_BAD_PARAMETERS;
 	}
@@ -1487,10 +1411,10 @@ static TEEC_Result ree_fs_new_readdir(size_t num_params,
 	return TEEC_SUCCESS;
 }
 
-int tee_supp_rk_fs_init(void)
+int tee_supp_rk_fs_init_v1(void)
 {
 	assert(sizeof(struct rkss_file_info) == 126);
-	assert(512 / sizeof(struct rkss_file_info) == RKSS_EACH_FILEFOLDER_COUNT);
+	assert(512 / sizeof(struct rkss_file_info) == RKSS_EACH_SECTION_FILECOUNT);
 
 	int ret;
 	struct rk_secure_storage rkss = {0};
@@ -1509,7 +1433,7 @@ int tee_supp_rk_fs_init(void)
 #ifdef DEBUG_CLEAN_RKSS
 	int i = 0;
 	for (i = 0; i < RKSS_DATA_SECTION_COUNT; i++) {
-		memset(rkss.data, 0, RKSS_DATA_LEN);
+		memset(rkss.data, 0, RKSS_DATA_SECTION_LEN);
 		rkss.index = i;
 		rkss_write_multi_sections(rkss.data, rkss.index, 1);
 		printf("TEEC: cleaned [%d]", i);
@@ -1521,7 +1445,7 @@ int tee_supp_rk_fs_init(void)
 		return TEEC_ERROR_GENERIC;
 	}
 
-	table_data = malloc(RKSS_DATA_LEN * RKSS_PARTITION_TABLE_COUNT);
+	table_data = malloc(RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
 	if (table_data == NULL) {
 		printf("TEEC: malloc table_data fail\n");
 		return TEEC_ERROR_GENERIC;
@@ -1538,7 +1462,7 @@ int tee_supp_rk_fs_init(void)
 	table_data = NULL;
 
 	/* Verify Usedflags Section*/
-	rkss.index = RKSS_USEDFLAGS_INDEX;
+	rkss.index = RKSS_USED_FLAGS_INDEX;
 	ret = rkss_read_multi_sections(rkss.data, rkss.index, 1);
 	if (ret < 0) {
 		printf("TEEC: rkss_read_multi_sections fail ! ret: %d.\n", ret);
@@ -1564,12 +1488,7 @@ int tee_supp_rk_fs_init(void)
 	return TEEC_SUCCESS;
 }
 
-int OpteeClientRkFsInit(void)
-{
-	debug("TEEC: OpteeClientRkFsInit\n");
-	return tee_supp_rk_fs_init();
-}
-bool tee_supp_param_is_value(struct tee_ioctl_param *param)
+static bool tee_supp_param_is_value(struct tee_ioctl_param *param)
 {
 	switch (param->attr & TEE_IOCTL_PARAM_ATTR_TYPE_MASK) {
 	case TEE_IOCTL_PARAM_ATTR_TYPE_VALUE_INPUT:
@@ -1582,7 +1501,7 @@ bool tee_supp_param_is_value(struct tee_ioctl_param *param)
 }
 
 static int rkss_step;
-int tee_supp_rk_fs_process(size_t num_params,
+int tee_supp_rk_fs_process_v1(size_t num_params,
 			struct tee_ioctl_param *params)
 {
 	if (!num_params || !tee_supp_param_is_value(params))
