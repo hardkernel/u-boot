@@ -418,6 +418,32 @@ static ulong rk322x_peri_set_clk(struct rk322x_clk_priv *priv,
 	return rk322x_peri_get_clk(priv, clk_id);
 }
 
+static ulong rk322x_spi_get_clk(struct rk322x_clk_priv *priv)
+{
+	struct rk322x_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	con = readl(&cru->cru_clksel_con[25]);
+	div = (con & SPI_DIV_MASK) >> SPI_DIV_SHIFT;
+	parent = priv->gpll_hz;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk322x_spi_set_clk(struct rk322x_clk_priv *priv, ulong hz)
+{
+	struct rk322x_cru *cru = priv->cru;
+	int div;
+
+	div = DIV_ROUND_UP(priv->gpll_hz, hz);
+	assert(div - 1 < 128);
+	rk_clrsetreg(&cru->cru_clksel_con[25],
+		     SPI_PLL_SEL_MASK | SPI_DIV_MASK,
+		     SPI_PLL_SEL_GPLL << SPI_PLL_SEL_SHIFT |
+		     (div - 1) << SPI_DIV_SHIFT);
+	return rk322x_spi_get_clk(priv);
+}
+
 #ifndef CONFIG_SPL_BUILD
 static ulong rk322x_vop_get_clk(struct rk322x_clk_priv *priv, ulong clk_id)
 {
@@ -574,6 +600,9 @@ static ulong rk322x_clk_get_rate(struct clk *clk)
 	case SCLK_SDIO_SAMPLE:
 		rate = rk322x_mmc_get_clk(priv, clk->id);
 		break;
+	case SCLK_SPI0:
+		rate = rk322x_spi_get_clk(priv);
+		break;
 	case ACLK_CPU:
 	case HCLK_CPU:
 	case PCLK_CPU:
@@ -644,6 +673,9 @@ static ulong rk322x_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_DDRC:
 		ret = rockchip_pll_set_rate(&rk322x_pll_clks[DPLL],
 					    priv->cru, DPLL, rate);
+		break;
+	case SCLK_SPI0:
+		rate = rk322x_spi_set_clk(priv, rate);
 		break;
 	case ACLK_CPU:
 	case HCLK_CPU:
