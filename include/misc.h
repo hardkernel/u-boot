@@ -158,5 +158,9 @@ int misc_decompress_start(struct udevice *dev, unsigned long src,
 			  unsigned long dst, unsigned long size);
 int misc_decompress_stop(struct udevice *dev);
 bool misc_decompress_is_complete(struct udevice *dev);
+int misc_decompress_process(unsigned long src,
+			    unsigned long dst,
+			    unsigned long limit_size,
+			    u32 cap);
 
 #endif	/* _MISC_H_ */
