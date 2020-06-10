@@ -1594,10 +1594,22 @@ static int data_training_rd(struct dram_info *dram, u32 cs, u32 dramtype,
 	u32 timeout_us = 1000;
 	u32 dqs_default;
 	u32 cur_fsp;
+	u32 vref_inner;
 	u32 i;
 	struct sdram_head_info_index_v2 *index =
 		(struct sdram_head_info_index_v2 *)common_info;
 	struct dq_map_info *map_info;
+
+	vref_inner = readl(PHY_REG(phy_base, 0x128)) & 0xff;
+	if (dramtype == DDR3 && vref_inner == 0x80) {
+		for (i = 0; i < 4; i++)
+			writel(vref_inner - 0xa,
+			       PHY_REG(phy_base, 0x118 + i * 0x10));
+
+		/* reg_rx_vref_value_update */
+		setbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
+		clrbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
+	}
 
 	map_info = (struct dq_map_info *)((void *)common_info +
 		index->dq_map_index.offset * 4);
@@ -1675,6 +1687,16 @@ static int data_training_rd(struct dram_info *dram, u32 cs, u32 dramtype,
 	clrbits_le32(PHY_REG(phy_base, 0x70), BIT(1));
 
 	pctl_rest_zqcs_aref(dram->pctl, dis_auto_zq);
+
+	if (dramtype == DDR3 && vref_inner == 0x80) {
+		for (i = 0; i < 4; i++)
+			writel(vref_inner,
+			       PHY_REG(phy_base, 0x118 + i * 0x10));
+
+		/* reg_rx_vref_value_update */
+		setbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
+		clrbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
+	}
 
 	return 0;
 }
