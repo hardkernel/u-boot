@@ -76,6 +76,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-664.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-784.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-924.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-1056.inc"
 };
 #elif defined TPL_INIT_DDR_TYPE_DDR4
 struct rv1126_sdram_params sdram_configs[] = {
@@ -95,6 +96,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-664.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-784.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-924.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-1056.inc"
 };
 #elif defined TPL_INIT_DDR_TYPE_LPDDR4
 struct rv1126_sdram_params sdram_configs[] = {
