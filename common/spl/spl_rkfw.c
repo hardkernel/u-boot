@@ -377,7 +377,7 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 #ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
 		int timeout = 10000;
 
-		while (misc_decompress_is_complete(dev)) {
+		while (!misc_decompress_is_complete(dev)) {
 			if (timeout < 0) {
 				ret = -EIO;
 				goto out;
@@ -403,7 +403,7 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 	else {
 		int timeout = 10000;
 
-		while (misc_decompress_is_complete(dev)) {
+		while (!misc_decompress_is_complete(dev)) {
 			if (timeout < 0) {
 				ret = -EIO;
 				goto out;
