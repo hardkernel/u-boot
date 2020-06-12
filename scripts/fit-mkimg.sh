@@ -174,7 +174,7 @@ function fit_process_args()
 function fit_rebuild()
 {
 	if [ "${ARG_NO_REBUILD}" != "y" ]; then
-		./make.sh nopack # Always no pack
+		./make.sh --no-pack # Always no pack
 	fi
 
 	rm ${FIT_DIR} -rf

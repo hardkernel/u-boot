@@ -167,8 +167,18 @@ function process_args()
 				exit 0
 				;;
 
-			''|loader|trust|uboot|spl*|tpl*|debug*|itb|env|nopack|fit*)
+			''|loader|trust|uboot|spl*|tpl*|debug*|itb|env|fit*)
 				ARG_CMD=$1
+				shift 1
+				;;
+
+			--no-pack)
+				ARG_NO_PACK="y"
+				shift 1
+				;;
+
+			--no-uboot)
+				ARG_NO_UBOOT="y"
 				shift 1
 				;;
 
@@ -344,11 +354,6 @@ function sub_commands()
 			pack_fit_image ${ARG_LIST_FIT}
 			exit 0
 			;;
-
-		nopack)
-			ARG_NO_PACK="y"
-			;;
-
 		*)
 			# Search function and code position of address
 			FUNCADDR=${ARG_FUNCADDR}
@@ -711,6 +716,11 @@ function pack_trust_image()
 
 function pack_fit_image()
 {
+	if [ "${ARG_NO_UBOOT}" == "y" ]; then
+		rm u-boot-nodtb.bin u-boot.dtb -rf
+		touch u-boot-nodtb.bin u-boot.dtb
+	fi
+
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
 		./scripts/fit-mkimg.sh --uboot-itb --boot-itb ${ARG_LIST_FIT}
 	else
