@@ -103,7 +103,7 @@ function help()
 	echo "	./make.sh [board|sub-command]"
 	echo
 	echo "	 - board:        board name of defconfig"
-	echo "	 - sub-command:  elf*|loader*|spl*|itb|trust*|uboot|map|sym|<addr>"
+	echo "	 - sub-command:  elf*|loader*|spl*|tpl*|itb|trust*|uboot|map|sym|<addr>"
 	echo "	 - ini:          assigned ini file to pack trust/loader"
 	echo
 	echo "Output:"
@@ -167,7 +167,7 @@ function process_args()
 				exit 0
 				;;
 
-			''|loader|trust|uboot|spl*|debug*|itb|env|nopack|fit*)
+			''|loader|trust|uboot|spl*|tpl*|debug*|itb|env|nopack|fit*)
 				ARG_CMD=$1
 				shift 1
 				;;
@@ -320,8 +320,8 @@ function sub_commands()
 			exit 0
 			;;
 
-		spl)
-			pack_spl_loader_image ${arg}
+		tpl|spl)
+			pack_spl_loader_image ${ARG_CMD}
 			exit 0
 			;;
 
@@ -595,7 +595,7 @@ function pack_spl_loader_image()
 
 	rm ${tmpdir} -rf && mkdir ${tmpdir} -p
 	cp spl/u-boot-spl.bin ${tmpdir}/ && cp ${ini} ${tmpini}
-	if [ "${mode}" == "spl" ]; then	# pack tpl+spl
+	if [ "${mode}" == "tpl-spl" ]; then	# pack tpl+spl
 		label="TPL+SPL"
 		cp tpl/u-boot-tpl.bin ${tmpdir}/
 		header=`sed -n '/NAME=/s/NAME=//p' ${ini}`
