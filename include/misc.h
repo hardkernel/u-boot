@@ -157,6 +157,6 @@ struct udevice *misc_decompress_get_device(u32 capability);
 int misc_decompress_start(struct udevice *dev, unsigned long src,
 			  unsigned long dst, unsigned long size);
 int misc_decompress_stop(struct udevice *dev);
-int misc_decompress_is_complete(struct udevice *dev);
+bool misc_decompress_is_complete(struct udevice *dev);
 
 #endif	/* _MISC_H_ */

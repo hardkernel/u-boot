@@ -70,7 +70,10 @@ int misc_decompress_stop(struct udevice *dev)
 	return misc_ioctl(dev, IOCTL_REQ_STOP, NULL);
 }
 
-int misc_decompress_is_complete(struct udevice *dev)
+bool misc_decompress_is_complete(struct udevice *dev)
 {
-	return misc_ioctl(dev, IOCTL_REQ_POLL, NULL);
+	if (misc_ioctl(dev, IOCTL_REQ_POLL, NULL))
+		return false;
+	else
+		return true;
 }

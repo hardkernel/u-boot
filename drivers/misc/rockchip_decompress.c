@@ -64,6 +64,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DECOM_GZIP_MODE		BIT(4)
 #define DECOM_ZLIB_MODE		BIT(5)
 #define DECOM_DEFLATE_MODE	BIT(0)
+#define DECOM_AXI_IDLE		BIT(4)
 #define DECOM_LZ4_MODE		0
 
 #define DECOM_ENABLE		0x1
@@ -81,6 +82,7 @@ DECLARE_GLOBAL_DATA_PTR;
 struct rockchip_decom_priv {
 	void __iomem *base;
 	unsigned long soft_reset_base;
+	bool idle_check_once;
 	bool done;
 };
 
@@ -118,6 +120,7 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 
 	writel(DECOM_INT_MASK, priv->base + DECOM_IEN);
 	writel(DECOM_ENABLE, priv->base + DECOM_ENR);
+	priv->idle_check_once = true;
 
 	return 0;
 }
@@ -141,13 +144,14 @@ static int rockchip_decom_stop(struct udevice *dev)
 static int rockchip_decom_done_poll(struct udevice *dev)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
-	int decom_status;
 
-	decom_status = readl(priv->base + DECOM_STAT);
-	if (decom_status & DECOM_COMPLETE)
-		return 0;
+	/*
+	 * Test the decom is idle first time.
+	 */
+	if (!priv->idle_check_once)
+		return !(readl(priv->base + DECOM_AXI_STAT) & DECOM_AXI_IDLE);
 
-	return -EINVAL;
+	return !(readl(priv->base + DECOM_STAT) & DECOM_COMPLETE);
 }
 
 static int rockchip_decom_capability(u32 *buf)
@@ -175,6 +179,7 @@ static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 		break;
 	case IOCTL_REQ_CAPABILITY:
 		ret = rockchip_decom_capability(buf);
+		break;
 	}
 
 	return ret;
