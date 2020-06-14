@@ -45,7 +45,7 @@ static int nanddev_read_bbt(struct nand_device *nand, u32 block, bool update)
 	unsigned int bits_per_block = fls(NAND_BBT_BLOCK_NUM_STATUS);
 	unsigned int nblocks = nanddev_neraseblocks(nand);
 	unsigned int nbytes = DIV_ROUND_UP(nblocks * bits_per_block,
-					   BITS_PER_LONG) * 4;
+					   BITS_PER_LONG) * sizeof(*nand->bbt.cache);
 	struct mtd_info *mtd = nanddev_to_mtd(nand);
 	u8 *data_buf, *oob_buf;
 	struct nanddev_bbt_info *bbt_info;
@@ -115,7 +115,7 @@ static int nanddev_write_bbt(struct nand_device *nand, u32 block)
 	unsigned int bits_per_block = fls(NAND_BBT_BLOCK_NUM_STATUS);
 	unsigned int nblocks = nanddev_neraseblocks(nand);
 	unsigned int nbytes = DIV_ROUND_UP(nblocks * bits_per_block,
-					   BITS_PER_LONG) * 4;
+					   BITS_PER_LONG) * sizeof(*nand->bbt.cache);
 	struct mtd_info *mtd = nanddev_to_mtd(nand);
 	u8 *data_buf, *oob_buf;
 	struct nanddev_bbt_info *bbt_info;
@@ -391,8 +391,8 @@ int nanddev_bbt_set_block_status(struct nand_device *nand, unsigned int entry,
 	if (entry >= nanddev_neraseblocks(nand))
 		return -ERANGE;
 
-	if (offs + bits_per_block - 1 > 31)
-		pos[0] &= ~GENMASK(31, offs);
+	if (offs + bits_per_block - 1 > (BITS_PER_LONG - 1))
+		pos[0] &= ~GENMASK(BITS_PER_LONG - 1, offs);
 	else
 		pos[0] &= ~GENMASK(offs + bits_per_block - 1, offs);
 	pos[0] |= val << offs;
