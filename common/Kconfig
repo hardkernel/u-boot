@@ -256,11 +256,6 @@ config CONSOLE_DISABLE_CLI
 	help
 	  This disable CLI interactive in verified-boot.
 
-config CONSOLE_SERIAL_SKIP_INIT
-	bool "Skip console serial init"
-	help
-	  Skip console serial init and always use debug uart.
-
 config DISABLE_CONSOLE
 	bool "disable console in & out"
 	help

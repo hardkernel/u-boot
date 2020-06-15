@@ -346,6 +346,11 @@ config DEBUG_UART_SKIP_INIT
 	  Select this if the UART you want to use for debug output is already
 	  initialized by the time U-Boot starts its execution.
 
+config DEBUG_UART_ALWAYS_MODE
+	bool "Always use debug UART mode"
+	help
+	  Select this to always use debug UART, skip complicated console UART register.
+
 config ALTERA_JTAG_UART
 	bool "Altera JTAG UART support"
 	depends on DM_SERIAL

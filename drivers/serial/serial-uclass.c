@@ -28,7 +28,7 @@ static const unsigned long baudrate_table[] = CONFIG_SYS_BAUDRATE_TABLE;
 #error "Serial is required before relocation - define CONFIG_$(SPL_)SYS_MALLOC_F_LEN to make this work"
 #endif
 
-#ifndef CONFIG_CONSOLE_SERIAL_SKIP_INIT
+#ifndef CONFIG_DEBUG_UART_ALWAYS_MODE
 static int serial_check_stdout(const void *blob, struct udevice **devp)
 {
 	int node;
@@ -90,7 +90,7 @@ static int serial_check_stdout(const void *blob, struct udevice **devp)
 }
 #endif
 
-#if defined(CONFIG_OF_LIVE) && !defined(CONFIG_CONSOLE_SERIAL_SKIP_INIT)
+#if defined(CONFIG_OF_LIVE) && !defined(CONFIG_DEBUG_UART_ALWAYS_MODE)
 /*
  * Hide and present pinctrl prop int live device tree
  *
@@ -148,7 +148,7 @@ static inline void serial_console_hide_prop(char **p1, char **p2) {}
 static inline void serial_console_present_prop(char *p1, char *p2) {}
 #endif
 
-#ifndef CONFIG_CONSOLE_SERIAL_SKIP_INIT
+#ifndef CONFIG_DEBUG_UART_ALWAYS_MODE
 static void serial_find_console_or_panic(void)
 {
 	const void *blob = gd->fdt_blob;
