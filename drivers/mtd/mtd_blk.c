@@ -49,13 +49,17 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 	} else {
 		blk_total = (mtd->size + mtd->erasesize - 1) >> mtd->erasesize_shift;
 		if (!mtd_map_blk_table) {
-			mtd_map_blk_table = (int *)malloc(blk_total * 4);
-			memset(mtd_map_blk_table, MTD_BLK_TABLE_BLOCK_UNKNOWN,
-			       blk_total * 4);
+			mtd_map_blk_table = (int *)malloc(blk_total * sizeof(int));
+			for (i = 0; i < blk_total; i++)
+				mtd_map_blk_table[i] = MTD_BLK_TABLE_BLOCK_UNKNOWN;
 		}
 
 		blk_begin = (u32)offset >> mtd->erasesize_shift;
 		blk_cnt = ((u32)((offset & mtd->erasesize_mask) + length) >> mtd->erasesize_shift);
+		if (blk_begin >= blk_total) {
+			pr_err("map table blk begin[%d] overflow\n", blk_begin);
+			return -EINVAL;
+		}
 		if ((blk_begin + blk_cnt) > blk_total)
 			blk_cnt = blk_total - blk_begin;
 
