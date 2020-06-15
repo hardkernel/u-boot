@@ -11,6 +11,7 @@ IMG_UBOOT="uboot.img"
 IMG_BOOT="boot.img"
 ITB_UBOOT="${FIT_DIR}/uboot.itb"
 ITB_BOOT="${FIT_DIR}/boot.itb"
+SIG_BIN="data2sign.bin"
 SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
 # offs
@@ -228,7 +229,7 @@ function fit_gen_uboot_itb()
 
 		# Pack
 		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT}
-		mv data2sign.bin ${SIG_UBOOT}
+		mv ${SIG_BIN} ${SIG_UBOOT}
 
 		# rollback-index read back check
 		if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
@@ -341,7 +342,7 @@ function fit_gen_boot_itb()
 		fi
 
 		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_BOOT} -r ${ITB_BOOT}
-		mv data2sign.bin ${SIG_BOOT}
+		mv ${SIG_BIN} ${SIG_BOOT}
 
 		# rollback-index read back check
 		if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
