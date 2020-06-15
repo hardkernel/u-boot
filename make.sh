@@ -295,7 +295,7 @@ function sub_commands()
 
 		fit)
 			if [ "${arg}" == "ns" ]; then
-				./scripts/fit-mkimg.sh --uboot --boot --no-vboot ${ARG_FIT}
+				./scripts/fit-mkimg.sh --uboot-itb --boot-itb --no-vboot ${ARG_FIT}
 			fi
 			exit 0
 			;;
@@ -712,10 +712,10 @@ function pack_trust_image()
 function pack_fit_image()
 {
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		./scripts/fit-mkimg.sh --uboot --boot ${ARG_LIST_FIT}
+		./scripts/fit-mkimg.sh --uboot-itb --boot-itb ${ARG_LIST_FIT}
 	else
 		rm uboot.img trust*.img -rf
-		./scripts/fit-mkimg.sh --uboot --no-vboot --no-rebuild ${ARG_LIST_FIT}
+		./scripts/fit-mkimg.sh --uboot-itb --no-vboot --no-rebuild ${ARG_LIST_FIT}
 		echo "pack uboot.img okay! Input: ${INI_TRUST}"
 	fi
 }

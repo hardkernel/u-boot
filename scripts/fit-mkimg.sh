@@ -53,8 +53,8 @@ function help()
 	echo "    --no-check"
 	echo "    --no-rebuild"
 	echo "    --spl-new"
-	echo "    --uboot"
-	echo "    --boot"
+	echo "    --uboot-itb"
+	echo "    --boot-itb"
 	echo "    --boot_img"
 	echo "    --p-check"
 	echo
@@ -90,7 +90,7 @@ function check_its()
 function validate_arg()
 {
 	case $1 in
-		--uboot|--boot|--no-vboot|--no-rebuild|--no-check|--spl-new)
+		--uboot-itb|--boot-itb|--no-vboot|--no-rebuild|--no-check|--spl-new)
 			shift=1
 			;;
 		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-uboot|--boot_img)
@@ -116,11 +116,11 @@ function fit_process_args()
 				ARG_VALIDATE=$2
 				shift 2
 				;;
-			--uboot)
+			--uboot-itb)
 				ARG_PACK_UBOOT="y"
 				shift 1
 				;;
-			--boot)
+			--boot-itb)
 				ARG_PACK_BOOT="y"
 				shift 1
 				;;
