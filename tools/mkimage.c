@@ -95,7 +95,9 @@ static void usage(const char *msg)
 	fprintf(stderr,
 		"          -D => set all options for device tree compiler\n"
 		"          -f => input filename for FIT source\n"
-		"          -i => input filename for ramdisk file\n");
+		"          -i => input filename for ramdisk file\n"
+		"          -v => set FIT image version in decimal\n");
+
 #ifdef CONFIG_FIT_SIGNATURE
 	fprintf(stderr,
 		"Signing / verified boot options: [-E] [-k keydir] [-K dtb] [ -c <comment>] [-p addr] [-r] [-N engine]\n"
@@ -144,7 +146,7 @@ static void process_args(int argc, char **argv)
 	int opt;
 
 	while ((opt = getopt(argc, argv,
-			     "a:A:b:c:C:d:D:e:Ef:Fk:i:K:ln:N:p:O:rR:qsT:vVxX:")) != -1) {
+			     "a:A:b:c:C:d:D:e:Ef:Fk:i:K:ln:N:p:O:rR:qsT:v:VxX:")) != -1) {
 		switch (opt) {
 		case 'a':
 			params.addr = strtoull(optarg, &ptr, 16);
@@ -271,7 +273,12 @@ static void process_args(int argc, char **argv)
 			}
 			break;
 		case 'v':
-			params.vflag++;
+			params.vflag = strtoull(optarg, &ptr, 10);
+			if (*ptr) {
+				fprintf(stderr, "%s: invalid version length %s\n",
+					params.cmdname, optarg);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'V':
 			printf("mkimage version %s\n", PLAIN_VERSION);

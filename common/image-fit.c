@@ -1131,6 +1131,19 @@ int fit_set_totalsize(void *fit, int noffset, int totalsize)
 	return 0;
 }
 
+int fit_set_version(void *fit, int noffset, int version)
+{
+	uint32_t v;
+	int ret;
+
+	v = cpu_to_uimage(version);
+	ret = fdt_setprop(fit, noffset, FIT_VERSION_PROP, &v, sizeof(uint32_t));
+	if (ret)
+		return ret == -FDT_ERR_NOSPACE ? -ENOSPC : -1;
+
+	return 0;
+}
+
 int fit_calculate_hash(const void *data, int data_len,
 		       const char *algo, uint8_t *value,
 		       int *value_len)
