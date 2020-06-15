@@ -420,9 +420,9 @@ function fit_msg_uboot()
 	fi
 
 	if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
-		echo "Image(${MSG}, rollback-index=${ARG_ROLLBACK_IDX_UBOOT}):  ${IMG_UBOOT} (with uboot trust) is ready"
+		echo "Image(${MSG}, rollback-index=${ARG_ROLLBACK_IDX_UBOOT}):  ${IMG_UBOOT} (with uboot, trust...) is ready"
 	else
-		echo "Image(${MSG}):  ${IMG_UBOOT} (FIT with uboot, trust) is ready"
+		echo "Image(${MSG}):  ${IMG_UBOOT} (FIT with uboot, trust...) is ready"
 	fi
 }
 
