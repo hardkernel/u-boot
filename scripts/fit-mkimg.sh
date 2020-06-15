@@ -39,6 +39,8 @@ UBOOT_DTB="u-boot.dtb"
 # its
 ITS_UBOOT="u-boot.its"
 ITS_BOOT="boot.its"
+ARG_VER_UBOOT="0"
+ARG_VER_BOOT="0"
 
 function help()
 {
@@ -49,6 +51,8 @@ function help()
 	echo "args:"
 	echo "    --rollback-index-boot   <decimal integer>"
 	echo "    --rollback-index-uboot  <decimal integer>"
+	echo "    --version-uboot         <decimal integer>"
+	echo "    --version-boot          <decimal integer>"
 	echo "    --ini-trust"
 	echo "    --ini-loader"
 	echo "    --no-vboot"
@@ -95,7 +99,7 @@ function validate_arg()
 		--uboot-itb|--boot-itb|--no-vboot|--no-rebuild|--no-check|--spl-new)
 			shift=1
 			;;
-		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-uboot|--boot_img)
+		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-uboot|--boot_img|--version-uboot|--version-boot)
 			shift=2
 			;;
 		*)
@@ -164,6 +168,16 @@ function fit_process_args()
 				ARG_EXT_BOOT=$2
 				shift 2
 				;;
+			--version-uboot)
+				ARG_VER_UBOOT=$2
+				arg_check_decimal $2
+				shift 2
+				;;
+			--version-boot)
+				ARG_VER_BOOT=$2
+				arg_check_decimal $2
+				shift 2
+				;;
 			*)
 				help
 				exit 1
@@ -188,7 +202,7 @@ function fit_gen_uboot_itb()
 	check_its ${ITS_UBOOT}
 
 	if [ "${ARG_NO_VBOOT}" == "y" ]; then
-		${MKIMAGE} -f ${ITS_UBOOT} -E -p ${OFFS_NS_UBOOT} ${ITB_UBOOT}
+		${MKIMAGE} -f ${ITS_UBOOT} -E -p ${OFFS_NS_UBOOT} ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		if [ "${ARG_SPL_NEW}" == "y" ]; then
 			./make.sh spl-s ${ARG_INI_LOADER}
 			echo "pack loader with new: spl/u-boot-spl.bin"
@@ -224,12 +238,12 @@ function fit_gen_uboot_itb()
 
 		# u-boot.dtb must contains rsa key
 		if ! fdtget -l ${UBOOT_DTB} /signature >/dev/null 2>&1 ; then
-			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT}
+			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 			echo "Adding RSA public key into ${UBOOT_DTB}"
 		fi
 
 		# Pack
-		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT}
+		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		mv ${SIG_BIN} ${SIG_UBOOT}
 
 		# rollback-index read back check
@@ -305,7 +319,7 @@ function fit_gen_boot_itb()
 	fi
 
 	if [ "${ARG_NO_VBOOT}" == "y" ]; then
-		${MKIMAGE} -f ${ITS_BOOT} -E -p ${OFFS_NS_BOOT} ${ITB_BOOT}
+		${MKIMAGE} -f ${ITS_BOOT} -E -p ${OFFS_NS_BOOT} ${ITB_BOOT} -v ${ARG_VER_BOOT}
 	else
 		if [ ! -f ${RSA_PRI_KEY}  ]; then
 			echo "ERROR: No ${RSA_PRI_KEY}"
@@ -345,7 +359,7 @@ function fit_gen_boot_itb()
 			sed -i "s/${VERSION}/ <${ARG_ROLLBACK_IDX_BOOT}>;/g" ${ITS_BOOT}
 		fi
 
-		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_BOOT} -r ${ITB_BOOT}
+		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_BOOT} -r ${ITB_BOOT} -v ${ARG_VER_BOOT}
 		mv ${SIG_BIN} ${SIG_BOOT}
 
 		# rollback-index read back check
@@ -419,30 +433,40 @@ function fit_gen_boot_img()
 function fit_msg_uboot()
 {
 	if [ "${ARG_NO_VBOOT}" == "y" ]; then
-		MSG="no-signed"
+		MSG_SIGN="no-signed"
 	else
-		MSG="signed"
+		MSG_SIGN="signed"
+	fi
+
+	VERSION=`fdtget -ti ${ITB_UBOOT} / version`
+	if [ "${VERSION}" != "" ]; then
+		MSG_VER=", version=${VERSION}"
 	fi
 
 	if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
-		echo "Image(${MSG}, rollback-index=${ARG_ROLLBACK_IDX_UBOOT}):  ${IMG_UBOOT} (with uboot, trust...) is ready"
+		echo "Image(${MSG_SIGN}${MSG_VER}, rollback-index=${ARG_ROLLBACK_IDX_UBOOT}):  ${IMG_UBOOT} (with uboot, trust...) is ready"
 	else
-		echo "Image(${MSG}):  ${IMG_UBOOT} (FIT with uboot, trust...) is ready"
+		echo "Image(${MSG_SIGN}${MSG_VER}):  ${IMG_UBOOT} (FIT with uboot, trust...) is ready"
 	fi
 }
 
 function fit_msg_boot()
 {
 	if [ "${ARG_NO_VBOOT}" == "y" ]; then
-		MSG="no-signed"
+		MSG_SIGN="no-signed"
 	else
-		MSG="signed"
+		MSG_SIGN="signed"
+	fi
+
+	VERSION=`fdtget -ti ${ITB_BOOT} / version`
+	if [ "${VERSION}" != "" ]; then
+		MSG_VER=", version=${VERSION}"
 	fi
 
 	if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
-		echo "Image(${MSG}, rollback-index=${ARG_ROLLBACK_IDX_BOOT}):  ${IMG_BOOT} is ready"
+		echo "Image(${MSG_SIGN}${MSG_VER}, rollback-index=${ARG_ROLLBACK_IDX_BOOT}):  ${IMG_BOOT} is ready"
 	else
-		echo "Image(${MSG}):  ${IMG_BOOT} (FIT with kernel, fdt, resource...) is ready"
+		echo "Image(${MSG_SIGN}${MSG_VER}):  ${IMG_BOOT} (FIT with kernel, fdt, resource...) is ready"
 	fi
 }
 
