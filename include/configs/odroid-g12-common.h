@@ -197,28 +197,23 @@
                 "androidboot.selinux=permissive jtag=disable "\
                 "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " "\
                 "recovery_part=recovery recovery_offset=0; "\
-            "for n in ${mmc_list}; do "\
-                "mmc dev ${n}; " \
-                "movi read dtbs 0 ${cramfsaddr}; " \
-                "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
-                "if test ${variant} != c4; then " \
-                    "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
-                    "fdt addr ${dtb_mem_addr};" \
-                    "fdt resize 8192;" \
-                    "fdt apply ${loadaddr};" \
-                "fi;" \
-                "movi read recovery 0 ${loadaddr}; " \
-                "booti ${loadaddr} - ${dtb_mem_addr}; " \
-                "bootm ${loadaddr};" \
-            "done\0" \
+            "movi read dtbs 0 ${cramfsaddr}; " \
+            "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
+            "if test ${variant} != c4; then " \
+                "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
+                "fdt addr ${dtb_mem_addr};" \
+                "fdt resize 8192;" \
+                "fdt apply ${loadaddr};" \
+            "fi;" \
+            "movi read recovery 0 ${loadaddr}; " \
+            "booti ${loadaddr} - ${dtb_mem_addr}; " \
+            "bootm ${loadaddr};" \
         "boot_rawimage=" \
 	    "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
             "androidboot.selinux=permissive androidboot.firstboot=${firstboot} jtag=disable " \
             "androidboot.hardware=" CONFIG_DEVICE_PRODUCT "; " \
-            "for n in ${mmc_list}; do " \
-                "mmc dev ${n}; " \
 	        "movi read dtbs 0 ${cramfsaddr}; " \
 	        "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
             "if test ${variant} != c4; then " \
@@ -230,7 +225,6 @@
 	        "movi read boot 0 ${loadaddr}; " \
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
 	        "bootm ${loadaddr}; " \
-            "done\0" \
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \

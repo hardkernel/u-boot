@@ -345,13 +345,21 @@ static int get_fdto_totalsize(u32 *tz)
 #endif
 
 #if defined(CONFIG_ODROID_COMMON)
+extern int get_boot_device(void);
 static int bootm_add_ignore_mpt_to_fdt(void *fdth)
 {
 	char *pathp = NULL;
 	int nodeoffset;
 	int ret;
+	bool is_emmc_boot = false;
+	const char * mmc_dev = getenv("mmc_dev");
 
-	if (simple_strtol(getenv("mmc_dev"), NULL, 10) == 0) { // emmc boot
+	if (mmc_dev == NULL)
+		is_emmc_boot = get_boot_device() == 1;
+	else
+		is_emmc_boot = simple_strtol(mmc_dev, NULL, 10) == 0;
+
+	if (is_emmc_boot) { // emmc boot
 		pathp = "/sd/sd";
 	} else { // sd boot
 		pathp = "/emmc/emmc";
