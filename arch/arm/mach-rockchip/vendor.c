@@ -8,10 +8,13 @@
 #include <malloc.h>
 #include <asm/arch/vendor.h>
 #include <boot_rkimg.h>
+#include <nand.h>
+#include <part.h>
 
 /* tag for vendor check */
 #define VENDOR_TAG		0x524B5644
 /* The Vendor partition contains the number of Vendor blocks */
+#define MTD_VENDOR_PART_NUM	1
 #define NAND_VENDOR_PART_NUM	2
 #define VENDOR_PART_NUM		4
 /* align to 64 bytes */
@@ -82,6 +85,17 @@ struct vendor_info {
 	u32 *version2;
 };
 
+struct mtd_nand_info {
+	u32 part_offset;
+	u32 part_size;
+	u32 blk_offset;
+	u32 page_offset;
+	u32 version;
+	u32 ops_size;
+	u32 page_size;
+	u32 blk_size;
+};
+
 /*
  * Calculate the offset of each field for emmc.
  * Emmc vendor info size: 64KB
@@ -114,6 +128,11 @@ static struct vendor_info vendor_info;
 /* The storage type of the device */
 static int bootdev_type;
 
+#ifdef CONFIG_MTD_BLK
+static struct mtd_nand_info nand_info;
+static const char *vendor_mtd_name = "vnvm";
+#endif
+
 /* vendor private read write ops*/
 static	int (*_flash_read)(struct blk_desc *dev_desc,
 			   u32 sec,
@@ -141,6 +160,141 @@ int flash_vendor_dev_ops_register(int (*read)(struct blk_desc *dev_desc,
 
 	return -EPERM;
 }
+
+#ifdef CONFIG_MTD_BLK
+static int mtd_vendor_storage_init(struct blk_desc *dev_desc)
+{
+	struct mtd_info *mtd = (struct mtd_info *)dev_desc->bdev->priv;
+	disk_partition_t vnvm_part_info;
+	void *buf = vendor_info.hdr;
+	int ret, offset;
+	int part_num, bad_block_size;
+
+	memset(&vnvm_part_info, 0x0, sizeof(vnvm_part_info));
+	part_num = part_get_info_by_name(dev_desc, vendor_mtd_name, &vnvm_part_info);
+	if (part_num < 0)
+		return -EIO;
+
+	nand_info.part_offset = (u32)vnvm_part_info.start;
+	nand_info.part_size = (u32)vnvm_part_info.size;
+	nand_info.page_offset = 0;
+	nand_info.blk_offset = 0;
+	nand_info.version = 0;
+	nand_info.page_size = mtd->writesize >> 9;
+	nand_info.blk_size = mtd->erasesize >> 9;
+	nand_info.ops_size = (FLASH_VENDOR_INFO_SIZE + mtd->writesize - 1) /
+			     mtd->writesize;
+	nand_info.ops_size *= nand_info.page_size;
+
+	/* scan bad block and calculate the real size can be used */
+	bad_block_size = 0;
+	for (offset = 0; offset < nand_info.part_size; offset += nand_info.blk_size) {
+		if (mtd_block_isbad(mtd, (nand_info.part_offset + offset) << 9))
+			bad_block_size += nand_info.blk_size;
+	}
+	nand_info.part_size -= bad_block_size;
+
+	for (offset = 0; offset < nand_info.part_size; offset += nand_info.blk_size) {
+		ret = blk_dread(dev_desc, nand_info.part_offset + offset,
+				FLASH_VENDOR_INFO_SIZE >> 9,
+				(u8 *)buf);
+		debug("%s: read %x version = %x\n", __func__,
+		      nand_info.part_offset + offset,
+		      vendor_info.hdr->version);
+		if (ret == (FLASH_VENDOR_INFO_SIZE >> 9) && vendor_info.hdr->tag == VENDOR_TAG &&
+		    vendor_info.hdr->version == *vendor_info.version2) {
+			if (vendor_info.hdr->version > nand_info.version) {
+				nand_info.version = vendor_info.hdr->version;
+				nand_info.blk_offset = offset;
+			}
+		}
+	}
+
+	debug("%s: nand_info.version = %x %x\n", __func__, nand_info.version, nand_info.blk_offset);
+	if (nand_info.version) {
+		for (offset = nand_info.blk_size  - nand_info.ops_size;
+		     offset >= 0;
+		     offset -= nand_info.ops_size) {
+			ret = blk_dread(dev_desc, nand_info.part_offset +
+					nand_info.blk_offset + offset,
+					1,
+					(u8 *)buf);
+
+			/* the page is not programed */
+			if (ret == 1 && vendor_info.hdr->tag == 0xFFFFFFFF)
+				continue;
+
+			/* point to the last programed page */
+			if (nand_info.page_offset < offset)
+				nand_info.page_offset = offset;
+
+			if (ret != 1 || vendor_info.hdr->tag != VENDOR_TAG)
+				continue;
+			ret = blk_dread(dev_desc, nand_info.part_offset +
+					nand_info.blk_offset + offset,
+					FLASH_VENDOR_INFO_SIZE >> 9,
+					(u8 *)buf);
+			debug("%s: read %x version = %x\n", __func__,
+			      nand_info.part_offset + nand_info.blk_offset  + offset,
+			      vendor_info.hdr->version);
+
+			if (ret == (FLASH_VENDOR_INFO_SIZE >> 9)  && vendor_info.hdr->tag == VENDOR_TAG &&
+			    vendor_info.hdr->version == *vendor_info.version2) {
+				nand_info.version = vendor_info.hdr->version;
+				break;
+			}
+		}
+	} else {
+		memset((u8 *)vendor_info.hdr, 0, FLASH_VENDOR_INFO_SIZE);
+		vendor_info.hdr->version = 1;
+		vendor_info.hdr->tag = VENDOR_TAG;
+		vendor_info.hdr->free_size =
+			((u32)(size_t)vendor_info.hash
+			- (u32)(size_t)vendor_info.data);
+		*vendor_info.version2 = vendor_info.hdr->version;
+	}
+
+	return 0;
+}
+
+static int mtd_vendor_write(struct blk_desc *dev_desc,
+			    u32 sec,
+			    u32 n_sec,
+			    void *buf)
+{
+	int ret, count = 0, err = 0;
+
+re_write:
+	debug("[Vendor INFO]:%s page_offset=0x%x count = %x\n", __func__, nand_info.part_offset +
+	      nand_info.blk_offset + nand_info.page_offset, count);
+	if (nand_info.page_offset >= nand_info.blk_size) {
+		nand_info.blk_offset += nand_info.blk_size;
+		if (nand_info.blk_offset >= nand_info.part_size)
+			nand_info.blk_offset = 0;
+		nand_info.page_offset = 0;
+	}
+
+	ret = blk_dwrite(dev_desc, nand_info.part_offset +
+			 nand_info.blk_offset + nand_info.page_offset,
+			 FLASH_VENDOR_INFO_SIZE >> 9,
+			 (u8 *)buf);
+
+	nand_info.page_offset += nand_info.ops_size;
+	if (ret != (FLASH_VENDOR_INFO_SIZE >> 9)) {
+		err++;
+		if (err > 3)
+			return -EIO;
+		goto re_write;
+	}
+
+	count++;
+	/* write 2 copies for reliability */
+	if (count < 2)
+		goto re_write;
+
+	return ret;
+}
+#endif
 
 /**********************************************************/
 /*              vendor API implementation                 */
@@ -198,6 +352,19 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		lba = FLASH_VENDOR_PART_OFFSET;
 		debug("[Vendor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
+#ifdef CONFIG_MTD_BLK
+	case IF_TYPE_MTD:
+		/*
+		 * The location of VendorStorage in NAND FLASH or SPI NAND partition "vnvm"
+		 * is shown in the following figure. The partition size is at least  4
+		 * NAND FLASH blocks.
+		 * ----------------------------------------------------
+		 * |   .....    |  vnvm  |  .......                   |
+		 * ----------------------------------------------------
+		 */
+		lba = 0;
+		break;
+#endif
 	default:
 		printf("[Vendor ERROR]:Boot device type is invalid!\n");
 		return -ENODEV;
@@ -279,6 +446,17 @@ int vendor_storage_init(void)
 		version2_offset = FLASH_VENDOR_VERSION2_OFFSET;
 		part_num = VENDOR_PART_NUM;
 		break;
+#ifdef CONFIG_MTD_BLK
+	case IF_TYPE_MTD:
+		size = FLASH_VENDOR_INFO_SIZE;
+		part_size = FLASH_VENDOR_PART_BLKS;
+		data_offset = FLASH_VENDOR_DATA_OFFSET;
+		hash_offset = FLASH_VENDOR_HASH_OFFSET;
+		version2_offset = FLASH_VENDOR_VERSION2_OFFSET;
+		part_num = MTD_VENDOR_PART_NUM;
+		_flash_write = mtd_vendor_write;
+		break;
+#endif
 	default:
 		debug("[Vendor ERROR]:Boot device type is invalid!\n");
 		ret = -ENODEV;
@@ -303,6 +481,11 @@ int vendor_storage_init(void)
 	vendor_info.data = buffer + data_offset;
 	vendor_info.hash = (u32 *)(buffer + hash_offset);
 	vendor_info.version2 = (u32 *)(buffer + version2_offset);
+
+#ifdef CONFIG_MTD_BLK
+	if (dev_desc->if_type == IF_TYPE_MTD)
+		return mtd_vendor_storage_init(dev_desc);
+#endif
 
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
 	for (i = 0; i < part_num; i++) {
@@ -437,6 +620,13 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 		max_item_num = FLASH_VENDOR_ITEM_NUM;
 		part_num = VENDOR_PART_NUM;
 		break;
+#ifdef CONFIG_MTD_BLK
+	case IF_TYPE_MTD:
+		part_size = FLASH_VENDOR_PART_BLKS;
+		max_item_num = FLASH_VENDOR_ITEM_NUM;
+		part_num = MTD_VENDOR_PART_NUM;
+		break;
+#endif
 	default:
 		ret = -ENODEV;
 		break;
@@ -577,20 +767,21 @@ int vendor_storage_test(void)
 		item_num = EMMC_VENDOR_ITEM_NUM;
 		total_size = (unsigned long)vendor_info.hash -
 			     (unsigned long)vendor_info.data;
-		size = total_size/item_num;
+		size = total_size / item_num;
 		break;
 	case IF_TYPE_RKNAND:
 	case IF_TYPE_SPINAND:
 		item_num = NAND_VENDOR_ITEM_NUM;
 		total_size = (unsigned long)vendor_info.hash -
 			     (unsigned long)vendor_info.data;
-		size = total_size/item_num;
+		size = total_size / item_num;
 		break;
 	case IF_TYPE_SPINOR:
+	case IF_TYPE_MTD:
 		item_num = FLASH_VENDOR_ITEM_NUM;
 		total_size = (unsigned long)vendor_info.hash -
 			     (unsigned long)vendor_info.data;
-		size = total_size/item_num;
+		size = total_size / item_num;
 		break;
 	default:
 		total_size = 0;
@@ -600,7 +791,8 @@ int vendor_storage_test(void)
 	if (!total_size)
 		return -ENODEV;
 	/* 64 bytes are aligned and rounded down */
-	size = (size/64)*64;
+	if (size > 64)
+		size = (size / 64) * 64;
 	/* malloc memory */
 	buffer = (u8 *)malloc(size);
 	if (!buffer) {
@@ -609,12 +801,12 @@ int vendor_storage_test(void)
 	}
 	printf("[Vendor Test]:Test Start...\n");
 	printf("[Vendor Test]:Before Test, Vendor Resetting.\n");
-	vendor_test_reset();
+	if (bootdev_type != IF_TYPE_MTD)
+		vendor_test_reset();
 
 	/* FIRST TEST: test all items can be used correctly */
 	printf("[Vendor Test]:<All Items Used> Test Start...\n");
-	printf("[Vendor Test]:item_num=%d, size=%d.\n",
-	       item_num, size);
+	printf("[Vendor Test]:item_num=%d, size=%d.\n", item_num, size);
 	/*
 	 * Write data, then read the data, and compare the
 	 * data consistency
@@ -652,6 +844,35 @@ int vendor_storage_test(void)
 	}
 	printf("[Vendor Test]:<All Items Used> Test End,States:OK\n");
 
+	printf("[Vendor Test]:<All Items Used> re init,States:OK\n");
+	ret = vendor_storage_init();
+	/* Read data */
+	for (id = 0; id < item_num; id++) {
+		memset(buffer, 0, size);
+		ret = vendor_storage_read(id, buffer, size);
+		if (ret < 0) {
+			printf("[Vendor Test]:vendor read failed(id=%d)!\n", id);
+			free(buffer);
+			return ret;
+		}
+		/* check data Correctness */
+		for (j = 0; j < size; j++) {
+			if (*(buffer + j) != id) {
+				printf("[Vendor Test]:Unexpected error occurs(id=%d)\n", id);
+				printf("the data content is:\n");
+				print_buffer(0, buffer, 1, size, 16);
+
+				free(buffer);
+				return -1;
+			}
+		}
+		debug("\t#id=%03d success,data=0x%02x,size=%d.\n", id, *buffer, size);
+	}
+	printf("[Vendor Test]:<All Items Used> Test End,States:OK\n");
+#ifdef CONFIG_MTD_BLK
+	if (bootdev_type == IF_TYPE_MTD)
+		return 0;
+#endif
 	/*
 	 * SECOND TEST: Overrides the maximum number of items to see if the
 	 * return value matches the expectation
