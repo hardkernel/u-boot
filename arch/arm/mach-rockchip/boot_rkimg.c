@@ -47,6 +47,8 @@ static void boot_devtype_init(void)
 	if (done)
 		return;
 
+	/* High priority: get bootdev from atags */
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	ret = param_parse_bootdev(&devtype, &devnum);
 	if (!ret) {
 		atags_en = 1;
@@ -69,8 +71,9 @@ static void boot_devtype_init(void)
 		if (blk_get_devnum_by_typename(devtype, atoi(devnum)))
 			goto finish;
 	}
+#endif
 
-	/* If not find valid bootdev by atags, scan all possible */
+	/* Low priority: if not get bootdev by atags, scan all possible */
 #ifdef CONFIG_DM_MMC
 	mmc_initialize(gd->bd);
 #endif
