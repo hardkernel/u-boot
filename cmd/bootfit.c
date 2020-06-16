@@ -113,7 +113,7 @@ out:
 	return CMD_RET_FAILURE;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_ALWAYS(
 	boot_fit,  2,     1,      do_boot_fit,
 	"Boot FIT Image from memory or boot/recovery partition",
 	"boot_fit [addr]"

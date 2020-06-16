@@ -21,7 +21,7 @@ static int do_download(cmd_tbl_t *cmdtp, int flag,
 	return 0;
 }
 
-U_BOOT_CMD(
+U_BOOT_CMD_ALWAYS(
 	download, 1, 1, do_download,
 	"enter rockusb/bootrom download mode", ""
 );
