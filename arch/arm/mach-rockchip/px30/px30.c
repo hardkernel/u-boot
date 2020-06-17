@@ -142,6 +142,52 @@ enum {
 	GPIO3A1_GPIO		= 0,
 	GPIO3A1_UART5_RX	= 4,
 };
+
+enum {
+	IOVSEL6_CTRL_SHIFT	= 0,
+	IOVSEL6_CTRL_MASK	= BIT(0),
+	VCCIO6_SEL_BY_GPIO	= 0,
+	VCCIO6_SEL_BY_IOVSEL6,
+
+	IOVSEL6_SHIFT		= 1,
+	IOVSEL6_MASK		= BIT(1),
+	VCCIO6_3V3		= 0,
+	VCCIO6_1V8,
+};
+
+/*
+ * The voltage of VCCIO6(which is the voltage domain of emmc/flash/sfc
+ * interface) can indicated by GPIO0_B6 or io_vsel6. The SOC defaults
+ * use GPIO0_B6 to indicate power supply voltage for VCCIO6 by hardware,
+ * then we can switch to io_vsel6 after system power on, and release GPIO0_B6
+ * for other usage.
+ */
+
+#define GPIO0_B6		14
+#define GPIO0_BASE		0xff040000
+#define GPIO_SWPORTA_DDR	0x4
+#define GPIO_EXT_PORTA		0x50
+
+static int grf_vccio6_vsel_init(void)
+{
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+	u32 val;
+
+	val = readl(GPIO0_BASE + GPIO_SWPORTA_DDR);
+	val &= ~BIT(GPIO0_B6);
+	writel(val, GPIO0_BASE + GPIO_SWPORTA_DDR);
+
+	if (readl(GPIO0_BASE + GPIO_EXT_PORTA) & BIT(GPIO0_B6))
+		val = VCCIO6_SEL_BY_IOVSEL6 << IOVSEL6_CTRL_SHIFT |
+		      VCCIO6_1V8 << IOVSEL6_SHIFT;
+	else
+		val = VCCIO6_SEL_BY_IOVSEL6 << IOVSEL6_CTRL_SHIFT |
+		      VCCIO6_3V3 << IOVSEL6_SHIFT;
+	rk_clrsetreg(&grf->io_vsel, IOVSEL6_CTRL_MASK | IOVSEL6_MASK, val);
+
+	return 0;
+}
+
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
@@ -184,6 +230,8 @@ int arch_cpu_init(void)
 
 	/* Clear the force_jtag */
 	rk_clrreg(GRF_CPU_CON1, 1 << 7);
+
+	grf_vccio6_vsel_init();
 
 	return 0;
 }
