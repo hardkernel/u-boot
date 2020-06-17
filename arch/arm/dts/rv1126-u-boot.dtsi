@@ -33,15 +33,21 @@
 &uart2 {
 	clock-frequency = <24000000>;
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 };
 
 &sdmmc {
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 };
 
 &emmc {
 	mmc-ecsd = <0x0020f000>;
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 };
 
 &pmu {
@@ -58,6 +64,9 @@
 
 &cru {
 	u-boot,dm-spl;
+	/delete-property/ assigned-clocks;
+	/delete-property/ assigned-clock-rates;
+	/delete-property/ assigned-clock-parents;
 };
 
 &crypto {
@@ -76,6 +85,8 @@
 
 &sfc {
 	u-boot,dm-spl;
+	/delete-property/ assigned-clocks;
+	/delete-property/ assigned-clock-rates;
 	status = "okay";
 
 	#address-cells = <1>;
