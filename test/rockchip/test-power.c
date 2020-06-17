@@ -213,6 +213,9 @@ static cmd_tbl_t sub_cmd[] = {
 #if defined(CONFIG_WDT)
 	UNIT_CMD_DEFINE(wdt, 0),
 #endif
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+	UNIT_CMD_DEFINE(charge, 0),
+#endif
 };
 
 static char sub_cmd_help[] =
