@@ -156,7 +156,9 @@ static inline int property_enable(void __iomem *base,
 	mask = GENMASK(reg->bitend, reg->bitstart);
 	val = (tmp << reg->bitstart) | (mask << U2PHY_BIT_WRITEABLE_SHIFT);
 
-	return writel(val, base + reg->offset);
+	writel(val, base + reg->offset);
+
+	return 0;
 }
 
 static inline bool property_enabled(void __iomem *base,
