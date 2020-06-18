@@ -213,6 +213,11 @@ config BOOTARGS
 	  CONFIG_BOOTARGS goes into the environment value "bootargs". Note that
 	  this value will also override the "chosen" node in FDT blob.
 
+config IO_TRACE
+	bool "Enable iotrace"
+	help
+	  This enable iotrace feature.
+
 menu "Console"
 
 config MENU

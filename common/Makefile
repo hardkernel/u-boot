@@ -122,7 +122,6 @@ obj-$(CONFIG_$(SPL_TPL_)FIT) += image-fit.o
 obj-$(CONFIG_$(SPL_)MULTI_DTB_FIT) += boot_fit.o common_fit.o
 obj-$(CONFIG_$(SPL_TPL_)FIT_SIGNATURE) += image-sig.o
 endif
-obj-$(CONFIG_IO_TRACE) += iotrace.o
 
 obj-y += memsize.o
 obj-y += stdio.o
@@ -162,6 +161,7 @@ obj-y += s_record.o
 obj-y += xyzModem.o
 
 ifndef CONFIG_SPL_BUILD
+obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-$(CONFIG_ANDROID_WRITE_KEYBOX) += write_keybox.o
 obj-$(CONFIG_ANDROID_KEYMASTER_CA) += keymaster.o
 obj-$(CONFIG_ANDROID_KEYMASTER_CA) += attestation_key.o
