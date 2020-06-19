@@ -1457,7 +1457,6 @@ static int data_training_rg(struct dram_info *dram, u32 cs, u32 dramtype)
 	u32 dis_auto_zq = 0;
 	u32 odt_val_up, odt_val_dn;
 	u32 i, j;
-	u32 weak_pull;
 
 	odt_val_dn = readl(PHY_REG(phy_base, 0x110));
 	odt_val_up = readl(PHY_REG(phy_base, 0x111));
@@ -1475,13 +1474,8 @@ static int data_training_rg(struct dram_info *dram, u32 cs, u32 dramtype)
 	/* use normal read mode for data training */
 	clrbits_le32(PHY_REG(phy_base, 0xc), BIT(1));
 
-	if (dramtype == DDR4) {
-		weak_pull = readl(PHY_REG(phy_base, 0x114));
-		writel(weak_pull & ~(0x3), PHY_REG(phy_base, 0x114));
-		writel(weak_pull & ~(0x3), PHY_REG(phy_base, 0x124));
-		writel(weak_pull & ~(0x3), PHY_REG(phy_base, 0x134));
-		writel(weak_pull & ~(0x3), PHY_REG(phy_base, 0x144));
-	}
+	if (dramtype == DDR4)
+		setbits_le32(PHY_REG(phy_base, 0xc), BIT(1));
 
 	/* choose training cs */
 	clrsetbits_le32(PHY_REG(phy_base, 2), 0x33, (0x20 >> cs));
@@ -1493,13 +1487,6 @@ static int data_training_rg(struct dram_info *dram, u32 cs, u32 dramtype)
 	clrsetbits_le32(PHY_REG(phy_base, 2), 0x33, (0x20 >> cs) | 0);
 	clrbits_le32(PHY_REG(phy_base, 2), 0x30);
 	pctl_rest_zqcs_aref(dram->pctl, dis_auto_zq);
-
-	if (dramtype == DDR4) {
-		writel(weak_pull, PHY_REG(phy_base, 0x114));
-		writel(weak_pull, PHY_REG(phy_base, 0x124));
-		writel(weak_pull, PHY_REG(phy_base, 0x134));
-		writel(weak_pull, PHY_REG(phy_base, 0x144));
-	}
 
 	if (ret & 0x20)
 		ret = -1;
