@@ -2698,18 +2698,6 @@ static void save_fsp_param(struct dram_info *dram, u32 dst_fsp,
 
 static void copy_fsp_param_to_ddr(void)
 {
-	u32 i;
-
-	printascii("fsp freq: ");
-	for (i = 0; i < MAX_IDX; i++) {
-		printascii("[");
-		printdec(i);
-		printascii("]");
-		printdec(fsp_param[i].freq_mhz);
-		printascii("Mhz ");
-	}
-	printascii("\n");
-
 	memcpy((void *)FSP_PARAM_STORE_ADDR, (void *)&fsp_param,
 	       sizeof(fsp_param));
 }
@@ -2932,22 +2920,22 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 
 	if (get_wrlvl_val(dram, sdram_params))
 		printascii("get wrlvl value fail\n");
-	printascii("change to f1: ");
+	printascii("change to: ");
 	printdec(f1);
 	printascii("MHz\n");
 	ddr_set_rate(&dram_info, sdram_params, f1,
 		     sdram_params->base.ddr_freq, 1, 1, 1);
-	printascii("change to f2: ");
+	printascii("change to: ");
 	printdec(f2);
 	printascii("MHz\n");
 	ddr_set_rate(&dram_info, sdram_params, f2, f1, 2, 0, 1);
-	printascii("change to f3: ");
+	printascii("change to: ");
 	printdec(f3);
 	printascii("MHz\n");
 	ddr_set_rate(&dram_info, sdram_params, f3, f2, 3, 1, 1);
-	printascii("change to f0: ");
+	printascii("change to: ");
 	printdec(f0);
-	printascii("MHz\n");
+	printascii("MHz(final freq)\n");
 	ddr_set_rate(&dram_info, sdram_params, f0, f3, 0, 0, 1);
 }
 
