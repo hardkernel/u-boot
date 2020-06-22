@@ -117,7 +117,7 @@ static struct rv1126_fsp_param fsp_param[MAX_IDX];
 
 static u8 lp3_odt_value;
 
-static u8 wrlvl_result[2][4];
+static s8 wrlvl_result[2][4];
 
 /* DDR configuration 0-9 */
 u16 ddr_cfg_2_rbc[] = {
@@ -1858,7 +1858,9 @@ static int get_wrlvl_val(struct dram_info *dram,
 
 	lp_stat = low_power_update(dram, 0);
 
-	clk_skew = readl(PHY_REG(phy_base, 0x150 + 0x17));
+	clk_skew = 0x1f;
+	modify_ca_deskew(dram, DESKEW_MDF_ABS_VAL, clk_skew, clk_skew, 3,
+			 sdram_params->base.dramtype);
 
 	ret = data_training(dram, 0, sdram_params, 0, WRITE_LEVELING);
 	if (sdram_params->ch.cap_info.rank == 2)
@@ -1884,7 +1886,7 @@ static int high_freq_training(struct dram_info *dram,
 	void __iomem *phy_base = dram->phy;
 	u32 dramtype = sdram_params->base.dramtype;
 	int min_val;
-	u32 dqs_skew, clk_skew, ca_skew;
+	int dqs_skew, clk_skew, ca_skew;
 	int ret;
 
 	dqs_skew = 0;
