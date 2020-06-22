@@ -352,15 +352,8 @@ int spl_mmc_load_image(struct spl_image_info *spl_image,
 				return err;
 		}
 #ifdef CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_PARTITION
-		const char *partition_name;
-
-		if (spl_image->next_stage == SPL_NEXT_STAGE_KERNEL)
-			partition_name = PART_BOOT;
-		else
-			partition_name = PART_UBOOT;
-
 		err = mmc_load_image_raw_partition(spl_image, mmc,
-			partition_name,
+			CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_NAME,
 			CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION);
 		if (!err)
 			return err;
