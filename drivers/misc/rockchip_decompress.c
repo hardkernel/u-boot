@@ -90,8 +90,8 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
 	struct decom_param *param = (struct decom_param *)buf;
-	unsigned int limit_lo = param->size & 0xffffffff;
-	unsigned int limit_hi = param->size >> 32;
+	unsigned int limit_lo = param->size_src & 0xffffffff;
+	unsigned int limit_hi = param->size_src >> 32;
 
 	priv->done = false;
 
@@ -102,13 +102,12 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 		writel(LZ4_CONT_CSUM_CHECK_EN |
 		       LZ4_HEAD_CSUM_CHECK_EN |
 		       LZ4_BLOCK_CSUM_CHECK_EN |
-		       DECOM_LZ4_MODE, priv->base + DECOM_CTRL);
-
-	if (param->mode == DECOM_GZIP)
+		       DECOM_LZ4_MODE,
+		       priv->base + DECOM_CTRL);
+	else if (param->mode == DECOM_GZIP)
 		writel(DECOM_DEFLATE_MODE | DECOM_GZIP_MODE,
 		       priv->base + DECOM_CTRL);
-
-	if (param->mode == DECOM_ZLIB)
+	else if (param->mode == DECOM_ZLIB)
 		writel(DECOM_DEFLATE_MODE | DECOM_ZLIB_MODE,
 		       priv->base + DECOM_CTRL);
 
@@ -118,8 +117,11 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	writel(limit_lo, priv->base + DECOM_LMTSL);
 	writel(limit_hi, priv->base + DECOM_LMTSH);
 
+#ifdef CONFIG_IRQ
 	writel(DECOM_INT_MASK, priv->base + DECOM_IEN);
+#endif
 	writel(DECOM_ENABLE, priv->base + DECOM_ENR);
+
 	priv->idle_check_once = true;
 
 	return 0;
@@ -128,13 +130,14 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 static int rockchip_decom_stop(struct udevice *dev)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
+#ifdef CONFIG_IRQ
 	int irq_status;
 
 	irq_status = readl(priv->base + DECOM_ISR);
 	/* clear interrupts */
 	if (irq_status)
 		writel(irq_status, priv->base + DECOM_ISR);
-
+#endif
 	writel(DECOM_DISABLE, priv->base + DECOM_ENR);
 
 	return 0;
@@ -161,6 +164,19 @@ static int rockchip_decom_capability(u32 *buf)
 	return 0;
 }
 
+static int rockchip_decom_data_size(struct udevice *dev, u64 *buf)
+{
+	struct rockchip_decom_priv *priv = dev_get_priv(dev);
+	struct decom_param *param = (struct decom_param *)buf;
+	u32 sizel, sizeh;
+
+	sizel = readl(priv->base + DECOM_TSIZEL);
+	sizeh = readl(priv->base + DECOM_TSIZEH);
+	param->size_dst = sizel | ((u64)sizeh << 32);
+
+	return 0;
+}
+
 /* Caller must fill in param @buf which represent struct decom_param */
 static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 				void *buf)
@@ -179,6 +195,12 @@ static int rockchip_decom_ioctl(struct udevice *dev, unsigned long request,
 		break;
 	case IOCTL_REQ_CAPABILITY:
 		ret = rockchip_decom_capability(buf);
+		break;
+	case IOCTL_REQ_DATA_SIZE:
+		ret = rockchip_decom_data_size(dev, buf);
+		break;
+	default:
+		printf("Unsupported ioctl: %ld\n", (ulong)request);
 		break;
 	}
 
