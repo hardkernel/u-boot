@@ -1413,11 +1413,16 @@ int board_fit_config_name_match(const char *name);
  * into the FIT creation (i.e. the binary blobs would have been pre-processed
  * before being added to the FIT image).
  *
+ * @fit: fit blob
  * @image: pointer to the image start pointer
+ * @load_addr: load address pointer to image(Uncompressed)
+ * @src_addr: source address pointer to image(Compressed maybe)
  * @size: pointer to the image size
  * @return no return value (failure should be handled internally)
  */
-void board_fit_image_post_process(void **p_image, size_t *p_size);
+void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
+				  ulong **src_addr, size_t *size);
+
 #endif /* CONFIG_SPL_FIT_IMAGE_POST_PROCESS */
 
 #define FDT_ERROR	((ulong)(-1))

@@ -2168,8 +2168,13 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 	}
 
 #if !defined(USE_HOSTCC) && defined(CONFIG_FIT_IMAGE_POST_PROCESS)
+	ret = fit_image_get_load(fit, noffset, &load);
+	if (ret < 0)
+		return ret;
+
 	/* perform any post-processing on the image data */
-	board_fit_image_post_process((void **)&buf, &size);
+	board_fit_image_post_process((void *)fit, noffset,
+				     &load, (ulong **)&buf, &size);
 #endif
 
 	len = (ulong)size;
