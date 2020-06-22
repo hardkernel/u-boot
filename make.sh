@@ -54,6 +54,11 @@ CHIP_CFG_FIXUP_TABLE=(
 	"CONFIG_ROCKCHIP_RV1126    3       -       -,-          -,-        -,-          -,-           -           -"
 )
 
+CHIP_TPL_MAGIC_TABLE=(
+	"CONFIG_ROCKCHIP_PX30      RK33"
+	"CONFIG_ROCKCHIP_RV1126    110B"
+)
+
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
 RKBIN_TOOLS=../rkbin/tools
@@ -598,20 +603,44 @@ function pack_spl_loader_image()
 		return
 	fi
 
+	# Find magic for TPL
+	for item in "${CHIP_TPL_MAGIC_TABLE[@]}"
+	do
+		config_xxx=`echo ${item} | awk '{ print $1 }'`
+		if grep -q "^${config_xxx}=y" .config ; then
+			header=`echo ${item} | awk '{ print $2 }'`
+		fi
+	done
+
+	if [ -z ${header} ]; then
+		header=`sed -n '/NAME=/s/NAME=//p' ${ini}`
+	fi
+
+	# Prepare files
 	rm ${tmpdir} -rf && mkdir ${tmpdir} -p
 	cp spl/u-boot-spl.bin ${tmpdir}/ && cp ${ini} ${tmpini}
+
 	if [ "${mode}" == "tpl-spl" ]; then	# pack tpl+spl
 		label="TPL+SPL"
 		cp tpl/u-boot-tpl.bin ${tmpdir}/
-		header=`sed -n '/NAME=/s/NAME=//p' ${ini}`
 		dd if=${tmpdir}/u-boot-tpl.bin of=${tmpdir}/tpl.bin bs=1 skip=4
 		sed -i "1s/^/${header:0:4}/" ${tmpdir}/tpl.bin
 		sed -i "s/FlashData=.*$/FlashData=.\/tmp\/tpl.bin/" ${tmpini}
+		sed -i "0,/Path1=.*/s/Path1=.*$/Path1=.\/tmp\/tpl.bin/" ${tmpini}
+		sed -i "s/FlashBoot=.*$/FlashBoot=.\/tmp\/u-boot-spl.bin/" ${tmpini}
+	elif [ "${mode}" == "tpl" ]; then	# pack tpl
+		label="TPL"
+		cp tpl/u-boot-tpl.bin ${tmpdir}/
+		dd if=${tmpdir}/u-boot-tpl.bin of=${tmpdir}/tpl.bin bs=1 skip=4
+		sed -i "1s/^/${header:0:4}/" ${tmpdir}/tpl.bin
+		sed -i "s/FlashData=.*$/FlashData=.\/tmp\/tpl.bin/" ${tmpini}
+		sed -i "0,/Path1=.*/s/Path1=.*$/Path1=.\/tmp\/tpl.bin/" ${tmpini}
 	else
 		label="SPL"
+		sed -i "s/FlashBoot=.*$/FlashBoot=.\/tmp\/u-boot-spl.bin/" ${tmpini}
 	fi
-	sed -i "s/FlashBoot=.*$/FlashBoot=.\/tmp\/u-boot-spl.bin/" ${tmpini}
 
+	# Pack
 	cd ${RKBIN}
 	${RKTOOLS}/boot_merger ${tmpini}
 
