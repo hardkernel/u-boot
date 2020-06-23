@@ -182,9 +182,9 @@ static const struct pmic_child_info rtc_info[] = {
 };
 
 static const struct pmic_child_info fuel_gauge_info[] = {
-	{ .prefix = "battery", .driver = "rk818_fg"},
-	{ .prefix = "battery", .driver = "rk817_fg"},
-	{ .prefix = "battery", .driver = "rk816_fg"},
+	{ .addr = "1c", .prefix = "battery", .driver = "rk818_fg"},
+	{ .addr = "20", .prefix = "battery", .driver = "rk817_fg"},
+	{ .addr = "1a", .prefix = "battery", .driver = "rk816_fg"},
 	{ },
 };
 
