@@ -341,7 +341,7 @@ static int spl_fit_image_get_os(const void *fit, int noffset, uint8_t *os)
 #endif
 }
 
-__weak int spl_fit_standalone_release(void)
+__weak int spl_fit_standalone_release(uintptr_t entry_point)
 {
 	return 0;
 }
@@ -454,9 +454,12 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 	if (node > 0) {
 		/* Load the image and set up the spl_image structure */
 		ret = spl_load_fit_image(info, sector, fit, base_offset, node,
-					 spl_image);
+					 &image_info);
 		if (!ret) {
-			ret = spl_fit_standalone_release();
+			if (image_info.entry_point == FDT_ERROR)
+				image_info.entry_point = image_info.load_addr;
+
+			ret = spl_fit_standalone_release(image_info.entry_point);
 			if (ret)
 				printf("Start standalone fail, ret = %d\n",
 				       ret);
