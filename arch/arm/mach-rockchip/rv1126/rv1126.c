@@ -327,11 +327,6 @@ enum {
 
 void board_debug_uart_init(void)
 {
-#ifdef CONFIG_TPL_BUILD
-	writel(0x03fe0000, PMUGRF_BASE + 0x144);
-	writel((0x7 << (12 + 16)) | (1 << 12), PMUGRF_BASE + 0x8);
-#endif
-
 #if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff560000)
 	static struct rv1126_grf * const grf = (void *)GRF_BASE;
 
