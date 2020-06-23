@@ -347,27 +347,24 @@ __weak int spl_fit_standalone_release(uintptr_t entry_point)
 	return 0;
 }
 
-static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
-					struct spl_load_info *info,
-					ulong sector, void *fit)
+static void *spl_fit_load_blob(struct spl_load_info *info,
+			       ulong sector, void *fit_header,
+			       int *base_offset)
 {
-	int sectors;
+	int align_len = ARCH_DMA_MINALIGN - 1;
+	ulong count;
 	ulong size;
-	unsigned long count;
-	struct spl_image_info image_info;
-	int node = -1;
-	int images, ret;
-	int base_offset, align_len = ARCH_DMA_MINALIGN - 1;
-	int index = 0;
+	int sectors;
+	void *fit;
 
 	/*
 	 * For FIT with external data, figure out where the external images
 	 * start. This is the base for the data-offset properties in each
 	 * image.
 	 */
-	size = fdt_totalsize(fit);
+	size = fdt_totalsize(fit_header);
 	size = FIT_ALIGN(size);
-	base_offset = FIT_ALIGN(size);
+	*base_offset = FIT_ALIGN(size);
 
 	/*
 	 * So far we only have one block of data from the FIT. Read the entire
@@ -393,7 +390,27 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 	debug("fit read sector %lx, sectors=%d, dst=%p, count=%lu\n",
 	      sector, sectors, fit, count);
 	if (count == 0)
-		return -EIO;
+		return NULL;
+
+	return fit;
+}
+
+static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
+					struct spl_load_info *info,
+					ulong sector, void *fit_header)
+{
+	struct spl_image_info image_info;
+	int base_offset;
+	int images, ret;
+	int index = 0;
+	int node = -1;
+	void *fit;
+
+	fit = spl_fit_load_blob(info, sector, fit_header, &base_offset);
+	if (!fit) {
+		debug("%s: Cannot load blob\n", __func__);
+		return -1;
+	}
 
 	/* find the node holding the images information */
 	images = fdt_path_offset(fit, FIT_IMAGES_PATH);
