@@ -996,7 +996,8 @@ static void set_ds_odt(struct dram_info *dram,
 
 	/* RAM VREF */
 	writel(vref_out, PHY_REG(phy_base, 0x105));
-	udelay(8000);
+	if (dramtype == LPDDR3)
+		udelay(100);
 
 	if (dramtype == LPDDR4)
 		set_lp4_vref(dram, lp4_info, freq, dst_fsp);
@@ -2696,11 +2697,13 @@ static void save_fsp_param(struct dram_info *dram, u32 dst_fsp,
 	p_fsp_param->flag = FSP_FLAG;
 }
 
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
 static void copy_fsp_param_to_ddr(void)
 {
 	memcpy((void *)FSP_PARAM_STORE_ADDR, (void *)&fsp_param,
 	       sizeof(fsp_param));
 }
+#endif
 
 void ddr_set_rate(struct dram_info *dram,
 		  struct rv1126_sdram_params *sdram_params,
@@ -2899,27 +2902,35 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 				 struct rv1126_sdram_params *sdram_params)
 {
 	struct ddr2_3_4_lp2_3_info *ddr_info;
-	u32 f0, f1, f2, f3;
+	u32 f0;
 	u32 dramtype = sdram_params->base.dramtype;
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+	u32 f1, f2, f3;
+#endif
 
 	ddr_info = get_ddr_drv_odt_info(dramtype);
 	if (!ddr_info)
 		return;
 
+	f0 = (ddr_info->ddr_freq0_1 >> DDR_FREQ_F0_SHIFT) &
+	     DDR_FREQ_MASK;
+
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
 	memset((void *)FSP_PARAM_STORE_ADDR, 0, sizeof(fsp_param));
 	memset((void *)&fsp_param, 0, sizeof(fsp_param));
 
-	f0 = (ddr_info->ddr_freq0_1 >> DDR_FREQ_F0_SHIFT) &
-	     DDR_FREQ_MASK;
 	f1 = (ddr_info->ddr_freq0_1 >> DDR_FREQ_F1_SHIFT) &
 	     DDR_FREQ_MASK;
 	f2 = (ddr_info->ddr_freq2_3 >> DDR_FREQ_F2_SHIFT) &
 	     DDR_FREQ_MASK;
 	f3 = (ddr_info->ddr_freq2_3 >> DDR_FREQ_F3_SHIFT) &
 	     DDR_FREQ_MASK;
+#endif
 
 	if (get_wrlvl_val(dram, sdram_params))
 		printascii("get wrlvl value fail\n");
+
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
 	printascii("change to: ");
 	printdec(f1);
 	printascii("MHz\n");
@@ -2933,10 +2944,15 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 	printdec(f3);
 	printascii("MHz\n");
 	ddr_set_rate(&dram_info, sdram_params, f3, f2, 3, 1, 1);
+#endif
 	printascii("change to: ");
 	printdec(f0);
 	printascii("MHz(final freq)\n");
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
 	ddr_set_rate(&dram_info, sdram_params, f0, f3, 0, 0, 1);
+#else
+	ddr_set_rate(&dram_info, sdram_params, f0, sdram_params->base.ddr_freq, 1, 1, 1);
+#endif
 }
 
 int get_uart_config(void)
@@ -3013,7 +3029,9 @@ int sdram_init(void)
 	print_ddr_info(sdram_params);
 
 	ddr_set_rate_for_fsp(&dram_info, sdram_params);
+#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
 	copy_fsp_param_to_ddr();
+#endif
 
 	ddr_set_atags(&dram_info, sdram_params);
 

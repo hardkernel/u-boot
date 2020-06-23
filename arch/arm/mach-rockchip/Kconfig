@@ -721,6 +721,12 @@ config ROCKCHIP_PRELOADER_SERIAL
 	  This enable U-Boot using pre-loader atags serial configure to initialize console.
 	  It denpends on serial aliases to find pre-loader serial number.
 
+config ROCKCHIP_THUNDER_BOOT
+	bool "Rockchip thunder boot"
+	help
+	  This enable rockchip thunder boot. The thunder boot is mainly used for
+	  booting system fastly.
+
 config ROCKCHIP_FIT_IMAGE_PACK
 	bool "Rockchip fit image pack of U-Boot and TEE"
 	depends on ROCKCHIP_FIT_IMAGE
