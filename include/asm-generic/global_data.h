@@ -148,6 +148,9 @@ typedef struct global_data {
 	int default_log_level;		/* For devices with no filters */
 	struct list_head log_head;	/* List of struct log_device */
 #endif
+#if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)
+	u32 rollback_index;
+#endif
 } gd_t;
 #endif
 
