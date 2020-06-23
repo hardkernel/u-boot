@@ -67,8 +67,7 @@ struct dram_info {
 
 struct dram_info dram_info;
 
-#define TPL_INIT_DDR_TYPE_DDR3
-#ifdef TPL_INIT_DDR_TYPE_DDR3
+#if (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 3)
 struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-330.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-396.inc"
@@ -78,7 +77,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-924.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-1056.inc"
 };
-#elif defined TPL_INIT_DDR_TYPE_DDR4
+#elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 0)
 struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-330.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-396.inc"
@@ -88,7 +87,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-924.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-1056.inc"
 };
-#elif defined TPL_INIT_DDR_TYPE_LPDDR3
+#elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 6)
 struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-330.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-396.inc"
@@ -98,7 +97,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-924.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-1056.inc"
 };
-#elif defined TPL_INIT_DDR_TYPE_LPDDR4
+#elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 7)
 struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-330.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-396.inc"

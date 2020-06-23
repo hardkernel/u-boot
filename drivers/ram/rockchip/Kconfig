@@ -8,3 +8,12 @@ config ROCKCHIP_SDRAM_COMMON
 	depends on TPL_RAM || SPL_RAM
 	help
 	  This enable sdram common driver
+
+config ROCKCHIP_TPL_INIT_DRAM_TYPE
+	int "TPL select DRAM type"
+	depends on TPL_RAM || SPL_RAM
+	default 3
+	help
+	  This choose DRAM type for TPL INIT code, 0 for DDR4, 2 for DDR2,
+	  3 for DDR3, 5 for LPDDR2, 6 for LPDDR3, 7 for LPDDR4, all other
+	  value are reserved.
