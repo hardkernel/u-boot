@@ -64,6 +64,17 @@ int pmic_bind_children(struct udevice *pmic, ofnode parent,
 					continue;
 			}
 
+			/*
+			 * If some child info->prefix are the same, try to
+			 * distinguish them by parent addr.
+			 *
+			 * Example: pmic@20, pmic@1a...
+			 */
+			if (info->addr) {
+				if (!strstr(dev_read_name(pmic), info->addr))
+					continue;
+			}
+
 			drv = lists_driver_lookup_name(info->driver);
 			if (!drv) {
 				debug("  - driver: '%s' not found!\n",

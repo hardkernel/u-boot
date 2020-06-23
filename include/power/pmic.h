@@ -189,6 +189,7 @@ enum pmic_op_type {
  * @driver - driver name for the sub-node with prefix
  */
 struct pmic_child_info {
+	const char *addr;
 	const char *prefix;
 	const char *driver;
 };
