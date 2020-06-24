@@ -1108,33 +1108,6 @@ int fit_set_totalsize(void *fit, int noffset, int totalsize)
 	return 0;
 }
 
-int fit_get_image_defconf_node(const void *fit, int *images_noffset, int *def_noffset)
-{
-	int images_node, confs_node, defconf_node;
-	const char *def_name;
-
-	images_node = fdt_path_offset(fit, FIT_IMAGES_PATH);
-	if (images_node < 0)
-		return images_node;
-
-	confs_node = fdt_path_offset(fit, FIT_CONFS_PATH);
-	if (confs_node < 0)
-		return confs_node;
-
-	def_name = fdt_getprop(fit, confs_node, FIT_DEFAULT_PROP, NULL);
-	if (!def_name)
-		return -ENOENT;
-
-	defconf_node = fdt_subnode_offset(fit, confs_node, def_name);
-	if (defconf_node < 0)
-		return defconf_node;
-
-	*images_noffset = images_node;
-	*def_noffset = defconf_node;
-
-	return 0;
-}
-
 /**
  * calculate_hash - calculate and return hash for provided input data
  * @data: pointer to the input data

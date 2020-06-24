@@ -1028,9 +1028,6 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 int fit_set_timestamp(void *fit, int noffset, time_t timestamp);
 int fit_set_totalsize(void *fit, int noffset, int totalsize);
 
-int fit_get_image_defconf_node(const void *fit,
-			       int *images_noffset, int *def_noffset);
-
 /**
  * fit_add_verification_data() - add verification data to FIT image nodes
  *
