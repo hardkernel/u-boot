@@ -448,25 +448,28 @@ function fixup_platform_configure()
 			sha=`echo ${item} | awk '{ print $3 }'`
 
 			# <*> Fixup images size pack for platforms, and ini file
-			if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
-				u_kb=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $1 }'`
-				t_kb=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $2 }'`
-				u_num=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $1 }'`
-				t_num=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $2 }'`
-				PADDING=`echo ${item} | awk '{ print $8 }'`
-				if [ "${PADDING}" != "-" ]; then
-					RKCHIP_LOADER=${RKCHIP_LOADER}${PADDING}
-				fi
-				PADDING=`echo  ${item} | awk '{ print $9 }'`
-				if [ "${PADDING}" != "-" ]; then
-					RKCHIP_TRUST=${RKCHIP_TRUST}${PADDING}
-				fi
-				RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
-			else
+			if grep -q '^CONFIG_ARM64=y' .config ; then
 				u_kb=`echo  ${item} | awk '{ print $4 }' | awk -F "," '{ print $1 }'`
 				t_kb=`echo  ${item} | awk '{ print $4 }' | awk -F "," '{ print $2 }'`
 				u_num=`echo ${item} | awk '{ print $5 }' | awk -F "," '{ print $1 }'`
 				t_num=`echo ${item} | awk '{ print $5 }' | awk -F "," '{ print $2 }'`
+			else
+				u_kb=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $1 }'`
+				t_kb=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $2 }'`
+				u_num=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $1 }'`
+				t_num=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $2 }'`
+				# AArch32
+				if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
+					PADDING=`echo ${item} | awk '{ print $8 }'`
+					if [ "${PADDING}" != "-" ]; then
+						RKCHIP_LOADER=${RKCHIP_LOADER}${PADDING}
+					fi
+					PADDING=`echo  ${item} | awk '{ print $9 }'`
+					if [ "${PADDING}" != "-" ]; then
+						RKCHIP_TRUST=${RKCHIP_TRUST}${PADDING}
+					fi
+					RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
+				fi
 			fi
 		fi
 	done
