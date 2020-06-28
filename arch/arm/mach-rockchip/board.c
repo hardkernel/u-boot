@@ -35,6 +35,7 @@
 #include <power/charge_display.h>
 #include <power/regulator.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <optee_include/tee_api_defines.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
@@ -825,6 +826,52 @@ void board_fit_image_post_process(void **p_image, size_t *p_size)
 }
 #endif
 
+#ifdef CONFIG_FIT_ROLLBACK_PROTECT
+
+#define FIT_ROLLBACK_INDEX_LOCATION	0x66697472	/* "fitr" */
+
+int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
+{
+#ifdef CONFIG_OPTEE_CLIENT
+	u64 index;
+	int ret;
+
+	ret = trusty_read_rollback_index(FIT_ROLLBACK_INDEX_LOCATION, &index);
+	if (ret) {
+		if (ret != TEE_ERROR_ITEM_NOT_FOUND)
+			return ret;
+
+		*otp_index = fit_index;
+		printf("Initial otp index as %d\n", fit_index);
+	}
+
+	*otp_index = index;
+#else
+	*otp_index = 0;
+#endif
+
+	return 0;
+}
+
+static int fit_write_trusty_rollback_index(u32 trusty_index)
+{
+	int ret;
+
+	if (!trusty_index)
+		return 0;
+
+	ret = trusty_write_rollback_index(FIT_ROLLBACK_INDEX_LOCATION,
+					  (u64)trusty_index);
+	if (ret) {
+		printf("Failed to write fit rollback index %d, ret=%d\n",
+		       trusty_index, ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
 void board_quiesce_devices(void *images)
 {
 	hotkey_run(HK_CMDLINE);
@@ -836,7 +883,6 @@ void board_quiesce_devices(void *images)
 #endif
 
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
-	/* TODO */
-	printf("fit: rollback protect not implement\n");
+	fit_write_trusty_rollback_index(gd->rollback_index);
 #endif
 }
