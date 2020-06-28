@@ -296,15 +296,6 @@ void spl_next_stage(struct spl_image_info *spl)
 }
 #endif
 
-int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
-{
-#if CONFIG_SPL_FIT_ROLLBACK_PROTECT
-	/* TODO */
-	printf("spl fit: rollback protect not implement\n");
-#endif
-	return 0;
-}
-
 void spl_hang_reset(void)
 {
 	printf("# Reset the board to bootrom #\n");
@@ -332,4 +323,13 @@ int fit_board_verify_required_sigs(void)
 	printf("## Verified-boot: %d\n", vboot == 0xff);
 
 	return vboot == 0xff;
+}
+
+int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
+{
+#if CONFIG_SPL_FIT_ROLLBACK_PROTECT
+	/* TODO */
+	printf("spl fit: rollback protect not implement\n");
+#endif
+	return 0;
 }
