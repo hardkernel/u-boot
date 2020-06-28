@@ -927,6 +927,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_TYPE_PROP		"type"
 #define FIT_OS_PROP		"os"
 #define FIT_COMP_PROP		"compression"
+#define FIT_COMP_ADDR_PROP	"comp"
 #define FIT_ENTRY_PROP		"entry"
 #define FIT_LOAD_PROP		"load"
 #define FIT_ROLLBACK_PROP	"rollback-index"
@@ -1012,6 +1013,7 @@ int fit_image_get_type(const void *fit, int noffset, uint8_t *type);
 int fit_image_get_comp(const void *fit, int noffset, uint8_t *comp);
 int fit_image_get_load(const void *fit, int noffset, ulong *load);
 int fit_image_get_entry(const void *fit, int noffset, ulong *entry);
+int fit_image_get_comp_addr(const void *fit, int noffset, ulong *comp);
 int fit_image_set_load(const void *fit, int noffset, ulong load);
 int fit_image_set_entry(const void *fit, int noffset, ulong entry);
 int fit_image_get_data(const void *fit, int noffset,
