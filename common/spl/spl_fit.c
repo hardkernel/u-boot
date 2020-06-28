@@ -168,7 +168,7 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 	size_t length;
 	int len;
 	ulong size;
-	ulong load_addr, load_ptr;
+	ulong comp_addr, load_addr, load_ptr;
 	void *src;
 	ulong overhead;
 	int nr_sectors;
@@ -187,10 +187,20 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 			puts("Cannot get image type.\n");
 		else
 			debug("%s ", genimg_get_type_name(type));
+	} else {
+		fit_image_get_comp(fit, node, &image_comp);
 	}
 
 	if (fit_image_get_load(fit, node, &load_addr))
 		load_addr = image_info->load_addr;
+
+	if (image_comp != IH_COMP_NONE && image_comp != IH_COMP_ZIMAGE) {
+		/* Empirically, 1MB is enough for U-Boot, tee and atf */
+		if (fit_image_get_comp_addr(fit, node, &comp_addr))
+			comp_addr = load_addr + SZ_1M;
+	} else {
+		comp_addr = load_addr;
+	}
 
 	if (!fit_image_get_data_position(fit, node, &offset)) {
 		external_data = true;
@@ -204,7 +214,7 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		if (fit_image_get_data_size(fit, node, &len))
 			return -ENOENT;
 
-		load_ptr = (load_addr + align_len) & ~align_len;
+		load_ptr = (comp_addr + align_len) & ~align_len;
 #if  defined(CONFIG_ARCH_ROCKCHIP)
 		if ((load_ptr < CONFIG_SYS_SDRAM_BASE) ||
 		     (load_ptr >= CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE))
@@ -235,8 +245,15 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 	}
 
 	/* Check hashes and signature */
-	printf("## Checking %s ... ",
-	       fit_get_name(fit, node, NULL));
+	if (image_comp != IH_COMP_NONE && image_comp != IH_COMP_ZIMAGE)
+		printf("## Checking %s 0x%08lx (%s @0x%08lx) ... ",
+		       fit_get_name(fit, node, NULL), load_addr,
+		       (char *)fdt_getprop(fit, node, FIT_COMP_PROP, NULL),
+		       (long)src);
+	else
+		printf("## Checking %s 0x%08lx ... ",
+		       fit_get_name(fit, node, NULL), load_addr);
+
 #ifdef CONFIG_FIT_SPL_PRINT
 	printf("\n");
 	fit_image_print(fit, node, "");
