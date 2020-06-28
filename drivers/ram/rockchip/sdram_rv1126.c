@@ -69,7 +69,7 @@ struct dram_info dram_info;
 
 #if (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 3)
 struct rv1126_sdram_params sdram_configs[] = {
-	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-330.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-328.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-396.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-528.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr3-detect-664.inc"
@@ -79,7 +79,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 };
 #elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 0)
 struct rv1126_sdram_params sdram_configs[] = {
-	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-330.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-328.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-396.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-528.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-ddr4-detect-664.inc"
@@ -89,7 +89,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 };
 #elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 6)
 struct rv1126_sdram_params sdram_configs[] = {
-	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-330.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-328.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-396.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-528.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-664.inc"
@@ -99,7 +99,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 };
 #elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 7)
 struct rv1126_sdram_params sdram_configs[] = {
-	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-330.inc"
+	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-328.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-396.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-528.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-664.inc"

@@ -14,7 +14,7 @@
 0, 0, 0, 0,/* reserved */
 
 /* ddr3 */
-(924 << DDR_FREQ_F0_SHIFT) | (330 << DDR_FREQ_F1_SHIFT),
+(924 << DDR_FREQ_F0_SHIFT) | (328 << DDR_FREQ_F1_SHIFT),
 (528 << DDR_FREQ_F2_SHIFT) | (784 << DDR_FREQ_F3_SHIFT),
 (0 << DDR_FREQ_F4_SHIFT) | (0 << DDR_FREQ_F5_SHIFT),
 /* drv when odt on */
@@ -37,7 +37,7 @@
 	(0 << PHY_CLK_SR_SHIFT),
 
 /* ddr4 */
-(924 << DDR_FREQ_F0_SHIFT) | (330 << DDR_FREQ_F1_SHIFT),
+(924 << DDR_FREQ_F0_SHIFT) | (328 << DDR_FREQ_F1_SHIFT),
 (528 << DDR_FREQ_F2_SHIFT) | (784 << DDR_FREQ_F3_SHIFT),
 (0 << DDR_FREQ_F4_SHIFT) | (0 << DDR_FREQ_F5_SHIFT),
 /* drv when odt on */
@@ -59,7 +59,7 @@
 	(0 << PHY_CLK_SR_SHIFT),
 
 /* lpddr3 */
-(924 << DDR_FREQ_F0_SHIFT) | (330 << DDR_FREQ_F1_SHIFT),
+(924 << DDR_FREQ_F0_SHIFT) | (328 << DDR_FREQ_F1_SHIFT),
 (528 << DDR_FREQ_F2_SHIFT) | (784 << DDR_FREQ_F3_SHIFT),
 (0 << DDR_FREQ_F4_SHIFT) | (0 << DDR_FREQ_F5_SHIFT),
 /* drv when odt on */
@@ -82,7 +82,7 @@
 	(0 << PHY_CLK_SR_SHIFT),
 
 /* lpddr4 */
-(924 << DDR_FREQ_F0_SHIFT) | (330 << DDR_FREQ_F1_SHIFT),
+(924 << DDR_FREQ_F0_SHIFT) | (328 << DDR_FREQ_F1_SHIFT),
 (528 << DDR_FREQ_F2_SHIFT) | (784 << DDR_FREQ_F3_SHIFT),
 (0 << DDR_FREQ_F4_SHIFT) | (0 << DDR_FREQ_F5_SHIFT),
 

@@ -24,7 +24,7 @@
 		}
 	},
 	{
-		.ddr_freq = 330,	/* clock rate(MHz) */
+		.ddr_freq = 328,	/* clock rate(MHz) */
 		.dramtype = DDR3,
 		.num_channels = 1,
 		.stride = 0,
