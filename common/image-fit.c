@@ -2015,7 +2015,7 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 					return -EINVAL;
 				}
 
-				printf("%d >= %d, OK\n", this_index, min_index);
+				printf("%d >= %d(min), OK\n", this_index, min_index);
 #endif
 			}
 			bootstage_mark(BOOTSTAGE_ID_FIT_CONFIG);

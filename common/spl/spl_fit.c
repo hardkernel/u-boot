@@ -437,7 +437,7 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 	}
 
 	spl_image->rollback_index = this_index;
-	printf("rollback index: %d >= %d, OK\n", this_index, min_index);
+	printf("rollback index: %d >= %d(min), OK\n", this_index, min_index);
 #endif
 #endif
 
