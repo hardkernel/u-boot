@@ -116,10 +116,6 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 
 	writel(limit_lo, priv->base + DECOM_LMTSL);
 	writel(limit_hi, priv->base + DECOM_LMTSH);
-
-#ifdef CONFIG_IRQ
-	writel(DECOM_INT_MASK, priv->base + DECOM_IEN);
-#endif
 	writel(DECOM_ENABLE, priv->base + DECOM_ENR);
 
 	priv->idle_check_once = true;
@@ -130,14 +126,7 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 static int rockchip_decom_stop(struct udevice *dev)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
-#ifdef CONFIG_IRQ
-	int irq_status;
 
-	irq_status = readl(priv->base + DECOM_ISR);
-	/* clear interrupts */
-	if (irq_status)
-		writel(irq_status, priv->base + DECOM_ISR);
-#endif
 	writel(DECOM_DISABLE, priv->base + DECOM_ENR);
 
 	return 0;
@@ -225,40 +214,8 @@ static int rockchip_decom_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
-#ifndef CONFIG_SPL_BUILD
-static void rockchip_decom_irqhandler(int irq, void *data)
-{
-	struct udevice *dev = data;
-	struct rockchip_decom_priv *priv = dev_get_priv(dev);
-	int irq_status;
-	int decom_status;
-
-	irq_status = readl(priv->base + DECOM_ISR);
-	/* clear interrupts */
-	writel(irq_status, priv->base + DECOM_ISR);
-	if (irq_status & DECOM_STOP) {
-		decom_status = readl(priv->base + DECOM_STAT);
-		if (decom_status & DECOM_COMPLETE) {
-			priv->done = true;
-			/*
-			 * TODO:
-			 * Inform someone that decompress completed
-			 */
-			printf("decom completed\n");
-		} else {
-			printf("decom failed, irq_status = 0x%x, decom_status = 0x%x\n",
-			       irq_status, decom_status);
-		}
-	}
-}
-#endif
-
 static int rockchip_decom_probe(struct udevice *dev)
 {
-#ifndef CONFIG_SPL_BUILD
-	irq_install_handler(DECOM_IRQ, rockchip_decom_irqhandler, dev);
-	irq_handler_enable(DECOM_IRQ);
-#endif
 	return 0;
 }
 

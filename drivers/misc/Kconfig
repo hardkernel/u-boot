@@ -80,14 +80,14 @@ config ROCKCHIP_OTP
 
 config ROCKCHIP_HW_DECOMPRESS
 	bool "Rockchip HardWare Decompress Support"
-	depends on MISC && IRQ
+	depends on MISC_DECOMPRESS
 	help
 	  This driver support Decompress IP built-in Rockchip SoC, support
 	  LZ4, GZIP, PNG, ZLIB.
 
 config SPL_ROCKCHIP_HW_DECOMPRESS
 	bool "Rockchip HardWare Decompress Support"
-	depends on SPL_MISC
+	depends on SPL_MISC_DECOMPRESS
 	help
 	  This driver support Decompress IP built-in Rockchip SoC, support
 	  LZ4, GZIP, PNG, ZLIB.
