@@ -204,9 +204,6 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		if (fit_image_get_data_size(fit, node, &len))
 			return -ENOENT;
 
-		if (!len)
-			return 0;
-
 		load_ptr = (load_addr + align_len) & ~align_len;
 #if  defined(CONFIG_ARCH_ROCKCHIP)
 		if ((load_ptr < CONFIG_SYS_SDRAM_BASE) ||
@@ -235,9 +232,6 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		debug("Embedded data: dst=%lx, size=%lx\n", load_addr,
 		      (unsigned long)length);
 		src = (void *)data;
-
-		if (!length)
-			return 0;
 	}
 
 	/* Check hashes and signature */
