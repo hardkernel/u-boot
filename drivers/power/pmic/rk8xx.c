@@ -278,17 +278,6 @@ static int rk8xx_shutdown(struct udevice *dev)
 	return 0;
 }
 
-/*
- * When system suspend during U-Boot charge, make sure the plugout event
- * be able to wakeup cpu in wfi/wfe state.
- */
-#ifdef CONFIG_DM_CHARGE_DISPLAY
-static void rk8xx_plug_out_handler(int irq, void *data)
-{
-	printf("Plug out interrupt\n");
-}
-#endif
-
 #if CONFIG_IS_ENABLED(PMIC_CHILDREN)
 static int rk8xx_bind(struct udevice *dev)
 {
@@ -330,6 +319,17 @@ static int rk8xx_bind(struct udevice *dev)
 #endif
 
 #if defined(CONFIG_IRQ) && !defined(CONFIG_SPL_BUILD)
+/*
+ * When system suspend during U-Boot charge, make sure the plugout event
+ * be able to wakeup cpu in wfi/wfe state.
+ */
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+static void rk8xx_plug_out_handler(int irq, void *data)
+{
+	printf("Plug out interrupt\n");
+}
+#endif
+
 static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 {
 	struct rk8xx_priv *rk8xx = dev_get_priv(dev);
