@@ -882,4 +882,8 @@ void board_quiesce_devices(void *images)
 		      gd->rollback_index, ret);
 	}
 #endif
+
+#ifdef CONFIG_ROCKCHIP_HW_DECOMPRESS
+	misc_decompress_cleanup();
+#endif
 }

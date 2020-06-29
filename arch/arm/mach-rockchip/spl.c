@@ -432,5 +432,9 @@ int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
 		      gd->rollback_index, ret);
 	}
 #endif
+
+#ifdef CONFIG_SPL_ROCKCHIP_HW_DECOMPRESS
+	misc_decompress_cleanup();
+#endif
 	return 0;
 }
