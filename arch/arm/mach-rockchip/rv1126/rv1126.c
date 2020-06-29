@@ -58,7 +58,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SGRF_BASE		0xFE0A0000
 #define SGRF_CON_SCR1_BOOT_ADDR	0x0b0
 #define SGRF_SOC_CON3		0x00c
-#define SCR1_START_ADDR		0x208000
 #define CRU_SOFTRST_CON11	0xFF49032C
 #define PMUGRF_SOC_CON1		0xFE020104
 #define GRF_IOFUNC_CON3		0xFF01026C
@@ -592,13 +591,13 @@ int arch_cpu_init(void)
 }
 
 #ifdef CONFIG_SPL_BUILD
-int spl_fit_standalone_release(void)
+int spl_fit_standalone_release(uintptr_t entry_point)
 {
 	/* Reset the scr1 */
 	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON02);
 	udelay(100);
 	/* set the scr1 addr */
-	writel(SCR1_START_ADDR, SGRF_BASE + SGRF_CON_SCR1_BOOT_ADDR);
+	writel(entry_point, SGRF_BASE + SGRF_CON_SCR1_BOOT_ADDR);
 	writel(0x00ff00bf, SGRF_BASE + SGRF_SOC_CON3);
 	/* release the scr1 */
 	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON02);
