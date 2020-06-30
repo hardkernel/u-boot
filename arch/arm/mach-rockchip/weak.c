@@ -18,6 +18,39 @@ DECLARE_GLOBAL_DATA_PTR;
 #if CONFIG_IS_ENABLED(FIT)
 
 /*
+ * Override __weak fit_rollback_index_verify() for SPL & U-Boot proper.
+ */
+#if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)
+int fit_rollback_index_verify(const void *fit, uint32_t rollback_fd,
+			      uint32_t *fit_index, uint32_t *otp_index)
+{
+	int conf_noffset, ret;
+
+	conf_noffset = fit_conf_get_node(fit, NULL); /* NULL for default conf */
+	if (conf_noffset < 0)
+		return conf_noffset;
+
+	ret = fit_image_get_rollback_index(fit, conf_noffset, fit_index);
+	if (ret) {
+		printf("Failed to get rollback-index from FIT, ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = fit_read_otp_rollback_index(*fit_index, otp_index);
+	if (ret) {
+		printf("Failed to get rollback-index from otp, ret=%d\n", ret);
+		return ret;
+	}
+
+	/* Should update rollback index to otp ! */
+	if (*otp_index < *fit_index)
+		gd->rollback_index = *fit_index;
+
+	return 0;
+}
+#endif
+
+/*
  * Override __weak fit_board_verify_required_sigs() for SPL & U-Boot proper.
  */
 int fit_board_verify_required_sigs(void)
