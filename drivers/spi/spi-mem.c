@@ -374,8 +374,12 @@ int spi_mem_exec_op(struct spi_slave *slave, const struct spi_mem_op *op)
 
 	/* 2nd transfer: rx or tx data path */
 	if (tx_buf || rx_buf) {
+		flag = SPI_XFER_END;
+		if (slave->mode & SPI_DMA_PREPARE)
+			flag |= SPI_XFER_PREPARE;
+
 		ret = spi_xfer(slave, op->data.nbytes * 8, tx_buf,
-			       rx_buf, SPI_XFER_END);
+			       rx_buf, flag);
 		if (ret)
 			return ret;
 	}

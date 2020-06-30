@@ -31,6 +31,7 @@
 #define SPI_RX_SLOW	BIT(11)			/* receive with 1 wire slow */
 #define SPI_RX_DUAL	BIT(12)			/* receive with 2 wires */
 #define SPI_RX_QUAD	BIT(13)			/* receive with 4 wires */
+#define SPI_DMA_PREPARE	BIT(24)			/* dma transfer skip waiting idle */
 
 /* Header byte that marks the start of the message */
 #define SPI_PREAMBLE_END_BYTE	0xec
@@ -117,6 +118,7 @@ struct spi_slave {
 #define SPI_XFER_ONCE		(SPI_XFER_BEGIN | SPI_XFER_END)
 #define SPI_XFER_MMAP		BIT(2)	/* Memory Mapped start */
 #define SPI_XFER_MMAP_END	BIT(3)	/* Memory Mapped End */
+#define SPI_XFER_PREPARE	BIT(7)	/* Transfer skip waiting idle */
 };
 
 /**
