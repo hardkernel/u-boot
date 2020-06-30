@@ -305,26 +305,6 @@ void spl_hang_reset(void)
 #endif
 }
 
-int fit_board_verify_required_sigs(void)
-{
-	uint8_t vboot = 0;
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2)
-	struct udevice *dev;
-
-	dev = misc_otp_get_device(OTP_S);
-	if (!dev)
-		return 1;
-
-	if (misc_otp_read(dev, 0, &vboot, 1)) {
-		printf("Can't read verified-boot flag\n");
-		return 1;
-	}
-#endif
-	printf("## Verified-boot: %d\n", vboot == 0xff);
-
-	return vboot == 0xff;
-}
-
 int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
 {
 #if CONFIG_SPL_FIT_ROLLBACK_PROTECT

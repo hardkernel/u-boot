@@ -14,6 +14,10 @@ obj-tpl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 obj-tpl-y += tpl.o
 obj-spl-y += spl.o spl-boot-order.o
 
+ifndef CONFIG_TPL_BUILD
+obj-y += weak.o
+endif
+
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 
 # Always include boot_mode.o, as we bypass it (i.e. turn it off)

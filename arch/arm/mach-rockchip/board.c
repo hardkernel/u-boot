@@ -812,23 +812,6 @@ void autoboot_command_fail_handle(void)
 #endif
 }
 
-int fit_board_verify_required_sigs(void)
-{
-	uint8_t vboot = 0;
-#ifdef CONFIG_OPTEE_CLIENT
-	int ret;
-
-	ret = trusty_read_vbootkey_enable_flag(&vboot);
-	if (ret) {
-		printf("Can't read verified-boot flag, ret=%d\n", ret);
-		return 1;
-	}
-#endif
-	printf("## Verified-boot: %d\n", vboot);
-
-	return vboot;
-}
-
 #ifdef CONFIG_FIT_IMAGE_POST_PROCESS
 void board_fit_image_post_process(void **p_image, size_t *p_size)
 {
