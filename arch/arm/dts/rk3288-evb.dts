@@ -11,6 +11,22 @@
 / {
 	model = "Evb-RK3288";
 	compatible = "evb-rk3288,evb-rk3288", "rockchip,rk3288";
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		u-boot,dm-pre-reloc;
+		status = "okay";
+
+		volumeup-key {
+			label = "volume up";
+			u-boot,dm-pre-reloc;
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <1000>;
+		};
+	};
 };
 
 &crypto {
