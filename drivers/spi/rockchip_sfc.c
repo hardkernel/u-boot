@@ -132,6 +132,8 @@ struct rockchip_sfc {
 	unsigned int mode;
 	unsigned int speed_hz;
 	u32 max_iosize;
+	bool prepare;
+	u32 last_prepare_size;
 	u32 cmd;
 	u32 addr;
 	u8 addr_bits;
@@ -214,6 +216,29 @@ static int rockchip_sfc_reset(struct rockchip_sfc *sfc)
 	return ret;
 }
 
+static int rockchip_sfc_dma_xfer_wait_finished(struct rockchip_sfc *sfc)
+{
+	struct rockchip_sfc_reg *regs = sfc->regbase;
+	int timeout = sfc->last_prepare_size * 10;
+	unsigned long tbase;
+	int ret = 0;
+	int risr;
+
+	tbase = get_timer(0);
+	do {
+		udelay(1);
+		risr = readl(&regs->risr);
+		if (get_timer(tbase) > timeout) {
+			debug("dma timeout\n");
+			ret = -ETIMEDOUT;
+			break;
+		}
+	} while (!(risr & TRANS_FINISH_INT));
+	sfc->last_prepare_size = 0;
+
+	return ret;
+}
+
 /* The SFC_CTRL register is a global control register,
  * when the controller is in busy state(SFC_SR),
  * SFC_CTRL cannot be set.
@@ -224,6 +249,9 @@ static int rockchip_sfc_wait_idle(struct rockchip_sfc *sfc,
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	unsigned long tbase = get_timer(0);
 	u32 sr, fsr;
+
+	if (sfc->last_prepare_size && rockchip_sfc_dma_xfer_wait_finished(sfc))
+		return -ETIMEDOUT;
 
 	while (1) {
 		sr = readl(&regs->sr);
@@ -353,6 +381,26 @@ static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, void *buffer,
 	return ret;
 }
 
+static int rockchip_sfc_dma_xfer_prepare(struct rockchip_sfc *sfc,
+					 void *buffer, size_t trb)
+{
+	struct rockchip_sfc_reg *regs = sfc->regbase;
+
+	SFC_DBG("sfc_dma_xfer_prepar enter\n");
+
+	rockchip_sfc_setup_xfer(sfc, trb);
+	sfc->last_prepare_size = trb;
+
+	flush_dcache_range((unsigned long)buffer,
+			   (unsigned long)buffer + trb);
+
+	writel(0xFFFFFFFF, &regs->iclr);
+	writel((unsigned long)buffer, &regs->dmaaddr);
+	writel(SFC_DMA_START, &regs->dmatr);
+
+	return 0;
+}
+
 static int rockchip_sfc_wait_fifo_ready(struct rockchip_sfc *sfc, int rw,
 					u32 timeout)
 {
@@ -471,7 +519,10 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 offset,
 
 	while (dma_trans) {
 		trb = min_t(size_t, dma_trans, sfc->max_iosize);
-		ret = rockchip_sfc_dma_xfer(sfc, buf, trb);
+		if (sfc->prepare)
+			ret = rockchip_sfc_dma_xfer_prepare(sfc, buf, len);
+		else
+			ret = rockchip_sfc_dma_xfer(sfc, buf, trb);
 		if (ret < 0)
 			return ret;
 		dma_trans -= trb;
@@ -580,6 +631,8 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 			len = 0;
 			data_buf = NULL;
 		}
+
+		sfc->prepare = flags & SPI_XFER_PREPARE ? true : false;
 
 		if (sfc->cmd == 0x9f && len == 4) {
 			/* SPI Nand read id */
