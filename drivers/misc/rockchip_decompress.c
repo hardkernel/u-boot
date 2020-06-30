@@ -84,6 +84,7 @@ struct rockchip_decom_priv {
 	unsigned long soft_reset_base;
 	bool idle_check_once;
 	bool done;
+	int cached; /* 1: access the data through dcache; 0: no dcache */
 };
 
 static int rockchip_decom_start(struct udevice *dev, void *buf)
@@ -92,6 +93,29 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	struct decom_param *param = (struct decom_param *)buf;
 	unsigned int limit_lo = param->size_src & 0xffffffff;
 	unsigned int limit_hi = param->size_src >> 32;
+	ulong align_input, align_len;
+
+	if (!priv->cached) {
+		/* src: make sure we get the real compressed data from ddr */
+		align_input =
+		     round_down(param->addr_src, CONFIG_SYS_CACHELINE_SIZE);
+		align_len =
+		     round_up(param->size_src + (param->addr_src - align_input),
+			      CONFIG_SYS_CACHELINE_SIZE);
+		flush_cache(align_input, align_len);
+
+		/*
+		 * dst: actually we prefer to invalidate dcache after decompress
+		 * done, but it seems there is not cache invalidate API for us.
+		 * so let's flush this area.
+		 */
+		align_input =
+		     round_down(param->addr_dst, CONFIG_SYS_CACHELINE_SIZE);
+		align_len =
+		     round_up(param->size_src + (param->addr_dst - align_input),
+			      CONFIG_SYS_CACHELINE_SIZE);
+		flush_cache(align_input, align_len);
+	}
 
 	priv->done = false;
 
@@ -208,6 +232,7 @@ static int rockchip_decom_ofdata_to_platdata(struct udevice *dev)
 	if (!priv->base)
 		return -ENOENT;
 
+	priv->cached = dev_read_u32_default(dev, "data-cached", 0);
 	priv->soft_reset_base = dev_read_u32_default(dev, "soft-reset-addr", 0)
 					& 0xffffffff;
 
