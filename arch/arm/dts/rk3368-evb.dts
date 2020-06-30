@@ -12,6 +12,22 @@
 / {
 	model = "Rockchip RK3368 Evaluation Board";
 	compatible = "rockchip,rk3368-evb", "rockchip,rk3368";
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1024000>;
+		u-boot,dm-pre-reloc;
+		status = "okay";
+
+		volumeup-key {
+			label = "volume up";
+			u-boot,dm-pre-reloc;
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <1000>;
+		};
+	};
 };
 
 &crypto {
