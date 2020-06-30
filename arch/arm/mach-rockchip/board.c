@@ -416,16 +416,10 @@ int board_fdt_fixup(void *blob)
 	return rk_board_fdt_fixup(blob);
 }
 
-#if defined(CONFIG_ARM64_BOOT_AARCH32) || \
-    (!defined(CONFIG_ARM64) && defined(CONFIG_OPTEE_V2))
+#if defined(CONFIG_ARM64_BOOT_AARCH32) || !defined(CONFIG_ARM64)
 /*
- * (1) Fixup MMU region attr for OP-TEE on (AArch32 + ARMv8)
- *
- * What ever U-Boot is 64-bit or 32-bit mode, the OP-TEE is always 64-bit mode.
- *
  * Common for OP-TEE:
- *	64-bit mode: dcache is always enabled;
- *	32-bit mode: dcache is always disabled(Due to rockchip sip calls);
+ *	64-bit & 32-bit mode: dcache is always enabled;
  *
  * Common for U-Boot:
  *	64-bit mode: MMU table is static defined in rkxxx.c file, all memory
@@ -433,24 +427,13 @@ int board_fdt_fixup(void *blob)
  *
  *	32-bit mode: MMU table is setup according to gd->bd->bi_dram[..] where
  *		     the OP-TEE region has been reserved, so it can not be
- *		     mapped(i.e. dcache is disabled). That's also good to match
+ *		     mapped(i.e. dcache is disabled). That's *NOT* good to match
  *		     OP-TEE MMU policy.
  *
  * For the data coherence when communication between U-Boot and OP-TEE, U-Boot
  * should follow OP-TEE MMU policy.
  *
- * Here is the special:
- *	When CONFIG_ARM64_BOOT_AARCH32 is enabled, U-Boot is 32-bit mode while
- *	OP-TEE is still 64-bit mode. U-Boot would not map MMU table for OP-TEE
- *	region(but OP-TEE requires it cacheable) so we fixup here.
- *
- *
- * (2) Fixup MMU region attr for OP-TEE on (ARMv7 + CONFIG_OPTEE_V2)
- *
- * OP-TEE for CONFIG_OPTEE_V1: dcache is always disabled;
- * OP-TEE for CONFIG_OPTEE_V2: dcache is always enabled;
- *
- * So U-Boot should map OP-TEE memory as dcache enabled for CONFIG_OPTEE_V2.
+ * So 32-bit mode U-Boot should map OP-TEE memory as dcache enabled.
  */
 int board_initr_caches_fixup(void)
 {
