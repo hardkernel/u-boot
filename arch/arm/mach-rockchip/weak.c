@@ -18,6 +18,71 @@ DECLARE_GLOBAL_DATA_PTR;
 #if CONFIG_IS_ENABLED(FIT)
 
 /*
+ * Override __weak board_fit_image_post_process() for SPL & U-Boot proper.
+ */
+#if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
+static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
+			 ulong **src_addr, size_t *src_len)
+{
+	const void *prop;
+	u64 len = *src_len;
+	int ret;
+	u8 comp;
+
+	if (fit_image_get_comp(fit, node, &comp))
+		return 0;
+
+	if (comp != IH_COMP_GZIP)
+		return 0;
+
+#ifndef CONFIG_SPL_BUILD
+	/* handled late in bootm_decomp_image() */
+	if (fit_image_check_type(fit, node, IH_TYPE_KERNEL))
+		return 0;
+#endif
+	ret = misc_decompress_process((ulong)(*load_addr),
+				      (ulong)(*src_addr), (ulong)(*src_len),
+				      DECOM_GZIP, false, &len);
+	if (ret) {
+		printf("%s: decompress error, ret=%d\n",
+		       fdt_get_name(fit, node, NULL), ret);
+		return ret;
+	}
+
+	*src_addr = (ulong *)*load_addr;
+	*src_len = len;
+
+	/* mark for misc_decompress_cleanup() */
+	prop = fdt_getprop(fit, node, "decomp-async", NULL);
+	if (prop)
+		misc_decompress_async(comp);
+	else
+		misc_decompress_sync(comp);
+
+	return 0;
+}
+#endif
+
+void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
+				  ulong **src_addr, size_t *src_len)
+{
+#if CONFIG_IS_ENABLED(ROCKCHIP_HW_DECOMPRESS)
+	fit_hw_gunzip(fit, node, load_addr, src_addr, src_len);
+#endif
+
+#if CONFIG_IS_ENABLED(USING_KERNEL_DTB)
+	/* Avoid overriding processed(overlay, hw-dtb, ...) kernel dtb */
+	if (fit_image_check_type(fit, node, IH_TYPE_FLATDT) &&
+	    !fdt_check_header(gd->fdt_blob)) {
+		*src_addr = (void *)gd->fdt_blob;
+		*src_len = (size_t)fdt_totalsize(gd->fdt_blob);
+	}
+#endif
+}
+#endif /* FIT_IMAGE_POST_PROCESS */
+
+/*
  * Override __weak fit_rollback_index_verify() for SPL & U-Boot proper.
  */
 #if CONFIG_IS_ENABLED(FIT_ROLLBACK_PROTECT)

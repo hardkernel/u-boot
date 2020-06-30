@@ -813,19 +813,6 @@ void autoboot_command_fail_handle(void)
 #endif
 }
 
-#ifdef CONFIG_FIT_IMAGE_POST_PROCESS
-void board_fit_image_post_process(void **p_image, size_t *p_size)
-{
-	/* Avoid overriding proccessed(overlay, hw-dtb, ...) kernel dtb */
-#ifdef CONFIG_USING_KERNEL_DTB
-	if (!fdt_check_header(*p_image) && !fdt_check_header(gd->fdt_blob)) {
-		*p_image = (void *)gd->fdt_blob;
-		*p_size = (size_t)fdt_totalsize(gd->fdt_blob);
-	}
-#endif
-}
-#endif
-
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
 
 #define FIT_ROLLBACK_INDEX_LOCATION	0x66697472	/* "fitr" */
