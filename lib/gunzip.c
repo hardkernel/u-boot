@@ -12,6 +12,7 @@
 #include <image.h>
 #include <malloc.h>
 #include <memalign.h>
+#include <misc.h>
 #include <u-boot/zlib.h>
 #include <div64.h>
 
@@ -77,6 +78,16 @@ int gunzip(void *dst, int dstlen, unsigned char *src, unsigned long *lenp)
 	if (offset < 0)
 		return offset;
 
+#if defined(CONFIG_MISC_DECOMPRESS) && !defined(CONFIG_SPL_BUILD)
+	int ret;
+
+	ret = misc_decompress_process((ulong)dst, (ulong)src, *lenp,
+				      DECOM_GZIP, true, (u64 *)lenp);
+	if (!ret)
+		return 0;
+
+	printf("hw gunzip failed(%d), fallback to soft gunzip\n", ret);
+#endif
 	return zunzip(dst, dstlen, src, lenp, 1, offset);
 }
 
