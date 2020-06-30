@@ -17,6 +17,8 @@
 #define OPTEE_MSG_REVISION_MAJOR        2
 #define OPTEE_MSG_REVISION_MINOR        0
 
+static bool optee_is_init;
+
 static bool optee_api_revision_is_compatible(void)
 {
 	ARM_SMC_ARGS ArmSmcArgs = {0};
@@ -44,6 +46,9 @@ TEEC_Result OpteeClientApiLibInitialize(void)
 {
 	TEEC_Result status = TEEC_SUCCESS;
 
+	if (optee_is_init)
+		return TEEC_SUCCESS;
+
 	/* check api revision compatibility */
 	if (!optee_api_revision_is_compatible())
 		panic("optee api revision is too low");
@@ -58,6 +63,8 @@ TEEC_Result OpteeClientApiLibInitialize(void)
 		printf("TEEC: OpteeClientRkFsInit fail!\n");
 		return status;
 	}
+
+	optee_is_init = true;
 
 	return TEEC_SUCCESS;
 }
