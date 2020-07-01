@@ -324,8 +324,8 @@ static bool parseOpts(void)
 		} else if (buf[0] == '#') {
 			continue;
 		} else {
-			LOGE("unknown sec: %s!\n", buf);
-			goto end;
+			LOGD("unknown sec: %s!\n", buf);
+			continue;
 		}
 		if (SCANF_EAT(file) != 0) {
 			goto end;
