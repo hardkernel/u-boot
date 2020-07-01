@@ -1,5 +1,25 @@
 #!/bin/bash
 
+# Process args and auto set variables
+source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
+
+if [ "${COMPRESSION}" == "gzip" ]; then
+	gzip -k -f -9 ${srctree}/u-boot-nodtb.bin
+	gzip -k -f -9 ${srctree}/tee.bin
+	SUFFIX=".gz"
+else
+	COMPRESSION="none"
+	SUFFIX=
+fi
+
+# mcu
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
+	if [ "${COMPRESSION}" == "gzip" ]; then
+		gzip -k -f -9 ${srctree}/mcu.bin
+	fi
+fi
+
+# .its file generation
 cat << EOF
 /*
  * Copyright (C) 2017 Rockchip Electronic Co.,Ltd
@@ -16,17 +36,15 @@ cat << EOF
 	images {
 		uboot {
 			description = "U-Boot";
-			data = /incbin/("./u-boot-nodtb.bin");
 			type = "standalone";
 			os = "U-Boot";
 			arch = "arm";
-			compression = "none";
 EOF
 
-OUTDIR=$PWD
-DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-UBOOT_BASE=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-echo "			load = <"$UBOOT_BASE">;"
+echo "			data = /incbin/(\"./u-boot-nodtb.bin${SUFFIX}\");"
+echo "			compression = \"${COMPRESSION}\";"
+echo "			load = <"${UBOOT_LOAD_ADDR}">;"
+
 cat << EOF
 			hash {
 				algo = "sha256";
@@ -34,22 +52,16 @@ cat << EOF
 		};
 		optee {
 			description = "OP-TEE";
-			data = /incbin/("./tee.bin");
 			type = "firmware";
 			arch = "arm";
 			os = "op-tee";
-			compression = "none";
 EOF
 
-if [ -z "$1" -o ! -z "$(echo $1 | sed 's/[x, X, 0-9, a-f, A-F]//g')" ]; then
-	TEE_OFFSET=0x8400000
-else
-	TEE_OFFSET=$1
-fi
-TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
-TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
-echo "			load = <0x"$TEE_LOAD_ADDR">;"
-echo "			entry = <0x"$TEE_LOAD_ADDR">;"
+echo "			load = <0x"${TEE_LOAD_ADDR}">;"
+echo "			entry = <0x"${TEE_LOAD_ADDR}">;"
+echo "			data = /incbin/(\"./tee.bin${SUFFIX}\");"
+echo "			compression = \"${COMPRESSION}\";"
+
 cat << EOF
 			hash {
 				algo = "sha256";
@@ -66,20 +78,19 @@ cat << EOF
 		};
 EOF
 
-MCU_OFFSET=$2
-if [ "$MCU_OFFSET" != "" ]; then
-MCU_LOAD_ADDR=$((DARM_BASE+$MCU_OFFSET))
-MCU_LOAD_ADDR=$(echo "obase=16;${MCU_LOAD_ADDR}"|bc)
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 cat  << EOF
 		mcu {
 			description = "mcu";
-			data = /incbin/("./mcu.bin");
 			type = "standalone";
-			compression = "none";
-EOF
-echo "			load = <0x"$MCU_LOAD_ADDR">;"
-cat  << EOF
 			arch = "riscv";
+EOF
+
+echo "			data = /incbin/(\"./mcu.bin${SUFFIX}\");"
+echo "			compression = \"${COMPRESSION}\";"
+echo "			load = <0x"${MCU_LOAD_ADDR}">;"
+
+cat  << EOF
 			hash {
 				algo = "sha256";
 			};
@@ -100,7 +111,7 @@ cat  << EOF
 			fdt = "fdt";
 EOF
 
-if [ "$MCU_OFFSET" != "" ]; then
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 echo "			standalone = \"mcu\";"
 fi
 
@@ -110,7 +121,7 @@ cat  << EOF
 				key-name-hint = "dev";
 EOF
 
-if [ "$MCU_OFFSET" != "" ]; then
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\", \"standalone\";"
 else
 echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
