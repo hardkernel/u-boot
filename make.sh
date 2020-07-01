@@ -578,8 +578,16 @@ function pack_uboot_itb_image()
 		mcu_enabled=`awk -F"," '/MCU=/ { printf $3 }' ${ini} | tr -d ' '`
 		if [ "${mcu_enabled}" == "enabled" ]; then
 			mcu_image=`awk -F"," '/MCU=/  { printf $1 }' ${ini} | tr -d ' ' | cut -c 5-`
-			mcu_offset=`awk -F"," '/MCU=/ { printf $2 }' ${ini} | tr -d ' '`
 			cp ${RKBIN}/${mcu_image} mcu.bin
+			mcu_offset=`awk -F"," '/MCU=/ { printf $2 }' ${ini} | tr -d ' '`
+			optional_mcu="-m "${mcu_offset}
+		else
+			optional_mcu=
+		fi
+
+		compression=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${ini} | tr -d ' ' | cut -c 13-`
+		if [ -z "${compression}" ]; then
+			compression="none"
 		fi
 
 		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
@@ -587,7 +595,7 @@ function pack_uboot_itb_image()
 			cp ${SPL_FIT_SOURCE} u-boot.its
 		else
 			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
-			${SPL_FIT_GENERATOR} ${tee_offset} ${mcu_offset} > u-boot.its
+			${SPL_FIT_GENERATOR} -u -t ${tee_offset} -c ${compression} ${optional_mcu} > u-boot.its
 		fi
 		./tools/mkimage -f u-boot.its -E u-boot.itb
 		echo "pack u-boot.itb okay! Input: ${ini}"
