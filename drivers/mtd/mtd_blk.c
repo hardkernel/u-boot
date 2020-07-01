@@ -12,7 +12,9 @@
 #include <malloc.h>
 #include <nand.h>
 #include <part.h>
+#include <spi.h>
 #include <dm/device-internal.h>
+#include <linux/mtd/spi-nor.h>
 
 #define MTD_PART_NAND_HEAD		"mtdparts="
 #define MTD_ROOT_PART_NUM		"ubi.mtd="
@@ -398,9 +400,16 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
 #if defined(CONFIG_SPI_FLASH_MTD) || defined(CONFIG_SPL_BUILD)
+		struct spi_nor *nor = (struct spi_nor *)mtd->priv;
+		struct spi_slave *spi = nor->spi;
 		size_t retlen_nor;
 
+		if (desc->op_flag == BLK_PRE_RW)
+			spi->mode |= SPI_DMA_PREPARE;
 		mtd_read(mtd, off, rwsize, &retlen_nor, dst);
+		if (desc->op_flag == BLK_PRE_RW)
+			spi->mode |= SPI_DMA_PREPARE;
+
 		if (retlen_nor == rwsize)
 			return blkcnt;
 		else
