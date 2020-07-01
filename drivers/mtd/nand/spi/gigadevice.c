@@ -193,8 +193,9 @@ static int gigadevice_spinand_detect(struct spinand_device *spinand)
 	ret = spinand_match_and_init(spinand, gigadevice_spinand_table,
 				     ARRAY_SIZE(gigadevice_spinand_table),
 				     id[2]);
+	/* Not Only GD Nands MFR equals C8h */
 	if (ret)
-		return ret;
+		return 0;
 
 	return 1;
 }
