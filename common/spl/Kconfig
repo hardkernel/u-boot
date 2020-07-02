@@ -836,6 +836,13 @@ config RKFW_BOOT_SECTOR
         depends on SPL_LOAD_RKFW
         default 0xa000
 
+config SPL_KERNEL_BOOT
+	bool "Enable boot kernel in SPL"
+	depends on SPL
+	help
+	  Enable boot kernel in SPL.
+
+if SPL_KERNEL_BOOT
 config SPL_KERNEL_ADDR
 	hex "Kernel load address in spl"
 	depends on SPL
@@ -889,12 +896,7 @@ config SPL_RAMDISK_DECOM_LIMIT_SIZE
 	help
 	  Define ramdisk maximum decompressible size that prevent
 	  memory overrun.
-
-config SPL_KERNEL_BOOT
-	bool "Enable boot kernel in SPL"
-	depends on SPL
-	help
-	  Enable boot kernel in SPL.
+endif
 
 config TPL
 	bool
