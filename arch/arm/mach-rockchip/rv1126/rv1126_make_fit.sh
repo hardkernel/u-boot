@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (C) 2020 Rockchip Electronics Co., Ltd
+#
+# SPDX-License-Identifier:     GPL-2.0+
+#
 
 # Process args and auto set variables
 source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
