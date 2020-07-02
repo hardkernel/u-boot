@@ -1,3 +1,23 @@
+#!/bin/bash
+#
+# Copyright (C) 2020 Rockchip Electronics Co., Ltd
+#
+# SPDX-License-Identifier:     GPL-2.0+
+#
+
+# Process args and auto set variables
+source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
+
+if [ "${COMPRESSION}" == "gzip" ]; then
+	gzip -k -f -9 ${srctree}/images/kernel
+	gzip -k -f -9 ${srctree}/images/ramdisk
+	SUFFIX=".gz"
+else
+	COMPRESSION="none"
+	SUFFIX=
+fi
+
+cat << EOF
 /*
  * Copyright (C) 2020 Fuzhou Rockchip Electronics Co., Ltd
  *
@@ -13,7 +33,7 @@
 
 	images {
 		fdt {
-			data = /incbin/("images/rk-kernel.dtb");
+			data = /incbin/("./images/rk-kernel.dtb");
 			type = "flat_dt";
 			arch = "arm";
 			compression = "none";
@@ -24,11 +44,13 @@
 		};
 
 		kernel {
-			data = /incbin/("images/kernel.img");
+EOF
+echo "			data = /incbin/(\"./images/kernel${SUFFIX}\");"
+echo "			compression = \"${COMPRESSION}\";"
+cat << EOF
 			type = "kernel";
 			arch = "arm";
 			os = "linux";
-			compression = "none";
 			entry = <0xffffff01>;
 			load  = <0xffffff01>;
 			hash {
@@ -37,11 +59,13 @@
 		};
 
 		ramdisk {
-			data = /incbin/("images/ramdisk.img");
+EOF
+echo "			data = /incbin/(\"./images/ramdisk${SUFFIX}\");"
+echo "			compression = \"${COMPRESSION}\";"
+cat << EOF
 			type = "ramdisk";
 			arch = "arm";
 			os = "linux";
-			compression = "none";
 			load  = <0xffffff02>;
 			hash {
 				algo = "sha256";
@@ -49,7 +73,7 @@
 		};
 
 		resource {
-			data = /incbin/("images/resource.img");
+			data = /incbin/("./images/resource");
 			type = "multi";
 			arch = "arm";
 			compression = "none";
@@ -76,3 +100,5 @@
 		};
 	};
 };
+
+EOF
