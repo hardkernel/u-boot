@@ -38,6 +38,7 @@ SPL_DTB="spl/u-boot-spl.dtb"
 UBOOT_DTB="u-boot.dtb"
 # its
 ITS_UBOOT="u-boot.its"
+ITS_BOOT="boot.its"
 
 function help()
 {
@@ -295,8 +296,11 @@ function fit_gen_boot_itb()
 		${FIT_UNPACK} -f ${ARG_EXT_BOOT} -o ${FIT_DIR}/unpack
 		ITS_BOOT="${FIT_DIR}/unpack/image.its"
 	else
-		ITS_BOOT="kernel_arm.its"
-		cp arch/arm/mach-rockchip/${ITS_BOOT} ./
+		compression=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${ARG_INI_TRUST} | tr -d ' ' | cut -c 13-`
+		if [ -z "${compression}" ]; then
+			compression="none"
+		fi
+		./arch/arm/mach-rockchip/make_fit_boot.sh -c ${compression} > ${ITS_BOOT}
 		check_its ${ITS_BOOT}
 	fi
 
@@ -455,15 +459,6 @@ function fit_vboot_uboot()
 	fit_gen_uboot_img
 	echo
 	fit_msg_uboot
-}
-
-function fit_vboot_boot()
-{
-	fit_rebuild
-	fit_boot_make_itb
-	fit_boot_make_img
-	echo
-	fit_verbose_boot
 }
 
 function fit_vboot()

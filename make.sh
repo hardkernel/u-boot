@@ -310,7 +310,7 @@ function sub_commands()
 
 		fit)
 			if [ "${arg}" == "ns" ]; then
-				./scripts/fit-mkimg.sh --uboot-itb --boot-itb --no-vboot ${ARG_FIT}
+				./scripts/fit-mkimg.sh --uboot-itb --boot-itb --no-vboot ${ARG_LIST_FIT}
 			fi
 			exit 0
 			;;
