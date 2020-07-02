@@ -31,6 +31,18 @@ config TPL_MISC
 	  set of generic read, write and ioctl methods may be used to
 	  access the device.
 
+config MISC_DECOMPRESS
+	bool "Enable misc decompress driver support"
+	depends on MISC
+	help
+	  Enable misc decompress driver support.
+
+config SPL_MISC_DECOMPRESS
+	bool "Enable misc decompress driver support in SPL"
+	depends on SPL_MISC
+	help
+	  Enable misc decompress driver support in spl.
+
 config ALTERA_SYSID
 	bool "Altera Sysid support"
 	depends on MISC
