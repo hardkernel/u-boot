@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <boot_rkimg.h>
 #include <debug_uart.h>
 #include <dm.h>
 #include <key.h>
@@ -294,6 +295,43 @@ void spl_next_stage(struct spl_image_info *spl)
 	default:
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
 	}
+}
+#endif
+
+#ifdef CONFIG_SPL_FIT_LOAD_KERNEL
+const char *spl_kernel_partition(struct spl_image_info *spl,
+				 struct spl_load_info *info)
+{
+	struct bootloader_message *bmsg = NULL;
+	u32 boot_mode;
+	int ret, cnt;
+	u32 sector = 0;
+
+#ifdef CONFIG_SPL_LIBDISK_SUPPORT
+	disk_partition_t part_info;
+
+	ret = part_get_info_by_name(info->dev, PART_MISC, &part_info);
+	if (ret >= 0)
+		sector = part_info.start;
+#else
+	sector = CONFIG_SPL_MISC_SECTOR;
+#endif
+	if (sector) {
+		cnt = DIV_ROUND_UP(sizeof(*bmsg), info->bl_len);
+		bmsg = memalign(ARCH_DMA_MINALIGN, cnt * info->bl_len);
+		ret = info->read(info, sector + BCB_MESSAGE_BLK_OFFSET,
+				 cnt, bmsg);
+		if (ret == cnt && !strcmp(bmsg->command, "boot-recovery")) {
+			free(bmsg);
+			return PART_RECOVERY;
+		} else {
+			free(bmsg);
+		}
+	}
+
+	boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+
+	return (boot_mode == BOOT_RECOVERY) ? PART_RECOVERY : PART_BOOT;
 }
 #endif
 
