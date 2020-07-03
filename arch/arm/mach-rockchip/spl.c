@@ -288,6 +288,7 @@ void spl_next_stage(struct spl_image_info *spl)
 	case BOOT_PANIC:
 	case BOOT_WATCHDOG:
 	case BOOT_NORMAL:
+	case BOOT_RECOVERY:
 		spl->next_stage = SPL_NEXT_STAGE_KERNEL;
 		break;
 	default:
