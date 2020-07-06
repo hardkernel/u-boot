@@ -338,6 +338,11 @@ ulong fit_image_get_bootables_size(const void *fit)
 	ulong max_off, load;
 	int offset, size;
 
+#if 0
+	if (!fit_get_totalsize(fit, &size))
+		return size;
+#endif
+
 	if (!fit_image_get_param(fit, FIT_FDT_PROP, &load, &offset, &size))
 		off[0] = offset + FIT_ALIGN(size);
 
