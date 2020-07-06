@@ -1001,6 +1001,7 @@ static inline const char *fit_get_name(const void *fit_hdr,
 
 int fit_get_desc(const void *fit, int noffset, char **desc);
 int fit_get_timestamp(const void *fit, int noffset, time_t *timestamp);
+int fit_get_totalsize(const void *fit, int *totalsize);
 
 int fit_image_get_node(const void *fit, const char *image_uname);
 int fit_image_get_os(const void *fit, int noffset, uint8_t *os);

@@ -528,6 +528,29 @@ int fit_get_timestamp(const void *fit, int noffset, time_t *timestamp)
 }
 
 /**
+ * fit_get_totalsize - get node totalsize property.
+ *
+ * @fit: pointer to the FIT image header
+ * @totalsize: holds the /totalsize property
+ *
+ * returns:
+ *     0, on success
+ *     -ENOENT if the property could not be found
+ */
+int fit_get_totalsize(const void *fit, int *totalsize)
+{
+	const fdt32_t *val;
+
+	val = fdt_getprop(fit, 0, FIT_TOTALSIZE_PROP, NULL);
+	if (!val)
+		return -ENOENT;
+
+	*totalsize = fdt32_to_cpu(*val);
+
+	return 0;
+}
+
+/**
  * fit_image_get_node - get node offset for component image of a given unit name
  * @fit: pointer to the FIT format image header
  * @image_uname: component image node unit name
