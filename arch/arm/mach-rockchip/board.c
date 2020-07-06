@@ -855,20 +855,11 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 
 static int fit_write_trusty_rollback_index(u32 trusty_index)
 {
-	int ret;
-
 	if (!trusty_index)
 		return 0;
 
-	ret = trusty_write_rollback_index(FIT_ROLLBACK_INDEX_LOCATION,
-					  (u64)trusty_index);
-	if (ret) {
-		printf("Failed to write fit rollback index %d, ret=%d\n",
-		       trusty_index, ret);
-		return ret;
-	}
-
-	return 0;
+	return trusty_write_rollback_index(FIT_ROLLBACK_INDEX_LOCATION,
+					   (u64)trusty_index);
 }
 #endif
 
@@ -883,6 +874,12 @@ void board_quiesce_devices(void *images)
 #endif
 
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
-	fit_write_trusty_rollback_index(gd->rollback_index);
+	int ret;
+
+	ret = fit_write_trusty_rollback_index(gd->rollback_index);
+	if (ret) {
+		panic("Failed to write fit rollback index %d, ret=%d",
+		      gd->rollback_index, ret);
+	}
 #endif
 }

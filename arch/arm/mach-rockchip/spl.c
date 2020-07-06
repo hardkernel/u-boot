@@ -382,7 +382,13 @@ static int fit_write_otp_rollback_index(u32 fit_index)
 int spl_board_prepare_for_jump(struct spl_image_info *spl_image)
 {
 #ifdef CONFIG_SPL_FIT_ROLLBACK_PROTECT
-	return fit_write_otp_rollback_index(gd->rollback_index);
+	int ret;
+
+	ret = fit_write_otp_rollback_index(gd->rollback_index);
+	if (ret) {
+		panic("Failed to write fit rollback index %d, ret=%d",
+		      gd->rollback_index, ret);
+	}
 #endif
 	return 0;
 }
