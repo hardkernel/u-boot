@@ -1,0 +1,6 @@
+ODROID-GO3
+M:      Joy Cho <joy.cho@hardkernel.com>
+S:      Maintained
+F:      board/rockchip/odroidgo3
+F:      include/configs/odroidgo3.h
+F:      configs/odroidgo3_defconfig

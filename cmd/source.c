@@ -131,7 +131,7 @@ source (ulong addr, const char *fit_uname)
 		break;
 #endif
 	default:
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 		{
 			char magic[32];
 			int size = snprintf(magic, sizeof(magic),

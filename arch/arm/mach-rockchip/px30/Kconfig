@@ -4,9 +4,23 @@ config TARGET_EVB_PX30
 	bool "EVB_PX30"
 	select BOARD_LATE_INIT
 
-config TARGET_ODROIDGO2
-	bool "ODROIDGO2"
+config PLATFORM_ODROID_GOADV
+	bool "Support ODROID-GO Advanced Platform"
 	select BOARD_LATE_INIT
+	help
+	   ODROID-GO Advanced configuration
+
+if PLATFORM_ODROID_GOADV
+config TARGET_ODROIDGO2
+	bool "Target ODROID-GO2"
+	help
+	   ODROID-GO Advanced 2nd configuration
+
+config TARGET_ODROIDGO3
+	bool "Target ODROID-GO3"
+	help
+	   ODROID-GO Advanced 3rd configuration
+endif
 
 config SYS_SOC
 	default "rockchip"
@@ -19,5 +33,6 @@ config SPL_SERIAL_SUPPORT
 
 source "board/rockchip/evb_px30/Kconfig"
 source "board/rockchip/odroidgo2/Kconfig"
+source "board/rockchip/odroidgo3/Kconfig"
 
 endif

@@ -9,7 +9,7 @@
 #include <dm.h>
 #include <rksfc.h>
 
-#ifdef CONFIG_TARGET_ODROIDGO2
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
 static int rksfc_curr_dev = 1; /* default spinor */
 #else
 static int rksfc_curr_dev;

@@ -1666,31 +1666,31 @@ menu "ODROID commands"
 
 config CMD_ODROID_ADC
 	bool "adc command - read saradc channel"
-	depends on TARGET_ODROIDGO2
+	depends on PLATFORM_ODROID_GOADV
 	help
 	  saradc read support
 
 config CMD_ODROID_CFGLOAD
 	bool "cfgload command - load boot.ini from FAT partition"
-	depends on TARGET_ODROIDGO2
+	depends on PLATFORM_ODROID_GOADV
 	help
 	  cfgload support
 
 config CMD_ODROID_BATTERY
 	bool "battery command - read battery infomation"
-	depends on TARGET_ODROIDGO2
+	depends on PLATFORM_ODROID_GOADV
 	help
 	  battery read support
 
 config CMD_ODROID_TEST
 	bool "odroidtest command - hw test for go advanced"
-	depends on TARGET_ODROIDGO2
+	depends on PLATFORM_ODROID_GOADV
 	help
 	  This enables hw test functions for ODROID GO-Advanced board.
 
 config CMD_ODROID_HWREV
 	bool "hwrev command - check hw revision for go advanced"
-	depends on TARGET_ODROIDGO2
+	depends on PLATFORM_ODROID_GOADV
 	help
 	  This enables hw revision check function for ODROID GO-Advanced board.
 
