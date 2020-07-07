@@ -1131,27 +1131,9 @@ int fit_set_totalsize(void *fit, int noffset, int totalsize)
 	return 0;
 }
 
-/**
- * calculate_hash - calculate and return hash for provided input data
- * @data: pointer to the input data
- * @data_len: data length
- * @algo: requested hash algorithm
- * @value: pointer to the char, will hold hash value data (caller must
- * allocate enough free space)
- * value_len: length of the calculated hash
- *
- * calculate_hash() computes input data hash according to the requested
- * algorithm.
- * Resulting hash value is placed in caller provided 'value' buffer, length
- * of the calculated hash is returned via value_len pointer argument.
- *
- * returns:
- *     0, on success
- *    -1, when algo is unsupported
- */
-int calculate_hash_software(const void *data, int data_len,
-			    const char *algo, uint8_t *value,
-			    int *value_len)
+int fit_calculate_hash(const void *data, int data_len,
+		       const char *algo, uint8_t *value,
+		       int *value_len)
 {
 	if (IMAGE_ENABLE_CRC32 && strcmp(algo, "crc32") == 0) {
 		*((uint32_t *)value) = crc32_wd(0, data, data_len,
@@ -1176,13 +1158,7 @@ int calculate_hash_software(const void *data, int data_len,
 	return 0;
 }
 
-#ifdef USE_HOSTCC
-int calculate_hash(const void *data, int data_len, const char *algo,
-		   uint8_t *value, int *value_len)
-{
-	return calculate_hash_software(data, data_len, algo, value, value_len);
-}
-#else
+#ifndef USE_HOSTCC
 #if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
 static int crypto_csum(u32 cap, const char *data, int len, u8 *output)
 {
@@ -1201,8 +1177,9 @@ static int crypto_csum(u32 cap, const char *data, int len, u8 *output)
 	return crypto_sha_csum(dev, &csha_ctx, (char *)data, len, output);
 }
 
-int calculate_hash(const void *data, int data_len, const char *algo,
-		   uint8_t *value, int *value_len)
+static int hw_fit_calculate_hash(const void *data, int data_len,
+				 const char *algo, uint8_t *value,
+				 int *value_len)
 {
 	if (IMAGE_ENABLE_CRC32 && strcmp(algo, "crc32") == 0) {
 		*((uint32_t *)value) = crc32_wd(0, data, data_len,
@@ -1224,14 +1201,40 @@ int calculate_hash(const void *data, int data_len, const char *algo,
 	}
 	return 0;
 }
-#else
+#endif
+#endif
+
+/**
+ * calculate_hash - calculate and return hash for provided input data
+ * @data: pointer to the input data
+ * @data_len: data length
+ * @algo: requested hash algorithm
+ * @value: pointer to the char, will hold hash value data (caller must
+ * allocate enough free space)
+ * value_len: length of the calculated hash
+ *
+ * calculate_hash() computes input data hash according to the requested
+ * algorithm.
+ * Resulting hash value is placed in caller provided 'value' buffer, length
+ * of the calculated hash is returned via value_len pointer argument.
+ *
+ * returns:
+ *     0, on success
+ *    -1, when algo is unsupported
+ */
 int calculate_hash(const void *data, int data_len, const char *algo,
 		   uint8_t *value, int *value_len)
 {
-	return calculate_hash_software(data, data_len, algo, value, value_len);
+#if defined(USE_HOSTCC)
+	return fit_calculate_hash(data, data_len, algo, value, value_len);
+#else
+#if !CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
+	return fit_calculate_hash(data, data_len, algo, value, value_len);
+#else
+	return hw_fit_calculate_hash(data, data_len, algo, value, value_len);
+#endif
+#endif
 }
-#endif
-#endif
 
 int fit_image_check_hash(const void *fit, int noffset, const void *data,
 			 size_t size, char **err_msgp)
