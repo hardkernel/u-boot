@@ -69,9 +69,9 @@ static void rsa_convert_big_endian(uint32_t *dst, const uint32_t *src, int len)
 		dst[i] = fdt32_to_cpu(src[len - 1 - i]);
 }
 
-static int hw_crypto_rsa(struct key_prop *prop, const uint8_t *sig,
-			 const uint32_t sig_len, const uint32_t key_len,
-			 uint8_t *output)
+static int rsa_mod_exp_hw(struct key_prop *prop, const uint8_t *sig,
+			  const uint32_t sig_len, const uint32_t key_len,
+			  uint8_t *output)
 {
 	struct udevice *dev;
 	uint8_t sig_reverse[sig_len];
@@ -169,7 +169,7 @@ static int rsa_verify_key(struct key_prop *prop, const uint8_t *sig,
 
 #if !defined(USE_HOSTCC)
 #if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
-	ret = hw_crypto_rsa(prop, sig, sig_len, key_len, buf);
+	ret = rsa_mod_exp_hw(prop, sig, sig_len, key_len, buf);
 #else
 	struct udevice *mod_exp_dev;
 
