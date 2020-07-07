@@ -344,7 +344,10 @@ static int fit_write_otp_rollback_index(u32 fit_index)
 	struct udevice *dev;
 	u32 index, i, otp_index;
 
-	if (!fit_index || fit_index > OTP_UBOOT_ROLLBACK_WORDS * 32)
+	if (!fit_index)
+		return 0;
+
+	if (fit_index > OTP_UBOOT_ROLLBACK_WORDS * 32)
 		return -EINVAL;
 
 	dev = misc_otp_get_device(OTP_S);
