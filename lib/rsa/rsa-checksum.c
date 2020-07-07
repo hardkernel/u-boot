@@ -17,9 +17,9 @@
 #endif
 #include <u-boot/rsa.h>
 
-int hash_calculate_sw(const char *name,
-		      const struct image_region region[],
-		      int region_count, uint8_t *checksum)
+int rsa_hash_calculate(const char *name,
+		       const struct image_region region[],
+		       int region_count, uint8_t *checksum)
 {
 	struct hash_algo *algo;
 	int ret = 0;
@@ -52,18 +52,11 @@ int hash_calculate_sw(const char *name,
 	return 0;
 }
 
-#if defined(USE_HOSTCC)
-int hash_calculate(const char *name,
-		   const struct image_region region[],
-		   int region_count, uint8_t *checksum)
-{
-	return hash_calculate_sw(name, region, region_count, checksum);
-}
-#else
+#if !defined(USE_HOSTCC)
 #if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
-int hash_calculate(const char *name,
-		   const struct image_region region[],
-		   int region_count, uint8_t *checksum)
+int hw_rsa_hash_calculate(const char *name,
+			  const struct image_region region[],
+			  int region_count, uint8_t *checksum)
 
 {
 	struct udevice *dev;
@@ -88,12 +81,20 @@ int hash_calculate(const char *name,
 	return crypto_sha_regions_csum(dev, &ctx, region,
 				       region_count, checksum);
 }
-#else
+#endif
+#endif
+
 int hash_calculate(const char *name,
 		   const struct image_region region[],
 		   int region_count, uint8_t *checksum)
 {
-	return hash_calculate_sw(name, region, region_count, checksum);
+#if defined(USE_HOSTCC)
+	return rsa_hash_calculate(name, region, region_count, checksum);
+#else
+#if !CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
+	return rsa_hash_calculate(name, region, region_count, checksum);
+#else
+	return hw_rsa_hash_calculate(name, region, region_count, checksum);
+#endif
+#endif
 }
-#endif
-#endif
