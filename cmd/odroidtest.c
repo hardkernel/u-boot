@@ -255,7 +255,7 @@ static int do_odroidtest_lcd(cmd_tbl_t * cmdtp, int flag,
 	return ret;
 }
 
-void btn_draw_key_arrays(int numkeys)
+void btn_draw_key_arrays(int numkeys, int key_idx)
 {
 	int i;
 
@@ -266,7 +266,7 @@ void btn_draw_key_arrays(int numkeys)
 	lcd_printf(0, 1, 1, "[ GPIO KEY TEST ]");
 
 	for (i = 0; i < numkeys; i++) {
-		if (gpiokeys[i].chk)
+		if ((gpiokeys[i].chk) && (i != key_idx))
 			lcd_setfg_color("blue");
 		else
 			lcd_setfg_color("red");
@@ -275,6 +275,11 @@ void btn_draw_key_arrays(int numkeys)
 				0, gpiokeys[i].name);
 	}
 
+	mdelay(200);
+
+	lcd_setfg_color("blue");
+	lcd_printf(gpiokeys[key_idx].x, gpiokeys[key_idx].y,
+			0, gpiokeys[key_idx].name);
 }
 
 static int btn_passed;
@@ -287,15 +292,13 @@ int btn_update_key_status(int key)
 			if(!(gpiokeys[i].chk)) {
 				gpiokeys[i].chk = 1;
 				btn_passed++;
-				return 1;
-			} else {
-				return 0;
 			}
+			return i;
 		}
 		i++;
 	}
 
-	return 0;
+	return -1;
 }
 
 void btn_set_default(void)
@@ -310,7 +313,7 @@ void btn_set_default(void)
 static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
-	int key, numkeys;
+	int key, numkeys, key_idx;
 	const char *hwrev = env_get("hwrev");
 
 	if (hwrev && !strcmp(hwrev, "v11"))
@@ -318,18 +321,33 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 	else
 		numkeys = NUMGPIOKEYS - 2;
 
-	btn_draw_key_arrays(numkeys);
+	key_idx = -1;
+	btn_draw_key_arrays(numkeys, key_idx);
 	mdelay(2000);
 
-	while (btn_passed < numkeys) {
+	while (1) {
 		key = wait_key_event();
-		if (btn_update_key_status(key))
-			btn_draw_key_arrays(numkeys);
+		key_idx = btn_update_key_status(key);
+		btn_draw_key_arrays(numkeys, key_idx);
 		printf("key 0x%x, passed %d\n", key, btn_passed);
+
+		/* termination using F1+F6 */
+		if ((key == BTN_TRIGGER_HAPPY1) || (key == BTN_TRIGGER_HAPPY6)) {
+			printf("check termination keys, key_idx %d\n", key_idx);
+
+			if(!run_command("gpio input C0", 0)
+				&& !run_command("gpio input C5", 0)) {
+				printf("Got termination key!\n");
+				break;
+			}
+		}
 	}
 
 	lcd_setfg_color("white");
-	lcd_printf(0, 18, 1, "GPIO KEY TEST PASS!");
+	if (btn_passed == numkeys)
+		lcd_printf(0, 18, 1, "GPIO KEY TEST PASS!");
+	else
+		lcd_printf(0, 18, 1, "GPIO KEY TEST TERMINATED!");
 
 	btn_set_default();
 
