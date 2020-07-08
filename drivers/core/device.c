@@ -85,7 +85,7 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 					      __func__, dev->name);
 					return 0;
 				} else {
-					list_del(&dev->uclass_node);
+					list_del_init(&dev->uclass_node);
 				}
 			}
 		}
