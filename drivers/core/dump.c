@@ -14,6 +14,7 @@ static void show_devices(struct udevice *dev, int depth, int last_flag)
 {
 	int i, is_last;
 	struct udevice *child;
+	int pre_reloc, remained;
 
 	/* print the first 11 characters to not break the tree-format. */
 	printf(" %-10.10s [ %c ]   %-25.25s  ", dev->uclass->uc_drv->name,
@@ -34,9 +35,14 @@ static void show_devices(struct udevice *dev, int depth, int last_flag)
 		}
 	}
 
-	printf("%s %s\n", dev->name,
-	       dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
-	       dev_read_bool(dev, "u-boot,dm-spl") ? "*" : "");
+	pre_reloc = dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+		    dev_read_bool(dev, "u-boot,dm-spl");
+	if (pre_reloc)
+		remained = !list_empty(&dev->uclass_node);
+	else
+		remained = 0;
+
+	printf("%s %s%s\n", dev->name, pre_reloc ? "*" : "", remained ? "*" : "");
 
 	list_for_each_entry(child, &dev->child_head, sibling_node) {
 		is_last = list_is_last(&child->sibling_node, &dev->child_head);
@@ -66,7 +72,7 @@ void dm_dump_all(void)
 static void dm_display_line(struct udevice *dev)
 {
 	printf("  %c [ %c ] %s @ %08lx",
-	       dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+	       dev_read_bool(dev, "u-boot,dm-pre-pre_reloc") ||
 	       dev_read_bool(dev, "u-boot,dm-spl") ? '*' : ' ',
 	       dev->flags & DM_FLAG_ACTIVATED ? '+' : ' ',
 	       dev->name, (ulong)map_to_sysmem(dev));
