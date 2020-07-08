@@ -28,7 +28,9 @@ struct rockchip_crypto_priv {
 #define DATA_ADDR_ALIGIN_SIZE	8
 #define DATA_LEN_ALIGIN_SIZE	64
 
-#define RK_CRYPTO_TIME_OUT	50000  /* max 50ms */
+/* crypto timeout 500ms, must support more than 32M data per times*/
+#define HASH_UPDATE_LIMIT	(32 * 1024 * 1024)
+#define RK_CRYPTO_TIME_OUT	500000
 
 #define RK_WHILE_TIME_OUT(condition, timeout, ret) { \
 			u32 time_out = timeout; \
@@ -511,11 +513,25 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 				      u32 *input, u32 len)
 {
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
+	int ret, i;
+	u8 *p;
 
 	if (!len)
 		return -EINVAL;
 
-	return rk_hash_update(priv->hw_ctx, (u8 *)input, len);
+	p = (u8 *)input;
+
+	for (i = 0; i < len / HASH_UPDATE_LIMIT; i++, p += HASH_UPDATE_LIMIT) {
+		ret = rk_hash_update(priv->hw_ctx, p, HASH_UPDATE_LIMIT);
+		if (ret)
+			goto exit;
+	}
+
+	if (len % HASH_UPDATE_LIMIT)
+		ret = rk_hash_update(priv->hw_ctx, p, len % HASH_UPDATE_LIMIT);
+
+exit:
+	return ret;
 }
 
 static int rockchip_crypto_sha_final(struct udevice *dev,
