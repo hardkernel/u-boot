@@ -84,10 +84,11 @@ struct rockchip_iodomain_priv {
 static int rockchip_ofdata_to_platdata(struct udevice *dev)
 {
 	struct rockchip_iodomain_priv *priv = dev_get_priv(dev);
+	struct syscon_uc_info *syscon_priv;
 	struct regmap *regmap;
 
-	/* get grf-reg base address */
-	regmap = syscon_get_regmap_by_driver_data(ROCKCHIP_SYSCON_GRF);
+	syscon_priv = dev_get_uclass_priv(dev_get_parent(dev));
+	regmap = syscon_priv->regmap;
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
