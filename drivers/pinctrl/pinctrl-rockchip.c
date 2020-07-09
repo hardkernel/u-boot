@@ -3569,6 +3569,7 @@ static struct rockchip_pin_bank rk3308_pin_banks[] = {
 static struct rockchip_pin_ctrl rk3308_pin_ctrl = {
 		.pin_banks		= rk3308_pin_banks,
 		.nr_banks		= ARRAY_SIZE(rk3308_pin_banks),
+		.nr_pins		= 160,
 		.label			= "RK3308-GPIO",
 		.type			= RK3308,
 		.grf_mux_offset		= 0x0,
