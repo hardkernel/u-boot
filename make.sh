@@ -227,16 +227,12 @@ function process_args()
 						echo "ERROR: No configs/${ARG_BOARD}_defconfig"
 						exit 1
 					elif [ -f configs/${ARG_BOARD}.config ]; then
-						BASE_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}.config |tr -d '\r' | tr -d '"'`
-						MAKE_CMD="make ${BASE_DEFCONFIG} ${ARG_BOARD}.config -j${JOB}"
+						BASE1_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}.config |tr -d '\r' | tr -d '"'`
+						BASE0_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${BASE1_DEFCONFIG} |tr -d '\r' | tr -d '"'`
+						MAKE_CMD="make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config -j${JOB}"
 						echo "## ${MAKE_CMD}"
-						make ${BASE_DEFCONFIG} ${ARG_BOARD}.config ${OPTION}
+						make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config ${OPTION}
 					else
-						BASE_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}_defconfig |tr -d '\r' | tr -d '"'`
-						if [ "${BASE_DEFCONFIG}" == "${ARG_BOARD}_defconfig" ]; then
-							echo "ERROR: configs/${ARG_BOARD}_defconfig is base defconfig for other [...].config"
-							exit 1
-						fi
 						MAKE_CMD="make ${ARG_BOARD}_defconfig -j${JOB}"
 						echo "## ${MAKE_CMD}"
 						make ${ARG_BOARD}_defconfig ${OPTION}
