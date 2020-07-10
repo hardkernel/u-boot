@@ -45,7 +45,7 @@ fi
 cp .config fragment.config
 make ${BASE_DEFCONFIG0} ${BASE_DEFCONFIG1}
 ./scripts/diffconfig -m .config fragment.config | sort > ${FRAGMENT_CONFIG}
-cp fragment.config .config
+mv fragment.config .config
 
 echo "$MSG_NEW_FILE"
 echo "Sync ${FRAGMENT_CONFIG} ... OK."
