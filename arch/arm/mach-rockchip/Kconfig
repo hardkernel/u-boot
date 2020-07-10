@@ -747,6 +747,18 @@ config BASE_DEFCONFIG
 	help
 	  Indicate the base defconfig of config fragment.
 
+config LOADER_INI
+	string "Name of Loader ini file in rkbin repository"
+	default ""
+	help
+	  The ini file is used to pack loader image.
+
+config TRUST_INI
+	string "Name of Trust ini file in rkbin repository"
+	default ""
+	help
+	  The ini file is used to pack trust image.
+
 config GICV2
 	bool "ARM GICv2"
 
