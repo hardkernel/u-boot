@@ -741,6 +741,12 @@ config ROCKCHIP_UART_MUX_SEL_M
 	help
 	  This select uart multiplexer for debug uart iomux in board_debug_uart_init.
 
+config BASE_DEFCONFIG
+	string "Base defconfig of config fragment"
+	default ""
+	help
+	  Indicate the base defconfig of config fragment.
+
 config GICV2
 	bool "ARM GICv2"
 

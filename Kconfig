@@ -59,12 +59,6 @@ config CC_OPTIMIZE_FOR_SIZE
 
 	  This option is enabled by default for U-Boot.
 
-config BASE_DEFCONFIG
-	string "Base defconfig of config fragment"
-	default ""
-	help
-	  Indicate the base defconfig of config fragment.
-
 config DISTRO_DEFAULTS
 	bool "Select defaults suitable for booting general purpose Linux distributions"
 	default y if ARCH_SUNXI || TEGRA
