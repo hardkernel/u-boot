@@ -499,6 +499,7 @@ function fixup_platform_configure()
 	fi
 }
 
+# Priority: default < CHIP_TYPE_FIXUP_TABLE() < defconfig < make.sh args
 function select_ini_file()
 {
 	# default
@@ -507,6 +508,16 @@ function select_ini_file()
 		INI_TRUST=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
 	else
 		INI_TRUST=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini
+	fi
+
+	# defconfig
+	NAME=`sed -n "/CONFIG_LOADER_INI=/s/CONFIG_LOADER_INI=//p" .config |tr -d '\r' | tr -d '"'`
+	if [ ! -z "${NAME}" ]; then
+		INI_LOADER=${RKBIN}/RKBOOT/${NAME}
+	fi
+	NAME=`sed -n "/CONFIG_TRUST_INI=/s/CONFIG_TRUST_INI=//p" .config |tr -d '\r' | tr -d '"'`
+	if [ ! -z "${NAME}" ]; then
+		INI_TRUST=${RKBIN}/RKTRUST/${NAME}
 	fi
 
 	# args
