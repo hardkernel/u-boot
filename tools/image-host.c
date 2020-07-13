@@ -163,7 +163,8 @@ static int fit_image_setup_sig(struct image_sign_info *info,
 	}
 
 	padding_name = fdt_getprop(fit, noffset, "padding", NULL);
-
+	if (!padding_name)
+		padding_name = "pkcs-1.5";
 	memset(info, '\0', sizeof(*info));
 	info->keydir = keydir;
 	info->keyname = fdt_getprop(fit, noffset, "key-name-hint", NULL);
