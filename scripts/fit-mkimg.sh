@@ -302,6 +302,7 @@ function fit_gen_uboot_itb()
 	fi
 
 	rm -f u-boot.itb u-boot.img u-boot-dtb.img
+	mv ${ITS_UBOOT} ${FIT_DIR}
 }
 
 function fit_gen_boot_itb()
@@ -389,6 +390,8 @@ function fit_gen_boot_itb()
 			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
 		fi
 	fi
+
+	mv ${ITS_BOOT} ${FIT_DIR}
 }
 
 function fit_gen_uboot_img()
