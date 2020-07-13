@@ -123,6 +123,7 @@ fi
 cat  << EOF
 			signature {
 				algo = "sha256,rsa2048";
+				padding = "pss";
 				key-name-hint = "dev";
 EOF
 
