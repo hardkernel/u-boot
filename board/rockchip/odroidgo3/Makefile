@@ -4,4 +4,4 @@
 # SPDX-License-Identifier:     GPL-2.0+
 #
 
-obj-y	+= odroidgo3.o
+obj-y	+= odroidgo3.o odroidgo3_power.o

@@ -11,6 +11,7 @@
 
 #define MIN_VOL_LEVEL	3500	/* 3.5V */
 
+#define PWR_LED_GPIO	18	/* GPIO0_C2 */
 #define DC_DET_GPIO	11	/* GPIO0_B3 */
 #define CHG_LED_GPIO	13	/* GPIO0_B5 */
 
@@ -22,11 +23,26 @@ void board_chg_led(void)
 	gpio_free(CHG_LED_GPIO);
 }
 
+void board_pwr_led(bool on)
+{
+	gpio_request(PWR_LED_GPIO, "pwr_led");
+	gpio_direction_output(PWR_LED_GPIO, on);
+	gpio_free(PWR_LED_GPIO);
+}
+
 int odroid_check_dcjack(void)
 {
 	gpio_request(DC_DET_GPIO, "dc_det_gpio");
 
-	return gpio_get_value(DC_DET_GPIO) ? 0 : -1;
+	if (gpio_get_value(DC_DET_GPIO)) {
+		debug("dc jack is connected\n");
+		board_pwr_led(1);
+		return 1;
+	} else {
+		debug("dc jack is NOT connected\n");
+		board_pwr_led(0);
+		return 0;
+	}
 }
 
 int odroid_check_battery(int *battery)
@@ -45,24 +61,28 @@ int odroid_check_battery(int *battery)
 
 	*battery = fuel_gauge_get_voltage(fg);
 
-	return *battery < MIN_VOL_LEVEL ? -1 : 0;
+	debug("BATTERY %d\n", *battery);
+
+	return *battery < MIN_VOL_LEVEL ? 0 : 1;
 }
 
 int board_check_power(void)
 {
 	int battery = 0;
+	int dcpower = 0;
 	char str[32];
 
 	board_chg_led();
 
-	if (odroid_check_battery(&battery) && odroid_check_dcjack()) {
-		debug("low battery (%d) without dc jack connected\n", battery);
-		sprintf(str, "voltage level : %d.%dV", (battery / 1000), (battery % 1000));
-		printf("%s - Low Battery!\n", __func__);
-		odroid_wait_pwrkey();
-		return -1;
-	}
+	dcpower = odroid_check_dcjack();
 
-	debug("power condition OK!\n");
-	return 0;
+	if (odroid_check_battery(&battery) || dcpower)
+		return 0;
+
+	debug("low battery (%d) without dc jack connected\n", battery);
+	sprintf(str, "voltage level : %d.%dV", (battery / 1000), (battery % 1000));
+	printf("%s - Low Battery!\n", __func__);
+	/* odroid_wait_pwrkey(); */
+
+	return -1;
 }

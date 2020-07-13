@@ -16,6 +16,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_check_power(void);
+
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 #define WIFI_EN_GPIO	110 /* GPIO3_B6 */
 
@@ -111,6 +113,10 @@ int rk_board_late_init(void)
 
 	/* set switch gpio */
 	board_init_switch_gpio();
+
+	/* check power */
+	if(board_check_power())
+		return 0;
 
 	/* display boot logo - TODO */
 
