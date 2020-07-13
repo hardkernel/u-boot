@@ -413,14 +413,17 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 	int conf_noffset;
 
 	conf_noffset = fit_conf_get_node(fit, NULL);
-	if (conf_noffset > 0) {
-		ret = fit_config_verify(fit, conf_noffset);
-		if (ret) {
-			printf("fit verify configure failed, ret=%d\n", ret);
-			return ret;
-		}
-		printf("\n");
+	if (conf_noffset <= 0) {
+		printf("No default config node\n");
+		return -EINVAL;
 	}
+
+	ret = fit_config_verify(fit, conf_noffset);
+	if (ret) {
+		printf("fit verify configure failed, ret=%d\n", ret);
+		return ret;
+	}
+	printf("\n");
 
 #ifdef CONFIG_SPL_FIT_ROLLBACK_PROTECT
 	uint32_t this_index, min_index;
