@@ -7,6 +7,8 @@
 #include <common.h>
 #include <rksfc.h>
 #include <fs.h>
+#include <rockchip_display_cmds.h>
+#include "odroidgo3_status.h"
 
 int recovery_check_mandatory_files(void)
 {
@@ -30,7 +32,7 @@ int board_check_recovery(void)
 	if (recovery_check_mandatory_files())
 		return -1;
 
-	printf("%s - Now start recovery!\n", __func__);
+	odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_ANYWHERE, NULL);
 
 	return 0;
 }
@@ -53,6 +55,8 @@ void board_odroid_recovery(void)
 	/* check spi flash */
 	if (rksfc_scan_namespace()) {
 		printf("spi flash probe fail!\n");
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_ANYWHERE,
+				"spi flash probe fail");
 		odroid_wait_pwrkey();
 	}
 
@@ -77,7 +81,7 @@ void board_odroid_recovery(void)
 
 		percentage = progress * 100 / filesize;
 		sprintf(str, "recovery progress :%3d %%", (int) percentage);
-		lcd_printf(0, 18, 1, "%s", str);
+		lcd_printf(0, 27, 1, "%s", str);
 
 		offs += unit;
 		addr += unit * 512;
@@ -85,7 +89,7 @@ void board_odroid_recovery(void)
 	}
 
 	sprintf(str, "recovery progress :%3d %%", (int) percentage);
-	lcd_printf(0, 18, 1, "%s", str);
+	lcd_printf(0, 27, 1, "%s", str);
 
 	/* readback & calculate md5sum */
 	run_command("rksfc read $loadaddr 0x0 $sz_total", 0);
@@ -99,6 +103,8 @@ void board_odroid_recovery(void)
 	ret = strncmp(md5sum_org, md5sum_readback, 32);
 	if (ret) {
 		printf("checksum fail! ret %d\n", ret);
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_ANYWHERE,
+				"checksum fail!");
 		odroid_wait_pwrkey();
 	}
 
@@ -118,7 +124,9 @@ void board_odroid_recovery(void)
 	/* recovery done */
 	loop = 3;
 	while (loop) {
-		printf("Recovery Done! system %s in %d sec\n", cmd, loop);
+		sprintf(str, "recovery done! system %s in %d sec", cmd, loop);
+		/* there is no vfat mbr in sd card now */
+		odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_ANYWHERE, str);
 		mdelay(1000);
 		loop--;
 	};

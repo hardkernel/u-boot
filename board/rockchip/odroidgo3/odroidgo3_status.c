@@ -8,15 +8,36 @@
 #include <key.h>
 #include <dm.h>
 #include <console.h>
+#include <rockchip_display_cmds.h>
 #include <asm/io.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
 #include <version.h>
+#include "odroidgo3_status.h"
 
 #define POWERDOWN_WAIT_TIME	10000
 #define LOOP_DELAY		25
 
 #define PMUGRF_BASE	0xFF010000
+
+static const char *st_logo_modes[] = {
+	"st_logo_hardkernel",
+	"st_logo_lowbatt",
+	"st_logo_recovery",
+	"st_logo_err",
+	"st_logo_nosdcard",
+};
+
+static const char *logo_bmp_names[] = {
+	"logo.bmp",
+	"low_battery.bmp",
+	"recovery.bmp",
+	"system_error.bmp",
+	"no_sdcard.bmp",
+};
+
+unsigned long bmp_mem;
+unsigned long bmp_copy;
 
 /*
  * When normal fdt logic doesn't work, this fnctio will show error leds
@@ -82,7 +103,98 @@ void odroid_wait_pwrkey(void)
 		delay -= LOOP_DELAY;
 	}
 
+	if (show_bmp(bmp_mem))
+		printf("[%s] show_bmp Fail!\n", __func__);
+
 	printf("power key long pressed...\n");
+	lcd_printf(0, 27, 1, "%s", "power off...");
 	mdelay(500);
 	run_command("poweroff", 0);
+}
+
+int odroid_display_status(int logo_mode, int logo_storage, const char *str)
+{
+	char cmd[128];
+
+	if (lcd_init()) {
+		printf("odroid lcd init fail!\n");
+		odroid_drop_errorlog("lcd init fail, check dtb file", 29);
+		odroid_alert_leds();
+		return -1;
+	}
+
+	/* draw logo bmp */
+	if (!bmp_mem) {
+		bmp_mem = lcd_get_mem();
+		bmp_copy = bmp_mem + LCD_LOGO_SIZE;
+	}
+
+	switch (logo_storage) {
+	case LOGO_STORAGE_SPIFLASH:
+		sprintf(cmd, "rksfc read %p %s %s", (void *)bmp_copy,
+			env_get(st_logo_modes[logo_mode]),
+			env_get("sz_logo"));
+		run_command(cmd, 0);
+
+		sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
+		run_command(cmd, 0);
+
+		if (show_bmp(bmp_mem))
+			printf("[%s] show_bmp Fail!\n", __func__);
+		break;
+	case LOGO_STORAGE_SDCARD:
+		sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
+			logo_bmp_names[logo_mode]);
+		run_command(cmd, 0);
+
+		if (show_bmp(bmp_mem))
+			printf("[%s] show_bmp Fail!\n", __func__);
+		break;
+	case LOGO_STORAGE_ANYWHERE:
+	default:
+		/* try spi flash first */
+		sprintf(cmd, "rksfc read %p %s %s", (void *)bmp_copy,
+			env_get(st_logo_modes[logo_mode]),
+			env_get("sz_logo"));
+		run_command(cmd, 0);
+
+		sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
+		run_command(cmd, 0);
+
+		if (show_bmp(bmp_mem)) {
+			/* then, check sd card */
+			sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
+				logo_bmp_names[logo_mode]);
+			run_command(cmd, 0);
+
+			if (show_bmp(bmp_mem))
+				printf("[%s] show_bmp Fail!\n", __func__);
+		}
+		break;
+	}
+
+	switch (logo_mode) {
+	case LOGO_MODE_SYSTEM_ERR:
+		lcd_setfg_color("white");
+		lcd_setbg_color("black");
+		break;
+	case LOGO_MODE_NO_SDCARD:
+		lcd_setfg_color("grey");
+		lcd_setbg_color("white");
+		lcd_printf(0, 28, 1, "U-BOOT (spinor) : %s %s", U_BOOT_DATE, U_BOOT_TIME);
+		lcd_setfg_color("black");
+		break;
+	case LOGO_MODE_LOW_BATT:
+	case LOGO_MODE_RECOVERY:
+	default:
+		lcd_setfg_color("black");
+		lcd_setbg_color("white");
+		break;
+	}
+
+	/* draw text */
+	if (str)
+		lcd_printf(0, 27, 1, "%s", str);
+
+	return 0;
 }

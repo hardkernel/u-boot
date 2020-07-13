@@ -37,10 +37,8 @@
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/vendor.h>
-#ifdef CONFIG_TARGET_ODROIDGO2
 #include <odroidgo2_status.h>
 extern int recovery_check_mandatory_files(void);
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -327,7 +325,6 @@ int init_kernel_dtb(void)
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 #ifdef CONFIG_PLATFORM_ODROID_GOADV
-#ifdef CONFIG_TARGET_ODROIDGO2
 		/* skip spi flash in case of recovery boot */
 		if (recovery_check_mandatory_files()) {
 			printf("dtb in resource read fail, try dtb in spi flash\n");
@@ -337,24 +334,20 @@ int init_kernel_dtb(void)
 			if (ret == CMD_RET_SUCCESS)
 				ret = check_fdt_header(fdt_addr);
 		}
-#endif
+
 		if (ret != CMD_RET_SUCCESS) {
 			printf("dtb in spi flash fail, try dtb in fat\n");
 			ret = run_command("fatload mmc 1:1 ${fdt_addr_r} ${dtb_name}", 0);
 			if (ret != CMD_RET_SUCCESS) {
 				printf("%s dtb in fat fs fail\n", __func__);
-#ifdef CONFIG_TARGET_ODROIDGO2
 				odroid_drop_errorlog("dtb load fail", 13);
 				odroid_alert_leds();
-#endif
 				return 0;
 			} else {
 				if (CMD_RET_SUCCESS != check_fdt_header(fdt_addr)) {
 					printf("%s dtb in fat fs fail\n", __func__);
-#ifdef CONFIG_TARGET_ODROIDGO2
 					odroid_drop_errorlog("dtb load fail", 13);
 					odroid_alert_leds();
-#endif
 					return 0;
 				}
 			}

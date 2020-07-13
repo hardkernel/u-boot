@@ -13,7 +13,7 @@
 #include <mapmem.h>
 #include <linux/kernel.h>
 #include <linux/sizes.h>
-#ifdef CONFIG_TARGET_ODROIDGO2
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
 #include <odroidgo2_status.h>
 #endif
 
@@ -141,7 +141,7 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	argc--; argv++;
 
 	if (booti_start(cmdtp, flag, argc, argv, &images))
-#ifdef CONFIG_TARGET_ODROIDGO2
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
 	{
 		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_SPIFLASH,
 				"booting fail! check kernel and dtb images!");

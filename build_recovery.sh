@@ -9,6 +9,12 @@ PWD=$(pwd)
 IMAGES=./tools/images/hardkernel
 OUT=./sd_fuse
 MNT=${PWD}/sd_fuse/mnt
+BOARD=$1
+
+if [ -z $1 ]; then
+        echo "Usage ./build_recovery.sh <board_name>"
+        exit 1
+fi
 
 pack_spi_full_image()
 {
@@ -17,14 +23,26 @@ pack_spi_full_image()
 	dd if=${OUT}/rk3326_header_miniloader_spiboot.img of=${OUT}/spi_recovery.img bs=512 seek=0 count=2048 conv=fsync,notrunc
 	dd if=${OUT}/uboot_spi.img of=${OUT}/spi_recovery.img bs=512 seek=2048 count=2048 conv=fsync,notrunc
 	dd if=${OUT}/trust_spi.img of=${OUT}/spi_recovery.img bs=512 seek=4096 count=4096 conv=fsync,notrunc
-	dd if=./arch/arm/dts/odroidgo2-kernel-v11.dtb of=${OUT}/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
 
+if [ ${BOARD} = "odroidgo3" ]; then
+	dd if=./arch/arm/dts/odroidgo3-kernel.dtb of=${OUT}/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
+else
+	dd if=./arch/arm/dts/odroidgo2-kernel-v11.dtb of=${OUT}/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
+fi
 	gzip -k -f ${IMAGES}/*.bmp
+if [ ${BOARD} = "odroidgo3" ]; then
+	dd if=${IMAGES}/logo_hardkernel_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
+	dd if=${IMAGES}/low_battery_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8792 conv=fsync,notrunc
+	dd if=${IMAGES}/recovery_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
+	dd if=${IMAGES}/system_error_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
+	dd if=${IMAGES}/no_sdcard_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc
+else
 	dd if=${IMAGES}/logo_hardkernel.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
 	dd if=${IMAGES}/low_battery.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8792 conv=fsync,notrunc
 	dd if=${IMAGES}/recovery.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
 	dd if=${IMAGES}/system_error.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
 	dd if=${IMAGES}/no_sdcard.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc
+fi
 	dd if=${IMAGES}/battery_0.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10392 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_1.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10792 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_2.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11192 conv=fsync,notrunc
@@ -46,12 +64,20 @@ pack_recovery_sdcard_img()
 
 	sudo mount ${OUT}/vfat.fs ${MNT}
 	sudo cp ${OUT}/spi_recovery.img* ${MNT}
+if [ ${BOARD} = "odroidgo3" ]; then
+	sudo cp ${IMAGES}/recovery_b.bmp ${MNT}/recovery.bmp
+	sudo cp ${IMAGES}/system_error_b.bmp ${MNT}/system_error.bmp
+	sudo cp ${IMAGES}/no_sdcard_b.bmp ${MNT}/no_sdcard.bmp
+	sudo cp ${IMAGES}/low_battery_b.bmp ${MNT}/low_battery.bmp
+	sudo cp ./arch/arm/dts/odroidgo3-kernel.dtb ${MNT}/rk3326-odroidgo3-linux-v10.dtb
+else
 	sudo cp ${IMAGES}/recovery.bmp ${MNT}
 	sudo cp ${IMAGES}/system_error.bmp ${MNT}
 	sudo cp ${IMAGES}/no_sdcard.bmp ${MNT}
 	sudo cp ${IMAGES}/low_battery.bmp ${MNT}
 	sudo cp ./arch/arm/dts/odroidgo2-kernel.dtb ${MNT}/rk3326-odroidgo2-linux.dtb
 	sudo cp ./arch/arm/dts/odroidgo2-kernel-v11.dtb ${MNT}/rk3326-odroidgo2-linux-v11.dtb
+fi
 	sync
 	sudo umount ${MNT}
 

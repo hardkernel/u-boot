@@ -15,9 +15,12 @@
 #include <version.h>
 
 #include <rockchip_display_cmds.h>
+#include "odroidgo3_status.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_check_recovery(void);
+extern void board_odroid_recovery(void);
 extern int board_check_power(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
@@ -102,6 +105,30 @@ void board_init_switch_gpio(void)
 	rk_clrsetreg(&grf->gpio3b_p, 0xC030, 0x4010);
 }
 
+void board_check_mandatory_files(void)
+{
+	/* check sd card existence */
+	if (CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
+		if(CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
+			odroid_display_status(LOGO_MODE_NO_SDCARD,
+				LOGO_STORAGE_ANYWHERE, NULL);
+			goto err;
+		}
+	}
+
+	/* check launcher in ext4 fs of sd card */
+	if (file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
+				FS_TYPE_EXT)) {
+		lcd_setfg_color("white");
+		lcd_printf(0, 0, 1, "[ GO Advanced EMULATION Image ]");
+	}
+
+	return;
+
+err:
+	odroid_wait_pwrkey();
+}
+
 int rk_board_late_init(void)
 {
 	/* turn on blue led */
@@ -120,11 +147,21 @@ int rk_board_late_init(void)
 	if(board_check_power())
 		return 0;
 
-	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
+	/* check recovery */
+	if (!board_check_recovery()) {
+		printf("Now start recovery mode\n");
+		board_odroid_recovery();
+		/* never get here */
+	}
+
+	/* show boot logo and version */
 	lcd_show_logo();
 	lcd_setfg_color("white");
 	lcd_printf(0, 27, 1, " %s", U_BOOT_VERSION);
 	lcd_printf(0, 28, 1, " %s %s", U_BOOT_DATE, U_BOOT_TIME);
+
+	/* check sd card and es launcher */
+	board_check_mandatory_files();
 
 	return 0;
 }
