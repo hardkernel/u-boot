@@ -94,6 +94,7 @@ cat << EOF
 			multi = "resource";
 			signature {
 				algo = "sha256,rsa2048";
+				padding = "pss";
 				key-name-hint = "dev";
 				sign-images = "fdt", "kernel", "ramdisk", "multi";
 			};
