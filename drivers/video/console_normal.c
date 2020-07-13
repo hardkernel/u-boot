@@ -14,7 +14,7 @@
 #include <video_console.h>
 #include <video_font.h>		/* Get font data, width and height */
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	#include <rockchip_display_cmds.h>
 #endif
 
@@ -47,7 +47,7 @@ static int console_normal_set_row(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 	case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 		struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
 		struct video_fb_bit *c = (struct video_fb_bit *)&clr;
 		if (!lcd_gettransp()) {
@@ -101,7 +101,7 @@ static int console_normal_putc_xy(struct udevice *dev, uint x_frac, uint y,
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
 	int i, row;
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	void *line = vid_priv->fb + y * vid_priv->line_length +
 		VID_TO_PIXEL(x_frac) * 3;
 #else
@@ -142,7 +142,7 @@ static int console_normal_putc_xy(struct udevice *dev, uint x_frac, uint y,
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *lfg, *lbg;
 			struct video_fb_bit *fg, *bg;
 			bool transp = lcd_gettransp();

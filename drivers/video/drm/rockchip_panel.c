@@ -252,6 +252,23 @@ static int rockchip_panel_send_dsi_cmds(struct mipi_dsi_device *dsi,
 
 		if (header->delay_ms)
 			mdelay(header->delay_ms);
+#if 0	// for lcd debug
+		{
+			int cnt, pos;
+			char *cmdp = (char *)desc->payload, cmdstr[256];
+
+			memset(cmdstr, 0x00, sizeof(cmdstr));
+
+			pos = sprintf(&cmdstr[0], "[cmd : %02X] ", cmdp[0]);
+
+			for(cnt = 1; cnt < header->payload_length; cnt++)
+				pos += sprintf(&cmdstr[pos], "%02X ", cmdp[cnt]);
+
+			pr_err("%s\n", cmdstr);
+			if (header->delay_ms)
+				pr_err("[delay(ms) : %d]\n", header->delay_ms);
+		}
+#endif
 	}
 
 	return 0;
@@ -268,7 +285,7 @@ static void panel_simple_prepare(struct rockchip_panel *panel)
 		return;
 
 	if (priv->power_supply) {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 		struct dm_regulator_uclass_platdata *uc_pdata;
 
 		uc_pdata = dev_get_uclass_platdata(priv->power_supply);

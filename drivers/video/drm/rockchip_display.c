@@ -158,7 +158,7 @@ static void *get_display_buffer(int size)
 	return buf;
 }
 
-#if !defined(CONFIG_TARGET_ODROIDGO2)
+#if !defined(CONFIG_PLATFORM_ODROID_GOADV)
 static unsigned long get_display_size(void)
 {
 	return memory_end - memory_start;
@@ -895,7 +895,7 @@ struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp)
 	return logo_cache;
 }
 
-#if !defined(CONFIG_TARGET_ODROIDGO2)
+#if !defined(CONFIG_PLATFORM_ODROID_GOADV)
 /* Note: used only for rkfb kernel driver */
 static int load_kernel_bmp_logo(struct logo_info *logo, const char *bmp_name)
 {
@@ -1419,7 +1419,7 @@ static int rockchip_display_probe(struct udevice *dev)
 	return 0;
 }
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 
 #include <rockchip_display_cmds.h>
 
@@ -1586,7 +1586,7 @@ static int do_rockchip_show_bmp(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 unsigned long get_drm_memory(void)
 {
 	return (memory_start - DRM_ROCKCHIP_FB_SIZE);

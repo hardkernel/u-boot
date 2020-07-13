@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------*/
 /*
-	ODROIDGO2 LCD control commands
+	ODROID-GOADV LCD control commands
 */
 /*----------------------------------------------------------------------------*/
 #include <asm/unaligned.h>
@@ -82,7 +82,6 @@ int lcd_init(void)
 
 	lcd->rot = lcd_getrot();
 	lcd->bpp = 24;
-	lcd->bgr = true;
 
 	lcd->w = lcd->s->conn_state.mode.hdisplay;
 	lcd->h = lcd->s->conn_state.mode.vdisplay;
@@ -91,7 +90,12 @@ int lcd_init(void)
 	lcd->drm_fb_size = (lcd->w * lcd->h * lcd->bpp) >> 3;
 
 	lcd->s->crtc_state.format  = ROCKCHIP_FMT_RGB888;
-	lcd->s->crtc_state.rb_swap = lcd->bgr;
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	lcd->s->crtc_state.rb_swap = true;
+#endif
+#if defined(CONFIG_TARGET_ODROIDGO3)
+	lcd->s->crtc_state.rb_swap = false;
+#endif
 	lcd->s->crtc_state.ymirror = 0;
 	lcd->s->crtc_state.src_w = lcd->s->crtc_state.crtc_w = lcd->w;
 	lcd->s->crtc_state.src_h = lcd->s->crtc_state.crtc_h = lcd->h;
@@ -325,14 +329,10 @@ int lcd_setfg(unsigned long r, unsigned long g, unsigned long b)
 	if (lcd == NULL)
 		return -ENODEV;
 
-	if (lcd->bgr) {
-		lcd->fg_color.r = (r > 255) ? 255 : r;
-		lcd->fg_color.b = (b > 255) ? 255 : b;
-	} else {
-		lcd->fg_color.r = (r > 255) ? 255 : r;
-		lcd->fg_color.b = (b > 255) ? 255 : b;
-	}
+	lcd->fg_color.r = (r > 255) ? 255 : r;
 	lcd->fg_color.g = (g > 255) ? 255 : g;
+	lcd->fg_color.b = (b > 255) ? 255 : b;
+
 	return 0;
 }
 
@@ -342,14 +342,10 @@ int lcd_setbg(unsigned long r, unsigned long g, unsigned long b)
 	if (lcd == NULL)
 		return -ENODEV;
 
-	if (lcd->bgr) {
-		lcd->bg_color.r = (r > 255) ? 255 : b;
-		lcd->bg_color.b = (b > 255) ? 255 : r;
-	} else {
-		lcd->bg_color.r = (r > 255) ? 255 : r;
-		lcd->bg_color.b = (b > 255) ? 255 : b;
-	}
+	lcd->bg_color.r = (r > 255) ? 255 : r;
 	lcd->bg_color.g = (g > 255) ? 255 : g;
+	lcd->bg_color.b = (b > 255) ? 255 : b;
+
 	return 0;
 }
 
@@ -443,6 +439,7 @@ int lcd_show_logo(void)
 	char *logo_fname;
 
 	if (lcd_init()) {
+		printf("%s : lcd init error!\n", __func__);
 		odroid_drop_errorlog("lcd init fail, check dtb file", 29);
 		odroid_alert_leds();
 		return -1;
@@ -561,7 +558,7 @@ static int do_lcd_cmds(cmd_tbl_t *cmdtp, int flag, int argc,
 
 /*----------------------------------------------------------------------------*/
 static char lcd_help_text[] = {
-	" - for odroidgo2 lcd control commands\n"
+	" - for odroid-goadv lcd control commands\n"
 	"init - lcd screen initialize.(default rotate = 3)\n"
 	"init <rot(0~3)> - lcd screen initialize & rotate(0-4).\n"
 	"clear - lcd screen clear(bg color), move cursor position to 0, 0\n"

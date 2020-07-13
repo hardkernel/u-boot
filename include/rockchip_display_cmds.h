@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------------*/
 /*
-	ODROIDGO2 LCD control commands
+	ODROID-GOADV LCD control commands
 */
 /*----------------------------------------------------------------------------*/
 #ifndef _ROCKCHIP_DISPLAY_CMDS_H_
@@ -26,10 +26,12 @@
 #define	DEFAULT_LCD_ROTATE	LCD_ROTATE_270
 
 /*----------------------------------------------------------------------------*/
-/* Max logo bmp file is 1M bytes, only support format is 320x480x24bpp bitmap */
+/* Max logo bmp file is 2M bytes */
+/* ODROID-GO2 320x480x24bpp bitmap, needs bytes = 460,800              */
+/* ODROID-GO3 480x854x24bpp bitmap, needs bytes = 1,229,760 > 1 Mbytes */
 /*----------------------------------------------------------------------------*/
 #define	LCD_LOGO_FILENAME	"logo.bmp"
-#define	LCD_LOGO_SIZE		(1024 * 1024)
+#define	LCD_LOGO_SIZE		(2 * 1024 * 1024)
 
 /*----------------------------------------------------------------------------*/
 /* LCD frame buffer is bgr format (24 bits) */
@@ -63,7 +65,7 @@ struct lcd {
 	struct lcd_fb_bit fg_color;
 	struct lcd_fb_bit bg_color;
 	unsigned char rot;
-	bool bgr;
+//	bool bgr;
 	bool transp;
 };
 

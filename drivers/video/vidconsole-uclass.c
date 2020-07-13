@@ -225,7 +225,7 @@ void vidconsole_position_cursor(struct udevice *dev, unsigned col, unsigned row)
 	struct udevice *vid_dev = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid_dev);
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	/*
 	 * In case of ROTATE clockwise and counter clockwise,
 	 * swap x/y size

@@ -19,7 +19,7 @@
 #ifdef CONFIG_SANDBOX
 #include <asm/sdl.h>
 #endif
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	#include <rockchip_display_cmds.h>
 #endif
 /*
@@ -204,7 +204,7 @@ static int video_post_probe(struct udevice *dev)
 
 	/* Set up the line and display size */
 	priv->fb = map_sysmem(plat->base, plat->size);
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	/* get lcd rotate */
 	priv->rot = lcd_getrot();
 

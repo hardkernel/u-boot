@@ -12,14 +12,14 @@
 #include <video_console.h>
 #include <video_font.h>		/* Get font data, width and height */
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	#include <rockchip_display_cmds.h>
 #endif
 
 static int console_set_row_1(struct udevice *dev, uint row, int clr)
 {
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -51,7 +51,7 @@ static int console_set_row_1(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
 			struct video_fb_bit *c = (struct video_fb_bit *)&clr;
 
@@ -93,7 +93,7 @@ static int console_move_rows_1(struct udevice *dev, uint rowdst, uint rowsrc,
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
 	void *dst;
 	void *src;
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -119,7 +119,7 @@ static int console_putc_xy_1(struct udevice *dev, uint x_frac, uint y, char ch)
 	struct vidconsole_priv *vc_priv = dev_get_uclass_priv(dev);
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -160,7 +160,7 @@ static int console_putc_xy_1(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *lfg, *lbg;
 			struct video_fb_bit *fg, *bg;
 			bool transp = lcd_gettransp();
@@ -248,7 +248,7 @@ static int console_set_row_2(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 	case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 		struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
 		struct video_fb_bit *c = (struct video_fb_bit *)&clr;
 
@@ -311,7 +311,7 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 	if (x_frac + VID_TO_POS(vc_priv->x_charsize) > vc_priv->xsize_frac)
 		return -EAGAIN;
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	line = vid_priv->fb + (vid_priv->ysize - y - 1) *
 			vid_priv->line_length +
 			(vid_priv->xsize - VID_TO_PIXEL(x_frac) -
@@ -353,7 +353,7 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *lfg, *lbg;
 			struct video_fb_bit *fg, *bg;
 			bool transp = lcd_gettransp();
@@ -414,7 +414,7 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 static int console_set_row_3(struct udevice *dev, uint row, int clr)
 {
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -445,7 +445,7 @@ static int console_set_row_3(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
 			struct video_fb_bit *c = (struct video_fb_bit *)&clr;
 
@@ -487,7 +487,7 @@ static int console_move_rows_3(struct udevice *dev, uint rowdst, uint rowsrc,
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
 	void *dst;
 	void *src;
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -511,7 +511,7 @@ static int console_putc_xy_3(struct udevice *dev, uint x_frac, uint y, char ch)
 	struct vidconsole_priv *vc_priv = dev_get_uclass_priv(dev);
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	int pbytes = 3;
 #else
 	int pbytes = VNBYTES(vid_priv->bpix);
@@ -552,7 +552,7 @@ static int console_putc_xy_3(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 			struct lcd_fb_bit *dst = line, *lfg, *lbg;
 			struct video_fb_bit *fg, *bg;
 			bool transp = lcd_gettransp();
