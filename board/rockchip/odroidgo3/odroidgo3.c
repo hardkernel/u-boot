@@ -14,6 +14,8 @@
 #include <fs.h>
 #include <version.h>
 
+#include <rockchip_display_cmds.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_check_power(void);
@@ -118,7 +120,11 @@ int rk_board_late_init(void)
 	if(board_check_power())
 		return 0;
 
-	/* display boot logo - TODO */
+	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
+	lcd_show_logo();
+	lcd_setfg_color("white");
+	lcd_printf(0, 27, 1, " %s", U_BOOT_VERSION);
+	lcd_printf(0, 28, 1, " %s %s", U_BOOT_DATE, U_BOOT_TIME);
 
 	return 0;
 }

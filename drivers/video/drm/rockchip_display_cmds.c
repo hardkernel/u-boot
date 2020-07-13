@@ -90,10 +90,9 @@ int lcd_init(void)
 	lcd->drm_fb_size = (lcd->w * lcd->h * lcd->bpp) >> 3;
 
 	lcd->s->crtc_state.format  = ROCKCHIP_FMT_RGB888;
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	lcd->s->crtc_state.rb_swap = true;
-#endif
-#if defined(CONFIG_TARGET_ODROIDGO3)
+#else
 	lcd->s->crtc_state.rb_swap = false;
 #endif
 	lcd->s->crtc_state.ymirror = 0;
@@ -403,13 +402,13 @@ int lcd_setfg_color(const char *color)
 int lcd_setbg_color(const char *color)
 {
 	if (!strcmp(color ,"red"))
-		lcd_setbg(0x00, 0x00, 0xff);
+		lcd_setbg(0xff, 0x00, 0x00);
 	if (!strcmp(color ,"green"))
 		lcd_setbg(0x00, 0xff, 0x00);
 	if (!strcmp(color ,"yellow"))
 		lcd_setbg(0xff, 0xff, 0x00);
 	if (!strcmp(color ,"blue"))
-		lcd_setbg(0xff, 0x00, 0x00);
+		lcd_setbg(0x00, 0x00, 0xff);
 	if (!strcmp(color ,"magenta"))
 		lcd_setbg(0xff, 0x00, 0xff);
 	if (!strcmp(color ,"cyan"))
@@ -440,8 +439,10 @@ int lcd_show_logo(void)
 
 	if (lcd_init()) {
 		printf("%s : lcd init error!\n", __func__);
+#if defined(CONFIG_TARGET_ODROIDGO2)
 		odroid_drop_errorlog("lcd init fail, check dtb file", 29);
 		odroid_alert_leds();
+#endif
 		return -1;
 	}
 
