@@ -177,6 +177,16 @@ function process_args()
 				shift 1
 				;;
 
+			--sz-trust)
+				ARG_TRUST_SIZE="--size $2 $3"
+				shift 3
+				;;
+
+			--sz-uboot)
+				ARG_UBOOT_SIZE="--size $2 $3"
+				shift 3
+				;;
+
 			--no-pack)
 				ARG_NO_PACK="y"
 				shift 1
@@ -442,6 +452,7 @@ function select_chip_info()
 	fi
 }
 
+# Priority: default < CHIP_CFG_FIXUP_TABLE() < make.sh args
 function fixup_platform_configure()
 {
 	u_kb="-" u_num="-" t_kb="-" t_num="-"  sha="-" rsa="-"
@@ -492,6 +503,15 @@ function fixup_platform_configure()
 	fi
 	if [ "${t_kb}" != "-" ]; then
 		PLATFORM_TRUST_SIZE="--size ${t_kb} ${t_num}"
+	fi
+
+	# args
+	if [ ! -z "${ARG_UBOOT_SIZE}" ]; then
+		PLATFORM_UBOOT_SIZE=${ARG_UBOOT_SIZE}
+	fi
+
+	if [ ! -z "${ARG_TRUST_SIZE}" ]; then
+		PLATFORM_TRUST_SIZE=${ARG_TRUST_SIZE}
 	fi
 }
 
