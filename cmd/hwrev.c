@@ -19,15 +19,20 @@ int do_hwrev(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return CMD_RET_FAILURE;
 	}
 
-	/* rev 1.1 */
+	/* GO2 rev 1.1 */
 	if (check_range(655, 695, hwrev_adc)) {
 		env_set("hwrev", "v11");
 		env_set("dtb_name", "rk3326-odroidgo2-linux-v11.dtb");
 	}
-	/* rev 1.0 */
+	/* GO2 rev 1.0 */
 	else if (check_range(816, 896, hwrev_adc)) {
 		env_set("hwrev", "v10");
 		env_set("dtb_name", "rk3326-odroidgo2-linux.dtb");
+	}
+	/* GO3 rev 1.0 */
+	else if (check_range(40, 126, hwrev_adc)) {
+		env_set("hwrev", "v10-go3");
+		env_set("dtb_name", "rk3326-odroidgo3-linux-v10.dtb");
 	}
 	/* engineer samples */
 	else {
