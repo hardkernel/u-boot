@@ -10,8 +10,8 @@
 #include <linux/types.h>
 
 static u16 LZ4_readLE16(const void *src) { return le16_to_cpu(*(u16 *)src); }
-static void LZ4_copy4(void *dst, const void *src) { *(u32 *)dst = *(u32 *)src; }
-static void LZ4_copy8(void *dst, const void *src) { *(u64 *)dst = *(u64 *)src; }
+static void LZ4_copy4(void *dst, const void *src) { memcpy(dst, src, 4); }
+static void LZ4_copy8(void *dst, const void *src) { memcpy(dst, src, 8); }
 
 typedef  uint8_t BYTE;
 typedef uint16_t U16;
