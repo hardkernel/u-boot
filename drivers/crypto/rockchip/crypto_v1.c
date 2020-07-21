@@ -162,6 +162,7 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
 static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 				      u8 *sign, u8 *output)
 {
@@ -213,7 +214,13 @@ static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 
 	return 0;
 }
-
+#else
+static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
+				      u8 *sign, u8 *output)
+{
+	return -ENOSYS;
+}
+#endif
 static const struct dm_crypto_ops rockchip_crypto_ops = {
 	.capability = rockchip_crypto_capability,
 	.sha_init   = rockchip_crypto_sha_init,

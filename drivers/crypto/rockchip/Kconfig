@@ -1,3 +1,19 @@
+config ROCKCHIP_RSA
+	bool "Enable rockchip RSA support"
+	depends on ROCKCHIP_CRYPTO_V1 || ROCKCHIP_CRYPTO_V2
+	default y
+	help
+	  This enable RSA512/RSA1024/RSA2048 algorithm support for
+	  rockchip crypto module.
+
+config SPL_ROCKCHIP_RSA
+	bool "Enable rockchip RSA support in spl"
+	depends on SPL_ROCKCHIP_CRYPTO_V1 || SPL_ROCKCHIP_CRYPTO_V2
+	default y
+	help
+	  This enable RSA512/RSA1024/RSA2048 algorithm support for
+	  rockchip crypto module.
+
 config ROCKCHIP_CRYPTO_V1
 	bool "Enable rockchip crypto v1 support"
 	depends on DM_CRYPTO

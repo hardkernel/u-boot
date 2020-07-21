@@ -545,6 +545,7 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 	return rk_hash_final(priv->hw_ctx, (u8 *)output, BITS2BYTE(nbits));
 }
 
+#if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
 static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 				      u8 *sign, u8 *output)
 {
@@ -607,6 +608,13 @@ exit:
 
 	return ret;
 }
+#else
+static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
+				      u8 *sign, u8 *output)
+{
+	return -ENOSYS;
+}
+#endif
 
 static int rockchip_crypto_get_trng(struct udevice *dev, u8 *output, u32 len)
 {
