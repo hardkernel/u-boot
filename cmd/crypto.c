@@ -90,6 +90,8 @@ __cacheline_aligned static u8 foo_data[] = {
 	0x20, 0x3b, 0x4e, 0x64, 0xff, 0xff, 0xff, 0xff,
 };
 
+#if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
+
 static u8 rsa2048_n[] = {
 	0xd5, 0xf2, 0xfc, 0xbb, 0x1a, 0x39, 0x61, 0xf5, 0x63, 0x7f, 0xa6, 0xeb,
 	0x5d, 0xc5, 0x22, 0xe2, 0x65, 0x03, 0xcc, 0x61, 0x92, 0x60, 0x4c, 0x5f,
@@ -193,6 +195,8 @@ static u8 rsa2048_sha256_sign[] = {
 	0x19, 0x9a, 0x1d, 0x32,
 };
 
+#endif
+
 static void dump_hash(const char *title, void *hard_d, void *soft_d, u32 nbits)
 {
 	int i, same;
@@ -278,7 +282,6 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	sha1_context sha1_ctx;
 	sha256_context sha256_ctx;
 	sha512_context sha512_ctx;
-	rsa_key rsa_key;
 	u8 hard_out[256];
 	u8 soft_out[64];
 	u32 cap;
@@ -360,8 +363,11 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			  crypto_algo_nbits(csha_ctx.algo));
 	}
 
+#if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
 	/* RSA2048-SHA256 */
 	if (cap & CRYPTO_RSA2048) {
+		rsa_key rsa_key;
+
 		memset(&rsa_key, 0x00, sizeof(rsa_key));
 		rsa_key.algo = CRYPTO_RSA2048;
 		rsa_key.n = (u32 *)&rsa2048_n;
@@ -378,6 +384,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		dump_hash("RSA2048-SHA256", hard_out,
 			  soft_out, crypto_algo_nbits(csha_ctx.algo));
 	}
+#endif
 
 	/* TRNG */
 	if (cap & CRYPTO_TRNG) {
