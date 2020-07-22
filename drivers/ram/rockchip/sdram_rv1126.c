@@ -1997,6 +1997,32 @@ static void set_ddrconfig(struct dram_info *dram, u32 ddrconfig)
 static void update_noc_timing(struct dram_info *dram,
 			      struct rv1126_sdram_params *sdram_params)
 {
+	void __iomem *pctl_base = dram->pctl;
+	u32 bw, bl;
+
+	bw = 8 << sdram_params->ch.cap_info.bw;
+	bl = ((readl(pctl_base + DDR_PCTL2_MSTR) >> 16) & 0xf) * 2;
+
+	/* update the noc timing related to data bus width */
+	if ((bw / 8 * bl) == 16)
+		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 0;
+	else if ((bw / 8 * bl) == 32)
+		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 1;
+	else if ((bw / 8 * bl) == 64)
+		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 2;
+	else
+		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 3;
+
+	sdram_params->ch.noc_timings.ddrtimingc0.b.burstpenalty =
+		(bw == 32) ? 2 : ((bw == 16) ? 4 : 8);
+
+	if (sdram_params->base.dramtype == LPDDR4) {
+		sdram_params->ch.noc_timings.ddrmode.b.mwrsize =
+			(bw == 16) ? 0x1 : 0x2;
+		sdram_params->ch.noc_timings.ddrtimingc0.b.wrtomwr =
+			3 * sdram_params->ch.noc_timings.ddrtimingc0.b.burstpenalty;
+	}
+
 	writel(sdram_params->ch.noc_timings.ddrtiminga0.d32,
 	       &dram->msch->ddrtiminga0);
 	writel(sdram_params->ch.noc_timings.ddrtimingb0.d32,
@@ -2772,6 +2798,7 @@ void ddr_set_rate(struct dram_info *dram,
 	lp_stat = low_power_update(dram, 0);
 	sdram_params_new = get_default_sdram_config(freq);
 	sdram_params_new->ch.cap_info.rank = sdram_params->ch.cap_info.rank;
+	sdram_params_new->ch.cap_info.bw = sdram_params->ch.cap_info.bw;
 
 	pre_set_rate(dram, sdram_params_new, dst_fsp, dst_fsp_lp4);
 
