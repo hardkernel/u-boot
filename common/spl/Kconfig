@@ -207,6 +207,11 @@ config SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_TYPE
 	  Partition Type on the MMC to load U-Boot from, when the MMC is being
 	  used in raw mode.
 
+config SPL_MISC_SECTOR
+	hex "Sector address to load misc in SPL"
+	depends on !SPL_LIBDISK_SUPPORT && SPL_FIT_LOAD_KERNEL
+	default 0x8000
+
 config SPL_CRC32_SUPPORT
 	bool "Support CRC32"
 	depends on SPL_FIT

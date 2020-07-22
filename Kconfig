@@ -362,6 +362,16 @@ config SPL_SYS_DCACHE_OFF
 	  Disable SPL dcache. Please make sure CONFIG_SPL_SYS_MALLOC_F_LEN
 	  is large enough to malloc TLB and bd_t buffer while enabling dcache.
 
+config SPL_FIT_LOAD_KERNEL
+	bool "Support load kernel FIT in SPL"
+	help
+	  Support load kernel FIT in SPL accordding to platform selection.
+
+config SPL_FIT_LOAD_KERNEL_SECTOR
+	hex "Sector address to load kernel in SPL"
+	depends on !SPL_LIBDISK_SUPPORT && SPL_FIT_LOAD_KERNEL
+	default 0xa000
+
 endif # SPL
 
 endif # FIT
