@@ -15,6 +15,8 @@
 #include <dm/device-internal.h>
 
 #define MTD_PART_NAND_HEAD		"mtdparts="
+#define MTD_ROOT_PART_NUM		"ubi.mtd="
+#define MTD_ROOT_PART_NAME		"root=ubi0:rootfs"
 #define MTD_PART_INFO_MAX_SIZE		512
 #define MTD_SINGLE_PART_INFO_MAX_SIZE	40
 
@@ -268,6 +270,7 @@ char *mtd_part_parse(void)
 {
 	char mtd_part_info_temp[MTD_SINGLE_PART_INFO_MAX_SIZE] = {0};
 	u32 length, data_len = MTD_PART_INFO_MAX_SIZE;
+	char mtd_root_part_info[30] = {0};
 	struct blk_desc *dev_desc;
 	disk_partition_t info;
 	char *mtd_part_info_p;
@@ -283,6 +286,12 @@ char *mtd_part_parse(void)
 	mtd = (struct mtd_info *)dev_desc->bdev->priv;
 	if (!mtd)
 		return NULL;
+
+	p = part_get_info_by_name(dev_desc, PART_SYSTEM, &info);
+	if (p > 0) {
+		snprintf(mtd_root_part_info, 30, "%s%d %s", MTD_ROOT_PART_NUM, p - 1, MTD_ROOT_PART_NAME);
+		env_update("bootargs", mtd_root_part_info);
+	}
 
 	mtd_part_info = (char *)calloc(MTD_PART_INFO_MAX_SIZE, sizeof(char));
 	if (!mtd_part_info) {
