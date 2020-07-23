@@ -434,10 +434,10 @@ static ulong px30_i2s_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 		con = readl(&cru->clksel_con[30]);
 		fracdiv = readl(&cru->clksel_con[31]);
 		gate = readl(&cru->clkgate_con[10]);
-		m = fracdiv & CLK_I2S1_FRAC_NUMERATOR_MASK;
-		m >>= CLK_I2S1_FRAC_NUMERATOR_SHIFT;
-		n = fracdiv & CLK_I2S1_FRAC_DENOMINATOR_MASK;
-		n >>= CLK_I2S1_FRAC_DENOMINATOR_SHIFT;
+		n = fracdiv & CLK_I2S1_FRAC_NUMERATOR_MASK;
+		n >>= CLK_I2S1_FRAC_NUMERATOR_SHIFT;
+		m = fracdiv & CLK_I2S1_FRAC_DENOMINATOR_MASK;
+		m >>= CLK_I2S1_FRAC_DENOMINATOR_SHIFT;
 		debug("con30: 0x%x, gate: 0x%x, frac: 0x%x\n",
 		      con, gate, fracdiv);
 		break;
