@@ -346,16 +346,6 @@ static void rkclk_configure_ddr(struct dram_info *dram,
 	rkclk_set_dpll(dram, sdram_params->base.ddr_freq * MHZ / 2);
 }
 
-static void phy_soft_reset(struct dram_info *dram)
-{
-	void __iomem *phy_base = dram->phy;
-
-	clrbits_le32(PHY_REG(phy_base, 0), 0x3 << 2);
-	udelay(1);
-	setbits_le32(PHY_REG(phy_base, 0), ANALOG_DERESET | DIGITAL_DERESET);
-	udelay(1);
-}
-
 static unsigned int
 	calculate_ddrconfig(struct rv1126_sdram_params *sdram_params)
 {
@@ -2271,8 +2261,6 @@ static u64 dram_detect_cap(struct dram_info *dram,
 
 	if (dram_type != LPDDR4) {
 		setbits_le32(PHY_REG(phy_base, 0xf), 0xf);
-
-		phy_soft_reset(dram);
 
 		if (data_training(dram, 0, sdram_params, 0,
 				  READ_GATE_TRAINING) == 0)
