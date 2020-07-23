@@ -72,13 +72,13 @@ int rockchip_get_boot_mode(void)
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("%s: dev_desc is NULL!\n", __func__);
+		printf("dev_desc is NULL!\n");
 		return -ENODEV;
 	}
 
 	ret = part_get_info_by_name(dev_desc, PART_MISC, &part_info);
 	if (ret < 0) {
-		printf("%s: Could not found misc partition\n", __func__);
+		printf("No misc partition\n");
 		goto fallback;
 	}
 
