@@ -2770,7 +2770,7 @@ void ddr_set_rate(struct dram_info *dram,
 
 	writel(PMUGRF_CON_DDRPHY_BUFFEREN_MASK |
 	       PMUGRF_CON_DDRPHY_BUFFEREN_EN,
-	       dram->pmugrf->soc_con[0]);
+	       &dram->pmugrf->soc_con[0]);
 	sw_set_req(dram);
 	clrbits_le32(pctl_base + DDR_PCTL2_DFIMISC,
 		     PCTL2_DFI_INIT_COMPLETE_EN);
@@ -2789,7 +2789,7 @@ void ddr_set_rate(struct dram_info *dram,
 	sw_set_ack(dram);
 
 	writel(DDR_MSCH_EN_MASK | (0x1 << DDR_MSCH_EN_SHIFT),
-	       dram->cru->clkgate_con[2]);
+	       &dram->cru->clkgate_con[21]);
 	writel(CLK_DDR_UPCTL_EN_MASK | ACLK_DDR_UPCTL_EN_MASK |
 					(0x1 << CLK_DDR_UPCTL_EN_SHIFT) |
 					(0x1 << ACLK_DDR_UPCTL_EN_SHIFT),
@@ -2803,9 +2803,9 @@ void ddr_set_rate(struct dram_info *dram,
 
 	writel(PMUGRF_CON_DDRPHY_BUFFEREN_MASK |
 			PMUGRF_CON_DDRPHY_BUFFEREN_DIS,
-			dram->pmugrf->soc_con[0]);
+			&dram->pmugrf->soc_con[0]);
 	writel(DDR_MSCH_EN_MASK | (0x0 << DDR_MSCH_EN_SHIFT),
-	       dram->cru->clkgate_con[2]);
+	       &dram->cru->clkgate_con[21]);
 	writel(CLK_DDR_UPCTL_EN_MASK | ACLK_DDR_UPCTL_EN_MASK |
 					(0x0 << CLK_DDR_UPCTL_EN_SHIFT) |
 					(0x0 << ACLK_DDR_UPCTL_EN_SHIFT),
