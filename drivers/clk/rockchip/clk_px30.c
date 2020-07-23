@@ -482,6 +482,39 @@ static ulong px30_i2s_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	return px30_i2s_get_clk(priv, clk_id);
 }
 
+static ulong px30_i2s1_mclk_get_clk(struct px30_clk_priv *priv, ulong clk_id)
+{
+	struct px30_cru *cru = priv->cru;
+	u32 con;
+
+	con = readl(&cru->clksel_con[30]);
+
+	if (con & CLK_I2S1_OUT_SEL_MASK)
+		return 12000000;
+
+	return px30_i2s_get_clk(priv, SCLK_I2S1);
+}
+
+static ulong px30_i2s1_mclk_set_clk(struct px30_clk_priv *priv, ulong clk_id,
+				    ulong hz)
+{
+	struct px30_cru *cru = priv->cru;
+
+	if (hz == 12000000) {
+		rk_clrsetreg(&cru->clksel_con[30], CLK_I2S1_OUT_SEL_MASK,
+			     CLK_I2S1_OUT_SEL_OSC);
+	} else {
+		rk_clrsetreg(&cru->clksel_con[30], CLK_I2S1_OUT_SEL_MASK,
+			     CLK_I2S1_OUT_SEL_I2S1);
+		px30_i2s_set_clk(priv, SCLK_I2S1, hz);
+	}
+
+	rk_clrsetreg(&cru->clkgate_con[10], CLK_I2S1_OUT_MCLK_PAD_MASK,
+		     CLK_I2S1_OUT_MCLK_PAD_ENABLE);
+
+	return px30_i2s1_mclk_get_clk(priv, clk_id);
+}
+
 static ulong px30_nandc_get_clk(struct px30_clk_priv *priv)
 {
 	struct px30_cru *cru = priv->cru;
@@ -1051,37 +1084,6 @@ static ulong px30_crypto_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	return px30_crypto_get_clk(priv, clk_id);
 }
 
-static ulong px30_i2s1_mclk_get_clk(struct px30_clk_priv *priv, ulong clk_id)
-{
-	struct px30_cru *cru = priv->cru;
-	u32 con;
-
-	con = readl(&cru->clksel_con[30]);
-
-	if (!(con & CLK_I2S1_OUT_SEL_MASK))
-		return -ENOENT;
-
-	return 12000000;
-}
-
-static ulong px30_i2s1_mclk_set_clk(struct px30_clk_priv *priv, ulong clk_id,
-				    ulong hz)
-{
-	struct px30_cru *cru = priv->cru;
-
-	if (hz != 12000000) {
-		printf("do not support this i2s1_mclk freq\n");
-		return -EINVAL;
-	}
-
-	rk_clrsetreg(&cru->clksel_con[30], CLK_I2S1_OUT_SEL_MASK,
-		     CLK_I2S1_OUT_SEL_OSC);
-	rk_clrsetreg(&cru->clkgate_con[10], CLK_I2S1_OUT_MCLK_PAD_MASK,
-		     CLK_I2S1_OUT_MCLK_PAD_ENABLE);
-
-	return px30_i2s1_mclk_get_clk(priv, clk_id);
-}
-
 static ulong px30_mac_set_clk(struct clk *clk, uint hz)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -1253,6 +1255,9 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case SCLK_I2S1:
 		rate = px30_i2s_get_clk(priv, clk->id);
 		break;
+	case SCLK_I2S1_OUT:
+		rate = px30_i2s1_mclk_get_clk(priv, clk->id);
+		break;
 	case SCLK_PWM0:
 	case SCLK_PWM1:
 		rate = px30_pwm_get_clk(priv, clk->id);
@@ -1334,6 +1339,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_I2S1:
 		ret = px30_i2s_set_clk(priv, clk->id, rate);
 		break;
+	case SCLK_I2S1_OUT:
+		ret = px30_i2s1_mclk_set_clk(priv, clk->id, rate);
+		break;
 	case SCLK_PWM0:
 	case SCLK_PWM1:
 		ret = px30_pwm_set_clk(priv, clk->id, rate);
@@ -1367,9 +1375,6 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_CRYPTO:
 	case SCLK_CRYPTO_APK:
 		ret = px30_crypto_set_clk(priv, clk->id, rate);
-		break;
-	case SCLK_I2S1_OUT:
-		ret = px30_i2s1_mclk_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_GMAC:
 	case SCLK_GMAC_SRC:
