@@ -1250,6 +1250,29 @@ void send_a_refresh(struct dram_info *dram)
 	writel(0x3, pctl_base + DDR_PCTL2_DBGCMD);
 }
 
+static void enter_sr(struct dram_info *dram, u32 en)
+{
+	void __iomem *pctl_base = dram->pctl;
+
+	if (en) {
+		setbits_le32(pctl_base + DDR_PCTL2_PWRCTL, PCTL2_SELFREF_SW);
+		while (1) {
+			if (((readl(pctl_base + DDR_PCTL2_STAT) &
+			      PCTL2_SELFREF_TYPE_MASK) ==
+			     PCTL2_SELFREF_TYPE_SR_NOT_AUTO) &&
+			    ((readl(pctl_base + DDR_PCTL2_STAT) &
+			      PCTL2_OPERATING_MODE_MASK) ==
+			     PCTL2_OPERATING_MODE_SR))
+				break;
+		}
+	} else {
+		clrbits_le32(pctl_base + DDR_PCTL2_PWRCTL, PCTL2_SELFREF_SW);
+		while ((readl(pctl_base + DDR_PCTL2_STAT) &
+		       PCTL2_OPERATING_MODE_MASK) == PCTL2_OPERATING_MODE_SR)
+			continue;
+	}
+}
+
 void record_dq_prebit(struct dram_info *dram)
 {
 	u32 group, i, tmp;
@@ -1316,6 +1339,7 @@ static void modify_ca_deskew(struct dram_info *dram, u32 dir, int delta_dif,
 {
 	void __iomem *phy_base = dram->phy;
 	u32 i, cs_en, tmp;
+	u32 dfi_lp_stat = 0;
 
 	if (cs == 0)
 		cs_en = 1;
@@ -1323,6 +1347,13 @@ static void modify_ca_deskew(struct dram_info *dram, u32 dir, int delta_dif,
 		cs_en = 2;
 	else
 		cs_en = 3;
+
+	if (dramtype == LPDDR4 &&
+	    ((readl(PHY_REG(phy_base, 0x60)) & BIT(5)) == 0)) {
+		dfi_lp_stat = 1;
+		setbits_le32(PHY_REG(phy_base, 0x60), BIT(5));
+	}
+	enter_sr(dram, 1);
 
 	for (i = 0; i < 0x20; i++) {
 		if (dir == DESKEW_MDF_ABS_VAL)
@@ -1347,6 +1378,11 @@ static void modify_ca_deskew(struct dram_info *dram, u32 dir, int delta_dif,
 		clrbits_le32(PHY_REG(phy_base, 0x10), cs_en << 6);
 		update_ca_prebit(dram);
 	}
+	enter_sr(dram, 0);
+
+	if (dfi_lp_stat)
+		clrbits_le32(PHY_REG(phy_base, 0x60), BIT(5));
+
 }
 
 static u32 get_min_value(struct dram_info *dram, u32 signal, u32 rank)
@@ -2746,17 +2782,7 @@ void ddr_set_rate(struct dram_info *dram,
 		     PCTL2_DIS_AUTO_REFRESH);
 	update_refresh_reg(dram);
 
-	setbits_le32(pctl_base + DDR_PCTL2_PWRCTL, PCTL2_SELFREF_SW);
-	while (1) {
-		if (((readl(pctl_base + DDR_PCTL2_STAT) &
-		      PCTL2_SELFREF_TYPE_MASK) ==
-		     PCTL2_SELFREF_TYPE_SR_NOT_AUTO) &&
-		    ((readl(pctl_base + DDR_PCTL2_STAT) &
-		      PCTL2_OPERATING_MODE_MASK) ==
-		     PCTL2_OPERATING_MODE_SR)) {
-			break;
-		}
-	}
+	enter_sr(dram, 1);
 
 	writel(PMUGRF_CON_DDRPHY_BUFFEREN_MASK |
 	       PMUGRF_CON_DDRPHY_BUFFEREN_EN,
@@ -2811,10 +2837,7 @@ void ddr_set_rate(struct dram_info *dram,
 	update_refresh_reg(dram);
 	clrsetbits_le32(PHY_REG(phy_base, 0xc), 0x3 << 2, dst_fsp << 2);
 
-	clrbits_le32(pctl_base + DDR_PCTL2_PWRCTL, PCTL2_SELFREF_SW);
-	while ((readl(pctl_base + DDR_PCTL2_STAT) &
-	       PCTL2_OPERATING_MODE_MASK) == PCTL2_OPERATING_MODE_SR)
-		continue;
+	enter_sr(dram, 0);
 
 	setbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
 	clrbits_le32(PHY_REG(phy_base, 0x71), 1 << 5);
@@ -2876,12 +2899,12 @@ void ddr_set_rate(struct dram_info *dram,
 			       PCTL2_MR_MASK) & (~(BIT(7)))) |
 			      dst_fsp_lp4 << 7, dramtype);
 	}
+	clrbits_le32(pctl_base + DDR_PCTL2_RFSHCTL3,
+		     PCTL2_DIS_AUTO_REFRESH);
+	update_refresh_reg(dram);
 
 	/* training */
 	high_freq_training(dram, sdram_params_new, dst_fsp);
-
-	clrbits_le32(pctl_base + DDR_PCTL2_RFSHCTL3,
-		     PCTL2_DIS_AUTO_REFRESH);
 	low_power_update(dram, lp_stat);
 
 	save_fsp_param(dram, dst_fsp, sdram_params_new);
