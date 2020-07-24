@@ -115,7 +115,7 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT)) {
 		header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
 					 sizeof(struct image_header));
-		ret = blk_dread(desc, CONFIG_SYS_NAND_U_BOOT_OFFS, 1, header);
+		ret = blk_dread(desc, CONFIG_MTD_BLK_U_BOOT_OFFS, 1, header);
 		if (ret != 1)
 			return -ENODEV;
 
@@ -134,7 +134,7 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 			load.read = mtd_spl_load_read;
 
 			ret = spl_load_simple_fit(spl_image, &load,
-						  CONFIG_SYS_NAND_U_BOOT_OFFS,
+						  CONFIG_MTD_BLK_U_BOOT_OFFS,
 						  header);
 		}
 	}
