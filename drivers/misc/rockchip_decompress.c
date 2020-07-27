@@ -8,6 +8,7 @@
 #include <linux/bitops.h>
 #include <misc.h>
 #include <irq-generic.h>
+#include <reset.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -80,8 +81,8 @@ DECLARE_GLOBAL_DATA_PTR;
 	HDEIEN | DSIEN)
 
 struct rockchip_decom_priv {
+	struct reset_ctl rst;
 	void __iomem *base;
-	unsigned long soft_reset_base;
 	bool idle_check_once;
 	bool done;
 	int cached; /* 1: access the data through dcache; 0: no dcache */
@@ -95,6 +96,11 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	unsigned int limit_hi = param->size_src >> 32;
 	ulong align_input, align_len;
 
+#if CONFIG_IS_ENABLED(DM_RESET)
+	reset_assert(&priv->rst);
+	udelay(10);
+	reset_deassert(&priv->rst);
+#endif
 	if (!priv->cached) {
 		/* src: make sure we get the real compressed data from ddr */
 		align_input =
@@ -118,9 +124,6 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	}
 
 	priv->done = false;
-
-	writel(0x00800080, priv->soft_reset_base);
-	writel(0x00800000, priv->soft_reset_base);
 
 	if (param->mode == DECOM_LZ4)
 		writel(LZ4_CONT_CSUM_CHECK_EN |
@@ -233,14 +236,22 @@ static int rockchip_decom_ofdata_to_platdata(struct udevice *dev)
 		return -ENOENT;
 
 	priv->cached = dev_read_u32_default(dev, "data-cached", 0);
-	priv->soft_reset_base = dev_read_u32_default(dev, "soft-reset-addr", 0)
-					& 0xffffffff;
 
 	return 0;
 }
 
 static int rockchip_decom_probe(struct udevice *dev)
 {
+#if CONFIG_IS_ENABLED(DM_RESET)
+	struct rockchip_decom_priv *priv = dev_get_priv(dev);
+	int ret;
+
+	ret = reset_get_by_name(dev, "dresetn", &priv->rst);
+	if (ret) {
+		debug("reset_get_by_name() failed: %d\n", ret);
+		return ret;
+	}
+#endif
 	return 0;
 }
 
