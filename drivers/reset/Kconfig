@@ -12,6 +12,18 @@ config DM_RESET
 	  although driving such reset isgnals using GPIOs may be more
 	  appropriate in this case.
 
+config SPL_DM_RESET
+        bool "Enable reset controllers using Driver Model in SPL"
+        depends on SPL_DM && OF_CONTROL
+        help
+          Enable support for the reset controller driver class. Many hardware
+          modules are equipped with a reset signal, typically driven by some
+          reset controller hardware module within the chip. In U-Boot, reset
+          controller drivers allow control over these reset signals. In some
+          cases this API is applicable to chips outside the CPU as well,
+          although driving such reset isgnals using GPIOs may be more
+          appropriate in this case.
+
 config SANDBOX_RESET
 	bool "Enable the sandbox reset test driver"
 	depends on DM_MAILBOX && SANDBOX
@@ -75,4 +87,10 @@ config RESET_ROCKCHIP
 	  Support for reset controller on rockchip SoC. The main limitation though
 	  is that some reset signals, like I2C or MISC reset multiple devices.
 
+config SPL_RESET_ROCKCHIP
+        bool "Reset controller driver for Rockchip SoCs in SPL"
+        depends on SPL_DM_RESET && SPL_CLK
+        help
+          Support for reset controller on rockchip SoC. The main limitation though
+          is that some reset signals, like I2C or MISC reset multiple devices.
 endmenu
