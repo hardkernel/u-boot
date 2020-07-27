@@ -261,12 +261,12 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 	if (!fit_image_verify_with_data(fit, node,
 					 src, length))
 		return -EPERM;
-	puts("OK\n");
 
 #ifdef CONFIG_SPL_FIT_IMAGE_POST_PROCESS
 	board_fit_image_post_process(fit, node, (ulong *)&load_addr,
 				     (ulong **)&src, &length);
 #endif
+	puts("OK\n");
 
 	if (IS_ENABLED(CONFIG_SPL_OS_BOOT)	&&
 	    IS_ENABLED(CONFIG_SPL_GZIP)		&&
