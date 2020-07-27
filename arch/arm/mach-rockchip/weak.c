@@ -22,6 +22,27 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
+
+#define FIT_UNCOMP_HASH_NODENAME	"digest"
+static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
+				       const void *data, size_t size)
+{
+	const char *name;
+	char *err_msgp;
+	int noffset;
+
+	fdt_for_each_subnode(noffset, fit, parent_noffset) {
+		name = fit_get_name(fit, noffset, NULL);
+		if (!strncmp(name, FIT_UNCOMP_HASH_NODENAME,
+			     strlen(FIT_UNCOMP_HASH_NODENAME))) {
+			return fit_image_check_hash(fit, noffset, data,
+						    size, &err_msgp);
+		}
+	}
+
+	return 0;
+}
+
 static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
 			 ulong **src_addr, size_t *src_len)
 {
@@ -49,6 +70,13 @@ static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
 		       fdt_get_name(fit, node, NULL), ret);
 		return ret;
 	}
+
+	/* check uncompressed data hash */
+	ret = fit_image_check_uncomp_hash(fit, node, (void *)(*load_addr), len);
+	if (!ret)
+		puts("+ ");
+	else
+		return ret;
 
 	*src_addr = (ulong *)*load_addr;
 	*src_len = len;
