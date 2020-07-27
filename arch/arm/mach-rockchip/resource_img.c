@@ -184,6 +184,7 @@ static int replace_resource_entry(const char *f_name, uint32_t base,
 	strcpy(entry->name, f_name);
 	entry->f_offset = f_offset;
 	entry->f_size = f_size;
+	entry->hash_size = 0;
 
 	/* Delete exist entry, then add this new */
 	list_for_each(node, &entrys_head) {
