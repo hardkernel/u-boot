@@ -8,11 +8,16 @@
 # Process args and auto set variables
 source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
 
+rm -f ${srctree}/mcu.digest ${srctree}/u-boot-nodtb.digest ${srctree}/tee.digest
+
 if [ "${COMPRESSION}" == "gzip" ]; then
+	openssl dgst -sha256 -binary -out ${srctree}/u-boot-nodtb.digest ${srctree}/u-boot-nodtb.bin
+	openssl dgst -sha256 -binary -out ${srctree}/tee.digest ${srctree}/tee.bin
 	gzip -k -f -9 ${srctree}/u-boot-nodtb.bin
 	gzip -k -f -9 ${srctree}/tee.bin
 	SUFFIX=".gz"
 else
+	touch ${srctree}/u-boot-nodtb.digest ${srctree}/tee.digest
 	COMPRESSION="none"
 	SUFFIX=
 fi
@@ -20,6 +25,7 @@ fi
 # mcu
 if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 	if [ "${COMPRESSION}" == "gzip" ]; then
+		openssl dgst -sha256 -binary -out ${srctree}/mcu.digest ${srctree}/mcu.bin
 		gzip -k -f -9 ${srctree}/mcu.bin
 	fi
 fi
@@ -54,6 +60,10 @@ cat << EOF
 			hash {
 				algo = "sha256";
 			};
+			digest { /* uncompressed data hash */
+				value = /incbin/("./u-boot-nodtb.digest");
+				algo = "sha256";
+			};
 		};
 		optee {
 			description = "OP-TEE";
@@ -69,6 +79,10 @@ echo "			compression = \"${COMPRESSION}\";"
 
 cat << EOF
 			hash {
+				algo = "sha256";
+			};
+			digest {
+				value = /incbin/("./tee.digest");
 				algo = "sha256";
 			};
 		};
@@ -97,6 +111,10 @@ echo "			load = <0x"${MCU_LOAD_ADDR}">;"
 
 cat  << EOF
 			hash {
+				algo = "sha256";
+			};
+			digest {
+				value = /incbin/("./mcu.digest");
 				algo = "sha256";
 			};
 		};
