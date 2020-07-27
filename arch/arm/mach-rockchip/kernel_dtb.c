@@ -182,7 +182,7 @@ static int phandles_fixup_gpio(const void *fdt, void *ufdt)
 		if (!name)
 			continue;
 
-		for (i = 0; i < ARRAY_SIZE(gpio_name[i]); i++) {
+		for (i = 0; i < ARRAY_SIZE(gpio_name); i++) {
 			if (gpio_name[i] && !strcmp(name, gpio_name[i])) {
 				new_phd = fdt_get_phandle(fdt, gpio_off[i]);
 				dev_write_u32_array(dev, prop, &new_phd, 1);
