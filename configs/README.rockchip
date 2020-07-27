@@ -12,8 +12,6 @@ All platform defconfigs of Rockchip SDK
 	|-----------------------|-----------------------------|
 	|    rv1126             |    rv1126_defconfig         |
 	|-----------------------|-----------------------------|
-	|    rv1109             |    rv1109.config            |
-	|-----------------------|-----------------------------|
 	|    rk1806             |    rk1806_defconfig         |
 	|-----------------------|-----------------------------|
 	|    rk1808             |    rk1808_defconfig         |
@@ -53,68 +51,36 @@ All platform defconfigs of Rockchip SDK
 	There is BASE_DEFCONFIG configure to indicate the base defconfig of it.
 
 	Usage example:
-		./make.sh rv1109
+		./make.sh rv1126-emmc-tb
 
-		It equals: make rv1126_defconfig rv1109.config && make.
+		It equals: make rv1126_defconfig rv1126-emmc-tb.config && make.
 
 
-All rv1126 & rv1109 defconfigs
+All rv1126 defconfigs
 ==============================
 
 	rv1126_defconfig
 	----------------
-			It provides the full features that what we want on rv1126.
+		Full features on rv1126.
+
+	rv1126-spi-nor-tiny_defconfig
+	-----------------------------
+		Tiny SPL & U-Boot image size with gzip compressed on SPI Nor board.
 
 	rv1126-emmc-tb.config
 	---------------------
-			It provides the thunder boot feature on eMMC board of rv1126.
-			"tb": thunder-boot.
+		Thunder boot feature on eMMC board.
 
 	rv1126-spi-nor-tb.config
 	------------------------
-			Similar to rv1126-emmc-tb.config, it provides the thunder boot feature on spi nor
-			board of rv1126.
+		Thunder boot feature on SPI Nor board.
 
 	rv1126-usbplug.config
 	---------------------
-			It provides the open source usbplug support by U-Boot project.
-
-			There is ./usbplug.bin after compilation, that can be used to replace the usbplug
-			file in the rkbin project.
+		Open source version of UsbPlug supported in U-Boot project.
+		There is a ./usbplug.bin after compilation to replace the usbplug in rkbin project.
 
 	rv1126-ramboot.config
 	---------------------
-			It provides the ram boot features on rv1126, only U-Boot proper is build.
-
-	rv1126-mini-template_defconfig
-	------------------------------
-			It provides a template to generate <u-boot.bin> with small size for eMMC board with
-			some basic features, developer is easy to enable/disable more features base on it.
-
-			If developer wants to get a even smaller u-boot.bin, try to disable the following
-			configurations accordding to board requirement.
-
-			[*] Remove Power(15KB):
-				# CONFIG_DM_PMIC is not set
-				# CONFIG_DM_REGULATOR is not set
-				# CONFIG_DM_REGULATOR_FIXED is not set
-				# CONFIG_DM_PWM is not set
-				# CONFIG_DM_I2C is not set
-
-			[*] Remove USB(55KB):
-				# CONFIG_USB is not set
-				# CONFIG_PHY_ROCKCHIP_NANENG_USB2 is not set
-
-				- No USB is available that U-Boot fallbacks to bootrom download mode with Menu key.
-				- Recovery key is always used to enter recovery boot mode.
-
-			[*] Remove Command-interface(33KB):
-				# CONFIG_CMDLINE is not set
-				CONFIG_U_BOOT_CMD_ALWAYS=y
-
-				- Only the command that with U_BOOT_CMD_ALWAYS() delcared is available.
-
-	rv1109-[...].config
-	-------------------
-			It provides the almost features the same as rv1126-[...]_defconfig.
+		Ram boot features on rv1126, only U-Boot proper is build.
 
