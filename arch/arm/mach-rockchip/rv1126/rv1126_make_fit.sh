@@ -8,6 +8,7 @@
 # Process args and auto set variables
 source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
 
+# compression
 rm -f ${srctree}/mcu.digest ${srctree}/u-boot-nodtb.digest ${srctree}/tee.digest
 
 if [ "${COMPRESSION}" == "gzip" ]; then
@@ -17,12 +18,10 @@ if [ "${COMPRESSION}" == "gzip" ]; then
 	gzip -k -f -9 ${srctree}/tee.bin
 	SUFFIX=".gz"
 else
-	touch ${srctree}/u-boot-nodtb.digest ${srctree}/tee.digest
 	COMPRESSION="none"
 	SUFFIX=
 fi
 
-# mcu
 if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 	if [ "${COMPRESSION}" == "gzip" ]; then
 		openssl dgst -sha256 -binary -out ${srctree}/mcu.digest ${srctree}/mcu.bin
@@ -30,10 +29,64 @@ if [ ! -z "${MCU_LOAD_ADDR}" ]; then
 	fi
 fi
 
-# .its file generation
+# u-boot and tee
+UBOOT_BODY="			data = /incbin/(\"./u-boot-nodtb.bin${SUFFIX}\");
+			compression = \"${COMPRESSION}\";
+			load = <"${UBOOT_LOAD_ADDR}">;"
+
+TEE_BODY="			data = /incbin/(\"./tee.bin${SUFFIX}\");
+			compression = \"${COMPRESSION}\";
+			load = <0x"${TEE_LOAD_ADDR}">;
+			entry = <0x"${TEE_LOAD_ADDR}">;"
+
+# digest
+if [ "${COMPRESSION}" != "none" ]; then
+UBOOT_DIGEST="			digest {
+				value = /incbin/(\"./u-boot-nodtb.digest\");
+				algo = \"sha256\";
+			};"
+
+TEE_DIGEST="			digest {
+				value = /incbin/(\"./tee.digest\");
+				algo = \"sha256\";
+			};"
+
+MCU_DIGEST="			digest {
+				value = /incbin/(\"./mcu.digest\");
+				algo = \"sha256\";
+			};"
+fi
+
+# mcu
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
+MCU_BODY="		mcu {
+			description = \"mcu\";
+			type = \"standalone\";
+			arch = \"riscv\";
+			data = /incbin/(\"./mcu.bin${SUFFIX}\");
+			compression = \"${COMPRESSION}\";
+			load = <0x"${MCU_LOAD_ADDR}">;
+			hash {
+				algo = \"sha256\";
+			};
+${MCU_DIGEST}
+		};"
+
+MCU_STANDALONE="			standalone = \"mcu\";"
+fi
+
+# /configurations/conf
+if [ ! -z "${MCU_LOAD_ADDR}" ]; then
+SIGN_IMAGES="			        sign-images = \"fdt\", \"firmware\", \"loadables\", \"standalone\";"
+else
+SIGN_IMAGES="			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
+fi
+
+########################################################################################################
+
 cat << EOF
 /*
- * Copyright (C) 2017 Rockchip Electronic Co.,Ltd
+ * Copyright (C) 2020 Rockchip Electronic Co.,Ltd
  *
  * Simple U-boot fit source file containing U-Boot, dtb and optee
  */
@@ -41,7 +94,7 @@ cat << EOF
 /dts-v1/;
 
 / {
-	description = "Simple image with OP-TEE support";
+	description = "FIT Image with U-Boot/OP-TEE/MCU";
 	#address-cells = <1>;
 
 	images {
@@ -51,17 +104,10 @@ cat << EOF
 			os = "U-Boot";
 			arch = "arm";
 EOF
-
-echo "			data = /incbin/(\"./u-boot-nodtb.bin${SUFFIX}\");"
-echo "			compression = \"${COMPRESSION}\";"
-echo "			load = <"${UBOOT_LOAD_ADDR}">;"
-
+echo "${UBOOT_BODY}"
+echo "${UBOOT_DIGEST}"
 cat << EOF
 			hash {
-				algo = "sha256";
-			};
-			digest { /* uncompressed data hash */
-				value = /incbin/("./u-boot-nodtb.digest");
 				algo = "sha256";
 			};
 		};
@@ -71,18 +117,10 @@ cat << EOF
 			arch = "arm";
 			os = "op-tee";
 EOF
-
-echo "			load = <0x"${TEE_LOAD_ADDR}">;"
-echo "			entry = <0x"${TEE_LOAD_ADDR}">;"
-echo "			data = /incbin/(\"./tee.bin${SUFFIX}\");"
-echo "			compression = \"${COMPRESSION}\";"
-
+echo "${TEE_BODY}"
+echo "${TEE_DIGEST}"
 cat << EOF
 			hash {
-				algo = "sha256";
-			};
-			digest {
-				value = /incbin/("./tee.digest");
 				algo = "sha256";
 			};
 		};
@@ -96,61 +134,27 @@ cat << EOF
 			};
 		};
 EOF
-
-if [ ! -z "${MCU_LOAD_ADDR}" ]; then
-cat  << EOF
-		mcu {
-			description = "mcu";
-			type = "standalone";
-			arch = "riscv";
-EOF
-
-echo "			data = /incbin/(\"./mcu.bin${SUFFIX}\");"
-echo "			compression = \"${COMPRESSION}\";"
-echo "			load = <0x"${MCU_LOAD_ADDR}">;"
-
-cat  << EOF
-			hash {
-				algo = "sha256";
-			};
-			digest {
-				value = /incbin/("./mcu.digest");
-				algo = "sha256";
-			};
-		};
-EOF
-fi
-
+echo "${MCU_BODY}"
 cat  << EOF
 	};
 
 	configurations {
 		default = "conf";
 		conf {
-			description = "Rockchip armv7 with OP-TEE";
+			description = "RV1126 U-Boot FIT";
 			rollback-index = <0x0>;
 			firmware = "optee";
 			loadables = "uboot";
 			fdt = "fdt";
 EOF
-
-if [ ! -z "${MCU_LOAD_ADDR}" ]; then
-echo "			standalone = \"mcu\";"
-fi
-
+echo "${MCU_STANDALONE}"
 cat  << EOF
 			signature {
 				algo = "sha256,rsa2048";
 				padding = "pss";
 				key-name-hint = "dev";
 EOF
-
-if [ ! -z "${MCU_LOAD_ADDR}" ]; then
-echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\", \"standalone\";"
-else
-echo "			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
-fi
-
+echo "${SIGN_IMAGES}"
 cat  << EOF
 			};
 		};
