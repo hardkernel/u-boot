@@ -2161,6 +2161,15 @@ static int sdram_init_(struct dram_info *dram,
 	pctl_cfg(dram->pctl, &sdram_params->pctl_regs,
 		 dram->sr_idle, dram->pd_idle);
 
+#ifdef CONFIG_ROCKCHIP_DRAM_EXTENDED_TEMP_SUPPORT
+	u32 tmp, trefi;
+
+	tmp = readl(pctl_base + DDR_PCTL2_RFSHTMG);
+	trefi = (tmp >> 16) & 0xfff;
+	writel((tmp & 0xf000ffff) | (trefi / 2) << 16,
+	       pctl_base + DDR_PCTL2_RFSHTMG);
+#endif
+
 	/* set frequency_mode */
 	setbits_le32(pctl_base + DDR_PCTL2_MSTR, 0x1 << 29);
 	/* set target_frequency to Frequency 0 */
@@ -2515,6 +2524,16 @@ static void pre_set_rate(struct dram_info *dram,
 			}
 		}
 	}
+
+#ifdef CONFIG_ROCKCHIP_DRAM_EXTENDED_TEMP_SUPPORT
+	u32 tmp, trefi;
+
+	tmp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) + DDR_PCTL2_RFSHTMG);
+	trefi = (tmp >> 16) & 0xfff;
+	writel((tmp & 0xf000ffff) | (trefi / 2) << 16,
+	       pctl_base + UMCTL2_REGS_FREQ(dst_fsp) + DDR_PCTL2_RFSHTMG);
+#endif
+
 	sw_set_ack(dram);
 
 	/* phy timing update */
@@ -2996,6 +3015,9 @@ int sdram_init(void)
 	dram_info.ddrgrf = (void *)DDR_GRF_BASE_ADDR;
 	dram_info.pmugrf = (void *)PMU_GRF_BASE_ADDR;
 
+#ifdef CONFIG_ROCKCHIP_DRAM_EXTENDED_TEMP_SUPPORT
+	printascii("extended temp support\n");
+#endif
 	if (index->version_info != 2 ||
 	    (index->global_index.size != sizeof(struct global_info) / 4) ||
 	    (index->ddr3_index.size !=
