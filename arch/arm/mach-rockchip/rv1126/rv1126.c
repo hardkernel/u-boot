@@ -42,6 +42,14 @@ DECLARE_GLOBAL_DATA_PTR;
 #define VDPU_PRIORITY_REG	0xfe8b0008
 #define JPEG_PRIORITY_REG	0xfe8c0008
 #define CRYPTO_PRIORITY_REG	0xfe8d0008
+/* external priority register */
+#define ISPP_M0_PRIORITY_EX_REG	0xfe880018
+#define ISPP_M1_PRIORITY_EX_REG	0xfe880098
+#define ISP_PRIORITY_EX_REG	0xfe890018
+#define CIF_LT_PRIORITY_EX_REG	0xfe890098
+#define CIF_PRIORITY_EX_REG	0xfe890118
+#define VOP_PRIORITY_EX_REG	0xfe8a0198
+#define VDPU_PRIORITY_EX_REG	0xfe8b0018
 
 #define PMU_BASE_ADDR		0xff3e0000
 
@@ -575,6 +583,8 @@ int arch_cpu_init(void)
 	writel(0x101, VDPU_PRIORITY_REG);
 	writel(0x101, JPEG_PRIORITY_REG);
 	writel(0x101, CRYPTO_PRIORITY_REG);
+	/* enable dynamic priority */
+	writel(0x1, ISP_PRIORITY_EX_REG);
 #endif
 
 #if defined(CONFIG_SUPPORT_USBPLUG)
