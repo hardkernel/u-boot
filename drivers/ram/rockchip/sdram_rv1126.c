@@ -2696,18 +2696,15 @@ static void save_fsp_param(struct dram_info *dram, u32 dst_fsp,
 		temp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) +
 			     DDR_PCTL2_INIT3);
 		temp = (temp >> PCTL2_DDR34_MR1_SHIFT) & PCTL2_MR_MASK;
-		p_fsp_param->ds_pdds = ((temp >> 1) & 0x1) |
-				       (((temp >> 5) & 0x1) << 1);
-		p_fsp_param->dq_odt = ((temp >> 2) & 0x1) |
-				      (((temp >> 6) & 0x1) << 1) |
-				      (((temp >> 9) & 0x1) << 2);
+		p_fsp_param->ds_pdds = temp & DDR3_DS_MASK;
+		p_fsp_param->dq_odt = temp & DDR3_RTT_NOM_MASK;
 		p_fsp_param->ca_odt = p_fsp_param->dq_odt;
 	} else if (sdram_params->base.dramtype == DDR4) {
 		temp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) +
 			     DDR_PCTL2_INIT3);
 		temp = (temp >> PCTL2_DDR34_MR1_SHIFT) & PCTL2_MR_MASK;
-		p_fsp_param->ds_pdds = (temp >> 1) & 0x3;
-		p_fsp_param->dq_odt = (temp >> 8) & 0x7;
+		p_fsp_param->ds_pdds = temp & DDR4_DS_MASK;
+		p_fsp_param->dq_odt = temp & DDR4_RTT_NOM_MASK;
 		p_fsp_param->ca_odt = p_fsp_param->dq_odt;
 	} else if (sdram_params->base.dramtype == LPDDR3) {
 		temp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) +
@@ -2721,13 +2718,13 @@ static void save_fsp_param(struct dram_info *dram, u32 dst_fsp,
 		temp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) +
 			     DDR_PCTL2_INIT4);
 		temp = (temp >> PCTL2_LPDDR234_MR3_SHIFT) & PCTL2_MR_MASK;
-		p_fsp_param->ds_pdds = (temp >> 3) & 0x7;
+		p_fsp_param->ds_pdds = temp & LPDDR4_PDDS_MASK;
 
 		temp = readl(pctl_base + UMCTL2_REGS_FREQ(dst_fsp) +
 			     DDR_PCTL2_INIT6);
 		temp = (temp >> PCTL2_LPDDR4_MR11_SHIFT) & PCTL2_MR_MASK;
-		p_fsp_param->dq_odt = temp & 0x7;
-		p_fsp_param->ca_odt = (temp >> 4) & 0x7;
+		p_fsp_param->dq_odt = temp & LPDDR4_DQODT_MASK;
+		p_fsp_param->ca_odt = temp & LPDDR4_CAODT_MASK;
 
 		temp = MAX(readl(PHY_REG(phy_base, 0x3ae)),
 			   readl(PHY_REG(phy_base, 0x3ce)));
