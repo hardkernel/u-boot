@@ -490,7 +490,7 @@ static const struct rockchip_iodomain_soc_data soc_data_rv1126_pmu = {
 static struct udevice *of_get_regulator(ofnode node, const char *supply)
 {
 	char sname[32]; /* 32 is max size of property name */
-	struct udevice *sudev;
+	struct udevice *sudev = NULL;
 	ofnode snode;
 	u32 phandle;
 	int ret;
