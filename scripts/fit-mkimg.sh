@@ -62,7 +62,7 @@ function help()
 	echo "    --uboot-itb"
 	echo "    --boot-itb"
 	echo "    --boot_img"
-	echo "    --p-check"
+	echo "    --arg-check"
 	echo
 }
 
@@ -118,7 +118,7 @@ function fit_process_args()
 
 	while [ $# -gt 0 ]; do
 		case $1 in
-			--p-check)
+			--arg-check)
 				ARG_VALIDATE=$2
 				shift 2
 				;;
@@ -188,8 +188,9 @@ function fit_process_args()
 
 function fit_rebuild()
 {
+	# Verified-boot: should rebuild code but don't need to repack images.
 	if [ "${ARG_NO_REBUILD}" != "y" ]; then
-		./make.sh --no-pack # Always no pack
+		./make.sh --no-pack # Build but not pack loader/trust/uboot, etc.
 	fi
 
 	rm ${FIT_DIR} -rf
@@ -198,13 +199,13 @@ function fit_rebuild()
 
 function fit_gen_uboot_itb()
 {
-	./make.sh itb ${ARG_INI_TRUST}
+	./make.sh itb ${ARG_INI_TRUST} >/dev/null 2>&1
 	check_its ${ITS_UBOOT}
 
 	if [ "${ARG_NO_VBOOT}" == "y" ]; then
 		${MKIMAGE} -f ${ITS_UBOOT} -E -p ${OFFS_NS_UBOOT} ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		if [ "${ARG_SPL_NEW}" == "y" ]; then
-			./make.sh spl-s ${ARG_INI_LOADER}
+			./make.sh --spl ${ARG_INI_LOADER}
 			echo "pack loader with new: spl/u-boot-spl.bin"
 		else
 			./make.sh loader ${ARG_INI_LOADER}
@@ -294,7 +295,7 @@ function fit_gen_uboot_itb()
 			fi
 			cat ${SPL_DTB} >> spl/u-boot-spl.bin
 
-			./make.sh spl-s ${ARG_INI_LOADER}
+			./make.sh --spl ${ARG_INI_LOADER}
 			echo "pack loader with new: spl/u-boot-spl.bin"
 		else
 			./make.sh loader ${ARG_INI_LOADER}
