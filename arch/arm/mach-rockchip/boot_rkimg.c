@@ -251,21 +251,6 @@ __weak int rockchip_dnl_key_pressed(void)
 #ifdef CONFIG_CMD_ROCKUSB
 	return key_is_pressed(key_read(KEY_VOLUMEUP));
 #else
-	/*
-	 * It's possible that USB is disabled due to developer needs
-	 * a critial size of u-boot.bin.
-	 *
-	 * Disabling USB makes vbus can't be detected any more, so that
-	 * we add menu key and the events trigger are changed:
-	 *
-	 * - rockusb mode(fallback to bootrom mode):
-	 *	"recovery key pressed + vbus=1" => "menu key pressed"
-	 *
-	 * - recovery mode:
-	 *	"recovery key pressed + vbus=0" => "recovery key pressed"
-	 *
-	 * At the most time, USB is enabled and this feature is not applied.
-	 */
 	return key_is_pressed(key_read(KEY_MENU));
 #endif
 
@@ -294,11 +279,29 @@ __weak int rockchip_dnl_key_pressed(void)
 
 void setup_download_mode(void)
 {
-	int vbus = 1;
+	int vbus = 1; /* Assumed 1 in case of no rockusb */
 
 	boot_devtype_init();
 
-	/* recovery key or "ctrl+d" */
+	/*
+	 * rockchip_dnl_key_pressed():
+	 *
+	 * (1) volume-up key (default)
+	 * (2) menu key (If no rockusb)
+	 *
+	 * It's possible that USB is disabled due to developer needs
+	 * a critial size of u-boot.bin.
+	 *
+	 * Disabling USB makes vbus can't be detected any more, so that
+	 * we add menu key. The events trigger are changed:
+	 *
+	 * - rockusb mode(actually fallback to bootrom mode):
+	 *	"volume-up pressed + vbus=1" replaced with "menu pressed"
+	 * - recovery mode:
+	 *	"volume-up pressed + vbus=0" replaced with "volume-up pressed"
+	 *
+	 * At the most time, USB is enabled and this feature is not applied.
+	 */
 	if (rockchip_dnl_key_pressed() || is_hotkey(HK_ROCKUSB_DNL)) {
 		printf("download key pressed... ");
 #ifdef CONFIG_CMD_ROCKUSB
