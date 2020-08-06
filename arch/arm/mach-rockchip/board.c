@@ -336,7 +336,7 @@ static void early_download(void)
 static void board_debug_init(void)
 {
 	if (!gd->serial.using_pre_serial)
-		board_debug_uart_init();
+		debug_uart_init();
 
 	if (tstc()) {
 		gd->console_evt = getc();
@@ -562,8 +562,8 @@ int board_init_f_init_serial(void)
 
 	if (t) {
 		gd->serial.using_pre_serial = t->u.serial.enable;
-		gd->serial.addr = t->u.serial.addr;
 		gd->serial.baudrate = t->u.serial.baudrate;
+		gd->serial.addr = t->u.serial.addr;
 		gd->serial.id = t->u.serial.id;
 
 		debug("%s: enable=%d, addr=0x%lx, baudrate=%d, id=%d\n",
