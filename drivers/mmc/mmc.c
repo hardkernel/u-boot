@@ -294,82 +294,6 @@ static int mmc_read_blocks_prepare(struct mmc *mmc, void *dst, lbaint_t start,
 }
 #endif
 
-#if CONFIG_IS_ENABLED(BLK)
-ulong mmc_bread(struct udevice *dev, lbaint_t start, lbaint_t blkcnt, void *dst)
-#else
-ulong mmc_bread(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
-		void *dst)
-#endif
-{
-#if CONFIG_IS_ENABLED(BLK)
-	struct blk_desc *block_dev = dev_get_uclass_platdata(dev);
-#endif
-	int dev_num = block_dev->devnum;
-	int err;
-	lbaint_t cur, blocks_todo = blkcnt;
-
-	if (blkcnt == 0)
-		return 0;
-
-	struct mmc *mmc = find_mmc_device(dev_num);
-	if (!mmc)
-		return 0;
-
-	if (CONFIG_IS_ENABLED(MMC_TINY))
-		err = mmc_switch_part(mmc, block_dev->hwpart);
-	else
-		err = blk_dselect_hwpart(block_dev, block_dev->hwpart);
-
-	if (err < 0)
-		return 0;
-
-	if ((start + blkcnt) > block_dev->lba) {
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
-		printf("MMC: block number 0x" LBAF " exceeds max(0x" LBAF ")\n",
-			start + blkcnt, block_dev->lba);
-#endif
-		return 0;
-	}
-
-	if (mmc_set_blocklen(mmc, mmc->read_bl_len)) {
-		debug("%s: Failed to set blocklen\n", __func__);
-		return 0;
-	}
-
-	do {
-		cur = (blocks_todo > mmc->cfg->b_max) ?
-			mmc->cfg->b_max : blocks_todo;
-		if (mmc_read_blocks(mmc, dst, start, cur) != cur) {
-			debug("%s: Failed to read blocks\n", __func__);
-			int timeout = 0;
-re_init_retry:
-			timeout++;
-			/*
-			 * Try re-init seven times.
-			 */
-			if (timeout > 7) {
-				printf("Re-init retry timeout\n");
-				return 0;
-			}
-
-			mmc->has_init = 0;
-			if (mmc_init(mmc))
-				return 0;
-
-			if (mmc_read_blocks(mmc, dst, start, cur) != cur) {
-				printf("%s: Re-init mmc_read_blocks error\n",
-				       __func__);
-				goto re_init_retry;
-			}
-		}
-		blocks_todo -= cur;
-		start += cur;
-		dst += cur * mmc->read_bl_len;
-	} while (blocks_todo > 0);
-
-	return blkcnt;
-}
-
 #ifdef CONFIG_SPL_BLK_READ_PREPARE
 #if CONFIG_IS_ENABLED(BLK)
 ulong mmc_bread_prepare(struct udevice *dev, lbaint_t start, lbaint_t blkcnt, void *dst)
@@ -440,6 +364,90 @@ re_init_retry:
 	return blkcnt;
 }
 #endif
+
+#if CONFIG_IS_ENABLED(BLK)
+ulong mmc_bread(struct udevice *dev, lbaint_t start, lbaint_t blkcnt, void *dst)
+#else
+ulong mmc_bread(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
+		void *dst)
+#endif
+{
+#if CONFIG_IS_ENABLED(BLK)
+	struct blk_desc *block_dev = dev_get_uclass_platdata(dev);
+#endif
+	int dev_num = block_dev->devnum;
+	int err;
+	lbaint_t cur, blocks_todo = blkcnt;
+
+#ifdef CONFIG_SPL_BLK_READ_PREPARE
+	if (block_dev->op_flag == BLK_PRE_RW)
+#if CONFIG_IS_ENABLED(BLK)
+		return mmc_bread_prepare(dev, start, blkcnt, dst);
+#else
+		return mmc_bread_prepare(block_dev, start, blkcnt, dst);
+#endif
+#endif
+	if (blkcnt == 0)
+		return 0;
+
+	struct mmc *mmc = find_mmc_device(dev_num);
+	if (!mmc)
+		return 0;
+
+	if (CONFIG_IS_ENABLED(MMC_TINY))
+		err = mmc_switch_part(mmc, block_dev->hwpart);
+	else
+		err = blk_dselect_hwpart(block_dev, block_dev->hwpart);
+
+	if (err < 0)
+		return 0;
+
+	if ((start + blkcnt) > block_dev->lba) {
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+		printf("MMC: block number 0x" LBAF " exceeds max(0x" LBAF ")\n",
+			start + blkcnt, block_dev->lba);
+#endif
+		return 0;
+	}
+
+	if (mmc_set_blocklen(mmc, mmc->read_bl_len)) {
+		debug("%s: Failed to set blocklen\n", __func__);
+		return 0;
+	}
+
+	do {
+		cur = (blocks_todo > mmc->cfg->b_max) ?
+			mmc->cfg->b_max : blocks_todo;
+		if (mmc_read_blocks(mmc, dst, start, cur) != cur) {
+			debug("%s: Failed to read blocks\n", __func__);
+			int timeout = 0;
+re_init_retry:
+			timeout++;
+			/*
+			 * Try re-init seven times.
+			 */
+			if (timeout > 7) {
+				printf("Re-init retry timeout\n");
+				return 0;
+			}
+
+			mmc->has_init = 0;
+			if (mmc_init(mmc))
+				return 0;
+
+			if (mmc_read_blocks(mmc, dst, start, cur) != cur) {
+				printf("%s: Re-init mmc_read_blocks error\n",
+				       __func__);
+				goto re_init_retry;
+			}
+		}
+		blocks_todo -= cur;
+		start += cur;
+		dst += cur * mmc->read_bl_len;
+	} while (blocks_todo > 0);
+
+	return blkcnt;
+}
 
 void mmc_set_clock(struct mmc *mmc, uint clock)
 {
