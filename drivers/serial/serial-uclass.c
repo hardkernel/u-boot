@@ -15,7 +15,6 @@
 #include <dm/lists.h>
 #include <dm/device-internal.h>
 #include <dm/of_access.h>
-#include <dm/uclass-internal.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -28,7 +27,6 @@ static const unsigned long baudrate_table[] = CONFIG_SYS_BAUDRATE_TABLE;
 #error "Serial is required before relocation - define CONFIG_$(SPL_)SYS_MALLOC_F_LEN to make this work"
 #endif
 
-#ifndef CONFIG_DEBUG_UART_ALWAYS_MODE
 static int serial_check_stdout(const void *blob, struct udevice **devp)
 {
 	int node;
@@ -56,23 +54,6 @@ static int serial_check_stdout(const void *blob, struct udevice **devp)
 	}
 	if (node < 0)
 		node = fdt_path_offset(blob, "console");
-
-	if (gd && gd->serial.using_pre_serial) {
-		const char *serial_path;
-		char serial[12];
-
-		snprintf(serial, 12, "serial%d", gd->serial.id);
-		serial_path = fdt_get_alias(blob, serial);
-		if (serial_path) {
-			debug("Find alias %s, path: %s\n", serial, serial_path);
-			node = fdt_path_offset(blob, serial_path);
-			if (node < 0)
-				printf("Can't find %s by path\n", serial);
-		} else {
-			printf("Can't find alias %s\n", serial);
-		}
-	}
-
 	if (!uclass_get_device_by_of_offset(UCLASS_SERIAL, node, devp))
 		return 0;
 
@@ -88,72 +69,11 @@ static int serial_check_stdout(const void *blob, struct udevice **devp)
 
 	return -ENODEV;
 }
-#endif
 
-#if defined(CONFIG_OF_LIVE) && !defined(CONFIG_DEBUG_UART_ALWAYS_MODE)
-/*
- * Hide and present pinctrl prop int live device tree
- *
- * 1. We bind all serial nodes including UART debug node from kernel dtb.
- *
- * 2. On some rockchip platforms, UART debug and SDMMC pin are multiplex.
- *    Without this, iomux is switched from SDMMC => UART debug at this time.
- *
- * 3. We may switch to UART debug iomux after SDMMC boot failed to print log
- *    by console record mechanism.
- */
-static void serial_console_hide_prop(char **p1, char **p2)
-{
-	struct udevice *dev;
-
-	if (!of_live_active())
-		return;
-
-	for (uclass_find_first_device(UCLASS_SERIAL, &dev);
-	     dev;
-	     uclass_find_next_device(&dev)) {
-		if (dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
-		    dev_read_bool(dev, "u-boot,dm-spl"))
-			continue;
-
-		if (gd->cur_serial_dev->req_seq == dev->req_seq) {
-			*p1 = (char *)dev_hide_prop(dev, "pinctrl-names");
-			*p2 = (char *)dev_hide_prop(dev, "pinctrl-0");
-		}
-	}
-}
-
-static void serial_console_present_prop(char *p1, char *p2)
-{
-	struct udevice *dev;
-
-	if (!of_live_active() || !p1 || !p2)
-		return;
-
-	for (uclass_find_first_device(UCLASS_SERIAL, &dev);
-	     dev;
-	     uclass_find_next_device(&dev)) {
-		if (dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
-		    dev_read_bool(dev, "u-boot,dm-spl"))
-			continue;
-
-		if (gd->cur_serial_dev->req_seq == dev->req_seq) {
-			dev_present_prop(dev, p1);
-			dev_present_prop(dev, p2);
-		}
-	}
-}
-#else
-static inline void serial_console_hide_prop(char **p1, char **p2) {}
-static inline void serial_console_present_prop(char *p1, char *p2) {}
-#endif
-
-#ifndef CONFIG_DEBUG_UART_ALWAYS_MODE
 static void serial_find_console_or_panic(void)
 {
 	const void *blob = gd->fdt_blob;
 	struct udevice *dev;
-	char *p1 = NULL, *p2 = NULL;
 
 	if (CONFIG_IS_ENABLED(OF_PLATDATA)) {
 		uclass_first_device(UCLASS_SERIAL, &dev);
@@ -166,26 +86,10 @@ static void serial_find_console_or_panic(void)
 		if (of_live_active()) {
 			struct device_node *np = of_get_stdout();
 
-			serial_console_hide_prop(&p1, &p2);
 			if (np && !uclass_get_device_by_ofnode(UCLASS_SERIAL,
 					np_to_ofnode(np), &dev)) {
-				serial_console_present_prop(p1, p2);
 				gd->cur_serial_dev = dev;
 				return;
-			}
-
-			/*
-			 * If the console is not marked to be bound, bind it
-			 * anyway.
-			 */
-			if (!lists_bind_fdt(gd->dm_root, np_to_ofnode(np),
-					    &dev)) {
-				serial_console_hide_prop(&p1, &p2);
-				if (!device_probe(dev)) {
-					serial_console_present_prop(p1, p2);
-					gd->cur_serial_dev = dev;
-					return;
-				}
 			}
 		} else {
 			if (!serial_check_stdout(blob, &dev)) {
@@ -230,9 +134,6 @@ int serial_init(void)
 
 	return 0;
 }
-#else
-int serial_init(void) { return 0; }
-#endif
 
 /* Called after relocation */
 void serial_initialize(void)
@@ -281,14 +182,6 @@ static int __serial_tstc(struct udevice *dev)
 		return ops->pending(dev, true);
 
 	return 1;
-}
-
-static void __serial_clear(struct udevice *dev)
-{
-	struct dm_serial_ops *ops = serial_get_ops(dev);
-
-	if (ops->clear)
-		ops->clear(dev);
 }
 
 #if CONFIG_IS_ENABLED(SERIAL_RX_BUFFER)
@@ -367,66 +260,6 @@ void serial_setbrg(void)
 	ops = serial_get_ops(gd->cur_serial_dev);
 	if (ops->setbrg)
 		ops->setbrg(gd->cur_serial_dev, gd->baudrate);
-}
-
-void serial_clear(void)
-{
-	if (!gd->cur_serial_dev)
-		return;
-
-	__serial_clear(gd->cur_serial_dev);
-}
-
-void serial_dev_putc(struct udevice *dev, char ch)
-{
-	if (!dev)
-		return;
-
-	_serial_putc(dev, ch);
-}
-
-void serial_dev_puts(struct udevice *dev, const char *str)
-{
-	if (!dev)
-		return;
-
-	_serial_puts(dev, str);
-}
-
-int serial_dev_getc(struct udevice *dev)
-{
-	if (!dev)
-		return 0;
-
-	return _serial_getc(dev);
-}
-
-int serial_dev_tstc(struct udevice *dev)
-{
-	if (!dev)
-		return 0;
-
-	return _serial_tstc(dev);
-}
-
-void serial_dev_setbrg(struct udevice *dev, int baudrate)
-{
-	struct dm_serial_ops *ops;
-
-	if (!dev)
-		return;
-
-	ops = serial_get_ops(dev);
-	if (ops->setbrg)
-		ops->setbrg(dev, baudrate);
-}
-
-void serial_dev_clear(struct udevice *dev)
-{
-	if (!dev)
-		return;
-
-	__serial_clear(dev);
 }
 
 void serial_stdio_init(void)
