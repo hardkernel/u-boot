@@ -230,20 +230,6 @@ struct blk_ops {
 			      lbaint_t blkcnt, void *buffer);
 
 	/**
-	 * read_prepare() - read from a block device
-	 *
-	 * @dev:	Device to read from
-	 * @start:	Start block number to read (0=first)
-	 * @blkcnt:	Number of blocks to read
-	 * @buffer:	Destination buffer for data read
-	 * @return number of blocks read, or -ve error number (see the
-	 * IS_ERR_VALUE() macro
-	 */
-#ifdef CONFIG_SPL_BLK_READ_PREPARE
-	unsigned long (*read_prepare)(struct udevice *dev, lbaint_t start,
-				      lbaint_t blkcnt, void *buffer);
-#endif
-	/**
 	 * write() - write to a block device
 	 *
 	 * @dev:	Device to write to
