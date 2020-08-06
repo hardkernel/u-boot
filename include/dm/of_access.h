@@ -105,24 +105,6 @@ const void *of_get_property(const struct device_node *np, const char *name,
 			    int *lenp);
 
 /**
- * of_hide_property() - hide a property
- *
- * @np: Pointer to device node holding property
- * @name: Name of property to hide
- * @return hidden name if ok, otherwise NULL
- */
-const char *of_hide_property(struct device_node *np, const char *name);
-
-/**
- * of_present_property() - present a property hidden before
- *
- * @np: Pointer to device node holding property
- * @name: Hidden name of property
- * @return 0 if ok, otherwise failed
- */
-int of_present_property(struct device_node *np, const char *name);
-
-/**
  * of_device_is_compatible() - Check if the node matches given constraints
  * @device: pointer to node
  * @compat: required compatible string, NULL or "" for any match

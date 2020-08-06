@@ -29,8 +29,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define PROP_HIDE_MAGIC		1
-
 /* list of struct alias_prop aliases */
 LIST_HEAD(aliases_lookup);
 
@@ -171,40 +169,6 @@ const void *of_get_property(const struct device_node *np, const char *name,
 	struct property *pp = of_find_property(np, name, lenp);
 
 	return pp ? pp->value : NULL;
-}
-
-const char *of_hide_property(struct device_node *np, const char *name)
-{
-	struct property *pp;
-
-	if (!np)
-		return NULL;
-
-	for (pp = np->properties; pp; pp = pp->next) {
-		if (strcmp(pp->name, name) == 0) {
-			pp->name[0] += PROP_HIDE_MAGIC;
-			return (const char *)pp->name;
-		}
-	}
-
-	return NULL;
-}
-
-int of_present_property(struct device_node *np, const char *name)
-{
-	struct property *pp;
-
-	if (!np)
-		return -FDT_ERR_NOTFOUND;
-
-	for (pp = np->properties; pp; pp = pp->next) {
-		if (strcmp(pp->name, name) == 0) {
-			pp->name[0] -= PROP_HIDE_MAGIC;
-			break;
-		}
-	}
-
-	return 0;
 }
 
 static const char *of_prop_next_string(struct property *prop, const char *cur)
@@ -900,17 +864,5 @@ struct device_node *of_alias_dump(void)
 
 struct device_node *of_get_stdout(void)
 {
-	struct device_node *np;
-
-	if (gd && gd->serial.using_pre_serial) {
-		np = of_alias_get_dev("serial", gd->serial.id);
-		if (!np)
-			printf("Can't find alias serial%d\n", gd->serial.id);
-		else
-			debug("Find alias serial: %s\n", np->full_name);
-
-		of_stdout = np;
-	}
-
 	return of_stdout;
 }

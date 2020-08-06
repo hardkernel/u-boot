@@ -320,24 +320,6 @@ int dev_read_phandle(struct udevice *dev);
 const void *dev_read_prop(struct udevice *dev, const char *propname, int *lenp);
 
 /**
- * dev_hide_prop() - hide a property
- *
- * @np: Pointer to device node holding property
- * @name: Name of property to hide
- * @return hidden name if ok, otherwise NULL
- */
-const char *dev_hide_prop(struct udevice *dev, const char *propname);
-
-/**
- * dev_present_prop() - present a property hidden before
- *
- * @np: Pointer to device node holding property
- * @name: Hidden name of property
- * @return 0 if ok, otherwise failed
- */
-int dev_present_prop(struct udevice *dev, const char *propname);
-
-/**
  * dev_read_alias_seq() - Get the alias sequence number of a node
  *
  * This works out whether a node is pointed to by an alias, and if so, the
