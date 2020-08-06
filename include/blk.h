@@ -51,6 +51,10 @@ enum if_type {
 #define BLK_PRD_SIZE		20
 #define BLK_REV_SIZE		8
 
+/* define block device operation flags */
+#define BLK_PRE_RW		1	/* Block prepare read & write*/
+#define BLK_MTD_NBA_RW		2	/* MTD block non-block-aligned read & write */
+
 /*
  * Identifies the partition table type (ie. MBR vs GPT GUID) signature
  */
@@ -79,6 +83,7 @@ struct blk_desc {
 	unsigned char	hwpart;		/* HW partition, e.g. for eMMC */
 	unsigned char	type;		/* device type */
 	unsigned char	removable;	/* removable device */
+	unsigned char	op_flag;	/* Some special operation flags */
 #ifdef CONFIG_LBA48
 	/* device can use 48bit addr (ATA/ATAPI v7) */
 	unsigned char	lba48;
