@@ -10,23 +10,27 @@ source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
 
 # compression
 rm -f ${srctree}/mcu.digest ${srctree}/u-boot-nodtb.digest ${srctree}/tee.digest
+rm -f ${srctree}/u-boot-nodtb.bin.gz ${srctree}/tee.bin.gz ${srctree}/mcu.bin.gz
 
 if [ "${COMPRESSION}" == "gzip" ]; then
 	openssl dgst -sha256 -binary -out ${srctree}/u-boot-nodtb.digest ${srctree}/u-boot-nodtb.bin
 	openssl dgst -sha256 -binary -out ${srctree}/tee.digest ${srctree}/tee.bin
-	gzip -k -f -9 ${srctree}/u-boot-nodtb.bin
 	gzip -k -f -9 ${srctree}/tee.bin
+	UBOOT_SZ=`ls -l u-boot-nodtb.bin | awk '{ print $5 }'`
+	if [ ${UBOOT_SZ} -gt 0 ]; then
+		gzip -k -f -9 ${srctree}/u-boot-nodtb.bin
+	else
+		touch ${srctree}/u-boot-nodtb.bin.gz
+	fi
+	if [ ! -z "${MCU_LOAD_ADDR}" ]; then
+		openssl dgst -sha256 -binary -out ${srctree}/mcu.digest ${srctree}/mcu.bin
+		gzip -k -f -9 ${srctree}/mcu.bin
+	fi
+
 	SUFFIX=".gz"
 else
 	COMPRESSION="none"
 	SUFFIX=
-fi
-
-if [ ! -z "${MCU_LOAD_ADDR}" ]; then
-	if [ "${COMPRESSION}" == "gzip" ]; then
-		openssl dgst -sha256 -binary -out ${srctree}/mcu.digest ${srctree}/mcu.bin
-		gzip -k -f -9 ${srctree}/mcu.bin
-	fi
 fi
 
 # u-boot and tee
