@@ -216,6 +216,9 @@ function process_args()
 				ARG_NO_UBOOT="y"
 				shift 1
 				;;
+			--idblock)  # pack idblock.bin
+				shift 1
+				;;
 			--tpl|tpl)  # use tpl file
 				ARG_TPL_BIN="tpl/u-boot-tpl.bin"
 				shift 1
@@ -498,6 +501,10 @@ function sub_commands()
 			make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools
 			exit 0
 			;;
+		--idblock)
+			pack_idblock
+			exit 0
+			;;
 		--tpl|--spl|tpl|spl)
 			pack_spl_loader_image
 			exit 0
@@ -539,6 +546,40 @@ function unwind_addr_or_continue()
 		${TOOLCHAIN_ADDR2LINE} -e ${ELF} ${FUNCADDR}
 		exit 0
 	fi
+}
+
+function pack_idblock()
+{
+	INI=${INI_LOADER}
+	if [ ! -f ${INI} ]; then
+		echo "ERROR: No ${INI}"
+		exit 1
+	fi
+
+	# chip
+	COMMON_H=`grep "_common.h:" include/autoconf.mk.dep | awk -F "/" '{ printf $3 }'`
+	PLAT=${COMMON_H%_*}
+
+	# file
+	SPL_BIN=${RKBIN}/`sed -n "/FlashBoot=/s/FlashBoot=//p" ${INI} | tr -d '\r'`
+	TPL_BIN=${RKBIN}/`sed -n "/FlashData=/s/FlashData=//p" ${INI} | tr -d '\r'`
+	if [ ! -z "${ARG_SPL_BIN}" ]; then
+		SPL_BIN=${ARG_SPL_BIN}
+	fi
+	if [ ! -z "${ARG_TPL_BIN}" ]; then
+		TPL_BIN=${ARG_TPL_BIN}
+	fi
+
+	# pack
+	rm idblock.bin -f
+	./tools/mkimage -n ${PLAT} -T rksd -d ${TPL_BIN}:${SPL_BIN} idblock.bin
+	echo "Input:"
+	echo "    ${INI}"
+	echo "    ${TPL_BIN}"
+	echo "    ${SPL_BIN}"
+	echo
+	echo "Pack ${PLAT} idblock.bin okay!"
+	echo
 }
 
 function pack_uboot_itb_image()
