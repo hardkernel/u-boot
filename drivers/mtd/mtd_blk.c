@@ -446,13 +446,50 @@ ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 	if (desc->devnum == BLK_MTD_NAND ||
 	    desc->devnum == BLK_MTD_SPI_NAND ||
 	    desc->devnum == BLK_MTD_SPI_NOR) {
-		ret = mtd_map_write(mtd, off, &rwsize,
-				    NULL, mtd->size,
-				    (u_char *)(src), 0);
-		if (!ret)
-			return blkcnt;
-		else
-			return 0;
+		if (desc->op_flag == BLK_MTD_NBA_RW) {
+			lbaint_t off_aligned, alinged;
+			size_t rwsize_aligned;
+			u8 *p_buf;
+
+			alinged = off & mtd->erasesize_mask;
+			off_aligned = off - alinged;
+			rwsize_aligned = rwsize + alinged;
+			rwsize_aligned = (rwsize_aligned + mtd->erasesize - 1) &
+				~(mtd->erasesize - 1);
+
+			p_buf = malloc(rwsize_aligned);
+			if (!p_buf) {
+				printf("%s: Fail to malloc!", __func__);
+				return 0;
+			}
+
+			ret = mtd_map_read(mtd, off_aligned, &rwsize_aligned,
+					   NULL, mtd->size,
+					   (u_char *)(p_buf));
+			if (ret) {
+				free(p_buf);
+				return 0;
+			}
+
+			memcpy(p_buf + alinged, src, rwsize);
+
+			ret = mtd_map_write(mtd, off_aligned, &rwsize_aligned,
+					    NULL, mtd->size,
+					    (u_char *)(p_buf), 0);
+			free(p_buf);
+			if (!ret)
+				return blkcnt;
+			else
+				return 0;
+		} else {
+			ret = mtd_map_write(mtd, off, &rwsize,
+					    NULL, mtd->size,
+					    (u_char *)(src), 0);
+			if (!ret)
+				return blkcnt;
+			else
+				return 0;
+		}
 	} else {
 		return 0;
 	}
