@@ -298,7 +298,7 @@ void spl_next_stage(struct spl_image_info *spl)
 }
 #endif
 
-#ifdef CONFIG_SPL_FIT_LOAD_KERNEL
+#ifdef CONFIG_SPL_KERNEL_BOOT
 const char *spl_kernel_partition(struct spl_image_info *spl,
 				 struct spl_load_info *info)
 {
