@@ -52,8 +52,8 @@ enum if_type {
 #define BLK_REV_SIZE		8
 
 /* define block device operation flags */
-#define BLK_PRE_RW		1	/* Block prepare read & write*/
-#define BLK_MTD_NBA_RW		2	/* MTD block non-block-aligned read & write */
+#define BLK_PRE_RW		BIT(0)	/* Block prepare read & write*/
+#define BLK_MTD_NBA_RW		BIT(1)	/* MTD block non-block-aligned read & write */
 
 /*
  * Identifies the partition table type (ie. MBR vs GPT GUID) signature
