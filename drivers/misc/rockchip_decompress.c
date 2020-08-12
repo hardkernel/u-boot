@@ -92,8 +92,8 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 {
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
 	struct decom_param *param = (struct decom_param *)buf;
-	unsigned int limit_lo = param->size_src & 0xffffffff;
-	unsigned int limit_hi = param->size_src >> 32;
+	unsigned int limit_lo = param->size_dst & 0xffffffff;
+	unsigned int limit_hi = param->size_dst >> 32;
 	ulong align_input, align_len;
 
 #if CONFIG_IS_ENABLED(DM_RESET)

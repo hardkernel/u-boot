@@ -90,8 +90,10 @@ int misc_decompress_start(struct udevice *dev, unsigned long dst,
 		return -EPERM;
 	}
 
-	param.size_src = misc_get_data_size(src, src_len, param.mode);
-	if (!param.size_src)
+	param.size_src = src_len;
+	param.size_dst = misc_get_data_size(src, src_len, param.mode);
+
+	if (!param.size_src || !param.size_dst)
 		return -EINVAL;
 
 	return misc_ioctl(dev, IOCTL_REQ_START, &param);
