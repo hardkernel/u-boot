@@ -209,7 +209,7 @@ config SYS_MMCSD_RAW_MODE_U_BOOT_PARTITION_TYPE
 
 config SPL_MISC_SECTOR
 	hex "Sector address to load misc in SPL"
-	depends on !SPL_LIBDISK_SUPPORT && SPL_FIT_LOAD_KERNEL
+	depends on !SPL_LIBDISK_SUPPORT && SPL_KERNEL_BOOT
 	default 0x8000
 
 config SPL_CRC32_SUPPORT
@@ -855,7 +855,12 @@ config SPL_KERNEL_BOOT
 	help
 	  Enable boot kernel in SPL.
 
-if SPL_KERNEL_BOOT
+config SPL_KERNEL_BOOT_SECTOR
+	hex "Sector address to load kernel in SPL"
+	depends on SPL_KERNEL_BOOT
+	default 0xa000
+
+if SPL_LOAD_RKFW
 config SPL_KERNEL_ADDR
 	hex "Kernel load address in spl"
 	depends on SPL

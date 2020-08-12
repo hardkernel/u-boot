@@ -412,7 +412,7 @@ static void *spl_fit_load_blob(struct spl_load_info *info,
 	return fit;
 }
 
-#ifdef CONFIG_SPL_FIT_LOAD_KERNEL
+#ifdef CONFIG_SPL_KERNEL_BOOT
 #ifdef CONFIG_SPL_LIBDISK_SUPPORT
 __weak const char *spl_kernel_partition(struct spl_image_info *spl,
 					struct spl_load_info *info)
@@ -456,7 +456,7 @@ static int spl_load_kernel_fit(struct spl_image_info *spl_image,
 	}
 	sector = part_info.start;
 #else
-	sector = CONFIG_SPL_FIT_LOAD_KERNEL_SECTOR;
+	sector = CONFIG_SPL_KERNEL_BOOT_SECTOR;
 #endif
 	if (info->read(info, sector, 1, &fit_header) != 1) {
 		debug("%s: no memory\n", __func__);
@@ -515,12 +515,23 @@ static int spl_load_kernel_fit(struct spl_image_info *spl_image,
 		if (!strcmp(images[i], FIT_FDT_PROP))
 			spl_image->fdt_addr = (void *)image_info.load_addr;
 		else if (!strcmp(images[i], FIT_KERNEL_PROP))
+#if CONFIG_IS_ENABLED(OPTEE)
 			spl_image->entry_point_os = image_info.load_addr;
+#endif
+#if CONFIG_IS_ENABLED(ATF)
+			spl_image->entry_point_bl33 = image_info.load_addr;
+#endif
 	}
 
-	debug("entry_point=0x%08lx, entry_point_os=0x%08lx, fdt_addr=0x%08lx\n",
-	      spl_image->entry_point, spl_image->entry_point_os,
-	      (ulong)spl_image->fdt_addr);
+	debug("fdt_addr=0x%08lx, entry_point=0x%08lx, entry_point_os=0x%08lx\n",
+	      (ulong)spl_image->fdt_addr,
+	      spl_image->entry_point,
+#if CONFIG_IS_ENABLED(OPTEE)
+	      spl_image->entry_point_os);
+#endif
+#if CONFIG_IS_ENABLED(ATF)
+	      spl_image->entry_point_bl33);
+#endif
 
 	return 0;
 }
@@ -752,7 +763,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		ret = spl_internal_load_simple_fit(spl_image, info,
 						   sector_offs, fit);
 		if (!ret) {
-#ifdef CONFIG_SPL_FIT_LOAD_KERNEL
+#ifdef CONFIG_SPL_KERNEL_BOOT
 			ret = spl_load_kernel_fit(spl_image, info);
 #endif
 			return ret;

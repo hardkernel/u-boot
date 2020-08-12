@@ -338,7 +338,7 @@ int spl_board_prepare_for_jump(struct spl_image_info *spl_image);
 /**
  * spl_kernel_partition() - arch/board-specific callback to get kernel partition
  */
-#ifdef CONFIG_SPL_FIT_LOAD_KERNEL
+#ifdef CONFIG_SPL_KERNEL_BOOT
 const char *spl_kernel_partition(struct spl_image_info *spl,
 				 struct spl_load_info *info);
 #endif
