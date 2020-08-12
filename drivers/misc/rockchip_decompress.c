@@ -110,17 +110,13 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 			      CONFIG_SYS_CACHELINE_SIZE);
 		flush_cache(align_input, align_len);
 
-		/*
-		 * dst: actually we prefer to invalidate dcache after decompress
-		 * done, but it seems there is not cache invalidate API for us.
-		 * so let's flush this area.
-		 */
+		/* dst: invalidate dcache */
 		align_input =
 		     round_down(param->addr_dst, CONFIG_SYS_CACHELINE_SIZE);
 		align_len =
 		     round_up(param->size_src + (param->addr_dst - align_input),
 			      CONFIG_SYS_CACHELINE_SIZE);
-		flush_cache(align_input, align_len);
+		invalidate_dcache_range(align_input, align_len);
 	}
 
 	priv->done = false;
