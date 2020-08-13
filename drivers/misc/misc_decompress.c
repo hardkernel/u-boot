@@ -166,7 +166,7 @@ int misc_decompress_cleanup(void)
 			continue;
 
 		if (misc_decomp_sync & cap) {
-			ret = ops->ioctl(dev, IOCTL_REQ_STOP, NULL);
+			ret = misc_decompress_finish(dev, cap);
 			if (ret) {
 				printf("Failed to stop decompress: %s, ret=%d\n",
 				       dev->name, ret);
