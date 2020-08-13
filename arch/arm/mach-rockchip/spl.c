@@ -169,7 +169,7 @@ void board_init_f(ulong dummy)
 	debug_uart_init();
 	printascii("U-Boot SPL board init");
 #endif
-
+	gd->sys_start_tick = get_ticks();
 #ifdef CONFIG_SPL_FRAMEWORK
 	ret = spl_early_init();
 	if (ret) {
