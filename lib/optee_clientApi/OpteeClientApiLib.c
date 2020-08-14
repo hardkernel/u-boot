@@ -39,6 +39,18 @@ static bool optee_api_revision_is_compatible(void)
 	}
 }
 
+void optee_get_shm_config(phys_addr_t *base, phys_size_t *size)
+{
+	ARM_SMC_ARGS ArmSmcArgs = {0};
+
+	ArmSmcArgs.Arg0 = OPTEE_SMC_GET_SHM_CONFIG_V2;
+
+	tee_smc_call(&ArmSmcArgs);
+
+	*base = ArmSmcArgs.Arg1;
+	*size = ArmSmcArgs.Arg2;
+}
+
 /*
  * Initlialize the library
  */

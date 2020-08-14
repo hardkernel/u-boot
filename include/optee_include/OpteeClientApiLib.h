@@ -11,5 +11,6 @@
 #include <optee_include/tee_client_api.h>
 
 TEEC_Result OpteeClientApiLibInitialize(void);
+void optee_get_shm_config(phys_addr_t *base, phys_size_t *size);
 
 #endif /*_OPTEE_CLIENT_APILIB_H_*/

@@ -35,6 +35,7 @@
 #include <power/charge_display.h>
 #include <power/regulator.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <optee_include/OpteeClientApiLib.h>
 #include <optee_include/tee_api_defines.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/clock.h>
@@ -419,7 +420,7 @@ int board_fdt_fixup(void *blob)
 #if defined(CONFIG_ARM64_BOOT_AARCH32) || !defined(CONFIG_ARM64)
 /*
  * Common for OP-TEE:
- *	64-bit & 32-bit mode: dcache is always enabled;
+ *	64-bit & 32-bit mode: share memory dcache is always enabled;
  *
  * Common for U-Boot:
  *	64-bit mode: MMU table is static defined in rkxxx.c file, all memory
@@ -433,16 +434,21 @@ int board_fdt_fixup(void *blob)
  * For the data coherence when communication between U-Boot and OP-TEE, U-Boot
  * should follow OP-TEE MMU policy.
  *
- * So 32-bit mode U-Boot should map OP-TEE memory as dcache enabled.
+ * So 32-bit mode U-Boot should map OP-TEE share memory as dcache enabled.
  */
 int board_initr_caches_fixup(void)
 {
+#ifdef CONFIG_OPTEE_CLIENT
 	struct memblock mem;
 
-	mem = param_parse_optee_mem();
+	mem.base = 0;
+	mem.size = 0;
+
+	optee_get_shm_config(&mem.base, &mem.size);
 	if (mem.size)
 		mmu_set_region_dcache_behaviour(mem.base, mem.size,
 						DCACHE_WRITEBACK);
+#endif
 	return 0;
 }
 #endif
