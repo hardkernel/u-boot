@@ -7,14 +7,23 @@
 #include <clk.h>
 #include <crypto.h>
 #include <dm.h>
+#include <rockchip/crypto_hash_cache.h>
 #include <rockchip/crypto_v1.h>
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/clock.h>
 
 #define CRYPTO_V1_DEFAULT_RATE		100000000
+/* crypto timeout 500ms, must support more than 32M data per times*/
+#define HASH_UPDATE_LIMIT	(32 * 1024 * 1024)
+#define RK_CRYPTO_TIME_OUT	500000
+
+#define LLI_ADDR_ALIGIN_SIZE	8
+#define DATA_ADDR_ALIGIN_SIZE	8
+#define DATA_LEN_ALIGIN_SIZE	64
 
 struct rockchip_crypto_priv {
+	struct crypto_hash_cache	*hash_cache;
 	struct rk_crypto_reg *reg;
 	struct clk clk;
 	sha_context *ctx;
@@ -34,6 +43,36 @@ static u32 rockchip_crypto_capability(struct udevice *dev)
 	       CRYPTO_RSA2048;
 }
 
+static int rk_hash_direct_calc(void *hw_data, const u8 *data,
+			       u32 data_len, u8 *started_flag, u8 is_last)
+{
+	struct rockchip_crypto_priv *priv = hw_data;
+	struct rk_crypto_reg *reg = priv->reg;
+
+	if (!data_len)
+		return -EINVAL;
+
+	/* Must flush dcache before crypto DMA fetch data region */
+	crypto_flush_cacheline((ulong)data, data_len);
+
+	/* Hash Done Interrupt */
+	writel(HASH_DONE_INT, &reg->crypto_intsts);
+
+	/* Set data base and length */
+	writel((u32)(ulong)data, &reg->crypto_hrdmas);
+	writel((data_len + 3) >> 2, &reg->crypto_hrdmal);
+
+	/* Write 1 to start. When finishes, the core will clear it */
+	rk_setreg(&reg->crypto_ctrl, HASH_START);
+
+	/* Wait last complete */
+	do {} while (readl(&reg->crypto_ctrl) & HASH_START);
+
+	priv->length += data_len;
+
+	return 0;
+}
+
 static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 {
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
@@ -47,6 +86,13 @@ static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 		printf("Crypto-v1: require data total length for sha init\n");
 		return -EINVAL;
 	}
+
+	priv->hash_cache = crypto_hash_cache_alloc(rk_hash_direct_calc,
+						   priv, ctx->length,
+						   DATA_ADDR_ALIGIN_SIZE,
+						   DATA_LEN_ALIGIN_SIZE);
+	if (!priv->hash_cache)
+		return -EFAULT;
 
 	priv->ctx = ctx;
 	priv->length = 0;
@@ -97,40 +143,32 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 				      u32 *input, u32 len)
 {
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
-	struct rk_crypto_reg *reg = priv->reg;
-	ulong aligned_input, aligned_len;
+	int ret = -EINVAL, i;
+	u8 *p;
 
-	if (!len)
-		return -EINVAL;
+	if (!input || !len)
+		goto exit;
 
-	priv->length += len;
-	if ((priv->length != priv->ctx->length) && !IS_ALIGNED(len, 4)) {
-		printf("Crypto-v1: require update data length 4-byte "
-		       "aligned(0x%08lx - 0x%08lx)\n",
-		       (ulong)input, (ulong)input + len);
-		return -EINVAL;
+	p = (u8 *)input;
+
+	for (i = 0; i < len / HASH_UPDATE_LIMIT; i++, p += HASH_UPDATE_LIMIT) {
+		ret = crypto_hash_update_with_cache(priv->hash_cache, p,
+						    HASH_UPDATE_LIMIT);
+		if (ret)
+			goto exit;
 	}
 
-	/* Must flush dcache before crypto DMA fetch data region */
-	aligned_input = round_down((ulong)input, CONFIG_SYS_CACHELINE_SIZE);
-	aligned_len = round_up(len + ((ulong)input - aligned_input),
-			       CONFIG_SYS_CACHELINE_SIZE);
-	flush_cache(aligned_input, aligned_len);
+	if (len % HASH_UPDATE_LIMIT)
+		ret = crypto_hash_update_with_cache(priv->hash_cache, p,
+						    len % HASH_UPDATE_LIMIT);
 
-	/* Wait last complete */
-	do {} while (readl(&reg->crypto_ctrl) & HASH_START);
+exit:
+	if (ret) {
+		crypto_hash_cache_free(priv->hash_cache);
+		priv->hash_cache = NULL;
+	}
 
-	/* Hash Done Interrupt */
-	writel(HASH_DONE_INT, &reg->crypto_intsts);
-
-	/* Set data base and length */
-	writel((u32)(ulong)input, &reg->crypto_hrdmas);
-	writel((len + 3) >> 2, &reg->crypto_hrdmal);
-
-	/* Write 1 to start. When finishes, the core will clear it */
-	rk_setreg(&reg->crypto_ctrl, HASH_START);
-
-	return 0;
+	return ret;
 }
 
 static int rockchip_crypto_sha_final(struct udevice *dev,
@@ -139,13 +177,15 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
 	struct rk_crypto_reg *reg = priv->reg;
 	u32 *buf = (u32 *)output;
+	int ret = 0;
 	u32 nbits;
 	int i;
 
 	if (priv->length != ctx->length) {
-		printf("Crypto-v1: data total length(0x%08x) != init length(0x%08x)!\n",
+		printf("total length(0x%08x) != init length(0x%08x)!\n",
 		       priv->length, ctx->length);
-		return -EIO;
+		ret = -EIO;
+		goto exit;
 	}
 
 	/* Wait last complete */
@@ -159,7 +199,10 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 	for (i = 0; i < BITS2WORD(nbits); i++)
 		buf[i] = readl(&reg->crypto_hash_dout[i]);
 
-	return 0;
+exit:
+	crypto_hash_cache_free(priv->hash_cache);
+	priv->hash_cache = NULL;
+	return ret;
 }
 
 #if CONFIG_IS_ENABLED(ROCKCHIP_RSA)

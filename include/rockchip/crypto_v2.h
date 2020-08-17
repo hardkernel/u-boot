@@ -44,9 +44,6 @@ enum rk_hash_algo {
 #define	RK_MODE_ENCRYPT			0
 #define	RK_MODE_DECRYPT			1
 
-#define	HASH_CACHE_SIZE			8192
-#define	CIPHER_CACHE_SIZE		8192
-
 #define	_SBF(s,	v)			((v) <<	(s))
 #define	_BIT(b)				_SBF(b,	1)
 
@@ -555,44 +552,6 @@ enum rk_hash_algo {
 #define LLI_USER_STRING_ADA		_BIT(3)
 #define LLI_USER_PRIVACY_KEY		_BIT(7)
 #define LLI_USER_ROOT_KEY		_BIT(8)
-
-#define CRYPTO_TRNG_MAX			32
-
-enum endian_mode {
-	BIG_ENDIAN = 0,
-	LITTLE_ENDIAN
-};
-
-enum clk_type {
-	CLK = 0,
-	HCLK
-};
-
-struct crypto_lli_desc {
-	u32 src_addr;
-	u32 src_len;
-	u32 dst_addr;
-	u32 dst_len;
-	u32 user_define;
-	u32 reserve;
-	u32 dma_ctrl;
-	u32 next_addr;
-};
-
-struct rk_hash_ctx {
-	struct crypto_lli_desc data_lli;/* lli desc */
-	void	*cache;			/* virt addr for hash src data*/
-	u32	cache_size;		/* data in cached size */
-	u32	left_len;		/* left data to calc */
-	u32	magic;			/* to check ctx */
-	u32	algo;			/* hash algo */
-	u8	digest_size;		/* hash out length */
-	u8	is_started;		/* choose use start or restart */
-	u8	use_cache;		/* is use cache or not*/
-	u8	reserved;
-};
-
-#define	RK_HASH_CTX_MAGIC		0x1A1A1A1A
 
 extern fdt_addr_t crypto_base;
 
