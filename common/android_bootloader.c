@@ -158,18 +158,39 @@ static void update_root_uuid_if_android_ab(void)
 	}
 }
 
-static int decrease_tries_if_android_ab(char *slot_suffix)
+static int get_slot_suffix_if_android_ab(char *slot_suffix)
 {
-	AvbABData ab_data_orig;
-	AvbABData ab_data;
-	AvbOps *ops;
-	size_t slot_index = 0;
-
 	/* TODO: get from pre-loader or misc partition */
 	if (rk_avb_get_current_slot(slot_suffix)) {
 		printf("rk_avb_get_current_slot() failed\n");
 		return -1;
 	}
+
+	if (slot_suffix[0] != '_') {
+#ifndef CONFIG_ANDROID_AVB
+		printf("###There is no bootable slot, bring up lastboot!###\n");
+		if (rk_get_lastboot() == 1)
+			memcpy(slot_suffix, "_b", 2);
+		else if (rk_get_lastboot() == 0)
+			memcpy(slot_suffix, "_a", 2);
+		else
+#endif
+			return -1;
+	}
+
+	return 0;
+}
+
+static int decrease_tries_if_android_ab(void)
+{
+	AvbABData ab_data_orig;
+	AvbABData ab_data;
+	char slot_suffix[3] = {0};
+	AvbOps *ops;
+	size_t slot_index = 0;
+
+	if (get_slot_suffix_if_android_ab(slot_suffix))
+		return -1;
 
 	if (!strncmp(slot_suffix, "_a", 2))
 		slot_index = 0;
@@ -199,23 +220,12 @@ static int decrease_tries_if_android_ab(char *slot_suffix)
 		return -1;
 	}
 
-	if (slot_suffix[0] != '_') {
-#ifndef CONFIG_ANDROID_AVB
-		printf("###There is no bootable slot, bring up lastboot!###\n");
-		if (rk_get_lastboot() == 1)
-			memcpy(slot_suffix, "_b", 2);
-		else if (rk_get_lastboot() == 0)
-			memcpy(slot_suffix, "_a", 2);
-		else
-#endif
-			return -1;
-	}
-
 	return 0;
 }
 #else
 static inline void update_root_uuid_if_android_ab(void) {}
-static inline int decrease_tries_if_android_ab(char *slot_suffix) { return 0; }
+static int get_slot_suffix_if_android_ab(char *slot_suffix) { return 0; }
+static inline int decrease_tries_if_android_ab(void) { return 0; }
 #endif
 
 #if defined(CONFIG_ANDROID_AB) && defined(CONFIG_ANDROID_AVB)
@@ -793,17 +803,6 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	}
 
 out:
-#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
-	/*
-	 * In ab & avb process, the tries_remaining minus one in function
-	 * android_slot_verify, shield this function here.
-	 */
-	/* ... and decrement tries remaining, if applicable. */
-	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
-	    ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
-		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
-	}
-#endif
 	env_update("bootargs", verify_state);
 	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
 		printf("Can not save metadata\n");
@@ -1120,7 +1119,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	printf("ANDROID: reboot reason: \"%s\"\n", android_boot_mode_str(mode));
 
 	/* Get current slot_suffix */
-	if (decrease_tries_if_android_ab(slot_suffix))
+	if (get_slot_suffix_if_android_ab(slot_suffix))
 		return -1;
 
 	switch (mode) {
@@ -1253,6 +1252,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	if (trusty_notify_optee_uboot_end())
 		printf("Close optee client failed!\n");
 #endif
+
+	if (decrease_tries_if_android_ab())
+		printf("Decrease ab tries count fail!\n");
+
 	android_bootloader_boot_kernel(load_address);
 
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
