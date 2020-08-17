@@ -4,6 +4,7 @@
  */
 #include <common.h>
 #include <asm/io.h>
+#include <clk.h>
 #include <dm.h>
 #include <linux/bitops.h>
 #include <misc.h>
@@ -80,11 +81,14 @@ DECLARE_GLOBAL_DATA_PTR;
 	DISEIEN | LENEIEN | LITEIEN | SQMEIEN | SLCIEN | \
 	HDEIEN | DSIEN)
 
+#define DCLK_DECOM		400 * 1000 * 1000
+
 struct rockchip_decom_priv {
 	struct reset_ctl rst;
 	void __iomem *base;
 	bool idle_check_once;
 	bool done;
+	struct clk dclk;
 	int cached; /* 1: access the data through dcache; 0: no dcache */
 };
 
@@ -248,6 +252,15 @@ static int rockchip_decom_probe(struct udevice *dev)
 		return ret;
 	}
 #endif
+
+	ret = clk_get_by_name(dev, "dclk", &priv->dclk);
+	if (ret < 0)
+		return ret;
+
+	ret = clk_set_rate(&priv->dclk, DCLK_DECOM);
+	if (ret < 0)
+		return ret;
+
 	return 0;
 }
 
