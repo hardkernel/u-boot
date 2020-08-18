@@ -955,6 +955,13 @@ static void set_ds_odt(struct dram_info *dram,
 	clrsetbits_le32(PHY_REG(phy_base, 0x101), 0x1f, phy_ca_drv);
 	clrsetbits_le32(PHY_REG(phy_base, 0x102), 0x1f, phy_clk_drv);
 	clrsetbits_le32(PHY_REG(phy_base, 0x103), 0x1f, phy_clk_drv);
+	if (dramtype == LPDDR4) {
+		clrsetbits_le32(PHY_REG(phy_base, 0x107), 0x1f, phy_clk_drv);
+		clrsetbits_le32(PHY_REG(phy_base, 0x108), 0x1f, phy_clk_drv);
+	} else {
+		clrsetbits_le32(PHY_REG(phy_base, 0x107), 0x1f, phy_ca_drv);
+		clrsetbits_le32(PHY_REG(phy_base, 0x108), 0x1f, phy_ca_drv);
+	}
 	/* clk / cmd slew rate */
 	clrsetbits_le32(PHY_REG(phy_base, 0x106), 0x1f, sr_clk);
 
