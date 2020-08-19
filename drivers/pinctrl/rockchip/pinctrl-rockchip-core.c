@@ -58,8 +58,9 @@ void rockchip_get_recalced_mux(struct rockchip_pin_bank *bank, int pin,
 	*bit = data->bit;
 }
 
-bool rockchip_get_mux_route(struct rockchip_pin_bank *bank, int pin,
-			    int mux, u32 *reg, u32 *value)
+static enum rockchip_pin_route_type
+rockchip_get_mux_route(struct rockchip_pin_bank *bank, int pin,
+		       int mux, u32 *reg, u32 *value)
 {
 	struct rockchip_pinctrl_priv *priv = bank->priv;
 	struct rockchip_pin_ctrl *ctrl = priv->ctrl;
@@ -74,12 +75,12 @@ bool rockchip_get_mux_route(struct rockchip_pin_bank *bank, int pin,
 	}
 
 	if (i >= ctrl->niomux_routes)
-		return false;
+		return ROUTE_TYPE_INVALID;
 
 	*reg = data->route_offset;
 	*value = data->route_val;
 
-	return true;
+	return data->route_type;
 }
 
 int rockchip_get_mux_data(int mux_type, int pin, u8 *bit, int *mask)
@@ -210,8 +211,39 @@ static int rockchip_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
 		return -ENOTSUPP;
 
 	ret = ctrl->set_mux(bank, pin, mux);
+	if (ret)
+		return ret;
 
-	return ret;
+	if (bank->route_mask & BIT(pin)) {
+		struct regmap *regmap;
+		u32 route_reg = 0, route_val = 0;
+
+		ret = rockchip_get_mux_route(bank, pin, mux,
+					     &route_reg, &route_val);
+		switch (ret) {
+		case ROUTE_TYPE_DEFAULT:
+			if (bank->iomux[iomux_num].type & IOMUX_SOURCE_PMU)
+				regmap = priv->regmap_pmu;
+			else if (bank->iomux[iomux_num].type & IOMUX_L_SOURCE_PMU)
+				regmap = (pin % 8 < 4) ? priv->regmap_pmu : priv->regmap_base;
+			else
+				regmap = priv->regmap_base;
+
+			regmap_write(regmap, route_reg, route_val);
+			break;
+		case ROUTE_TYPE_TOPGRF:
+			regmap_write(priv->regmap_base, route_reg, route_val);
+			break;
+		case ROUTE_TYPE_PMUGRF:
+			regmap_write(priv->regmap_pmu, route_reg, route_val);
+			break;
+		case ROUTE_TYPE_INVALID: /* Fall through */
+		default:
+			break;
+		}
+	}
+
+	return 0;
 }
 
 static int rockchip_perpin_drv_list[DRV_TYPE_MAX][8] = {
@@ -550,8 +582,9 @@ static struct rockchip_pin_ctrl *rockchip_pinctrl_get_soc_data(struct udevice *d
 			 * 4bit iomux'es are spread over two registers.
 			 */
 			inc = (iom->type & (IOMUX_WIDTH_4BIT |
-					    IOMUX_WIDTH_3BIT)) ? 8 : 4;
-			if (iom->type & IOMUX_SOURCE_PMU)
+					    IOMUX_WIDTH_3BIT |
+					    IOMUX_8WIDTH_2BIT)) ? 8 : 4;
+			if ((iom->type & IOMUX_SOURCE_PMU) || (iom->type & IOMUX_L_SOURCE_PMU))
 				pmu_offs += inc;
 			else
 				grf_offs += inc;
