@@ -32,9 +32,27 @@ struct rk3288_clk_plat {
 };
 
 struct pll_div {
+	ulong rate;
 	u32 nr;
 	u32 nf;
 	u32 no;
+	u32 nb;
+};
+
+#define RK3288_PLL_RATE(_rate, _nr, _nf, _no, _nb)	\
+{							\
+	.rate	= _rate##U,				\
+	.nr = _nr,					\
+	.nf = _nf,					\
+	.no = _no,					\
+	.nb = _nb,					\
+}
+
+static struct pll_div rk3288_pll_rates[] = {
+	/* _mhz,  _nr, _nf, _no, _nb */
+	RK3288_PLL_RATE(1188000000, 1, 99, 2, 16),
+	RK3288_PLL_RATE(594000000, 1, 99, 4, 16),
+	RK3288_PLL_RATE(297000000, 1, 99, 8, 16),
 };
 
 #ifndef CONFIG_SPL_BUILD
@@ -191,8 +209,20 @@ enum {
 
 /* Keep divisors as low as possible to reduce jitter and power usage */
 static const struct pll_div apll_init_cfg = PLL_DIVISORS(APLL_HZ, 1, 1);
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 4);
+static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 4);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2);
+
+struct pll_div *rkclk_get_pll_config(ulong freq_hz)
+{
+	unsigned int rate_count = ARRAY_SIZE(rk3288_pll_rates);
+	int i;
+
+	for (i = 0; i < rate_count; i++) {
+		if (freq_hz == rk3288_pll_rates[i].rate)
+			return &rk3288_pll_rates[i];
+	}
+	return NULL;
+}
 
 static int rkclk_set_pll(struct rk3288_cru *cru, enum rk_clk_id clk_id,
 			 const struct pll_div *div)
@@ -213,9 +243,9 @@ static int rkclk_set_pll(struct rk3288_cru *cru, enum rk_clk_id clk_id,
 		     ((div->nr - 1) << CLKR_SHIFT) | (div->no - 1));
 	rk_clrsetreg(&pll->con1, CLKF_MASK, div->nf - 1);
 
-	/* adjust gpll bw for better clock jitter */
-	if (pll_id == 3)
-		rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, 0);
+	/* adjust pll bw for better clock jitter */
+	if (div->nb)
+		rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, div->nb - 1);
 	else
 		rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
 
@@ -312,10 +342,11 @@ static int rkclk_configure_ddr(struct rk3288_cru *cru, struct rk3288_grf *grf,
 #define VCO_MIN_KHZ	440000
 #define FREF_MAX_KHZ	2200000
 #define FREF_MIN_KHZ	269
-#define PLL_LIMIT_FREQ	600000000
+#define PLL_LIMIT_FREQ	594000000
 
 static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 {
+	struct pll_div *best_div = NULL;
 	uint ref_khz = OSC_HZ / 1000, nr, nf = 0;
 	uint fref_khz;
 	uint diff_khz, best_diff_khz;
@@ -333,6 +364,15 @@ static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 	if (ext_div) {
 		*ext_div = DIV_ROUND_UP(PLL_LIMIT_FREQ, freq_hz);
 		no = DIV_ROUND_UP(no, *ext_div);
+	}
+
+	best_div = rkclk_get_pll_config(freq_hz * (*ext_div));
+	if (best_div) {
+		div->nr = best_div->nr;
+		div->nf = best_div->nf;
+		div->no = best_div->no;
+		div->nb = best_div->nb;
+		return 0;
 	}
 
 	/* only even divisors (and 1) are supported */
