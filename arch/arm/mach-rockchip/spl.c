@@ -9,6 +9,7 @@
 #include <debug_uart.h>
 #include <dm.h>
 #include <key.h>
+#include <led.h>
 #include <misc.h>
 #include <ram.h>
 #include <spl.h>
@@ -229,7 +230,7 @@ static int setup_led(void)
 		debug("%s: get=%d\n", __func__, ret);
 		return ret;
 	}
-	ret = led_set_on(dev, 1);
+	ret = led_set_state(dev, LEDST_ON);
 	if (ret)
 		return ret;
 #endif
