@@ -459,12 +459,12 @@ static int spl_load_kernel_fit(struct spl_image_info *spl_image,
 	sector = CONFIG_SPL_KERNEL_BOOT_SECTOR;
 #endif
 	if (info->read(info, sector, 1, &fit_header) != 1) {
-		debug("%s: no memory\n", __func__);
+		debug("%s: Failed to read header\n", __func__);
 		return -EIO;
 	}
 
 	if (image_get_magic((void *)&fit_header) != FDT_MAGIC) {
-		debug("%s: Not fit magic\n", __func__);
+		printf("%s: Not fit magic\n", __func__);
 		return -EINVAL;
 	}
 
