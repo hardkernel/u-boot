@@ -258,13 +258,6 @@ static inline int pinctrl_generic_set_state(struct udevice *pctldev,
  * @return: 0 on success, or negative error code on failure
  */
 int pinctrl_select_state(struct udevice *dev, const char *statename);
-#else
-static inline int pinctrl_select_state(struct udevice *dev,
-				       const char *statename)
-{
-	return -EINVAL;
-}
-#endif
 
 /**
  * pinctrl_request() - Request a particular pinctrl function
@@ -338,5 +331,42 @@ int pinctrl_get_gpio_mux(struct udevice *dev, int banknum, int index);
  * @return pins count
 */
 int pinctrl_get_pins_count(struct udevice *dev);
+#else
+static inline int pinctrl_select_state(struct udevice *dev,
+				       const char *statename)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_request(struct udevice *dev, int func, int flags)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_request_noflags(struct udevice *dev, int func)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_get_periph_id(struct udevice *dev, struct udevice *periph)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_decode_pin_config(const void *blob, int node)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_get_gpio_mux(struct udevice *dev, int banknum, int index)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_get_pins_count(struct udevice *dev)
+{
+	return -EINVAL;
+}
+#endif
 
 #endif /* __PINCTRL_H */
