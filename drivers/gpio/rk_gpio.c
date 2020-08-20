@@ -142,8 +142,11 @@ static int rockchip_gpio_probe(struct udevice *dev)
 	uc_priv->bank_name = priv->name;
 
 	pins_num = pinctrl_get_pins_count(priv->pinctrl);
-	if ((priv->bank + 1) * ROCKCHIP_GPIOS_PER_BANK >= pins_num)
+	if (pins_num <= 0) {
+		printf("%s: fail to get pins from pinctrl\n", __func__);
+	} else if ((priv->bank + 1) * ROCKCHIP_GPIOS_PER_BANK >= pins_num) {
 		uc_priv->gpio_count = pins_num - priv->bank * ROCKCHIP_GPIOS_PER_BANK;
+	}
 
 	return 0;
 }
