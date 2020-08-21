@@ -1518,6 +1518,7 @@ static ulong rv1126_clk_isp_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 
 	return rv1126_clk_isp_get_clk(priv);
 }
+#endif
 
 static ulong rv1126_dclk_decom_get_clk(struct rv1126_clk_priv *priv)
 {
@@ -1551,7 +1552,6 @@ static ulong rv1126_dclk_decom_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 
 	return rv1126_dclk_decom_get_clk(priv);
 }
-#endif
 
 static ulong rv1126_clk_get_rate(struct clk *clk)
 {
@@ -1659,10 +1659,10 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 	case CLK_ISPP:
 		rate = rv1126_clk_pdvi_ispp_get_clk(priv, clk->id);
 		break;
+#endif
 	case DCLK_DECOM:
 		rate = rv1126_dclk_decom_get_clk(priv);
 		break;
-#endif
 	default:
 		return -ENOENT;
 	}
@@ -1772,10 +1772,10 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_ISPP:
 		ret = rv1126_clk_pdvi_ispp_set_clk(priv, clk->id, rate);
 		break;
+#endif
 	case DCLK_DECOM:
 		ret = rv1126_dclk_decom_set_clk(priv, rate);
 		break;
-#endif
 	default:
 		return -ENOENT;
 	}
