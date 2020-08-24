@@ -68,6 +68,14 @@ static const struct spinand_info dosilicon_spinand_table[] = {
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&ds35xxga_ooblayout, NULL)),
+	SPINAND_INFO("DS35X2GA", 0x72,
+		     NAND_MEMORG(1, 2048, 64, 64, 2048, 2, 1, 1),
+		     NAND_ECCREQ(4, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&ds35xxga_ooblayout, NULL)),
 };
 
 /**
