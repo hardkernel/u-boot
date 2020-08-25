@@ -59,7 +59,8 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 		}
 
 		blk_begin = (u32)offset >> mtd->erasesize_shift;
-		blk_cnt = ((u32)((offset & mtd->erasesize_mask) + length) >> mtd->erasesize_shift);
+		blk_cnt = ((u32)((offset & mtd->erasesize_mask) + length + \
+			mtd->erasesize - 1) >> mtd->erasesize_shift);
 		if (blk_begin >= blk_total) {
 			pr_err("map table blk begin[%d] overflow\n", blk_begin);
 			return -EINVAL;
