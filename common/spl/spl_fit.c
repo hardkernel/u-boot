@@ -9,9 +9,10 @@
 #include <boot_rkimg.h>
 #include <errno.h>
 #include <image.h>
-#include <linux/libfdt.h>
 #include <spl.h>
 #include <malloc.h>
+#include <mtd_blk.h>
+#include <linux/libfdt.h>
 
 #ifndef CONFIG_SYS_BOOTM_LEN
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)
@@ -419,6 +420,9 @@ static void *spl_fit_load_blob(struct spl_load_info *info,
 			align_len) & ~align_len);
 	sectors = get_aligned_image_size(info, size, 0);
 	count = info->read(info, sector, sectors, fit);
+#ifdef CONFIG_MTD_BLK
+	mtd_blk_map_fit(info->dev, sector, fit);
+#endif
 	debug("fit read sector %lx, sectors=%d, dst=%p, count=%lu\n",
 	      sector, sectors, fit, count);
 	if (count == 0)
