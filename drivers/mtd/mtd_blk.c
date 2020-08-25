@@ -9,6 +9,7 @@
 #include <boot_rkimg.h>
 #include <dm.h>
 #include <errno.h>
+#include <image.h>
 #include <malloc.h>
 #include <nand.h>
 #include <part.h>
@@ -137,6 +138,34 @@ void mtd_blk_map_partitions(struct blk_desc *desc)
 					   info.size << 9)) {
 			pr_debug("mtd block map table fail\n");
 		}
+	}
+}
+
+void mtd_blk_map_fit(struct blk_desc *desc, ulong sector, void *fit)
+{
+	struct mtd_info *mtd = NULL;
+	int totalsize = 0;
+
+	if (desc->if_type != IF_TYPE_MTD)
+		return;
+
+	if (desc->devnum == BLK_MTD_NAND) {
+#if defined(CONFIG_NAND)
+		mtd = dev_get_priv(desc->bdev->parent);
+#endif
+	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
+#if defined(CONFIG_MTD_SPI_NAND)
+		mtd = desc->bdev->priv;
+#endif
+	}
+
+#ifdef CONFIG_SPL_FIT
+	if (fit_get_totalsize(fit, &totalsize))
+		debug("Can not find /totalsize node.\n");
+#endif
+	if (mtd && totalsize) {
+		if (mtd_blk_map_table_init(desc, sector << 9, totalsize + (size_t)mtd->erasesize))
+			debug("Map block table fail.\n");
 	}
 }
 

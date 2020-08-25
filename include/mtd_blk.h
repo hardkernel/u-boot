@@ -16,5 +16,6 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 			   loff_t offset,
 			   size_t length);
 void mtd_blk_map_partitions(struct blk_desc *desc);
+void mtd_blk_map_fit(struct blk_desc *desc, ulong sector, void *fit);
 
 #endif
