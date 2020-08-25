@@ -39,11 +39,11 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 		return -ENODEV;
 
 	if (desc->devnum == BLK_MTD_NAND) {
-#if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
+#if defined(CONFIG_NAND)
 		mtd = dev_get_priv(desc->bdev->parent);
 #endif
 	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-#if defined(CONFIG_MTD_SPI_NAND) && !defined(CONFIG_SPL_BUILD)
+#if defined(CONFIG_MTD_SPI_NAND)
 		mtd = desc->bdev->priv;
 #endif
 	}
