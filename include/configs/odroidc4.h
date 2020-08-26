@@ -18,4 +18,10 @@
 
 #include "odroid-g12-common.h"
 
+#if defined(CONFIG_CMD_USB)
+	/* USB OTG Power Enable */
+	#define CONFIG_USB_GPIO_PWR		GPIOEE(GPIOAO_2)
+	#define CONFIG_USB_GPIO_PWR_NAME	"GPIOAO_2"
+#endif
+
 #endif
