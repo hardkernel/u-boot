@@ -60,7 +60,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_PWR_GATE_SFTCON	(0x110)
 
 #define CRU_BASE		0xFF490000
+#define CRU_CLKSEL_CON65	0x204
+#define CRU_CLKSEL_CON67	0x20c
 #define CRU_SOFTRST_CON02	0x308
+
 #define GRF_BASE		0xFE000000
 #define PMUGRF_BASE		0xFE020000
 #define SGRF_BASE		0xFE0A0000
@@ -512,6 +515,10 @@ int arch_cpu_init(void)
 
 	/* disable force jtag mux route to both group0 and group1 */
 	writel(0x00300000, GRF_IOFUNC_CON3);
+
+	/* make npu aclk and sclk less then 300MHz when reset */
+	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON65);
+	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON67);
 
 #if !defined(CONFIG_TPL_BUILD)
 	int delay;
