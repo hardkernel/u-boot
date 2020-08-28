@@ -72,6 +72,7 @@ static inline int is_bootable(gpt_entry *p)
 			sizeof(efi_guid_t));
 }
 
+#define FACTORY_UNKNOWN_LBA (0xffffffff - 34)
 static int validate_gpt_header(gpt_header *gpt_h, lbaint_t lba,
 		lbaint_t lastlba)
 {
@@ -124,6 +125,16 @@ static int validate_gpt_header(gpt_header *gpt_h, lbaint_t lba,
 		return -1;
 	}
 	if (le64_to_cpu(gpt_h->last_usable_lba) > lastlba) {
+		if (le64_to_cpu(gpt_h->last_usable_lba) == FACTORY_UNKNOWN_LBA) {
+#ifdef CONFIG_SPL_BUILD
+			printf("GPT: SPL workaround factory last_usable_lba\n");
+			gpt_h->last_usable_lba = lastlba - 34;
+			return 0;
+#else
+			printf("GPT: last_usable_lba need repair\n");
+			return 0;
+#endif
+		}
 		printf("GPT: last_usable_lba incorrect: %llX > " LBAF "\n",
 		       le64_to_cpu(gpt_h->last_usable_lba), lastlba);
 		return -1;
@@ -381,6 +392,7 @@ static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
 		gpt_head->my_lba = dev_desc->lba - 1;
 		gpt_head->alternate_lba = 1;
 		gpt_head->partition_entry_lba = dev_desc->lba - 0x21;
+		gpt_head->last_usable_lba = cpu_to_le64(dev_desc->lba - 34);
 		gpt_entry_modify(dev_desc, gpt_pte, gpt_head);
 		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
 				       le32_to_cpu(gpt_head->header_size));
@@ -404,6 +416,7 @@ static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
 		gpt_head->my_lba = 1;
 		gpt_head->alternate_lba = dev_desc->lba - 1;
 		gpt_head->partition_entry_lba = 0x22;
+		gpt_head->last_usable_lba = cpu_to_le64(dev_desc->lba - 34);
 		gpt_entry_modify(dev_desc, gpt_pte, gpt_head);
 		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
 				       le32_to_cpu(gpt_head->header_size));
@@ -457,6 +470,15 @@ static int part_test_efi(struct blk_desc *dev_desc)
 				      h_gpt_head, &h_gpt_pte);
 	backup_gpt_valid = is_gpt_valid(dev_desc, (dev_desc->lba - 1),
 					b_gpt_head, &b_gpt_pte);
+
+	if ((head_gpt_valid == 1) &&
+	    (le64_to_cpu(h_gpt_head->last_usable_lba)
+	     == FACTORY_UNKNOWN_LBA)) {
+		if (part_efi_repair(dev_desc, h_gpt_pte, h_gpt_head,
+				    0, 1))
+			printf("Primary GPT repair fail!\n");
+	}
+
 	if (head_gpt_valid == 1 && backup_gpt_valid == 0) {
 		if (part_efi_repair(dev_desc, h_gpt_pte, h_gpt_head,
 				    head_gpt_valid, backup_gpt_valid))
