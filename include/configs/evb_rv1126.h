@@ -21,7 +21,22 @@
 
 #ifndef CONFIG_SPL_BUILD
 #undef CONFIG_BOOTCOMMAND
+
+/*
+ * We made a deal: Not allow U-Boot to bring up thunder-boot kernel.
+ *
+ * Because the thunder-boot feature may require special memory layout
+ * or other appointments, U-Boot can't handle all that. Let's go back
+ * to SPL to bring up kernel.
+ *
+ * Note: bootcmd is only called in normal boot sequence, that means
+ * we allow user to boot what they want in U-Boot shell mode.
+ */
+#ifdef CONFIG_SPL_KERNEL_BOOT
+#define CONFIG_BOOTCOMMAND "reset"
+#else
 #define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 #endif
+#endif /* !CONFIG_SPL_BUILD */
 
 #endif
