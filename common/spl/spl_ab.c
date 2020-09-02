@@ -254,8 +254,9 @@ int spl_ab_append_part_slot(struct blk_desc *dev_desc,
 	}
 
 	if (spl_get_current_slot(dev_desc, "misc", slot_suffix)) {
-		printf("%s: failed to get slot suffix !\n", __func__);
-		return -1;
+		printf("No misc partition\n");
+		strcat(new_name, part_name);
+		return 0;
 	}
 
 	strcpy(new_name, part_name);
