@@ -554,7 +554,8 @@ void putc(const char c)
 	}
 }
 
-#if (!defined(CONFIG_SPL_BUILD) && defined(CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP))
+#if ((!defined(CONFIG_SPL_BUILD) || !defined(CONFIG_USE_TINY_PRINTF)) && \
+	defined(CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP))
 static void vspfunc(char *buf, size_t size, char *format, ...)
 {
 	va_list ap;
