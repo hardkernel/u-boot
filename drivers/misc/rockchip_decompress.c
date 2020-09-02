@@ -98,30 +98,23 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 	struct decom_param *param = (struct decom_param *)buf;
 	unsigned int limit_lo = param->size_dst & 0xffffffff;
 	unsigned int limit_hi = param->size_dst >> 32;
-	ulong align_input, align_len;
 
 #if CONFIG_IS_ENABLED(DM_RESET)
 	reset_assert(&priv->rst);
 	udelay(10);
 	reset_deassert(&priv->rst);
 #endif
-	if (!priv->cached) {
-		/* src: make sure we get the real compressed data from ddr */
-		align_input =
-		     round_down(param->addr_src, CONFIG_SYS_CACHELINE_SIZE);
-		align_len =
-		     round_up(param->size_src + (param->addr_src - align_input),
-			      CONFIG_SYS_CACHELINE_SIZE);
-		flush_cache(align_input, align_len);
-
-		/* dst: invalidate dcache */
-		align_input =
-		     round_down(param->addr_dst, CONFIG_SYS_CACHELINE_SIZE);
-		align_len =
-		     round_up(param->size_src + (param->addr_dst - align_input),
-			      CONFIG_SYS_CACHELINE_SIZE);
-		invalidate_dcache_range(align_input, align_len);
-	}
+	/*
+	 * Purpose:
+	 *    src: clean dcache to get the real compressed data from ddr.
+	 *    dst: invalidate dcache.
+	 *
+	 * flush_dcache_all() operating on set/way is faster than
+	 * flush_cache() and invalidate_dcache_range() operating
+	 * on virtual address.
+	 */
+	if (!priv->cached)
+		flush_dcache_all();
 
 	priv->done = false;
 
