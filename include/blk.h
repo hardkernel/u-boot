@@ -284,10 +284,6 @@ struct blk_ops {
  */
 unsigned long blk_dread(struct blk_desc *block_dev, lbaint_t start,
 			lbaint_t blkcnt, void *buffer);
-#ifdef CONFIG_SPL_BLK_READ_PREPARE
-unsigned long blk_dread_prepare(struct blk_desc *block_dev, lbaint_t start,
-				lbaint_t blkcnt, void *buffer);
-#endif
 unsigned long blk_dwrite(struct blk_desc *block_dev, lbaint_t start,
 			 lbaint_t blkcnt, const void *buffer);
 unsigned long blk_derase(struct blk_desc *block_dev, lbaint_t start,
