@@ -29,9 +29,27 @@ struct rk3368_clk_plat {
 #endif
 
 struct pll_div {
+	ulong rate;
 	u32 nr;
 	u32 nf;
 	u32 no;
+	u32 nb;
+};
+
+#define RK3368_PLL_RATE(_rate, _nr, _nf, _no, _nb)	\
+{							\
+	.rate	= _rate##U,				\
+	.nr = _nr,					\
+	.nf = _nf,					\
+	.no = _no,					\
+	.nb = _nb,					\
+}
+
+static struct pll_div rk3368_pll_rates[] = {
+	/* _mhz,  _nr, _nf, _no, _nb */
+	RK3368_PLL_RATE(594000000, 1, 99, 4, 16),
+	RK3368_PLL_RATE(424200000, 5, 707, 8, 0),
+	RK3368_PLL_RATE(410000000, 3, 205, 4, 16),
 };
 
 #define OSC_HZ		(24 * 1000 * 1000)
@@ -99,7 +117,6 @@ static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 2);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 6);
 #endif
 #endif
-static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 4);
 
 static ulong rk3368_clk_get_rate(struct clk *clk);
 
@@ -109,8 +126,21 @@ static ulong rk3368_clk_get_rate(struct clk *clk);
 #define FREF_MIN_KHZ	269
 #define PLL_LIMIT_FREQ	400000000
 
+struct pll_div *rkclk_get_pll_config(ulong freq_hz)
+{
+	unsigned int rate_count = ARRAY_SIZE(rk3368_pll_rates);
+	int i;
+
+	for (i = 0; i < rate_count; i++) {
+		if (freq_hz == rk3368_pll_rates[i].rate)
+			return &rk3368_pll_rates[i];
+	}
+	return NULL;
+}
+
 static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 {
+	struct pll_div *best_div = NULL;
 	uint ref_khz = OSC_HZ / 1000, nr, nf = 0;
 	uint fref_khz;
 	uint diff_khz, best_diff_khz;
@@ -128,6 +158,15 @@ static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 	if (ext_div) {
 		*ext_div = DIV_ROUND_UP(PLL_LIMIT_FREQ, freq_hz);
 		no = DIV_ROUND_UP(no, *ext_div);
+	}
+
+	best_div = rkclk_get_pll_config(freq_hz * (*ext_div));
+	if (best_div) {
+		div->nr = best_div->nr;
+		div->nf = best_div->nf;
+		div->no = best_div->no;
+		div->nb = best_div->nb;
+		return 0;
 	}
 
 	/* only even divisors (and 1) are supported */
@@ -230,8 +269,8 @@ static int rkclk_set_pll(struct rk3368_cru *cru, enum rk3368_pll_id pll_id,
 	 * BWADJ should be set to NF / 2 to ensure the nominal bandwidth.
 	 * Compare the RK3368 TRM, section "3.6.4 PLL Bandwidth Adjustment".
 	 */
-	if (pll_id == NPLL)
-		clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, 0);
+	if (div->nb)
+		clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, div->nb - 1);
 	else
 		clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
 
@@ -735,7 +774,7 @@ static ulong rk3368_vop_set_clk(struct rk3368_cru *cru, int clk_id, uint hz)
 	switch (clk_id) {
 	case DCLK_VOP:
 		if (!(NPLL_HZ % hz)) {
-			rkclk_set_pll(cru, NPLL, &npll_init_cfg);
+			rkclk_set_pll(cru, NPLL, rkclk_get_pll_config(NPLL_HZ));
 			lcdc_div = NPLL_HZ / hz;
 		} else {
 			ret = pll_para_config(hz, &npll_config, &lcdc_div);
@@ -1267,7 +1306,7 @@ static int rk3368_clk_probe(struct udevice *dev)
 #if IS_ENABLED(CONFIG_SPL_BUILD) || IS_ENABLED(CONFIG_TPL_BUILD)
 	rkclk_init(priv->cru);
 #endif
-	rkclk_set_pll(priv->cru, NPLL, &npll_init_cfg);
+	rkclk_set_pll(priv->cru, NPLL, rkclk_get_pll_config(NPLL_HZ));
 	if (!priv->armlclk_init_hz)
 		priv->armlclk_init_hz = rkclk_pll_get_rate(priv->cru, APLLL);
 	if (!priv->armbclk_init_hz)
