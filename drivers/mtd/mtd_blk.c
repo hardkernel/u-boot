@@ -446,7 +446,15 @@ ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 	if (desc->devnum == BLK_MTD_NAND ||
 	    desc->devnum == BLK_MTD_SPI_NAND ||
 	    desc->devnum == BLK_MTD_SPI_NOR) {
-		if (desc->op_flag == BLK_MTD_NBA_RW) {
+		if (desc->op_flag == BLK_MTD_CONT_WRITE) {
+			ret = mtd_map_write(mtd, off, &rwsize,
+					    NULL, mtd->size,
+					    (u_char *)(src), 0);
+			if (!ret)
+				return blkcnt;
+			else
+				return 0;
+		} else {
 			lbaint_t off_aligned, alinged;
 			size_t rwsize_aligned;
 			u8 *p_buf;
@@ -477,14 +485,6 @@ ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 					    NULL, mtd->size,
 					    (u_char *)(p_buf), 0);
 			free(p_buf);
-			if (!ret)
-				return blkcnt;
-			else
-				return 0;
-		} else {
-			ret = mtd_map_write(mtd, off, &rwsize,
-					    NULL, mtd->size,
-					    (u_char *)(src), 0);
 			if (!ret)
 				return blkcnt;
 			else

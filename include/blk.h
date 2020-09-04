@@ -53,7 +53,7 @@ enum if_type {
 
 /* define block device operation flags */
 #define BLK_PRE_RW		BIT(0)	/* Block prepare read & write*/
-#define BLK_MTD_NBA_RW		BIT(1)	/* MTD block non-block-aligned read & write */
+#define BLK_MTD_CONT_WRITE	BIT(1)	/* Special for Nand device P/E */
 
 /*
  * Identifies the partition table type (ie. MBR vs GPT GUID) signature
