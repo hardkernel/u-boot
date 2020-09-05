@@ -28,7 +28,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
-#define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
+#define ANDROID_ARG_FDT_FILENAME		"rk-kernel.dtb"
 #define ANDROID_Q_VER				10
 
 /* Defined by rockchip legacy mkboot tool(SDK version < 8.1) */
@@ -47,15 +47,15 @@ u32 android_bcb_msg_sector_offset(void)
 {
 	/*
 	 * Rockchip platforms defines BCB message at the 16KB offset of
-	 * misc partition while the Google defines it at 0x0 offset.
+	 * misc partition while the Google defines it at 0x00 offset.
 	 *
-	 * From Android-Q, the 0x0 offset is mandary on Google VTS, so that
+	 * From Android-Q, the 0x00 offset is mandary on Google VTS, so that
 	 * this is a compatibility according to android image 'os_version'.
 	 */
 #ifdef CONFIG_RKIMG_BOOTLOADER
-	return (android_image_major_version() >= ANDROID_Q_VER) ? 0x0 : 0x20;
+	return (android_image_major_version() >= ANDROID_Q_VER) ? 0x00 : 0x20;
 #else
-	return 0x0;
+	return 0x00;
 #endif
 }
 
@@ -296,7 +296,7 @@ typedef enum {
 	IMG_MAX,
 } img_t;
 
-static int image_read(img_t img, struct andr_img_hdr *hdr,
+static int image_load(img_t img, struct andr_img_hdr *hdr,
 		      ulong blkstart, void *ram_base,
 		      struct udevice *crypto)
 {
@@ -422,7 +422,7 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 		return -EINVAL;
 	}
 
-	/* set for image_read(IMG_KERNEL, ...) */
+	/* set for image_load(IMG_KERNEL, ...) */
 	env_set_hex("android_addr_r", (ulong)load_address);
 	bstart = part ? part->start : 0;
 
@@ -457,20 +457,20 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	crypto_sha_init(dev, &ctx);
 
 	/* load, never change order ! */
-	if (image_read(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
+	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
 		return -1;
-	if (image_read(IMG_KERNEL,  hdr, bstart, ram_base, dev))
+	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, dev))
 		return -1;
-	if (image_read(IMG_RAMDISK, hdr, bstart, ram_base, dev))
+	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, dev))
 		return -1;
-	if (image_read(IMG_SECOND,  hdr, bstart, ram_base, dev))
+	if (image_load(IMG_SECOND,  hdr, bstart, ram_base, dev))
 		return -1;
 	if (hdr->header_version > 0) {
-		if (image_read(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, dev))
+		if (image_load(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, dev))
 			return -1;
 	}
 	if (hdr->header_version > 1) {
-		if (image_read(IMG_DTB, hdr, bstart, ram_base, dev))
+		if (image_load(IMG_DTB, hdr, bstart, ram_base, dev))
 			return -1;
 	}
 
@@ -484,20 +484,20 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	}
 
 #else /* !(CONFIG_DM_CRYPTO && CONFIG_ANDROID_BOOT_IMAGE_HASH) */
-	if (image_read(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
+	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
 		return -1;
-	if (image_read(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
+	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
 		return -1;
-	if (image_read(IMG_RAMDISK, hdr, bstart, ram_base, NULL))
+	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, NULL))
 		return -1;
-	if (image_read(IMG_SECOND,  hdr, bstart, ram_base, NULL))
+	if (image_load(IMG_SECOND,  hdr, bstart, ram_base, NULL))
 		return -1;
 	if (hdr->header_version > 0) {
-		if (image_read(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, NULL))
+		if (image_load(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, NULL))
 			return -1;
 	}
 	if (hdr->header_version > 1) {
-		if (image_read(IMG_DTB, hdr, bstart, ram_base, NULL))
+		if (image_load(IMG_DTB, hdr, bstart, ram_base, NULL))
 			return -1;
 	}
 #endif
@@ -508,17 +508,12 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	return 0;
 }
 
-/*
- * 'boot_android' cmd use "kernel_addr_r" as default load address !
- * We update it according to compress type and "kernel_addr_c/r".
- */
-int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
+static ulong android_image_get_comp_addr(struct andr_img_hdr *hdr, int comp)
 {
 	ulong kernel_addr_c;
-	int comp;
+	ulong load_addr = 0;
 
 	kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
-	comp = android_image_parse_kernel_comp(hdr);
 
 #ifdef CONFIG_ARM64
 	/*
@@ -538,7 +533,7 @@ int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 			env_set_hex("kernel_addr_c", comp_addr);
 		}
 
-		*load_addr = comp_addr - hdr->page_size;
+		load_addr = comp_addr - hdr->page_size;
 	}
 #else
 	/*
@@ -555,22 +550,40 @@ int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 			/* input load_addr is for Image, nothing to do */
 		} else {
 			/* input load_addr is for lz4/zImage, set default addr for Image */
-			*load_addr = CONFIG_SYS_SDRAM_BASE + 0x8000;
-			env_set_hex("kernel_addr_r", *load_addr);
+			load_addr = CONFIG_SYS_SDRAM_BASE + 0x8000;
+			env_set_hex("kernel_addr_r", load_addr);
 
-			*load_addr -= hdr->page_size;
+			load_addr -= hdr->page_size;
 		}
 	} else {
 		if (kernel_addr_c) {
 			/* input load_addr is for Image, so use another for lz4/zImage */
-			*load_addr = kernel_addr_c - hdr->page_size;
+			load_addr = kernel_addr_c - hdr->page_size;
 		} else {
 			/* input load_addr is for lz4/zImage, nothing to do */
 		}
 	}
 #endif
 
+	return load_addr;
+}
+
+/*
+ * 'boot_android' cmd use "kernel_addr_r" as default load address !
+ * We update it according to compress type and "kernel_addr_c/r".
+ */
+int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
+{
+	ulong new_load_addr;
+	int comp;
+
+	comp = android_image_parse_kernel_comp(hdr);
 	env_set_ulong("os_comp", comp);
+
+	new_load_addr = android_image_get_comp_addr(hdr, comp);
+	if (new_load_addr != 0)
+		*load_addr = new_load_addr;
+
 	return comp;
 }
 

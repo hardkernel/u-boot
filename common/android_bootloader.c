@@ -846,11 +846,10 @@ __weak int board_select_fdt_index(ulong dt_table_hdr)
 
 static int android_get_dtbo(ulong *fdt_dtbo,
 			    const struct andr_img_hdr *hdr,
-			    int *index, int boot_mode)
+			    int *index, const char *part_dtbo)
 {
 	struct dt_table_header *dt_hdr = NULL;
 	struct blk_desc *dev_desc;
-	const char *part_name;
 	disk_partition_t part_info;
 	u32 blk_offset, blk_cnt;
 	void *buf;
@@ -859,49 +858,34 @@ static int android_get_dtbo(ulong *fdt_dtbo,
 	int e_idx;
 	int ret;
 
-	/* Get partition according to boot mode */
-	if (boot_mode == BOOT_MODE_RECOVERY)
-		part_name = PART_RECOVERY;
-	else
-		part_name = PART_DTBO;
-
 	/* Get partition info */
 	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: dev_desc is NULL!\n", __func__);
+	if (!dev_desc)
 		return -ENODEV;
-	}
 
-	ret = part_get_info_by_name(dev_desc, part_name, &part_info);
+	ret = part_get_info_by_name(dev_desc, part_dtbo, &part_info);
 	if (ret < 0) {
-		printf("%s: failed to get %s part info, ret=%d\n",
-		       __func__, part_name, ret);
+		printf("No %s partition, ret=%d\n", part_dtbo, ret);
 		return ret;
 	}
 
 	/* Check dt table header */
-	if (!strcmp(part_name, PART_RECOVERY))
+	if (!strcmp(part_dtbo, PART_RECOVERY))
 		blk_offset = part_info.start +
 			     (hdr->recovery_dtbo_offset / part_info.blksz);
 	else
 		blk_offset = part_info.start;
 
 	dt_hdr = memalign(ARCH_DMA_MINALIGN, part_info.blksz);
-	if (!dt_hdr) {
-		printf("%s: out of memory for dt header!\n", __func__);
+	if (!dt_hdr)
 		return -ENOMEM;
-	}
 
 	ret = blk_dread(dev_desc, blk_offset, 1, dt_hdr);
-	if (ret != 1) {
-		printf("%s: failed to read dt table header\n",
-		       __func__);
+	if (ret != 1)
 		goto out1;
-	}
 
 	if (!android_dt_check_header((ulong)dt_hdr)) {
-		printf("%s: Error: invalid dt table header: 0x%x\n",
-		       __func__, dt_hdr->magic);
+		printf("DTBO: invalid dt table header: 0x%x\n", dt_hdr->magic);
 		ret = -EINVAL;
 		goto out1;
 	}
@@ -915,17 +899,13 @@ static int android_get_dtbo(ulong *fdt_dtbo,
 	/* Read all DT Image */
 	buf = memalign(ARCH_DMA_MINALIGN, part_info.blksz * blk_cnt);
 	if (!buf) {
-		printf("%s: out of memory for %s part!\n", __func__, part_name);
 		ret = -ENOMEM;
 		goto out1;
 	}
 
 	ret = blk_dread(dev_desc, blk_offset, blk_cnt, buf);
-	if (ret != blk_cnt) {
-		printf("%s: failed to read dtbo, blk_cnt=%d, ret=%d\n",
-		       __func__, blk_cnt, ret);
+	if (ret != blk_cnt)
 		goto out2;
-	}
 
 	e_idx = board_select_fdt_index((ulong)buf);
 	if (e_idx < 0) {
@@ -948,7 +928,7 @@ static int android_get_dtbo(ulong *fdt_dtbo,
 
 	free(dt_hdr);
 	debug("ANDROID: Loading dt entry to 0x%lx size 0x%x idx %d from \"%s\" part\n",
-	      e_addr, e_size, e_idx, part_name);
+	      e_addr, e_size, e_idx, part_dtbo);
 
 	return 0;
 
@@ -964,38 +944,31 @@ int android_fdt_overlay_apply(void *fdt_addr)
 {
 	struct andr_img_hdr *hdr;
 	struct blk_desc *dev_desc;
-	const char *part_name;
+	const char *part_boot;
 	disk_partition_t part_info;
+	char *part_dtbo;
 	char buf[32] = {0};
 	u32 blk_cnt;
 	ulong fdt_dtbo = -1;
-	int boot_mode;
 	int index = -1;
 	int ret;
 
-	boot_mode = rockchip_get_boot_mode();
-#ifdef CONFIG_ANDROID_AB
-	if (boot_mode == BOOT_MODE_RECOVERY)
-		boot_mode = BOOT_MODE_NORMAL;
-#endif
-	if (boot_mode == BOOT_MODE_RECOVERY)
-		part_name = PART_RECOVERY;
-	else
-		part_name = PART_BOOT;
+	if (IS_ENABLED(CONFIG_ANDROID_AB) ||
+	    (rockchip_get_boot_mode() != BOOT_MODE_RECOVERY)) {
+		part_boot = PART_BOOT;
+		part_dtbo = PART_DTBO;
+	} else {
+		part_boot = PART_RECOVERY;
+		part_dtbo = PART_RECOVERY;
+	}
 
-	/* Get partition info */
 	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: dev_desc is NULL!\n", __func__);
+	if (!dev_desc)
 		return -ENODEV;
-	}
 
-	ret = part_get_info_by_name(dev_desc, part_name, &part_info);
-	if (ret < 0) {
-		printf("%s: failed to get %s part info, ret=%d\n",
-		       __func__, part_name, ret);
+	ret = part_get_info_by_name(dev_desc, part_boot, &part_info);
+	if (ret < 0)
 		return ret;
-	}
 
 	blk_cnt = DIV_ROUND_UP(sizeof(*hdr), part_info.blksz);
 	hdr = memalign(ARCH_DMA_MINALIGN, part_info.blksz * blk_cnt);
@@ -1006,7 +979,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 
 	ret = blk_dread(dev_desc, part_info.start, blk_cnt, hdr);
 	if (ret != blk_cnt) {
-		printf("%s: failed to read %s hdr!\n", __func__, part_name);
+		printf("%s: failed to read %s hdr!\n", __func__, part_boot);
 		goto out;
 	}
 
@@ -1024,7 +997,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 		goto out;
 	}
 
-	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index, boot_mode);
+	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index, part_dtbo);
 	if (!ret) {
 		phys_size_t fdt_size;
 		/* Must incease size before overlay */
