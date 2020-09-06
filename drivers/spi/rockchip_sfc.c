@@ -107,7 +107,7 @@ check_member(rockchip_sfc_reg, data, 0x108);
 #define SFC_MAX_TRB_VER3	(512 * 31)
 #define SFC_MAX_TRB_VER4	(0xFFFFFFFF)
 
-#define SFC_MAX_RATE		(150 * 1000 * 1000)
+#define SFC_MAX_RATE		(100 * 1000 * 1000)
 #define SFC_DEFAULT_RATE	(80 * 1000 * 1000)
 #define SFC_MIN_RATE		(10 * 1000 * 1000)
 
