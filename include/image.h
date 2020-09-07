@@ -930,6 +930,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_COMP_ADDR_PROP	"comp"
 #define FIT_ENTRY_PROP		"entry"
 #define FIT_LOAD_PROP		"load"
+#define FIT_PRE_LOAD_PROP	"preload"
 #define FIT_ROLLBACK_PROP	"rollback-index"
 
 /* configuration node */
@@ -1011,6 +1012,7 @@ int fit_image_get_os(const void *fit, int noffset, uint8_t *os);
 int fit_image_get_arch(const void *fit, int noffset, uint8_t *arch);
 int fit_image_get_type(const void *fit, int noffset, uint8_t *type);
 int fit_image_get_comp(const void *fit, int noffset, uint8_t *comp);
+bool fit_image_is_preload(const void *fit, int noffset);
 int fit_image_get_load(const void *fit, int noffset, ulong *load);
 int fit_image_get_entry(const void *fit, int noffset, ulong *entry);
 int fit_image_get_comp_addr(const void *fit, int noffset, ulong *comp);

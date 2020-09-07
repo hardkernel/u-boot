@@ -711,6 +711,23 @@ int fit_image_get_comp(const void *fit, int noffset, uint8_t *comp)
 	return 0;
 }
 
+bool fit_image_is_preload(const void *fit, int noffset)
+{
+	int len;
+	int *data;
+
+	data = (int *)fdt_getprop(fit, noffset, FIT_PRE_LOAD_PROP, &len);
+	if (data == NULL || len != sizeof(int)) {
+		fit_get_debug(fit, noffset, FIT_PRE_LOAD_PROP, len);
+		return false;
+	}
+
+	if (*data != 1)
+		return false;
+
+	return true;
+}
+
 static int fit_image_get_address(const void *fit, int noffset, char *name,
 			  ulong *load)
 {
