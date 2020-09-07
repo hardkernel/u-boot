@@ -20,7 +20,15 @@ endif
 
 ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_$(SPL_TPL_)BOOTROM_SUPPORT) += spl_bootrom.o
+ifdef CONFIG_SPL_KERNEL_BOOT
+ifdef CONFIG_ARM64
 obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit.o
+else
+obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit_tb_arm_v7.o
+endif
+else
+obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit.o
+endif
 obj-$(CONFIG_$(SPL_TPL_)NOR_SUPPORT) += spl_nor.o
 obj-$(CONFIG_$(SPL_TPL_)XIP_SUPPORT) += spl_xip.o
 obj-$(CONFIG_$(SPL_TPL_)YMODEM_SUPPORT) += spl_ymodem.o
