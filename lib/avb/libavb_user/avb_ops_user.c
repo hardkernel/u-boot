@@ -32,6 +32,7 @@
 #include <mmc.h>
 #include <blk.h>
 #include <part.h>
+#include <stdio.h>
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/libavb_ab.h>
 #include <android_avb/avb_atx_validate.h>
@@ -67,6 +68,27 @@ static void byte_to_block(int64_t *offset,
 	}
 }
 
+static AvbIOResult get_size_of_partition(AvbOps *ops,
+					 const char *partition,
+					 uint64_t *out_size_in_bytes)
+{
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: Could not find device\n", __func__);
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
+
+	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0) {
+		printf("Could not find \"%s\" partition\n", partition);
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
+	*out_size_in_bytes = (part_info.size) * 512;
+	return AVB_IO_RESULT_OK;
+}
+
 static AvbIOResult read_from_partition(AvbOps *ops,
 				       const char *partition,
 				       int64_t offset,
@@ -77,6 +99,17 @@ static AvbIOResult read_from_partition(AvbOps *ops,
 	struct blk_desc *dev_desc;
 	lbaint_t offset_blk, blkcnt;
 	disk_partition_t part_info;
+	uint64_t partition_size;
+
+	if (offset < 0) {
+		if (get_size_of_partition(ops, partition, &partition_size))
+			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+
+		if (-offset > partition_size)
+			return AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION;
+
+		offset = partition_size - (-offset);
+	}
 
 	byte_to_block(&offset, &num_bytes, &offset_blk, &blkcnt);
 	dev_desc = rockchip_get_bootdev();
@@ -290,27 +323,6 @@ static AvbIOResult write_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 	return AVB_IO_RESULT_ERROR_IO;
 }
 
-static AvbIOResult get_size_of_partition(AvbOps *ops,
-					 const char *partition,
-					 uint64_t *out_size_in_bytes)
-{
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
-
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: Could not find device\n", __func__);
-		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
-	}
-
-	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0) {
-		printf("Could not find \"%s\" partition\n", partition);
-		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
-	}
-	*out_size_in_bytes = (part_info.size) * 512;
-	return AVB_IO_RESULT_OK;
-}
-
 static AvbIOResult get_unique_guid_for_partition(AvbOps *ops,
 						 const char *partition,
 						 char *guid_buf,
@@ -438,6 +450,34 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 }
 #endif
 
+AvbIOResult validate_public_key_for_partition(AvbOps *ops,
+					      const char *partition,
+					      const uint8_t *public_key_data,
+					      size_t public_key_length,
+					      const uint8_t *public_key_metadata,
+					      size_t public_key_metadata_length,
+					      bool *out_is_trusted,
+					      uint32_t *out_rollback_index_location)
+{
+/* remain AVB_VBMETA_PUBLIC_KEY_VALIDATE to compatible legacy code */
+#if defined(CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE) || \
+    defined(AVB_VBMETA_PUBLIC_KEY_VALIDATE)
+	if (out_is_trusted) {
+		avb_atx_validate_vbmeta_public_key(ops,
+						   public_key_data,
+						   public_key_length,
+						   public_key_metadata,
+						   public_key_metadata_length,
+						   out_is_trusted);
+	}
+#else
+	if (out_is_trusted)
+		*out_is_trusted = true;
+#endif
+	*out_rollback_index_location = 0;
+	return AVB_IO_RESULT_OK;
+}
+
 AvbOps *avb_ops_user_new(void)
 {
 	AvbOps *ops;
@@ -476,6 +516,7 @@ AvbOps *avb_ops_user_new(void)
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	ops->get_preloaded_partition = get_preloaded_partition;
 #endif
+	ops->validate_public_key_for_partition = validate_public_key_for_partition;
 	ops->ab_ops->read_ab_metadata = avb_ab_data_read;
 	ops->ab_ops->write_ab_metadata = avb_ab_data_write;
 	ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
