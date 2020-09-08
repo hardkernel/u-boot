@@ -489,6 +489,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	size_t slot_index_to_boot = 0;
 	char verify_state[38] = {0};
 	char can_boot = 1;
+	char retry_no_vbmeta_partition = 1;
 	unsigned long load_address = *android_load_address;
 	struct andr_img_hdr *hdr;
 
@@ -521,6 +522,10 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	else
 		slot_index_to_boot = 0;
 
+	if (strcmp(boot_partname, "recovery") == 0)
+		flags |= AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
+
+retry_verify:
 	verify_result =
 	avb_slot_verify(ops,
 			requested_partitions,
@@ -555,6 +560,16 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		else
 			strcat(verify_state, "red");
 		break;
+	}
+
+	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK &&
+	    verify_result != AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
+		if (retry_no_vbmeta_partition && strcmp(boot_partname, "recovery") == 0) {
+			printf("Verify recovery with vbmeta.\n");
+			flags &= ~AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
+			retry_no_vbmeta_partition = 0;
+			goto retry_verify;
+		}
 	}
 
 	if (!slot_data[0]) {
