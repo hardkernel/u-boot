@@ -61,6 +61,14 @@ config CLK_ZYNQMP
 	  This clock driver adds support for clock realted settings for
 	  ZynqMP platform.
 
+config CLK_SCMI
+	bool "Enable SCMI clock driver"
+	depends on SCMI_FIRMWARE
+	help
+	  Enable this option if you want to support clock devices exposed
+	  by a SCMI agent based on SCMI clock protocol communication
+	  with a SCMI server.
+
 source "drivers/clk/tegra/Kconfig"
 source "drivers/clk/uniphier/Kconfig"
 source "drivers/clk/exynos/Kconfig"
