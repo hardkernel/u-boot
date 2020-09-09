@@ -172,6 +172,28 @@
 		fake-host-hwaddr = <0x00 0x00 0x66 0x44 0x22 0x22>;
 	};
 
+	firmware {
+		sandbox_firmware: sandbox-firmware {
+			compatible = "sandbox,firmware";
+		};
+
+		sandbox-scmi-agent@0 {
+			compatible = "sandbox,scmi-agent";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		sandbox-scmi-agent@1 {
+			compatible = "sandbox,scmi-agent";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			protocol@10 {
+				reg = <0x10>;
+			};
+		};
+	};
+
 	gpio_a: base-gpios {
 		compatible = "sandbox,gpio";
 		gpio-controller;

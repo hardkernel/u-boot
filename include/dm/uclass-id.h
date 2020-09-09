@@ -77,6 +77,7 @@ enum uclass_id {
 	UCLASS_RKNAND,		/* Rockchip nand device with ftl */
 	UCLASS_RAMDISK,		/* Virtual ram disk */
 	UCLASS_RTC,		/* Real time clock device */
+	UCLASS_SCMI_AGENT,	/* Interface with an SCMI server */
 	UCLASS_SCSI,		/* SCSI device */
 	UCLASS_SERIAL,		/* Serial UART */
 	UCLASS_SPI,		/* SPI bus */
