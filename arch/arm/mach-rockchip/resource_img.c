@@ -273,27 +273,6 @@ static int read_logo_bmps(struct blk_desc *dev_desc)
 	return 0;
 }
 
-static int read_dtb_from_android_v2(int rsce_base, int dtb_offset, int dtb_size)
-{
-	if (!dtb_size)
-		return 0;
-
-	/*
-	 * boot_img_hdr_v2 feature.
-	 *
-	 * If dtb position is present, replace the old with new one if
-	 * we don't need to verify DTB hash from resource.img file entry.
-	 */
-#ifndef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (replace_resource_entry(DTB_FILE, rsce_base, dtb_offset, dtb_size))
-		printf("Failed to load dtb from v2 dtb position\n");
-	else
-#endif
-		env_update("bootargs", "androidboot.dtb_idx=0");
-
-	return 0;
-}
-
 int resource_create_ram_list(struct blk_desc *dev_desc, void *rsce_hdr)
 {
 	struct resource_img_hdr *hdr = rsce_hdr;
@@ -385,81 +364,105 @@ err:
 	return ret;
 }
 
+static int read_dtb_from_android(struct blk_desc *dev_desc,
+				 struct andr_img_hdr *hdr,
+				 ulong rsce_base)
+{
+	ulong dtb_offset = 0;
+	ulong dtb_size = 0;
+
+	if (!hdr || hdr->header_version <= 1) {
+		return 0;
+	} else if (hdr->header_version == 2) {
+		dtb_offset += hdr->page_size;
+		dtb_offset += ALIGN(hdr->kernel_size, hdr->page_size);
+		dtb_offset += ALIGN(hdr->ramdisk_size, hdr->page_size);
+		dtb_offset += ALIGN(hdr->recovery_dtbo_size, hdr->page_size) +
+			      ALIGN(hdr->second_size, hdr->page_size);
+		dtb_size = hdr->dtb_size;
+	} else if (hdr->header_version == 3) {
+		dtb_offset += ALIGN(VENDOR_BOOT_HDR_SIZE,
+				    hdr->vendor_page_size) +
+			      ALIGN(hdr->vendor_ramdisk_size,
+				    hdr->vendor_page_size);
+		dtb_size = hdr->dtb_size;
+	}
+
+	if (!dtb_size)
+		return 0;
+
+	/*
+	 * boot_img_hdr_v2,3 feature.
+	 *
+	 * If dtb position is present, replace the old with new one if
+	 * we don't need to verify DTB hash from resource.img file entry.
+	 */
+	dtb_offset = DIV_ROUND_UP(dtb_offset, dev_desc->blksz);
+#ifndef CONFIG_ROCKCHIP_DTB_VERIFY
+	if (replace_resource_entry(DTB_FILE, rsce_base, dtb_offset, dtb_size))
+		printf("Failed to load dtb from v2 dtb position\n");
+	else
+#endif
+		env_update("bootargs", "androidboot.dtb_idx=0");
+
+	return 0;
+}
+
 static int get_resource_base_sector(struct blk_desc *dev_desc,
-				    disk_partition_t *from_part,
-				    int *dtb_off, int *dtb_size)
+				    struct andr_img_hdr **ret_hdr)
 {
 	disk_partition_t part;
-	int rsce_base;
+	int rsce_base = 0;
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	struct andr_img_hdr *hdr;
-	int blknum;
+	u32 os_ver = 0, os_lvl;
 
 	/*
 	 * Anyway, we must read android hdr firstly from boot partition to get
 	 * the 'os_version' for android_bcb_msg_sector_offset(), in order to
-	 * confirm BCB message offset of misc partition.
+	 * confirm BCB message offset of *MISC* partition.
 	 */
 	if (part_get_info_by_name(dev_desc, PART_BOOT, &part) < 0)
 		goto resource_part;
 
-	blknum = DIV_ROUND_UP(sizeof(*hdr), dev_desc->blksz);
-	hdr = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz * blknum);
-	if (!hdr)
-		return -ENOMEM;
-
-	if (blk_dread(dev_desc, part.start, blknum, hdr) != blknum) {
-		printf("Failed to read %s hdr\n", part.name);
-		free(hdr);
-		return -EIO;
-	}
-
-	if (!android_image_check_header(hdr)) {
-		u32 os_ver, os_lvl;
-
+	hdr = populate_andr_img_hdr(dev_desc, &part);
+	if (hdr) {
 		os_ver = hdr->os_version >> 11;
 		os_lvl = hdr->os_version & ((1U << 11) - 1);
-		if (os_ver) {
+		if (os_ver)
 			gd->bd->bi_andr_version = hdr->os_version;
-			printf("Android %u.%u, Build %u.%u\n",
-			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
-			       (os_lvl >> 4) + 2000, os_lvl & 0x0F);
-		}
 	}
 
 #ifndef CONFIG_ANDROID_AB
 	/* Get boot mode from misc and read if recovery mode */
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY) {
+		if (hdr)
+			free(hdr);
+
 		if (part_get_info_by_name(dev_desc, PART_RECOVERY, &part) < 0)
 			goto resource_part;
 
-		if (blk_dread(dev_desc, part.start, blknum, hdr) != blknum) {
-			printf("Failed to read %s hdr\n", part.name);
-			free(hdr);
-			return -EIO;
-		}
+		hdr = populate_andr_img_hdr(dev_desc, &part);
+		if (!hdr)
+			goto resource_part;
 	}
 #endif
-	/* get ! */
-	if (!android_image_check_header(hdr)) {
-		rsce_base = part.start * dev_desc->blksz;
-		rsce_base += hdr->page_size;
-		rsce_base += ALIGN(hdr->kernel_size, hdr->page_size);
-		rsce_base += ALIGN(hdr->ramdisk_size, hdr->page_size);
-
-		if (hdr->header_version >= 2) {
-			*dtb_size = hdr->dtb_size;
-			*dtb_off =
-				rsce_base +
-				ALIGN(hdr->recovery_dtbo_size, hdr->page_size) +
-				ALIGN(hdr->second_size, hdr->page_size);
+	/* If Android v012, getting resource from second position ! */
+	if (hdr) {
+		if (os_ver)
+			printf("Android %u.%u, Build %u.%u, v%d\n",
+			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
+			       (os_lvl >> 4) + 2000, os_lvl & 0x0F,
+			       hdr->header_version);
+		*ret_hdr = hdr;
+		if (hdr->header_version < 3) {
+			rsce_base = part.start * dev_desc->blksz;
+			rsce_base += hdr->page_size;
+			rsce_base += ALIGN(hdr->kernel_size, hdr->page_size);
+			rsce_base += ALIGN(hdr->ramdisk_size, hdr->page_size);
+			rsce_base = DIV_ROUND_UP(rsce_base, dev_desc->blksz);
+			goto finish;
 		}
-
-		rsce_base = DIV_ROUND_UP(rsce_base, dev_desc->blksz);
-		*dtb_off = DIV_ROUND_UP(*dtb_off, dev_desc->blksz) - rsce_base;
-		*from_part = part;
-		free(hdr);
-		goto finish;
 	}
 resource_part:
 #endif
@@ -467,10 +470,9 @@ resource_part:
 	if (part_get_info_by_name(dev_desc, PART_RESOURCE, &part) < 0) {
 		printf("No resource partition\n");
 		return -ENODEV;
+	} else {
+		rsce_base = part.start;
 	}
-
-	*from_part = part;
-	rsce_base = part.start;
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 finish:
 #endif
@@ -490,11 +492,9 @@ finish:
  */
 static int init_resource_list(void)
 {
+	struct andr_img_hdr *hdr = NULL;
 	struct blk_desc *dev_desc;
-	disk_partition_t part;
 	int rsce_base;
-	int dtb_offset;
-	int dtb_size = 0;
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -502,17 +502,14 @@ static int init_resource_list(void)
 		return -ENODEV;
 	}
 
-	rsce_base = get_resource_base_sector(dev_desc, &part,
-					     &dtb_offset, &dtb_size);
+	rsce_base = get_resource_base_sector(dev_desc, &hdr);
 	if (rsce_base > 0) {
 		if (resource_create_list(dev_desc, rsce_base))
 			printf("Failed to create resource list\n");
 	}
 
-	/* override the old one if dtb_size != 0 */
-	read_dtb_from_android_v2(rsce_base, dtb_offset, dtb_size);
-
-	return 0;
+	/* override the resource dtb with android dtb if need */
+	return read_dtb_from_android(dev_desc, hdr, rsce_base);
 }
 
 static struct resource_file *get_file_info(const char *name)

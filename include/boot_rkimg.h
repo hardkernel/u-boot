@@ -54,6 +54,7 @@ struct rockchip_image {
 #define PART_RESOURCE			"resource"
 #define PART_KERNEL			"kernel"
 #define PART_BOOT			"boot"
+#define PART_VENDOR_BOOT		"vendor_boot"
 #define PART_RECOVERY			"recovery"
 #define PART_DTBO			"dtbo"
 #define PART_LOGO			"logo"

@@ -1365,6 +1365,9 @@ void android_image_set_decomp(struct andr_img_hdr *hdr, int comp);
 int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr);
 int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_address);
 
+struct andr_img_hdr *populate_andr_img_hdr(struct blk_desc *dev_desc,
+					   disk_partition_t *part_boot);
+
 /** android_image_load - Load an Android Image from storage.
  *
  * Load an Android Image based on the header size in the storage.

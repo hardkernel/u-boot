@@ -30,9 +30,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 #define ANDROID_ARG_FDT_FILENAME		"rk-kernel.dtb"
 #define ANDROID_Q_VER				10
+#define ANDROID_PARTITION_VENDOR_BOOT		"vendor_boot"
 
-/* Defined by rockchip legacy mkboot tool(SDK version < 8.1) */
-#define ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE	0x4000
+#define BLK_CNT(_num_bytes, _block_size)	\
+		((_num_bytes + _block_size - 1) / _block_size)
 
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
 static u32 android_kernel_comp_type = IH_COMP_NONE;
@@ -131,7 +132,8 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 			     ulong *os_data, ulong *os_len)
 {
 	u32 kernel_addr = android_image_get_kernel_addr(hdr);
-
+	const char *cmdline = hdr->header_version < 3 ?
+			      hdr->cmdline : hdr->total_cmdline;
 	/*
 	 * Not all Android tools use the id field for signing the image with
 	 * sha1 (or anything) so we don't check it. It is not obvious that the
@@ -146,9 +148,9 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 	       kernel_addr, DIV_ROUND_UP(hdr->kernel_size, 1024));
 
 	int len = 0;
-	if (*hdr->cmdline) {
-		debug("Kernel command line: %s\n", hdr->cmdline);
-		len += strlen(hdr->cmdline);
+	if (cmdline) {
+		debug("Kernel command line: %s\n", cmdline);
+		len += strlen(cmdline);
 	}
 
 	char *bootargs = env_get("bootargs");
@@ -166,8 +168,8 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 		strcpy(newbootargs, bootargs);
 		strcat(newbootargs, " ");
 	}
-	if (*hdr->cmdline)
-		strcat(newbootargs, hdr->cmdline);
+	if (cmdline)
+		strcat(newbootargs, cmdline);
 
 	env_set("bootargs", newbootargs);
 
@@ -193,16 +195,22 @@ ulong android_image_get_end(const struct andr_img_hdr *hdr)
 	 * on page boundary
 	 */
 	end = (ulong)hdr;
-	end += hdr->page_size;
-	end += ALIGN(hdr->kernel_size, hdr->page_size);
-	end += ALIGN(hdr->ramdisk_size, hdr->page_size);
-	end += ALIGN(hdr->second_size, hdr->page_size);
-
-	if (hdr->header_version >= 2) {
-		end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
-		end += ALIGN(hdr->dtb_size, hdr->page_size);
-	} else if (hdr->header_version >= 1) {
-		end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
+	if (hdr->header_version < 3) {
+		end += hdr->page_size;
+		end += ALIGN(hdr->kernel_size, hdr->page_size);
+		end += ALIGN(hdr->ramdisk_size, hdr->page_size);
+		end += ALIGN(hdr->second_size, hdr->page_size);
+		if (hdr->header_version == 1) {
+			end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
+		} else if (hdr->header_version == 2) {
+			end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
+			end += ALIGN(hdr->dtb_size, hdr->page_size);
+		}
+	} else {
+		/* boot_img_hdr_v3 */
+		end += hdr->page_size;
+		end += ALIGN(hdr->kernel_size, hdr->page_size);
+		end += ALIGN(hdr->ramdisk_size, hdr->page_size);
 	}
 
 	return end;
@@ -293,6 +301,7 @@ typedef enum {
 	IMG_RECOVERY_DTBO,
 	IMG_RK_DTB,	/* within resource.img in second position */
 	IMG_DTB,
+	IMG_VENDOR_RAMDISK,
 	IMG_MAX,
 } img_t;
 
@@ -301,11 +310,14 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		      struct udevice *crypto)
 {
 	struct blk_desc *desc = rockchip_get_bootdev();
+	disk_partition_t part_vendor_boot;
 	__maybe_unused u32 sizesz;
 	ulong pgsz = hdr->page_size;
 	ulong blksz = desc->blksz;
 	ulong blkcnt, blkoff;
+	ulong orgdst = 0;
 	ulong offset = 0;
+	ulong extra = 0;
 	ulong datasz;
 	void *ramdst;
 	int ret = 0;
@@ -321,15 +333,62 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 				(phys_addr_t)ramdst, blkcnt * blksz))
 			return -ENOMEM;
 		break;
+	case IMG_VENDOR_RAMDISK:
+		if (part_get_info_by_name(desc,
+					  ANDROID_PARTITION_VENDOR_BOOT,
+					  &part_vendor_boot) < 0) {
+			printf("No vendor boot partition\n");
+			return -ENOENT;
+		}
+		/* Always load vendor boot from storage: avb full load boot/recovery */
+		blkstart = part_vendor_boot.start;
+		ram_base = 0;
+
+		pgsz = hdr->vendor_page_size;
+		offset = ALIGN(VENDOR_BOOT_HDR_SIZE, pgsz);
+		blkcnt = DIV_ROUND_UP(hdr->vendor_ramdisk_size, blksz);
+		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
+		datasz = hdr->vendor_ramdisk_size;
+		sizesz = sizeof(hdr->vendor_ramdisk_size);
+		/*
+		 * Add extra memory for generic ramdisk space.
+		 *
+		 * In case of unaligned vendor ramdisk size, reserve
+		 * 1 more blksz.
+		 */
+		if (hdr->header_version == 3)
+			extra = ALIGN(hdr->ramdisk_size, blksz) + blksz;
+		if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
+			(phys_addr_t)ramdst, blkcnt * blksz + extra))
+			return -ENOMEM;
+		break;
 	case IMG_RAMDISK:
 		offset = pgsz + ALIGN(hdr->kernel_size, pgsz);
 		blkcnt = DIV_ROUND_UP(hdr->ramdisk_size, blksz);
 		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
+		/*
+		 * ramdisk_addr_r:
+		 *	|----------------|---------|
+		 *	| vendor-ramdisk | ramdisk |
+		 *	|----------------|---------|
+		 */
+		if (hdr->header_version >= 3) {
+			ramdst += hdr->vendor_ramdisk_size;
+			if (!IS_ALIGNED((ulong)ramdst, blksz)) {
+				orgdst = (ulong)ramdst;
+				ramdst = (void *)ALIGN(orgdst, blksz);
+			}
+		}
 		datasz = hdr->ramdisk_size;
 		sizesz = sizeof(hdr->ramdisk_size);
-		if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
+		/*
+		 * skip v3: sysmem has been alloced by vendor ramdisk.
+		 */
+		if (hdr->header_version < 3) {
+			if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
 				(phys_addr_t)ramdst, blkcnt * blksz))
-			return -ENOMEM;
+				return -ENOMEM;
+		}
 		break;
 	case IMG_SECOND:
 		offset = pgsz +
@@ -393,6 +452,9 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		}
 	}
 
+	if (orgdst)
+		memmove((char *)orgdst, ramdst, datasz);
+
 crypto_calc:
 	/* sha1 */
 #ifdef CONFIG_DM_CRYPTO
@@ -410,6 +472,9 @@ crypto_calc:
 	return 0;
 }
 
+/*
+ * @ram_base: !NULL means require memcpy for an exist full android image.
+ */
 static int android_image_separate(struct andr_img_hdr *hdr,
 				  const disk_partition_t *part,
 				  void *load_address,
@@ -501,6 +566,48 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 			return -1;
 	}
 #endif
+
+	/* 2. Disable fdt/ramdisk relocation, it saves boot time */
+	env_set("bootm-no-reloc", "y");
+
+	return 0;
+}
+
+static int android_image_separate_v3(struct andr_img_hdr *hdr,
+				     const disk_partition_t *part,
+				     void *load_address, void *ram_base)
+{
+	ulong bstart;
+
+	if (android_image_check_header(hdr)) {
+		printf("Bad android image header\n");
+		return -EINVAL;
+	}
+
+	/* set for image_load(IMG_KERNEL, ...) */
+	env_set_hex("android_addr_r", (ulong)load_address);
+	bstart = part ? part->start : 0;
+
+	/*
+	 * 1. Load images to their individual target ram position
+	 *    in order to disable fdt/ramdisk relocation.
+	 */
+	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_load(IMG_VENDOR_RAMDISK, hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, NULL))
+		return -1;
+
+	/*
+	 * Copy the populated hdr to load address after image_load(IMG_KERNEL)
+	 *
+	 * The image_load(IMG_KERNEL) only reads boot_img_hdr_v3 while
+	 * vendor_boot_img_hdr_v3 is not included, so fix it here.
+	 */
+	memcpy((char *)load_address, hdr, hdr->page_size);
 
 	/* 2. Disable fdt/ramdisk relocation, it saves boot time */
 	env_set("bootm-no-reloc", "y");
@@ -605,7 +712,10 @@ static int android_image_load_separate(struct andr_img_hdr *hdr,
 				       const disk_partition_t *part,
 				       void *load_addr)
 {
-	return android_image_separate(hdr, part, load_addr, NULL);
+	if (hdr->header_version < 3)
+		return android_image_separate(hdr, part, load_addr, NULL);
+	else
+		return android_image_separate_v3(hdr, part, load_addr, NULL);
 }
 
 int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_addr)
@@ -617,8 +727,13 @@ int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_addr)
 	if (comp_addr == (ulong)hdr)
 		return 0;
 
-	if (android_image_separate(hdr, NULL, (void *)comp_addr, hdr))
-		return -1;
+	if (hdr->header_version < 3) {
+		if (android_image_separate(hdr, NULL, (void *)comp_addr, hdr))
+			return -1;
+	} else {
+		if (android_image_separate_v3(hdr, NULL, (void *)comp_addr, hdr))
+			return -1;
+	}
 
 	*load_addr = comp_addr;
 	android_image_set_decomp((void *)comp_addr, comp);
@@ -631,54 +746,45 @@ long android_image_load(struct blk_desc *dev_desc,
 			unsigned long load_address,
 			unsigned long max_size) {
 	struct andr_img_hdr *hdr;
-	u32 blksz = dev_desc->blksz;
-	u32 pszcnt, hdrcnt, kercnt;
 	int comp, ret;
+	int blk_off;
 
 	if (max_size < part_info->blksz)
 		return -1;
 
-	/*
-	 * read Android image header and leave enough space for page_size align
-	 * and kernel image header(1 block maybe enough).
-	 *
-	 * ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE is defined by rockchip legacy
-	 * mkboot tool(SDK version < 8.1) and larger than Google defined.
-	 *
-	 * To compatible this, we malloc enough buffer but only read android
-	 * header and kernel image(1 block) from storage(ignore page size).
-	 */
-	kercnt = 1;
-	hdrcnt = DIV_ROUND_UP(sizeof(*hdr), blksz);
-	pszcnt = DIV_ROUND_UP(ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE, blksz);
-
-	hdr = memalign(ARCH_DMA_MINALIGN, (hdrcnt + pszcnt + kercnt) * blksz);
+	hdr = populate_andr_img_hdr(dev_desc, (disk_partition_t *)part_info);
 	if (!hdr) {
-		printf("No memory\n");
+		printf("No valid android hdr\n");
 		return -1;
 	}
 
-	if (blk_dread(dev_desc, part_info->start, hdrcnt, hdr) != hdrcnt) {
-		printf("Failed to read image header\n");
-		goto fail;
-	}
-
-	if (android_image_check_header(hdr) != 0) {
-		printf("** Invalid Android Image header **\n");
-		goto fail;
-	}
-
 	/*
-	 * Update and skip pszcnt(hdr is included) according to hdr->page_size,
-	 * reading kernel image for compress validation.
+	 * create the layout:
+	 *
+	 * |<- page_size ->|1-blk |
+	 * |-----|---------|------|-----|
+	 * | hdr |   ...   |   kernel   |
+	 * |-----|----- ---|------------|
+	 *
+	 * Alloc page_size and 1 more blk for reading kernel image to
+	 * get it's compression type, then fill the android hdr what
+	 * we have populated before.
+	 *
+	 * Why? see: android_image_get_kernel_addr().
 	 */
-	pszcnt = DIV_ROUND_UP(hdr->page_size, blksz);
-	if (blk_dread(dev_desc, part_info->start + pszcnt, kercnt,
-		      (void *)((ulong)hdr + hdr->page_size)) != kercnt) {
-		printf("Failed to read kernel header\n");
-		goto fail;
+	blk_off = BLK_CNT(hdr->page_size, dev_desc->blksz);
+	hdr = (struct andr_img_hdr *)
+			realloc(hdr, (blk_off + 1) * dev_desc->blksz);
+	if (!hdr)
+		return -1;
+
+	if (blk_dread(dev_desc, part_info->start + blk_off, 1,
+		      (char *)hdr + hdr->page_size) != 1) {
+		free(hdr);
+		return -1;
 	}
 
+	/* Make kernel start address at load_address */
 	load_address -= hdr->page_size;
 
 	/* Let's load kernel now ! */
@@ -698,6 +804,260 @@ long android_image_load(struct blk_desc *dev_desc,
 fail:
 	free(hdr);
 	return -1;
+}
+
+static struct andr_img_hdr *
+extract_boot_image_v012_header(struct blk_desc *dev_desc,
+			       const disk_partition_t *boot_img)
+{
+	struct andr_img_hdr *hdr;
+	long blk_cnt, blks_read;
+
+	blk_cnt = BLK_CNT(sizeof(struct andr_img_hdr), dev_desc->blksz);
+	hdr = (struct andr_img_hdr *)malloc(blk_cnt * dev_desc->blksz);
+
+	if (!blk_cnt || !hdr)
+		return NULL;
+
+	blks_read = blk_dread(dev_desc, boot_img->start, blk_cnt, hdr);
+	if (blks_read != blk_cnt) {
+		debug("boot img header blk cnt is %ld and blks read is %ld\n",
+		      blk_cnt, blks_read);
+		return NULL;
+	}
+
+	if (android_image_check_header((void *)hdr)) {
+		printf("boot header magic is invalid.\n");
+		return NULL;
+	}
+
+	if (hdr->page_size < sizeof(*hdr)) {
+		printf("android hdr is over size\n");
+		return NULL;
+	}
+
+	return hdr;
+}
+
+static struct boot_img_hdr_v3 *
+extract_boot_image_v3_header(struct blk_desc *dev_desc,
+			     const disk_partition_t *boot_img)
+{
+	struct boot_img_hdr_v3 *boot_hdr;
+	long blk_cnt, blks_read;
+
+	blk_cnt = BLK_CNT(sizeof(struct boot_img_hdr_v3), dev_desc->blksz);
+	boot_hdr = (struct boot_img_hdr_v3 *)malloc(blk_cnt * dev_desc->blksz);
+
+	if (!blk_cnt || !boot_hdr)
+		return NULL;
+
+	blks_read = blk_dread(dev_desc, boot_img->start, blk_cnt, boot_hdr);
+	if (blks_read != blk_cnt) {
+		debug("boot img header blk cnt is %ld and blks read is %ld\n",
+		      blk_cnt, blks_read);
+		return NULL;
+	}
+
+	if (android_image_check_header((void *)boot_hdr)) {
+		printf("boot header magic is invalid.\n");
+		return NULL;
+	}
+
+	if (boot_hdr->header_version != 3) {
+		printf("boot header is not v3.\n");
+		return NULL;
+	}
+
+	return boot_hdr;
+}
+
+static struct vendor_boot_img_hdr_v3 *
+extract_vendor_boot_image_v3_header(struct blk_desc *dev_desc,
+				    const disk_partition_t *part_vendor_boot)
+{
+	struct vendor_boot_img_hdr_v3 *vboot_hdr;
+	long blk_cnt, blks_read;
+
+	blk_cnt = BLK_CNT(sizeof(struct vendor_boot_img_hdr_v3),
+				part_vendor_boot->blksz);
+	vboot_hdr = (struct vendor_boot_img_hdr_v3 *)
+				malloc(blk_cnt * part_vendor_boot->blksz);
+
+	if (!blk_cnt || !vboot_hdr)
+		return NULL;
+
+	blks_read = blk_dread(dev_desc, part_vendor_boot->start,
+			      blk_cnt, vboot_hdr);
+	if (blks_read != blk_cnt) {
+		debug("vboot img header blk cnt is %ld and blks read is %ld\n",
+		      blk_cnt, blks_read);
+		return NULL;
+	}
+
+	if (strncmp(VENDOR_BOOT_MAGIC, (void *)vboot_hdr->magic,
+		    VENDOR_BOOT_MAGIC_SIZE)) {
+		printf("vendor boot header is invalid.\n");
+		return NULL;
+	}
+
+	if (vboot_hdr->header_version != 3) {
+		printf("vendor boot header is not v3.\n");
+		return NULL;
+	}
+
+	return vboot_hdr;
+}
+
+static int populate_boot_info(const struct boot_img_hdr_v3 *boot_hdr,
+			      const struct vendor_boot_img_hdr_v3 *vendor_hdr,
+			      struct andr_img_hdr *hdr)
+{
+	memset(hdr->magic, 0, ANDR_BOOT_MAGIC_SIZE);
+	memcpy(hdr->magic, boot_hdr->magic, ANDR_BOOT_MAGIC_SIZE);
+
+	hdr->kernel_size = boot_hdr->kernel_size;
+	/* don't use vendor_hdr->kernel_addr, we prefer "hdr + hdr->page_size" */
+	hdr->kernel_addr = ANDROID_IMAGE_DEFAULT_KERNEL_ADDR;
+	/* generic ramdisk: immediately following the vendor ramdisk */
+	hdr->ramdisk_size = boot_hdr->ramdisk_size +
+				vendor_hdr->vendor_ramdisk_size;
+	/* actually, useless */
+	hdr->ramdisk_addr = vendor_hdr->ramdisk_addr +
+				vendor_hdr->vendor_ramdisk_size;
+	/* removed in v3 */
+	hdr->second_size = 0;
+	hdr->second_addr = 0;
+
+	hdr->tags_addr = vendor_hdr->tags_addr;
+
+	/* fixed in v3 */
+	hdr->page_size = 4096;
+	hdr->header_version = boot_hdr->header_version;
+	hdr->os_version = boot_hdr->os_version;
+
+	memset(hdr->name, 0, ANDR_BOOT_NAME_SIZE);
+	strncpy(hdr->name, (const char *)vendor_hdr->name, ANDR_BOOT_NAME_SIZE);
+
+	/* removed in v3 */
+	memset(hdr->cmdline, 0, ANDR_BOOT_ARGS_SIZE);
+	memset(hdr->id, 0, 32);
+	memset(hdr->extra_cmdline, 0, ANDR_BOOT_EXTRA_ARGS_SIZE);
+	hdr->recovery_dtbo_size = 0;
+	hdr->recovery_dtbo_offset = 0;
+
+	hdr->header_size = boot_hdr->header_size;
+	hdr->dtb_size = vendor_hdr->dtb_size;
+	hdr->dtb_addr = vendor_hdr->dtb_addr;
+
+	/* boot_img_hdr_v3 fields */
+	hdr->vendor_ramdisk_size = vendor_hdr->vendor_ramdisk_size;
+	hdr->vendor_page_size = vendor_hdr->page_size;
+	hdr->vendor_header_version = vendor_hdr->header_version;
+	hdr->vendor_header_size = vendor_hdr->header_size;
+
+	hdr->total_cmdline = calloc(1, TOTAL_BOOT_ARGS_SIZE);
+	if (!hdr->total_cmdline)
+		return -ENOMEM;
+	strncpy(hdr->total_cmdline, (const char *)boot_hdr->cmdline,
+		sizeof(boot_hdr->cmdline));
+	strncat(hdr->total_cmdline, " ", 1);
+	strncat(hdr->total_cmdline, (const char *)vendor_hdr->cmdline,
+		sizeof(vendor_hdr->cmdline));
+
+	if (hdr->page_size < sizeof(*hdr)) {
+		printf("android hdr is over size\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/*
+ * The possible cases of boot.img + recovery.img:
+ *
+ * [N]: 0, 1, 2
+ * [M]: 0, 1, 2, 3
+ *
+ * |--------------------|---------------------|
+ * |   boot.img         |    recovery.img     |
+ * |--------------------|---------------------|
+ * | boot_img_hdr_v[N]  |  boot_img_hdr_v[N]  | <= if A/B is not required
+ * |--------------------|---------------------|
+ * | boot_img_hdr_v3    |  boot_img_hdr_v2    | <= if A/B is not required
+ * |------------------------------------------|
+ * | boot_img_hdr_v[M], no recovery.img       | <= if A/B is required
+ * |------------------------------------------|
+ */
+struct andr_img_hdr *populate_andr_img_hdr(struct blk_desc *dev_desc,
+					   disk_partition_t *part_boot)
+{
+	disk_partition_t part_vendor_boot;
+	struct vendor_boot_img_hdr_v3 *vboot_hdr;
+	struct boot_img_hdr_v3 *boot_hdr;
+	struct andr_img_hdr *andr_hdr;
+	int header_version;
+
+	if (!dev_desc || !part_boot)
+		return NULL;
+
+	andr_hdr = (struct andr_img_hdr *)malloc(1 * dev_desc->blksz);
+	if (!andr_hdr)
+		return NULL;
+
+	if (blk_dread(dev_desc, part_boot->start, 1, andr_hdr) != 1) {
+		free(andr_hdr);
+		return NULL;
+	}
+
+	if (android_image_check_header(andr_hdr)) {
+		free(andr_hdr);
+		return NULL;
+	}
+
+	header_version = andr_hdr->header_version;
+	free(andr_hdr);
+
+	if (header_version < 3) {
+		return extract_boot_image_v012_header(dev_desc, part_boot);
+	} else {
+		if (part_get_info_by_name(dev_desc,
+					  ANDROID_PARTITION_VENDOR_BOOT,
+					  &part_vendor_boot) < 0) {
+			printf("No vendor boot partition\n");
+			return NULL;
+		}
+		boot_hdr = extract_boot_image_v3_header(dev_desc, part_boot);
+		vboot_hdr = extract_vendor_boot_image_v3_header(dev_desc,
+							&part_vendor_boot);
+		if (!boot_hdr || !vboot_hdr)
+			goto image_load_exit;
+
+		andr_hdr = (struct andr_img_hdr *)
+				malloc(sizeof(struct andr_img_hdr));
+		if (!andr_hdr) {
+			printf("No memory for andr hdr\n");
+			goto image_load_exit;
+		}
+
+		if (populate_boot_info(boot_hdr, vboot_hdr, andr_hdr)) {
+			printf("populate boot info failed\n");
+			goto image_load_exit;
+		}
+
+		free(boot_hdr);
+		free(vboot_hdr);
+
+		return andr_hdr;
+
+image_load_exit:
+		free(boot_hdr);
+		free(vboot_hdr);
+
+		return NULL;
+	}
+
+	return NULL;
 }
 
 #if !defined(CONFIG_SPL_BUILD)
@@ -723,7 +1083,7 @@ void android_print_contents(const struct andr_img_hdr *hdr)
 	printf("%skernel size:      %x\n", p, hdr->kernel_size);
 	printf("%skernel address:   %x\n", p, hdr->kernel_addr);
 	printf("%sramdisk size:     %x\n", p, hdr->ramdisk_size);
-	printf("%sramdisk addrress: %x\n", p, hdr->ramdisk_addr);
+	printf("%sramdisk address: %x\n", p, hdr->ramdisk_addr);
 	printf("%ssecond size:      %x\n", p, hdr->second_size);
 	printf("%ssecond address:   %x\n", p, hdr->second_addr);
 	printf("%stags address:     %x\n", p, hdr->tags_addr);
@@ -738,15 +1098,23 @@ void android_print_contents(const struct andr_img_hdr *hdr)
 	printf("%sname:             %s\n", p, hdr->name);
 	printf("%scmdline:          %s\n", p, hdr->cmdline);
 
-	if (header_version >= 1) {
+	if (header_version == 1 || header_version == 2) {
 		printf("%srecovery dtbo size:    %x\n", p, hdr->recovery_dtbo_size);
 		printf("%srecovery dtbo offset:  %llx\n", p, hdr->recovery_dtbo_offset);
 		printf("%sheader size:           %x\n", p, hdr->header_size);
 	}
 
-	if (header_version >= 2) {
+	if (header_version == 2 || header_version == 3) {
 		printf("%sdtb size:              %x\n", p, hdr->dtb_size);
 		printf("%sdtb addr:              %llx\n", p, hdr->dtb_addr);
+	}
+
+	if (header_version == 3) {
+		printf("%scmdline:               %s\n", p, hdr->total_cmdline);
+		printf("%svendor ramdisk size:   %x\n", p, hdr->vendor_ramdisk_size);
+		printf("%svendor page size:      %x\n", p, hdr->vendor_page_size);
+		printf("%svendor header version: %d\n", p, hdr->vendor_header_version);
+		printf("%svendor header size:    %x\n", p, hdr->vendor_header_size);
 	}
 }
 #endif

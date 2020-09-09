@@ -18,7 +18,6 @@ static int do_android_print_hdr(cmd_tbl_t *cmdtp, int flag,
 	struct andr_img_hdr *hdr;
 	disk_partition_t part_info;
 	const char *part_name;
-	int blkcnt, ret;
 
 	if (argc != 2)
 		return CMD_RET_USAGE;
@@ -31,31 +30,18 @@ static int do_android_print_hdr(cmd_tbl_t *cmdtp, int flag,
 		return -ENODEV;
 	}
 
-	ret = part_get_info_by_name(dev_desc, part_name, &part_info);
-	if (ret < 0) {
-		printf("Failed to get \"%s\" part, ret=%d\n", part_name, ret);
+	if (part_get_info_by_name(dev_desc, part_name, &part_info) < 0) {
+		printf("Failed to get \"%s\" part\n", part_name);
 		return -ENODEV;
 	}
 
-	blkcnt = DIV_ROUND_UP(sizeof(*hdr), dev_desc->blksz);
-	hdr = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz * blkcnt);
+	hdr = populate_andr_img_hdr(dev_desc, &part_info);
 	if (!hdr) {
-		printf("%s: out of memory!\n", __func__);
-		return -ENOMEM;
-	}
-
-	ret = blk_dread(dev_desc, part_info.start, blkcnt, hdr);
-	if (ret != blkcnt) {
-		printf("Failed to read %s sector, ret=%d\n", part_info.name, ret);
-		free(hdr);
-		return -EIO;
-	}
-
-	if (!android_image_check_header(hdr)) {
+		printf("Not an android image\n");
+		return -EINVAL;
+	} else {
 		printf("Partition \"%s\"\n", part_info.name);
 		android_print_contents(hdr);
-	} else {
-		printf("Not an android image\n");
 	}
 
 	free(hdr);

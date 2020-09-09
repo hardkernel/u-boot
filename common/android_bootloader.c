@@ -31,6 +31,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define ANDROID_PARTITION_BOOT "boot"
+#define ANDROID_PARTITION_VENDOR_BOOT "vendor_boot"
 #define ANDROID_PARTITION_MISC "misc"
 #define ANDROID_PARTITION_OEM  "oem"
 #define ANDROID_PARTITION_RECOVERY  "recovery"
@@ -790,8 +791,41 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			strcat(newbootargs, slot_data[0]->cmdline);
 		env_set("bootargs", newbootargs);
 
-		/* Reserve page_size */
 		hdr = (void *)slot_data[0]->loaded_partitions->data;
+
+		/*
+		 *		populate boot_img_hdr_v3
+		 *
+		 * If allow verification error: the image is loaded by
+		 * ops->get_preloaded_partition() which auto populates
+		 * boot_img_hdr_v3.
+		 *
+		 * If not allow verification error: the image is full loaded
+		 * by ops->read_from_partition() which doesn't populate
+		 * boot_img_hdr_v3, we need to fix it here.
+		 */
+		if (hdr->header_version >= 3 &&
+		    !(flags & AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR)) {
+			struct andr_img_hdr *v3hdr;
+			struct blk_desc *dev_desc;
+			disk_partition_t part;
+
+			dev_desc = rockchip_get_bootdev();
+			if (!dev_desc)
+				return -1;
+
+			if (part_get_info_by_name(dev_desc,
+						  boot_partname, &part) < 0)
+				return -1;
+
+			v3hdr = populate_andr_img_hdr(dev_desc, &part);
+			if (v3hdr) {
+				memcpy(hdr, v3hdr, sizeof(*v3hdr));
+				free(v3hdr);
+			}
+		}
+
+		/* Reserve page_size */
 		load_address -= hdr->page_size;
 		if (android_image_memcpy_separate(hdr, &load_address)) {
 			printf("Failed to separate copy android image\n");
@@ -948,7 +982,6 @@ int android_fdt_overlay_apply(void *fdt_addr)
 	disk_partition_t part_info;
 	char *part_dtbo;
 	char buf[32] = {0};
-	u32 blk_cnt;
 	ulong fdt_dtbo = -1;
 	int index = -1;
 	int ret;
@@ -970,32 +1003,25 @@ int android_fdt_overlay_apply(void *fdt_addr)
 	if (ret < 0)
 		return ret;
 
-	blk_cnt = DIV_ROUND_UP(sizeof(*hdr), part_info.blksz);
-	hdr = memalign(ARCH_DMA_MINALIGN, part_info.blksz * blk_cnt);
-	if (!hdr) {
-		printf("%s: out of memory!\n", __func__);
-		return -ENOMEM;
-	}
-
-	ret = blk_dread(dev_desc, part_info.start, blk_cnt, hdr);
-	if (ret != blk_cnt) {
-		printf("%s: failed to read %s hdr!\n", __func__, part_boot);
-		goto out;
-	}
-
+	hdr = populate_andr_img_hdr(dev_desc, &part_info);
+	if (!hdr)
+		return -EINVAL;
 #ifdef DEBUG
 	android_print_contents(hdr);
 #endif
 
-	if (android_image_check_header(hdr))
-		return -EINVAL;
-
-	/* Check header version */
-	if (!hdr->header_version) {
-		printf("Android header version 0\n");
-		ret = -EINVAL;
+	/*
+	 * recovery_dtbo fields
+	 *
+	 * boot_img_hdr_v0: unsupported
+	 * boot_img_hdr_v1,2: supported
+	 * boot_img_hdr_v3 + boot.img: supported
+	 * boot_img_hdr_v3 + recovery.img: unsupported
+	 */
+	if ((hdr->header_version == 0) ||
+	    (hdr->header_version == 3 && !strcmp(part_boot, PART_RECOVERY)) ||
+	    (hdr->header_version > 3))
 		goto out;
-	}
 
 	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index, part_dtbo);
 	if (!ret) {
