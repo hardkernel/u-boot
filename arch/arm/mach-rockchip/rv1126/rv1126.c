@@ -72,6 +72,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_SOFTRST_CON11	0xFF49032C
 #define PMUGRF_SOC_CON1		0xFE020104
 #define GRF_IOFUNC_CON3		0xFF01026C
+#define GRF1_GPIO0D_P		0xFE010104
 
 enum {
 	GPIO1A7_SHIFT		= 12,
@@ -602,6 +603,10 @@ int arch_cpu_init(void)
 
 	/* hold pmugrf's io reset */
 	writel(0x1 << 7 | 1 << 23, PMUGRF_SOC_CON1);
+#endif
+#if defined(CONFIG_ROCKCHIP_SFC) && (defined(CONFIG_SPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG))
+	/* GPIO0_D6 pull down in default, pull up it for SPI Flash */
+	writel(((0x3 << 12) << 16) | (0x1 << 12), GRF1_GPIO0D_P);
 #endif
 
 	return 0;
