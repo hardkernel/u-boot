@@ -508,10 +508,11 @@ void board_debug_uart_init(void)
 
 int arch_cpu_init(void)
 {
-#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG)
+#ifdef CONFIG_SPL_BUILD
+	int delay;
+
 	/* Just set region 0 to unsecure */
 	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
-#endif
 
 	/* disable force jtag mux route to both group0 and group1 */
 	writel(0x00300000, GRF_IOFUNC_CON3);
@@ -519,9 +520,6 @@ int arch_cpu_init(void)
 	/* make npu aclk and sclk less then 300MHz when reset */
 	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON65);
 	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON67);
-
-#if !defined(CONFIG_TPL_BUILD)
-	int delay;
 
 	/* enable all pd */
 	writel(0xffff0000, PMU_BASE_ADDR + PMU_PWR_GATE_SFTCON);
@@ -592,9 +590,11 @@ int arch_cpu_init(void)
 	writel(0x101, CRYPTO_PRIORITY_REG);
 	/* enable dynamic priority */
 	writel(0x1, ISP_PRIORITY_EX_REG);
-#endif
 
-#if defined(CONFIG_SUPPORT_USBPLUG)
+#elif defined(CONFIG_SUPPORT_USBPLUG)
+	/* Just set region 0 to unsecure */
+	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
+
 	/* reset usbphy_otg usbphypor_otg */
 	writel(((0x1 << 6 | (1 << 8)) << 16) | (0x1 << 6) | (1 << 8), CRU_SOFTRST_CON11);
 	udelay(50);
