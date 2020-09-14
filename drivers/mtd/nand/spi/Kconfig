@@ -83,4 +83,10 @@ config SPI_NAND_BIWIN
 	help
 	  Add support for various BIWIN SPI Nand flash chips
 
+config SPI_NAND_ETRON
+	default y
+	bool "ETRON SPI flash support"
+	help
+	  Add support for various ETRON SPI Nand flash chips
+
 endif
