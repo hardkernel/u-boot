@@ -2771,7 +2771,7 @@ static void save_fsp_param(struct dram_info *dram, u32 dst_fsp,
 	p_fsp_param->flag = FSP_FLAG;
 }
 
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 static void copy_fsp_param_to_ddr(void)
 {
 	memcpy((void *)FSP_PARAM_STORE_ADDR, (void *)&fsp_param,
@@ -2966,7 +2966,7 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 	struct ddr2_3_4_lp2_3_info *ddr_info;
 	u32 f0;
 	u32 dramtype = sdram_params->base.dramtype;
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 	u32 f1, f2, f3;
 #endif
 
@@ -2977,7 +2977,7 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 	f0 = (ddr_info->ddr_freq0_1 >> DDR_FREQ_F0_SHIFT) &
 	     DDR_FREQ_MASK;
 
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 	memset((void *)FSP_PARAM_STORE_ADDR, 0, sizeof(fsp_param));
 	memset((void *)&fsp_param, 0, sizeof(fsp_param));
 
@@ -2992,7 +2992,7 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 	if (get_wrlvl_val(dram, sdram_params))
 		printascii("get wrlvl value fail\n");
 
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 	printascii("change to: ");
 	printdec(f1);
 	printascii("MHz\n");
@@ -3010,7 +3010,7 @@ static void ddr_set_rate_for_fsp(struct dram_info *dram,
 	printascii("change to: ");
 	printdec(f0);
 	printascii("MHz(final freq)\n");
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 	ddr_set_rate(&dram_info, sdram_params, f0, f3, 0, 0, 1);
 #else
 	ddr_set_rate(&dram_info, sdram_params, f0, sdram_params->base.ddr_freq, 1, 1, 1);
@@ -3094,7 +3094,7 @@ int sdram_init(void)
 	print_ddr_info(sdram_params);
 
 	ddr_set_rate_for_fsp(&dram_info, sdram_params);
-#ifndef CONFIG_ROCKCHIP_THUNDER_BOOT
+#ifndef CONFIG_SPL_KERNEL_BOOT
 	copy_fsp_param_to_ddr();
 #endif
 
