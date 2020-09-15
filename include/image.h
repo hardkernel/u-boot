@@ -17,6 +17,7 @@
 #define __IMAGE_H__
 
 #include "compiler.h"
+#include <stdbool.h>
 #include <asm/byteorder.h>
 
 /* Define this to avoid #ifdefs later on */
