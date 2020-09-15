@@ -65,7 +65,7 @@ function fit_repack()
 	rm -rf ${OUT}
 	mkdir -p ${OUT}
 	${UNPACK} -f ${IMAGE} -o ${OUT}/
-	cp ${DATA}/* ${OUT}/
+	find ${DATA}/ -maxdepth 1 -type f | xargs cp -t ${OUT}/
 
 	if fdtget -l ${IMAGE} /images/uboot >/dev/null 2>&1 ; then
 		rm -f ${IMAGE}
