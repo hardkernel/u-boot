@@ -666,6 +666,16 @@ function pack_uboot_image()
 {
 	rm u-boot.img u-boot-dtb.img -f
 	LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
+	if [ -z "${LOAD_ADDR}" ]; then
+		# upstream U-Boot
+		LOAD_ADDR=`grep CONFIG_SYS_TEXT_BASE include/generated/autoconf.h | awk '{ print $3 }' | tr -d '\r'`
+	fi
+
+	if [ -z "${LOAD_ADDR}" ]; then
+		echo "ERROR: No CONFIG_SYS_TEXT_BASE for u-boot";
+		exit 1
+	fi
+
 	${SCRIPT_UBOOT} --load ${LOAD_ADDR} ${PLAT_UBOOT_SIZE}
 }
 
