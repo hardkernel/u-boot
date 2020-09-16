@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: GPL-2.0
 #
 
+set -e
+
 if [ $# -eq 0 ]; then
 	echo "ERROR: No args of $0"
 	exit 1
