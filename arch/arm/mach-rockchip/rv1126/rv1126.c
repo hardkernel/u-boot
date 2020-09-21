@@ -66,6 +66,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_CLKSEL_CON67	0x20c
 #define CRU_SOFTRST_CON02	0x308
 
+#define CRU_PMU_BASE		0xFF480000
+#define CRU_PMU_GPLL_CON0	0x10
+#define CRU_PMU_GPLL_CON1	0x14
+
 #define GRF_BASE		0xFE000000
 #define PMUGRF_BASE		0xFE020000
 #define SGRF_BASE		0xFE0A0000
@@ -531,6 +535,13 @@ int arch_cpu_init(void)
 	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
 	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
 
+#ifdef CONFIG_SPL_KERNEL_BOOT
+	/* Adjust the parameters of GPLL's VCO for reduce power*/
+	writel(0x00030000, CRU_PMU_BASE);
+	writel(0xffff1063, CRU_PMU_BASE + CRU_PMU_GPLL_CON0);
+	writel(0xffff1442, CRU_PMU_BASE + CRU_PMU_GPLL_CON1);
+	writel(0x00030001, CRU_PMU_BASE);
+#endif
 	/* enable all pd */
 	writel(0xffff0000, PMU_BASE_ADDR + PMU_PWR_GATE_SFTCON);
 	delay = 1000;
