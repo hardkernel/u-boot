@@ -43,6 +43,9 @@
 #ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 #include <keymaster.h>
 #endif
+#ifdef CONFIG_ANDROID_AB
+#include <android_ab.h>
+#endif
 
 #define FASTBOOT_VERSION		"0.4"
 
@@ -1000,6 +1003,37 @@ static int fb_read_var(char *cmd, char *response,
 		} while (strlen(cmd));
 		break;
 	}
+	case FB_SNAPSHOT_STATUS: {
+#ifdef CONFIG_ANDROID_AB
+		struct misc_virtual_ab_message state;
+
+		memset(&state, 0x0, sizeof(state));
+		if (read_misc_virtual_ab_message(&state) != 0) {
+			printf("FB_SNAPSHOT_STATUS read_misc_virtual_ab_message failed!\n");
+			fb_add_string(response, chars_left, "get error", NULL);
+			ret = -1;
+		}
+
+		if (state.magic != MISC_VIRTUAL_AB_MAGIC_HEADER) {
+			printf("FB_SNAPSHOT_STATUS not virtual A/B metadata!\n");
+			fb_add_string(response, chars_left, "get error", NULL);
+			ret = -1;
+		}
+
+		if (state.merge_status == ENUM_MERGE_STATUS_MERGING) {
+			fb_add_string(response, chars_left, "merging", NULL);
+		} else if (state.merge_status == ENUM_MERGE_STATUS_SNAPSHOTTED) {
+			fb_add_string(response, chars_left, "snapshotted", NULL);
+		} else {
+			fb_add_string(response, chars_left, "none", NULL);
+		}
+#else
+		fb_add_string(response, chars_left, "get error", NULL);
+		ret = -1;
+#endif
+		break;
+	}
+
 #endif
 #ifdef CONFIG_OPTEE_CLIENT
 	case FB_AT_DH: {
@@ -1094,6 +1128,7 @@ static const struct {
 	{ NAME_ARGS("slot-unbootable", ':'), FB_SLOT_UNBOOTABLE},
 	{ NAME_ARGS("slot-retry-count", ':'), FB_SLOT_RETRY_COUNT},
 	{ NAME_NO_ARGS("at-vboot-state"), FB_AT_VBST},
+	{ NAME_NO_ARGS("snapshot-update-status"), FB_SNAPSHOT_STATUS},
 #endif
 	/*
 	 * OEM specific :
@@ -1397,6 +1432,76 @@ static void fb_getvar_all(void)
 	}
 }
 
+#ifdef CONFIG_ANDROID_AB
+static int get_current_slot(void)
+{
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	char cmd[8] = {0};
+	unsigned int slot_number = -1;
+
+	memset(cmd, 0x0, sizeof(cmd));
+	rk_avb_get_current_slot(cmd);
+	if (strncmp("_a", cmd, 2) == 0) {
+		slot_number = 0;
+	} else if (strncmp("_b", cmd, 2) == 0) {
+		slot_number = 1;
+	} else {
+		pr_err("%s: FAILunkown slot name\n", __func__);
+		return -1;
+	}
+
+	return slot_number;
+#else
+	pr_err("%s: FAILnot implemented\n", __func__);
+	return -1;
+#endif
+}
+
+#ifdef CONFIG_FASTBOOT_FLASH
+static int should_prevent_userdata_wipe(void)
+{
+	struct misc_virtual_ab_message state;
+
+	memset(&state, 0x0, sizeof(state));
+	if (read_misc_virtual_ab_message(&state) != 0) {
+		pr_err("%s: read_misc_virtual_ab_message failed!\n", __func__);
+		return 0;
+	}
+
+	if (state.magic != MISC_VIRTUAL_AB_MAGIC_HEADER) {
+		pr_err("%s: NOT virtual A/B metadata!\n", __func__);
+		return 0;
+	}
+
+	if (state.merge_status == (uint8_t)ENUM_MERGE_STATUS_MERGING ||
+		(state.merge_status == (uint8_t)ENUM_MERGE_STATUS_SNAPSHOTTED &&
+		state.source_slot != get_current_slot())) {
+		return 1;
+	}
+
+	return 0;
+}
+#endif
+
+static int get_virtual_ab_merge_status(void)
+{
+	struct misc_virtual_ab_message state;
+
+	memset(&state, 0x0, sizeof(state));
+	if (read_misc_virtual_ab_message(&state) != 0) {
+		pr_err("%s: read_misc_virtual_ab_message failed!\n", __func__);
+		return -1;
+	}
+
+	if (state.magic != MISC_VIRTUAL_AB_MAGIC_HEADER) {
+		pr_err("%s: NOT virtual A/B metadata!\n", __func__);
+		return -1;
+	}
+
+	return state.merge_status;
+}
+#endif
+
 static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
@@ -1649,6 +1754,13 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILmissing slot name");
 		return;
 	}
+#ifdef CONFIG_ANDROID_AB
+	if (get_virtual_ab_merge_status() == ENUM_MERGE_STATUS_MERGING) {
+		pr_err("virtual A/B is merging, abort the operation");
+		fastboot_tx_write_str("FAILvirtual A/B is merging, abort");
+		return;
+	}
+#endif
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 	unsigned int slot_number;
 	if (strncmp("a", cmd, 1) == 0) {
@@ -1702,7 +1814,15 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILmissing partition name");
 		return;
 	}
-
+#ifdef CONFIG_ANDROID_AB
+	if ((strcmp(cmd, PART_USERDATA) == 0) || (strcmp(cmd, PART_METADATA) == 0)) {
+		if (should_prevent_userdata_wipe()) {
+			pr_err("FAILThe virtual A/B merging, can not flash userdata or metadata!\n");
+			fastboot_tx_write_str("FAILvirtual A/B merging,abort flash!");
+			return;
+		}
+	}
+#endif
 	fastboot_fail("no flash device defined", response);
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 	fb_mmc_flash_write(cmd, (void *)CONFIG_FASTBOOT_BUF_ADDR,
@@ -1894,10 +2014,22 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		char cmdbuf[32];
 		sprintf(cmdbuf, "gpt write mmc %x $partitions",
 			CONFIG_FASTBOOT_FLASH_MMC_DEV);
-		if (run_command(cmdbuf, 0))
-			fastboot_tx_write_str("FAILmmc write failure");
-		else
-			fastboot_tx_write_str("OKAY");
+#ifdef CONFIG_ANDROID_AB
+		if (should_prevent_userdata_wipe()) {
+			printf("FAILThe virtual A/B merging, can not format!\n");
+			fastboot_tx_write_str("FAILvirtual A/B merging,abort format!");
+		} else {
+			if (run_command(cmdbuf, 0))
+				fastboot_tx_write_str("FAILmmc write failure");
+			else
+				fastboot_tx_write_str("OKAY");
+		}
+#else
+	if (run_command(cmdbuf, 0))
+		fastboot_tx_write_str("FAILmmc write failure");
+	else
+		fastboot_tx_write_str("OKAY");
+#endif
 	} else
 #endif
 	if (strncmp("unlock", cmd + 4, 8) == 0) {
@@ -2157,7 +2289,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[FASTBOOT_RESPONSE_LEN];
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
 
 	strsep(&cmd, ":");
 	if (!cmd) {
@@ -2165,7 +2297,15 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILmissing partition name");
 		return;
 	}
-
+#ifdef CONFIG_ANDROID_AB
+	if ((strcmp(cmd, PART_USERDATA) == 0) || (strcmp(cmd, PART_METADATA) == 0)) {
+		if (should_prevent_userdata_wipe()) {
+			pr_err("virtual A/B merging, can not erase userdata or metadata!\n");
+			fastboot_tx_write_str("FAILvirtual A/B merging,abort erase!");
+			return;
+		}
+	}
+#endif
 	fastboot_fail("no flash device defined", response);
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 	fb_mmc_erase(cmd, response);
