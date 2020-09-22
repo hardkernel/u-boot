@@ -10,6 +10,7 @@
 #include <common.h>
 #include <malloc.h>
 #include <u-boot/crc.h>
+#include <boot_rkimg.h>
 
 /** android_boot_control_compute_crc - Compute the CRC-32 of the bootloader
  * control struct. Only the bytes up to the crc32_le field are considered for
@@ -263,4 +264,71 @@ int android_ab_select(struct blk_desc *dev_desc, disk_partition_t *part_info)
 	if (slot < 0)
 		return -1;
 	return slot;
+}
+
+int read_misc_virtual_ab_message(struct misc_virtual_ab_message *message)
+{
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+	u32 bcb_offset = (ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
+	int cnt, ret;
+
+	if (!message) {
+		debug("%s: message is NULL!\n", __func__);
+		return -1;
+	}
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		debug("%s: dev_desc is NULL!\n", __func__);
+		return -1;
+	}
+
+	ret = part_get_info_by_name(dev_desc, PART_MISC, &part_info);
+	if (ret < 0) {
+		debug("%s: Could not found misc partition\n",
+		       __func__);
+		return -1;
+	}
+
+	cnt = DIV_ROUND_UP(sizeof(struct misc_virtual_ab_message), dev_desc->blksz);
+	if (blk_dread(dev_desc, part_info.start + bcb_offset, cnt, message) != cnt) {
+		debug("%s: could not read from misc partition\n", __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
+int write_misc_virtual_ab_message(struct misc_virtual_ab_message *message)
+{
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+	u32 bcb_offset = (ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
+	int cnt, ret;
+
+	if (!message) {
+		debug("%s: message is NULL!\n", __func__);
+		return -1;
+	}
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		debug("%s: dev_desc is NULL!\n", __func__);
+		return -1;
+	}
+
+	ret = part_get_info_by_name(dev_desc, PART_MISC, &part_info);
+	if (ret < 0) {
+		debug("%s: Could not found misc partition\n",
+		       __func__);
+		return -1;
+	}
+
+	cnt = DIV_ROUND_UP(sizeof(struct misc_virtual_ab_message), dev_desc->blksz);
+	ret = blk_dwrite(dev_desc, part_info.start + bcb_offset, cnt, message);
+	if (ret != cnt)
+		debug("%s: blk_dwrite write failed, ret=%d\n", __func__, ret);
+
+	return 0;
 }
