@@ -56,6 +56,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_BUS_IDLE_SFTCON(n)	(0xc0 + (n) * 4)
 #define PMU_BUS_IDLE_ACK	(0xd0)
 #define PMU_BUS_IDLE_ST		(0xd8)
+#define PMU_NOC_AUTO_CON0	(0xe0)
+#define PMU_NOC_AUTO_CON1	(0xe4)
 #define PMU_PWR_DWN_ST		(0x108)
 #define PMU_PWR_GATE_SFTCON	(0x110)
 
@@ -521,6 +523,13 @@ int arch_cpu_init(void)
 	/* make npu aclk and sclk less then 300MHz when reset */
 	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON65);
 	writel(0x00ff0055, CRU_BASE + CRU_CLKSEL_CON67);
+
+	/*
+	 * When perform idle operation, corresponding clock can
+	 * be opened or gated automatically.
+	 */
+	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
+	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
 
 	/* enable all pd */
 	writel(0xffff0000, PMU_BASE_ADDR + PMU_PWR_GATE_SFTCON);
