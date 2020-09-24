@@ -8,6 +8,7 @@
 #include <dm.h>
 #include <asm/gpio.h>
 #include <power/fuel_gauge.h>
+#include "odroidgo3_status.h"
 
 #define MIN_VOL_LEVEL	3500	/* 3.5V */
 
@@ -81,8 +82,8 @@ int board_check_power(void)
 
 	debug("low battery (%d) without dc jack connected\n", battery);
 	sprintf(str, "voltage level : %d.%dV", (battery / 1000), (battery % 1000));
-	printf("%s - Low Battery!\n", __func__);
-	/* odroid_wait_pwrkey(); */
+	odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_ANYWHERE, str);
+	odroid_wait_pwrkey();
 
 	return -1;
 }
