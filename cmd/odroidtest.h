@@ -15,8 +15,6 @@
 #include <odroidgo2_status.h>
 #include <rockchip_display_cmds.h>
 
-#define NUMGPIOKEYS	18
-
 struct key_arrays {
 	const char * name;
 	u32 code;
@@ -25,7 +23,46 @@ struct key_arrays {
 	u32 chk; /* 0:red, 1:blue */
 };
 
-struct key_arrays gpiokeys[NUMGPIOKEYS] = {
+#ifdef CONFIG_TARGET_ODROIDGO3
+#define NUMGPIOKEYS	20
+static struct key_arrays gpiokeys[NUMGPIOKEYS] = {
+	{"[sw1]", BTN_DPAD_UP, 170, 13, 0},
+	{"[sw2]", BTN_DPAD_DOWN, 170, 17, 0},
+	{"[sw3]", BTN_DPAD_LEFT, 85, 15, 0},
+	{"[sw4]", BTN_DPAD_RIGHT, 255, 15, 0},
+	{"[sw5]", BTN_EAST, 702, 15, 0},
+	{"[sw6]", BTN_SOUTH, 617, 17, 0},
+	{"[sw7]", BTN_WEST, 532, 15, 0},
+	{"[sw8]", BTN_NORTH, 617, 13, 0},
+	{"[sw9]", KEY_VOLUMEUP, 457, 5, 0},
+	{"[sw10]", KEY_VOLUMEDOWN, 350, 5, 0},
+	{"[sw11]", BTN_TRIGGER_HAPPY3, 85, 25, 0},
+	{"[sw12]", BTN_TRIGGER_HAPPY4, 170, 25, 0},
+	{"[sw13]", BTN_TRIGGER_HAPPY5, 617, 25, 0},
+	{"[sw14]", BTN_TRIGGER_HAPPY6, 702, 25, 0},
+	{"[sw15]", BTN_TL, 85, 5, 0},
+	{"[sw16]", BTN_TR, 702, 5, 0},
+	{"[sw20]", BTN_TR2, 617, 5, 0},
+	{"[sw21]", BTN_TL2, 170, 5, 0},
+	{"[sw19]", BTN_TRIGGER_HAPPY1, 260, 9, 0},
+	{"[sw22]", BTN_TRIGGER_HAPPY2, 532, 9, 0},
+};
+
+struct key_arrays adckeys[8] = {
+	/* LEFT */
+	{"[WEST]", 0, 85, 11, 0},
+	{"[EAST]", 0, 275, 11, 0},
+	{"[NORTH]", 0, 180, 6, 0},
+	{"[SOUTH]", 0, 180, 16, 0},
+	/* RIGHT */
+	{"[WEST]", 0, 500, 11, 0},
+	{"[EAST]", 0, 690, 11, 0},
+	{"[NORTH]", 0, 595, 6, 0},
+	{"[SOUTH]", 0, 595, 16, 0},
+};
+#else
+#define NUMGPIOKEYS	18
+static struct key_arrays gpiokeys[NUMGPIOKEYS] = {
 	{"[sw1]", BTN_DPAD_UP, 96, 7, 0},
 	{"[sw2]", BTN_DPAD_DOWN, 96, 11, 0},
 	{"[sw3]", BTN_DPAD_LEFT, 48, 9, 0},
@@ -52,5 +89,5 @@ struct key_arrays adckeys[4] = {
 	{"[UP]", 0, 220, 4, 0},
 	{"[DOWN]", 0, 218, 14, 0},
 };
-
+#endif
 #endif /* _CMD_ODROIDTEST_ */

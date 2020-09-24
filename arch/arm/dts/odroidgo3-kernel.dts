@@ -34,6 +34,22 @@
 		status = "okay";
 	};
 
+ 	/*
+	     *** ODROIDGO3-Advance Switch layoout ***
+	|------------------------------------------------|
+	| sw15  sw21        sw10   sw9        sw20  sw16 |
+	|------------------------------------------------|
+	|      sw19                            sw22      |
+	|              |-------------------|             |
+	|     sw1      |                   |      sw8    |
+	|  sw3   sw4   |                   |   sw7   sw5 |
+	|     sw2      |    LCD Display    |      sw6    |
+	|              |                   |             |
+	|              |                   |             |
+	|              |-------------------|             |
+	|  sw11 sw12        | sd-slot |       sw13 sw14  |
+	|-------------------|         |------------------|
+	*/
 	keys: gpio-keys {
 		compatible = "gpio-keys";
 		status = "okay";

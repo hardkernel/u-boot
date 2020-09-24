@@ -52,6 +52,12 @@ int board_check_autotest(void)
 	return 0;
 }
 
+void board_run_autotest(void)
+{
+	run_command("odroidtest all", 0);
+	odroid_wait_pwrkey();
+}
+
 #define GRF_BASE		0xff140000
 void board_debug_uart2m1(void)
 {
@@ -102,7 +108,7 @@ void board_init_switch_gpio(void)
 	rk_clrsetreg(&grf->gpio1b_p, 0xff00, 0x5500);
 	rk_clrsetreg(&grf->gpio1a_p, 0xfcc0, 0x5440);
 	rk_clrsetreg(&grf->gpio2a_p, 0xffff, 0x5555);
-	rk_clrsetreg(&grf->gpio3b_p, 0xC030, 0x4010);
+	rk_clrsetreg(&grf->gpio3b_p, 0xC33C, 0x4114);
 }
 
 void board_check_mandatory_files(void)
@@ -159,6 +165,11 @@ int rk_board_late_init(void)
 	lcd_setfg_color("white");
 	lcd_printf(0, 27, 1, " %s", U_BOOT_VERSION);
 	lcd_printf(0, 28, 1, " %s %s", U_BOOT_DATE, U_BOOT_TIME);
+
+	if (!board_check_autotest()) {
+		board_run_autotest();
+		return 0;
+	}
 
 	/* check sd card and es launcher */
 	board_check_mandatory_files();
