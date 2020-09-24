@@ -341,7 +341,8 @@ static void early_download(void)
 
 static void board_debug_init(void)
 {
-	if (!gd->serial.using_pre_serial)
+	if (!gd->serial.using_pre_serial &&
+	    !(gd->flags & GD_FLG_DISABLE_CONSOLE))
 		debug_uart_init();
 
 	if (tstc()) {
@@ -560,27 +561,43 @@ void cpu_secondary_init_r(void)
 }
 #endif
 
+int board_init_f_boot_flags(void)
+{
+	int boot_flags = 0;
+
+	/* pre-loader serial */
 #if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \
     defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS)
-int board_init_f_init_serial(void)
-{
-	struct tag *t = atags_get_tag(ATAG_SERIAL);
+	struct tag *t;
 
+	t = atags_get_tag(ATAG_SERIAL);
 	if (t) {
-		gd->serial.using_pre_serial = t->u.serial.enable;
+		gd->serial.using_pre_serial = 1;
+		gd->serial.enable = t->u.serial.enable;
 		gd->serial.baudrate = t->u.serial.baudrate;
 		gd->serial.addr = t->u.serial.addr;
 		gd->serial.id = t->u.serial.id;
-
-		debug("%s: enable=%d, addr=0x%lx, baudrate=%d, id=%d\n",
-		      __func__, gd->serial.using_pre_serial,
-		      gd->serial.addr, gd->serial.baudrate,
-		      gd->serial.id);
+		gd->baudrate = CONFIG_BAUDRATE;
+		if (!t->u.serial.enable)
+			boot_flags |= GD_FLG_DISABLE_CONSOLE;
+		debug("preloader: enable=%d, addr=0x%lx, baudrate=%d, id=%d\n",
+		      gd->serial.enable, gd->serial.addr,
+		      gd->serial.baudrate, gd->serial.id);
+	} else
+#endif
+	{
+		gd->baudrate = CONFIG_BAUDRATE;
+		gd->serial.baudrate = CONFIG_BAUDRATE;
+		gd->serial.addr = CONFIG_DEBUG_UART_BASE;
 	}
 
-	return 0;
-}
+	/* The highest priority to turn off (override) console */
+#if defined(CONFIG_DISABLE_CONSOLE)
+	boot_flags |= GD_FLG_DISABLE_CONSOLE;
 #endif
+
+	return boot_flags;
+}
 
 #if defined(CONFIG_USB_GADGET) && defined(CONFIG_USB_GADGET_DWC2_OTG)
 #include <fdt_support.h>

@@ -209,6 +209,45 @@ int board_fit_config_name_match(const char *name)
 }
 #endif
 
+int board_init_f_boot_flags(void)
+{
+	int boot_flags = 0;
+
+	/* pre-loader serial */
+#if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \
+    defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS)
+	struct tag *t;
+
+
+	t = atags_get_tag(ATAG_SERIAL);
+	if (t) {
+		gd->serial.using_pre_serial = 1;
+		gd->serial.enable = t->u.serial.enable;
+		gd->serial.baudrate = t->u.serial.baudrate;
+		gd->serial.addr = t->u.serial.addr;
+		gd->serial.id = t->u.serial.id;
+		gd->baudrate = t->u.serial.baudrate;
+		if (!t->u.serial.enable)
+			boot_flags |= GD_FLG_DISABLE_CONSOLE;
+		debug("preloader: enable=%d, addr=0x%x, baudrate=%d, id=%d\n",
+		      t->u.serial.enable, (u32)t->u.serial.addr,
+		      t->u.serial.baudrate, t->u.serial.id);
+	} else
+#endif
+	{
+		gd->baudrate = CONFIG_BAUDRATE;
+		gd->serial.baudrate = CONFIG_BAUDRATE;
+		gd->serial.addr = CONFIG_DEBUG_UART_BASE;
+	}
+
+	/* The highest priority to turn off (override) console */
+#if defined(CONFIG_DISABLE_CONSOLE)
+	boot_flags |= GD_FLG_DISABLE_CONSOLE;
+#endif
+
+	return boot_flags;
+}
+
 #ifdef CONFIG_SPL_BOARD_INIT
 __weak int rk_spl_board_init(void)
 {
