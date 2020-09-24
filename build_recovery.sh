@@ -69,7 +69,7 @@ if [ ${BOARD} = "odroidgo3" ]; then
 	sudo cp ${IMAGES}/system_error_b.bmp ${MNT}/system_error.bmp
 	sudo cp ${IMAGES}/no_sdcard_b.bmp ${MNT}/no_sdcard.bmp
 	sudo cp ${IMAGES}/low_battery_b.bmp ${MNT}/low_battery.bmp
-	sudo cp ./arch/arm/dts/odroidgo3-kernel.dtb ${MNT}/rk3326-odroidgo3-linux-v10.dtb
+	sudo cp ./arch/arm/dts/odroidgo3-kernel.dtb ${MNT}/rk3326-odroidgo3-linux.dtb
 else
 	sudo cp ${IMAGES}/recovery.bmp ${MNT}
 	sudo cp ${IMAGES}/system_error.bmp ${MNT}

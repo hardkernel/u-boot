@@ -69,7 +69,7 @@
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"fdt_addr_r=0x01f00000\0" \
-	"dtb_name=rk3326-odroidgo3-linux-v01.dtb\0" \
+	"dtb_name=rk3326-odroidgo3-linux.dtb\0" \
 	"loadaddr=0x100000\0" \
 	ENV_DEV_TYPE \
 	ENV_DEV_NUM \
@@ -84,7 +84,7 @@
 		"net.iframes=0 fbcon=rotate:3\0"	\
 	"bootcmd=mmc dev 1; cfgload; run setbootargs;"	\
 		"load mmc 1:1 0x02000000 Image; "		\
-		"load mmc 1:1 0x01f00000 rk3326-odroidgo3-linux-v01.dtb; "	\
+		"load mmc 1:1 0x01f00000 rk3326-odroidgo3-linux.dtb; "	\
 		"booti 0x02000000 - 0x01f00000\0"
 
 #undef CONFIG_BOOTDELAY
