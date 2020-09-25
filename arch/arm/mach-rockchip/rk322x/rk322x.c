@@ -17,6 +17,7 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_SD] = "/dwmmc@30000000",
 };
 
+#ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
 	static struct rk322x_grf * const grf = (void *)GRF_BASE;
@@ -49,6 +50,7 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+#endif
 
 void board_debug_uart_init(void)
 {

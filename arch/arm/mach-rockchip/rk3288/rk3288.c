@@ -41,6 +41,7 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_SD] = "/dwmmc@ff0c0000",
 };
 
+#ifndef CONFIG_TPL_BUILD
 #ifdef CONFIG_SPL_BUILD
 static void configure_l2ctlr(void)
 {
@@ -87,9 +88,9 @@ int arch_cpu_init(void)
 	writel(CPU_AXI_QOS_PRIORITY_LEVEL(2, 2), VIO0_VOP_QOS_BASE);
 	writel(CPU_AXI_QOS_PRIORITY_LEVEL(2, 2), VIO1_VOP_QOS_BASE);
 #endif
-
 	return 0;
 }
+#endif
 
 void board_debug_uart_init(void)
 {

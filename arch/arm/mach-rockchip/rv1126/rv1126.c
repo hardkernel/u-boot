@@ -536,6 +536,7 @@ void board_debug_uart_init(void)
 #endif /* CONFIG_DEBUG_UART_BASE && CONFIG_DEBUG_UART_BASE == ... */
 }
 
+#ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
 	/*
@@ -688,9 +689,9 @@ int arch_cpu_init(void)
 	/* GPIO0_D6 pull down in default, pull up it for SPI Flash */
 	writel(((0x3 << 12) << 16) | (0x1 << 12), GRF1_GPIO0D_P);
 #endif
-
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(uintptr_t entry_point)

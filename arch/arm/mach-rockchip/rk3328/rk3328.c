@@ -47,6 +47,8 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_EMMC] = "/rksdmmc@ff520000",
 	[BROM_BOOTSOURCE_SD] = "/rksdmmc@ff500000",
 };
+
+#ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
@@ -66,6 +68,7 @@ int arch_cpu_init(void)
 #endif
 	return 0;
 }
+#endif
 
 void board_debug_uart_init(void)
 {

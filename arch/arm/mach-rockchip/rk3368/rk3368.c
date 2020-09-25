@@ -124,6 +124,73 @@ int arch_early_init_r(void)
 }
 #endif
 
+void board_debug_uart_init(void)
+{
+	/*
+	 * N.B.: This is called before the device-model has been
+	 *       initialised. For this reason, we can not access
+	 *       the GRF address range using the syscon API.
+	 */
+	struct rk3368_grf * const grf __maybe_unused =
+		(struct rk3368_grf * const)0xff770000;
+
+	enum {
+		/* UART0 */
+		GPIO2D1_MASK            = GENMASK(3, 2),
+		GPIO2D1_GPIO            = 0,
+		GPIO2D1_UART0_SOUT      = (1 << 2),
+
+		GPIO2D0_MASK            = GENMASK(1, 0),
+		GPIO2D0_GPIO            = 0,
+		GPIO2D0_UART0_SIN       = (1 << 0),
+
+		/* UART2 */
+		GPIO2A6_MASK		= GENMASK(13, 12),
+		GPIO2A6_GPIO		= 0,
+		GPIO2A6_UART0_SIN      = (1 << 13),
+		GPIO2A6_UART2_SIN	= (2 << 12),
+
+		GPIO2A5_MASK		= GENMASK(11, 10),
+		GPIO2A5_GPIO		= 0,
+		GPIO2A5_UART0_SOUT	 = (1 << 11),
+		GPIO2A5_UART2_SOUT      = (2 << 10),
+	};
+
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
+	/* Enable early UART0 on the RK3368 */
+	rk_clrsetreg(&grf->gpio2d_iomux,
+		     GPIO2D0_MASK, GPIO2D0_UART0_SIN);
+	rk_clrsetreg(&grf->gpio2d_iomux,
+		     GPIO2D1_MASK, GPIO2D1_UART0_SOUT);
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff1c0000)
+	struct rk3368_pmu_grf * const pmugrf __maybe_unused =
+		(struct rk3368_pmu_grf * const)0xff738000;
+
+	enum {
+		/* UART4 */
+		GPIO0D2_MASK		= GENMASK(5, 4),
+		GPIO0D2_GPIO		= 0,
+		GPIO0D2_UART4_SOUT	= (3 << 4),
+
+		GPIO0D3_MASK		= GENMASK(7, 6),
+		GPIO0D3_GPIO		= 0,
+		GPIO0D3_UART4_SIN	= (3 << 6),
+	};
+
+	/* Enable early UART4 on the PX5 */
+	rk_clrsetreg(&pmugrf->gpio0d_iomux,
+		     GPIO0D2_MASK | GPIO0D3_MASK,
+		     GPIO0D2_UART4_SOUT | GPIO0D3_UART4_SIN);
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff690000)
+	/* Enable early UART2 on the RK3368 */
+	rk_clrsetreg(&grf->gpio2a_iomux,
+		     GPIO2A6_MASK, GPIO2A6_UART2_SIN);
+	rk_clrsetreg(&grf->gpio2a_iomux,
+		     GPIO2A5_MASK, GPIO2A5_UART2_SOUT);
+#endif
+}
+
+#ifndef CONFIG_TPL_BUILD
 static void cpu_axi_qos_prority_level_config(void)
 {
 	u32 level;
@@ -218,72 +285,6 @@ static void sgrf_init(void)
 }
 #endif
 
-void board_debug_uart_init(void)
-{
-	/*
-	 * N.B.: This is called before the device-model has been
-	 *       initialised. For this reason, we can not access
-	 *       the GRF address range using the syscon API.
-	 */
-	struct rk3368_grf * const grf __maybe_unused =
-		(struct rk3368_grf * const)0xff770000;
-
-	enum {
-		/* UART0 */
-		GPIO2D1_MASK            = GENMASK(3, 2),
-		GPIO2D1_GPIO            = 0,
-		GPIO2D1_UART0_SOUT      = (1 << 2),
-
-		GPIO2D0_MASK            = GENMASK(1, 0),
-		GPIO2D0_GPIO            = 0,
-		GPIO2D0_UART0_SIN       = (1 << 0),
-
-		/* UART2 */
-		GPIO2A6_MASK		= GENMASK(13, 12),
-		GPIO2A6_GPIO		= 0,
-		GPIO2A6_UART0_SIN      = (1 << 13),
-		GPIO2A6_UART2_SIN	= (2 << 12),
-
-		GPIO2A5_MASK		= GENMASK(11, 10),
-		GPIO2A5_GPIO		= 0,
-		GPIO2A5_UART0_SOUT	 = (1 << 11),
-		GPIO2A5_UART2_SOUT      = (2 << 10),
-	};
-
-#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
-	/* Enable early UART0 on the RK3368 */
-	rk_clrsetreg(&grf->gpio2d_iomux,
-		     GPIO2D0_MASK, GPIO2D0_UART0_SIN);
-	rk_clrsetreg(&grf->gpio2d_iomux,
-		     GPIO2D1_MASK, GPIO2D1_UART0_SOUT);
-#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff1c0000)
-	struct rk3368_pmu_grf * const pmugrf __maybe_unused =
-		(struct rk3368_pmu_grf * const)0xff738000;
-
-	enum {
-		/* UART4 */
-		GPIO0D2_MASK		= GENMASK(5, 4),
-		GPIO0D2_GPIO		= 0,
-		GPIO0D2_UART4_SOUT	= (3 << 4),
-
-		GPIO0D3_MASK		= GENMASK(7, 6),
-		GPIO0D3_GPIO		= 0,
-		GPIO0D3_UART4_SIN	= (3 << 6),
-	};
-
-	/* Enable early UART4 on the PX5 */
-	rk_clrsetreg(&pmugrf->gpio0d_iomux,
-		     GPIO0D2_MASK | GPIO0D3_MASK,
-		     GPIO0D2_UART4_SOUT | GPIO0D3_UART4_SIN);
-#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff690000)
-	/* Enable early UART2 on the RK3368 */
-	rk_clrsetreg(&grf->gpio2a_iomux,
-		     GPIO2A6_MASK, GPIO2A6_UART2_SIN);
-	rk_clrsetreg(&grf->gpio2a_iomux,
-		     GPIO2A5_MASK, GPIO2A5_UART2_SOUT);
-#endif
-}
-
 int arch_cpu_init(void)
 {
 	/* DDR read latency config */
@@ -308,3 +309,4 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+#endif

@@ -114,6 +114,11 @@ __weak void rockchip_stimer_init(void)
 	writel(1, CONFIG_ROCKCHIP_STIMER_BASE + 0x10);
 }
 
+__weak int arch_cpu_init(void)
+{
+	return 0;
+}
+
 void board_init_f(ulong dummy)
 {
 #if defined(CONFIG_SPL_FRAMEWORK) && !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
@@ -122,6 +127,7 @@ void board_init_f(ulong dummy)
 #endif
 
 	rockchip_stimer_init();
+	arch_cpu_init();
 #define EARLY_DEBUG
 #ifdef EARLY_DEBUG
 	/*
