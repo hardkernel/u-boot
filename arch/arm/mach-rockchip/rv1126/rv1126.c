@@ -369,6 +369,7 @@ void board_debug_uart_init(void)
 
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff410000)
 	static struct rv1126_pmugrf * const pmugrf = (void *)PMUGRF_BASE;
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
     (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 	/* UART1 M0 */
@@ -386,7 +387,7 @@ void board_debug_uart_init(void)
 		     UART1_IO_SEL_M1 << UART1_IO_SEL_SHIFT);
 
 	/* Switch iomux */
-	rk_clrsetreg(&topgrf->gpio1d_iomux_l,
+	rk_clrsetreg(&grf->gpio1d_iomux_l,
 		     GPIO1D1_MASK | GPIO1D0_MASK,
 		     GPIO1D1_UART1_RX_M1 << GPIO1D1_SHIFT |
 		     GPIO1D0_UART1_TX_M1 << GPIO1D0_SHIFT);
