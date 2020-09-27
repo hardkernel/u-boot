@@ -32,7 +32,7 @@ int board_check_recovery(void)
 	if (recovery_check_mandatory_files())
 		return -1;
 
-	odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_ANYWHERE, NULL);
+	odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_SDCARD, NULL);
 
 	return 0;
 }
