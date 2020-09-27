@@ -147,6 +147,7 @@ cat  << EOF
 		conf {
 			description = "Rockchip armv7 with OP-TEE";
 			rollback-index = <0x0>;
+			burn-key-hash = <0>;
 			firmware = "optee";
 			loadables = "uboot";
 			fdt = "fdt";
