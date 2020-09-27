@@ -76,6 +76,10 @@ static inline void board_debug_uart_init(void)
  * @ch:		Character to output
  */
 void printch(int ch);
+int debug_uart_getc(void);
+int debug_uart_tstc(void);
+int debug_uart_clrc(void);
+int debug_uart_setbrg(void);
 
 /**
  * printascii() - Output an ASCII string to the debug UART
@@ -144,6 +148,26 @@ void printdec(uint value);
 	void printch(int ch) \
 	{ \
 		_printch(ch); \
+	} \
+\
+	int debug_uart_getc(void)\
+	{ \
+		return _debug_uart_getc(); \
+	} \
+\
+	int debug_uart_tstc(void)\
+	{ \
+		return _debug_uart_tstc(true); \
+	} \
+\
+	int debug_uart_clrc(void)\
+	{ \
+		return _debug_uart_clrc(); \
+	} \
+\
+	int debug_uart_setbrg(void)\
+	{ \
+		return _debug_uart_setbrg(); \
 	} \
 \
 	void printascii(const char *str) \

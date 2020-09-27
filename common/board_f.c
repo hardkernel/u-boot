@@ -119,8 +119,8 @@ __weak void board_add_ram_info(int use_default)
 
 static int init_baud_rate(void)
 {
-	if (gd && gd->serial.using_pre_serial)
-		gd->baudrate = env_get_ulong("baudrate", 10, gd->serial.baudrate);
+	if (gd && gd->serial.baudrate)
+		gd->baudrate = gd->serial.baudrate;
 	else
 		gd->baudrate = env_get_ulong("baudrate", 10, CONFIG_BAUDRATE);
 
@@ -148,15 +148,22 @@ static int display_text_info(void)
 	return 0;
 }
 
-#if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL)
-static int announce_pre_serial(void)
+static int announce_serial(void)
 {
 	if (gd && gd->serial.using_pre_serial)
-		printf("PreSerial: %d\n", gd->serial.id);
+		printf("PreSerial: %d, ", gd->serial.id);
+	else
+		printf("Serial: ");
+
+#ifdef CONFIG_DEBUG_UART_ALWAYS
+	printf("raw");
+#else
+	printf("console");
+#endif
+	printf(", 0x%lx\n", gd->serial.addr);
 
 	return 0;
 }
-#endif
 
 static int announce_dram_init(void)
 {
@@ -861,9 +868,8 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_HARD_SPI)
 	init_func_spi,
 #endif
-#if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL)
-	announce_pre_serial,
-#endif
+	announce_serial,
+
 	announce_dram_init,
 	dram_init,		/* configure available RAM banks */
 #ifdef CONFIG_POST
@@ -953,10 +959,6 @@ void board_init_f(ulong boot_flags)
 {
 	gd->flags = boot_flags;
 	gd->have_console = 0;
-
-#if defined(CONFIG_DISABLE_CONSOLE)
-	gd->flags |= GD_FLG_DISABLE_CONSOLE;
-#endif
 
 	if (initcall_run_list(init_sequence_f))
 		hang();

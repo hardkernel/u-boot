@@ -33,6 +33,7 @@ struct pm_ctx {
 
 struct pre_serial {
 	u32 using_pre_serial;
+	u32 enable;
 	u32 id;
 	u32 baudrate;
 	ulong addr;

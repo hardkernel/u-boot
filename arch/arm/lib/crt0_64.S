@@ -101,9 +101,8 @@ ENTRY(_main)
 	/* set up gd here, outside any C code */
 	mov	x18, x0
 	bl	board_init_f_init_reserve
-	bl	board_init_f_init_serial
+	bl	board_init_f_boot_flags
 
-	mov	x0, #0
 	bl	board_init_f
 
 #if (defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD) && !defined(CONFIG_SPL_SKIP_RELOCATE)) || \

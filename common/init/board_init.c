@@ -130,10 +130,15 @@ void board_init_f_init_reserve(ulong base)
 }
 
 /*
- * Board-specific Platform code can init serial earlier if needed
+ * Board-specific Platform code can init boot flags if needed
  */
-__weak int board_init_f_init_serial(void)
+__weak int board_init_f_boot_flags(void)
 {
+	gd->baudrate = CONFIG_BAUDRATE;
+	gd->serial.baudrate = CONFIG_BAUDRATE;
+	gd->serial.addr = CONFIG_DEBUG_UART_BASE;
+	gd->serial.using_pre_serial = 0;
+
 	return 0;
 }
 

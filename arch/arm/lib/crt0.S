@@ -84,9 +84,8 @@ ENTRY(_main)
 	/* set up gd here, outside any C code */
 	mov	r9, r0
 	bl	board_init_f_init_reserve
-	bl	board_init_f_init_serial
+	bl	board_init_f_boot_flags
 
-	mov	r0, #0
 	bl	board_init_f
 
 #if ! defined(CONFIG_SPL_BUILD)
