@@ -125,22 +125,28 @@ static int rockchip_set_serialno(void)
 		env_set("serial#", serialno_str);
 	} else {
 #endif
-#ifdef CONFIG_ROCKCHIP_EFUSE
+#if defined(CONFIG_ROCKCHIP_EFUSE) || defined(CONFIG_ROCKCHIP_OTP)
 		struct udevice *dev;
 
 		/* retrieve the device */
-		ret = uclass_get_device_by_driver(UCLASS_MISC,
-						  DM_GET_DRIVER(rockchip_efuse),
-						  &dev);
+		if (IS_ENABLED(CONFIG_ROCKCHIP_EFUSE))
+			ret = uclass_get_device_by_driver(UCLASS_MISC,
+							  DM_GET_DRIVER(rockchip_efuse),
+							  &dev);
+		else
+			ret = uclass_get_device_by_driver(UCLASS_MISC,
+							  DM_GET_DRIVER(rockchip_otp),
+							  &dev);
+
 		if (ret) {
-			printf("%s: could not find efuse device\n", __func__);
+			printf("%s: could not find efuse/otp device\n", __func__);
 			return ret;
 		}
 
 		/* read the cpu_id range from the efuses */
 		ret = misc_read(dev, CPUID_OFF, &cpuid, sizeof(cpuid));
 		if (ret) {
-			printf("%s: read cpuid from efuses failed, ret=%d\n",
+			printf("%s: read cpuid from efuse/otp failed, ret=%d\n",
 			       __func__, ret);
 			return ret;
 		}
