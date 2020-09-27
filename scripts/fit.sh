@@ -92,7 +92,7 @@ function check_its()
 function validate_arg()
 {
 	case $1 in
-		--no-check|--spl-new)
+		--no-check|--spl-new|--burn-key-hash)
 			shift=1
 			;;
 		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-uboot|--boot_img|--version-uboot|--version-boot)
@@ -162,6 +162,10 @@ function fit_process_args()
 				arg_check_decimal $2
 				shift 2
 				;;
+			--burn-key-hash)
+				ARG_BURN_KEY_HASH="y"
+				shift 1
+				;;
 			*)
 				help
 				exit 1
@@ -224,6 +228,11 @@ function fit_gen_uboot_itb()
 			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_UBOOT}>;/g" ${ITS_UBOOT}
 		fi
 
+		# burn-key-hash
+		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
+			sed -i "s/burn-key-hash = <0>;/burn-key-hash = <1>;/g" ${ITS_UBOOT}
+		fi
+
 		# u-boot.dtb must contains rsa key
 		if ! fdtget -l ${UBOOT_DTB} /signature >/dev/null 2>&1 ; then
 			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
@@ -239,6 +248,14 @@ function fit_gen_uboot_itb()
 			VERSION=`fdtget -ti ${ITB_UBOOT} /configurations/conf rollback-index`
 			if [ "${VERSION}" != "${ARG_ROLLBACK_IDX_UBOOT}" ]; then
 				echo "ERROR: Failed to set rollback-index for ${ITB_UBOOT}";
+				exit 1
+			fi
+		fi
+
+		# burn-key-hash read back check
+		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
+			if [ "`fdtget -ti ${ITB_UBOOT} /configurations/conf burn-key-hash`" != "1" ]; then
+				echo "ERROR: Failed to set burn-key-hash for ${ITB_UBOOT}";
 				exit 1
 			fi
 		fi
@@ -432,6 +449,11 @@ function fit_msg_uboot()
 	VERSION=`fdtget -ti ${ITB_UBOOT} / version`
 	if [ "${VERSION}" != "" ]; then
 		MSG_VER=", version=${VERSION}"
+	fi
+
+	if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
+		echo "uboot.img: burn-key-hash=1"
+		echo
 	fi
 
 	if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
