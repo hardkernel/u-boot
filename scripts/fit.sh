@@ -210,6 +210,7 @@ function fit_gen_uboot_itb()
 			exit 1
 		fi
 
+		# rollback-index
 		if grep -q '^CONFIG_SPL_FIT_ROLLBACK_PROTECT=y' .config ; then
 			ARG_SPL_ROLLBACK_PROTECT="y"
 			if [ -z ${ARG_ROLLBACK_IDX_UBOOT} ]; then
@@ -219,8 +220,8 @@ function fit_gen_uboot_itb()
 		fi
 
 		if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
-			VERSION=`grep 'rollback-index' ${ITS_UBOOT} | awk -F '=' '{ printf $2 }' `
-			sed -i "s/${VERSION}/ <${ARG_ROLLBACK_IDX_UBOOT}>;/g" ${ITS_UBOOT}
+			VERSION=`grep 'rollback-index' ${ITS_UBOOT} | awk -F '=' '{ printf $2 }' | tr -d ' '`
+			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_UBOOT}>;/g" ${ITS_UBOOT}
 		fi
 
 		# u-boot.dtb must contains rsa key
@@ -343,8 +344,8 @@ function fit_gen_boot_itb()
 		fi
 
 		if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
-			VERSION=`grep 'rollback-index' ${ITS_BOOT} | awk -F '=' '{ printf $2 }' `
-			sed -i "s/${VERSION}/ <${ARG_ROLLBACK_IDX_BOOT}>;/g" ${ITS_BOOT}
+			VERSION=`grep 'rollback-index' ${ITS_BOOT} | awk -F '=' '{ printf $2 }' | tr -d ' '`
+			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_BOOT}>;/g" ${ITS_BOOT}
 		fi
 
 		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_BOOT} -r ${ITB_BOOT} -v ${ARG_VER_BOOT}
