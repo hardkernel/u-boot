@@ -102,6 +102,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define OTP_S_BASE		0xFF5D0000
 #define OTP_NVM_TRWH		0x28
 
+#define PMU_GRF_BASE		0xFE020000
+#define PMUGRF_GPIO0B_IOMUX_H	0xc
+
 enum {
 	GPIO1A7_SHIFT		= 12,
 	GPIO1A7_MASK		= GENMASK(14, 12),
@@ -671,6 +674,14 @@ int arch_cpu_init(void)
 	writel(0x101, CRYPTO_PRIORITY_REG);
 	/* enable dynamic priority */
 	writel(0x1, ISP_PRIORITY_EX_REG);
+
+	/*
+	 * Init the i2c0 iomux and use it to control electronic voltmeter
+	 * to detect voltage.
+	 */
+#if defined(CONFIG_SPL_KERNEL_BOOT) && defined(CONFIG_SPL_DM_FUEL_GAUGE)
+	writel(0x00770011, PMU_GRF_BASE + PMUGRF_GPIO0B_IOMUX_H);
+#endif
 
 #elif defined(CONFIG_SUPPORT_USBPLUG)
 	/* Just set region 0 to unsecure */
