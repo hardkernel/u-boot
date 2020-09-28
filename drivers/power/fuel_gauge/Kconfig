@@ -57,3 +57,13 @@ config SPL_POWER_FG_RK816
 	depends on DM_FUEL_GAUGE && PMIC_RK8XX
 	help
 	  This adds support for RK816 fuel gauge support.
+
+config SPL_POWER_LOW_VOLTAGE_THRESHOLD
+	int "Set the low voltage threshold"
+	default 3400
+	depends on SPL_DM_FUEL_GAUGE
+	help
+	  Set the low voltage threshold. If the voltage, which is detected,
+	  is lower than the low voltage threshold, load and boot the U-Boot
+	  and goto charge the power.
+

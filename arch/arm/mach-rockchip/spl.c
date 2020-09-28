@@ -14,6 +14,7 @@
 #include <ram.h>
 #include <spl.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <power/fuel_gauge.h>
 #include <asm/arch/bootrom.h>
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 #include <asm/arch/rk_atags.h>
@@ -316,6 +317,26 @@ static int spl_rockchip_dnl_key_pressed(void)
 #endif
 }
 
+#ifdef CONFIG_SPL_DM_FUEL_GAUGE
+bool spl_is_low_power(void)
+{
+	struct udevice *dev;
+	int ret, voltage;
+
+	ret = uclass_get_device(UCLASS_FG, 0, &dev);
+	if (ret) {
+		debug("Get charge display failed, ret=%d\n", ret);
+		return false;
+	}
+
+	voltage = fuel_gauge_get_voltage(dev);
+	if (voltage >= CONFIG_SPL_POWER_LOW_VOLTAGE_THRESHOLD)
+		return false;
+
+	return true;
+}
+#endif
+
 void spl_next_stage(struct spl_image_info *spl)
 {
 	uint32_t reg_boot_mode;
@@ -324,6 +345,12 @@ void spl_next_stage(struct spl_image_info *spl)
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
 		return;
 	}
+#ifdef CONFIG_SPL_DM_FUEL_GAUGE
+	if (spl_is_low_power()) {
+		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		return;
+	}
+#endif
 
 	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 	switch (reg_boot_mode) {
