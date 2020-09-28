@@ -85,6 +85,7 @@ struct andr_img_hdr {
      * we have to partly merge fields from boot_img_hdr_v3 and vendor_boot_img_hdr_v3
      * into this structure to compatible with boot_img_hdr_v012.
      */
+    u32 boot_ramdisk_size;   /* size in bytes */
     u32 vendor_ramdisk_size; /* size in bytes */
     u32 vendor_page_size;
     u32 vendor_header_version;

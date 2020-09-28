@@ -251,9 +251,14 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 	*rd_data = ramdisk_addr_r;
 	*rd_len = hdr->ramdisk_size;
 
-	printf("RAM disk load addr 0x%08lx size %u KiB\n",
-	       *rd_data, DIV_ROUND_UP(hdr->ramdisk_size, 1024));
+	printf("RAM disk load addr 0x%08lx ", *rd_data);
 
+	if (hdr->header_version < 3)
+		printf("size %u KiB\n", DIV_ROUND_UP(hdr->ramdisk_size, 1024));
+	else
+		printf("size: boot %u KiB, vendor-boot %u KiB\n",
+		       DIV_ROUND_UP(hdr->boot_ramdisk_size, 1024),
+		       DIV_ROUND_UP(hdr->vendor_ramdisk_size, 1024));
 	return 0;
 }
 
@@ -920,6 +925,7 @@ static int populate_boot_info(const struct boot_img_hdr_v3 *boot_hdr,
 	/* don't use vendor_hdr->kernel_addr, we prefer "hdr + hdr->page_size" */
 	hdr->kernel_addr = ANDROID_IMAGE_DEFAULT_KERNEL_ADDR;
 	/* generic ramdisk: immediately following the vendor ramdisk */
+	hdr->boot_ramdisk_size = boot_hdr->ramdisk_size;
 	hdr->ramdisk_size = boot_hdr->ramdisk_size +
 				vendor_hdr->vendor_ramdisk_size;
 	/* actually, useless */
