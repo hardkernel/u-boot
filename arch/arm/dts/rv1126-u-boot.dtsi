@@ -151,6 +151,18 @@
 	status = "okay";
 };
 
+&i2c0 {
+	u-boot,dm-spl;
+	status = "okay";
+	rk817_fg@20 {
+		u-boot,dm-spl;
+		compatible = "rk817,battery";
+		reg = <0x20>;
+		bat_res_up = <140>;
+		bat_res_down = <20>;
+	};
+};
+
 &u2phy0 {
 	u-boot,dm-pre-reloc;
 	status = "okay";
