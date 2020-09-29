@@ -42,7 +42,20 @@
 
 #define OTPC_TIMEOUT			10000
 
-typedef int (*OTP_READ)(struct udevice *dev, int offset, void *buf, int size);
+#define RV1126_OTP_NVM_CEB		0x00
+#define RV1126_OTP_NVM_RSTB		0x04
+#define RV1126_OTP_NVM_ST		0x18
+#define RV1126_OTP_NVM_RADDR		0x1C
+#define RV1126_OTP_NVM_RSTART		0x20
+#define RV1126_OTP_NVM_RDATA		0x24
+#define RV1126_OTP_NVM_TRWH		0x28
+#define RV1126_OTP_READ_ST		0x30
+#define RV1126_OTP_NVM_PRADDR		0x34
+#define RV1126_OTP_NVM_PRLEN		0x38
+#define RV1126_OTP_NVM_PRDATA		0x3c
+#define RV1126_OTP_NVM_FAILTIME		0x40
+#define RV1126_OTP_NVM_PRSTART		0x44
+#define RV1126_OTP_NVM_PRSTATE		0x48
 
 struct rockchip_otp_platdata {
 	void __iomem *base;
