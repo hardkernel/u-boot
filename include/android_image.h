@@ -11,6 +11,27 @@
 #ifndef _ANDROID_IMAGE_H_
 #define _ANDROID_IMAGE_H_
 
+#define ANDROID_PARTITION_BOOT "boot"
+#define ANDROID_PARTITION_VENDOR_BOOT "vendor_boot"
+#define ANDROID_PARTITION_MISC "misc"
+#define ANDROID_PARTITION_OEM  "oem"
+#define ANDROID_PARTITION_RECOVERY  "recovery"
+#define ANDROID_PARTITION_SYSTEM "system"
+#define ANDROID_PARTITION_VBMETA "vbmeta"
+#define ANDROID_PARTITION_SUPER "super"
+
+#define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
+#define ANDROID_ARG_ROOT "root="
+#define ANDROID_ARG_SERIALNO "androidboot.serialno="
+#define ANDROID_VERIFY_STATE "androidboot.verifiedbootstate="
+#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+#define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
+#else
+#define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
+#endif
+#define OEM_UNLOCK_ARG_SIZE 30
+#define UUID_SIZE 37
+
 #define ANDR_BOOT_MAGIC "ANDROID!"
 #define VENDOR_BOOT_MAGIC "VNDRBOOT"
 #define ANDR_BOOT_MAGIC_SIZE 8

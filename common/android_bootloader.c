@@ -30,28 +30,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define ANDROID_PARTITION_BOOT "boot"
-#define ANDROID_PARTITION_VENDOR_BOOT "vendor_boot"
-#define ANDROID_PARTITION_MISC "misc"
-#define ANDROID_PARTITION_OEM  "oem"
-#define ANDROID_PARTITION_RECOVERY  "recovery"
-#define ANDROID_PARTITION_SYSTEM "system"
-#define ANDROID_PARTITION_VBMETA "vbmeta"
-#define ANDROID_PARTITION_SUPER "super"
-
-
-#define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
-#define ANDROID_ARG_ROOT "root="
-#define ANDROID_ARG_SERIALNO "androidboot.serialno="
-#define ANDROID_VERIFY_STATE "androidboot.verifiedbootstate="
-#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-#define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
-#else
-#define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
-#endif
-#define OEM_UNLOCK_ARG_SIZE 30
-#define UUID_SIZE 37
-
 #ifdef CONFIG_ANDROID_AB
 static int is_support_dynamic_partition(struct blk_desc *dev_desc)
 {
