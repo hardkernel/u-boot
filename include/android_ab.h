@@ -46,4 +46,10 @@ int android_ab_select(struct blk_desc *dev_desc, disk_partition_t *part_info);
 /* Read or write the Virtual A/B message from 32KB offset in /misc.*/
 int read_misc_virtual_ab_message(struct misc_virtual_ab_message *message);
 int write_misc_virtual_ab_message(struct misc_virtual_ab_message *message);
+
+void ab_update_root_uuid(void);
+int ab_get_slot_suffix(char *slot_suffix);
+int ab_is_support_dynamic_partition(struct blk_desc *dev_desc);
+int ab_decrease_tries(void);
+
 #endif
