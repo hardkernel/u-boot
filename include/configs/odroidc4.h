@@ -24,4 +24,7 @@
 	#define CONFIG_USB_GPIO_PWR_NAME	"GPIOAO_2"
 #endif
 
+#undef  CONFIG_VDDEE_INIT_VOLTAGE
+#define CONFIG_VDDEE_INIT_VOLTAGE		880	/* VDDEE power up voltage */
+
 #endif
