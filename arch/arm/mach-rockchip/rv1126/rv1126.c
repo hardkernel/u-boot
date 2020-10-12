@@ -535,7 +535,10 @@ void board_debug_uart_init(void)
 
 int arch_cpu_init(void)
 {
-#ifdef CONFIG_SPL_BUILD
+	/*
+	 * CONFIG_DM_RAMDISK: for ramboot that without SPL.
+	 */
+#if defined(CONFIG_SPL_BUILD) || defined(CONFIG_DM_RAMDISK)
 	int delay;
 
 	/* write BOOT_WATCHDOG to boot mode register, if reset by wdt */
@@ -545,8 +548,13 @@ int arch_cpu_init(void)
 		writel(WDT_RESET_SRC_CLR, PMUGRF_RSTFUNC_CLR);
 	}
 
-	/* Just set region 0 to unsecure */
+#ifdef CONFIG_SPL_BUILD
+	/*
+	 * Just set region 0 to unsecure.
+	 * (Note: only secure-world can access this register)
+	 */
 	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
+#endif
 
 	/* disable force jtag mux route to both group0 and group1 */
 	writel(0x00300000, GRF_IOFUNC_CON3);
@@ -668,6 +676,7 @@ int arch_cpu_init(void)
 	/* hold pmugrf's io reset */
 	writel(0x1 << 7 | 1 << 23, PMUGRF_SOC_CON1);
 #endif
+
 #if defined(CONFIG_ROCKCHIP_SFC) && (defined(CONFIG_SPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG))
 	/* GPIO0_D6 pull down in default, pull up it for SPI Flash */
 	writel(((0x3 << 12) << 16) | (0x1 << 12), GRF1_GPIO0D_P);
