@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <asm/io.h>
+#include <asm/arch/boot_mode.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rv1126.h>
 
@@ -91,6 +92,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SGRF_SOC_CON3		0x00c
 #define CRU_SOFTRST_CON11	0xFF49032C
 #define PMUGRF_SOC_CON1		0xFE020104
+#define PMUGRF_RSTFUNC_STATUS	0xFE020230
+#define PMUGRF_RSTFUNC_CLR	0xFE020234
+#define WDT_RESET_SRC		BIT(1)
+#define WDT_RESET_SRC_CLR	BIT(1)
 #define GRF_IOFUNC_CON3		0xFF01026C
 #define GRF1_GPIO0D_P		0xFE010104
 
@@ -532,6 +537,13 @@ int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
 	int delay;
+
+	/* write BOOT_WATCHDOG to boot mode register, if reset by wdt */
+	if (readl(PMUGRF_RSTFUNC_STATUS) & WDT_RESET_SRC) {
+		writel(BOOT_WATCHDOG, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+		/* clear flag for reset by wdt trigger */
+		writel(WDT_RESET_SRC_CLR, PMUGRF_RSTFUNC_CLR);
+	}
 
 	/* Just set region 0 to unsecure */
 	writel(0, FIREWALL_APB_BASE + FW_DDR_CON_REG);
