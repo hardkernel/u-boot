@@ -473,7 +473,8 @@ int vendor_storage_init(void)
 	buffer = (u8 *)malloc(size);
 	if (!buffer) {
 		printf("[Vendor ERROR]:Malloc failed!\n");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto out;
 	}
 	/* Pointer initialization */
 	vendor_info.hdr = (struct vendor_hdr *)buffer;
@@ -483,8 +484,10 @@ int vendor_storage_init(void)
 	vendor_info.version2 = (u32 *)(buffer + version2_offset);
 
 #ifdef CONFIG_MTD_BLK
-	if (dev_desc->if_type == IF_TYPE_MTD)
-		return mtd_vendor_storage_init(dev_desc);
+	if (dev_desc->if_type == IF_TYPE_MTD) {
+		ret = mtd_vendor_storage_init(dev_desc);
+		goto out;
+	}
 #endif
 
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
@@ -533,6 +536,9 @@ int vendor_storage_init(void)
 	debug("[Vendor INFO]:ret=%d.\n", ret);
 
 out:
+	if (ret)
+		bootdev_type = 0;
+
 	return ret;
 }
 
