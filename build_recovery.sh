@@ -50,6 +50,7 @@ pack_recovery_sdcard_img()
 	sudo cp ${IMAGES}/system_error.bmp ${MNT}
 	sudo cp ${IMAGES}/no_sdcard.bmp ${MNT}
 	sudo cp ${IMAGES}/low_battery.bmp ${MNT}
+	sudo cp ./arch/arm/dts/odroidgo2-kernel.dtb ${MNT}/rk3326-odroidgo2-linux.dtb
 	sudo cp ./arch/arm/dts/odroidgo2-kernel-v11.dtb ${MNT}/rk3326-odroidgo2-linux-v11.dtb
 	sync
 	sudo umount ${MNT}
