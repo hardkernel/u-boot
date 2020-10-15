@@ -15,6 +15,9 @@
 #include <spi.h>
 #include <dm/device-internal.h>
 #include <linux/mtd/spi-nor.h>
+#ifdef CONFIG_NAND
+#include <linux/mtd/nand.h>
+#endif
 
 #define MTD_PART_NAND_HEAD		"mtdparts="
 #define MTD_ROOT_PART_NUM		"ubi.mtd="
@@ -38,14 +41,13 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 	if (!desc)
 		return -ENODEV;
 
-	if (desc->devnum == BLK_MTD_NAND) {
-#if defined(CONFIG_NAND)
-		mtd = dev_get_priv(desc->bdev->parent);
-#endif
-	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-#if defined(CONFIG_MTD_SPI_NAND)
+	switch (desc->devnum) {
+	case BLK_MTD_NAND:
+	case BLK_MTD_SPI_NAND:
 		mtd = desc->bdev->priv;
-#endif
+		break;
+	default:
+		break;
 	}
 
 	if (!mtd) {
@@ -54,6 +56,8 @@ int mtd_blk_map_table_init(struct blk_desc *desc,
 		blk_total = (mtd->size + mtd->erasesize - 1) >> mtd->erasesize_shift;
 		if (!mtd_map_blk_table) {
 			mtd_map_blk_table = (int *)malloc(blk_total * sizeof(int));
+			if (!mtd_map_blk_table)
+				return -ENOMEM;
 			for (i = 0; i < blk_total; i++)
 				mtd_map_blk_table[i] = MTD_BLK_TABLE_BLOCK_UNKNOWN;
 		}
@@ -374,19 +378,9 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 	pr_debug("mtd dread %s %lx %lx\n", mtd->name, start, blkcnt);
 
 	if (desc->devnum == BLK_MTD_NAND) {
-#if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
-		mtd = dev_get_priv(udev->parent);
-		if (!mtd)
-			return 0;
-
-		ret = nand_read_skip_bad(mtd, off, &rwsize,
-					 NULL, mtd->size,
-					 (u_char *)(dst));
-#else
 		ret = mtd_map_read(mtd, off, &rwsize,
 				   NULL, mtd->size,
 				   (u_char *)(dst));
-#endif
 		if (!ret)
 			return blkcnt;
 		else
@@ -507,22 +501,34 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 
 static int mtd_blk_probe(struct udevice *udev)
 {
-	struct mtd_info *mtd = dev_get_uclass_priv(udev->parent);
+	struct mtd_info *mtd;
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
-	int ret, i;
+	int ret, i = 0;
+
+	mtd = dev_get_uclass_priv(udev->parent);
+	if (mtd->type == MTD_NANDFLASH && desc->devnum == BLK_MTD_NAND) {
+#ifndef CONFIG_SPL_BUILD
+		mtd = dev_get_priv(udev->parent);
+#endif
+	}
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
+#ifdef CONFIG_NAND
 		if (desc->devnum == BLK_MTD_NAND)
-			mtd = dev_get_priv(udev->parent);
+			i = NAND_BBT_SCAN_MAXBLOCKS;
+		else if (desc->devnum == BLK_MTD_SPI_NAND)
+			i = NANDDEV_BBT_SCAN_MAXBLOCKS;
+#endif
+
 		/*
 		 * Find the first useful block in the end,
 		 * and it is the end lba of the nand storage.
 		 */
-		for (i = 0; i < (mtd->size / mtd->erasesize); i++) {
+		for (; i < (mtd->size / mtd->erasesize); i++) {
 			ret =  mtd_block_isbad(mtd,
 					       mtd->size - mtd->erasesize * (i + 1));
 			if (!ret) {
