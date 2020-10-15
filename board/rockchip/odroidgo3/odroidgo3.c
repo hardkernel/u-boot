@@ -13,7 +13,9 @@
 #include <key.h>
 #include <fs.h>
 #include <version.h>
-
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+#include <power/charge_display.h>
+#endif
 #include <rockchip_display_cmds.h>
 #include "odroidgo3_status.h"
 
@@ -22,6 +24,7 @@ DECLARE_GLOBAL_DATA_PTR;
 extern int board_check_recovery(void);
 extern void board_odroid_recovery(void);
 extern int board_check_power(void);
+extern int odroid_check_dcjack(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 #define WIFI_EN_GPIO	110 /* GPIO3_B6 */
@@ -159,6 +162,12 @@ int rk_board_late_init(void)
 		board_odroid_recovery();
 		/* never get here */
 	}
+
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+	if (odroid_check_dcjack() &&
+		(CMD_RET_SUCCESS != run_command("fatload mmc 1:1 $loadaddr manufacture", 0)))
+		charge_display();
+#endif
 
 	/* show boot logo and version */
 	lcd_show_logo();

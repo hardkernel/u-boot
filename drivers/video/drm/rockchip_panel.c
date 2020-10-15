@@ -66,10 +66,9 @@ struct rockchip_panel_priv {
 	struct udevice *backlight;
 	struct gpio_desc enable_gpio;
 	struct gpio_desc reset_gpio;
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	struct udevice *backlight_supply;
 #endif
-
 	int cmd_type;
 	struct gpio_desc spi_sdi_gpio;
 	struct gpio_desc spi_scl_gpio;
@@ -294,7 +293,7 @@ static void panel_simple_prepare(struct rockchip_panel *panel)
 		regulator_set_enable(priv->power_supply, !plat->power_invert);
 	}
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	if (priv->backlight_supply) {
 		struct dm_regulator_uclass_platdata *uc_pdata;
 
@@ -376,7 +375,7 @@ static void panel_simple_unprepare(struct rockchip_panel *panel)
 	if (priv->power_supply)
 		regulator_set_enable(priv->power_supply, plat->power_invert);
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	if (priv->backlight_supply) {
 		ret = regulator_set_enable(priv->backlight_supply, 0);
 		if (ret)
@@ -534,7 +533,7 @@ static int rockchip_panel_probe(struct udevice *dev)
 		return ret;
 	}
 
-#if defined(CONFIG_TARGET_ODROIDGO2)
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
 	ret = uclass_get_device_by_phandle(UCLASS_REGULATOR, dev,
 				   "backlight-supply", &priv->backlight_supply);
 	if (ret && ret != -ENOENT) {

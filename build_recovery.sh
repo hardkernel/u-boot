@@ -36,18 +36,25 @@ if [ ${BOARD} = "odroidgo3" ]; then
 	dd if=${IMAGES}/recovery_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
 	dd if=${IMAGES}/system_error_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
 	dd if=${IMAGES}/no_sdcard_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc
+
+	dd if=${IMAGES}/battery_0_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10392 conv=fsync,notrunc
+	dd if=${IMAGES}/battery_1_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10792 conv=fsync,notrunc
+	dd if=${IMAGES}/battery_2_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11192 conv=fsync,notrunc
+	dd if=${IMAGES}/battery_3_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11592 conv=fsync,notrunc
+	dd if=${IMAGES}/battery_fail_b.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11992 conv=fsync,notrunc
 else
 	dd if=${IMAGES}/logo_hardkernel.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
 	dd if=${IMAGES}/low_battery.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8792 conv=fsync,notrunc
 	dd if=${IMAGES}/recovery.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
 	dd if=${IMAGES}/system_error.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
 	dd if=${IMAGES}/no_sdcard.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc
-fi
+
 	dd if=${IMAGES}/battery_0.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10392 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_1.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=10792 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_2.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11192 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_3.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11592 conv=fsync,notrunc
 	dd if=${IMAGES}/battery_fail.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=11992 conv=fsync,notrunc
+fi
 	rm ${IMAGES}/*.bmp.gz
 
 	md5sum ${OUT}/spi_recovery.img > ${OUT}/spi_recovery.img.md5sum
