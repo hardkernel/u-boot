@@ -593,9 +593,13 @@ function pack_uboot_itb_image()
 
 	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
 		BL31_ELF=`sed -n '/_bl31_/s/PATH=//p' ${INI} | tr -d '\r'`
+		BL32_BIN=`sed -n '/_bl32_/s/PATH=//p' ${INI} | tr -d '\r'`
 		cp ${RKBIN}/${BL31_ELF} bl31.elf
-		make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
-		echo "pack u-boot.itb okay! Input: ${INI}"
+		if grep BL32_OPTION -A 1 ${INI} | grep SEC=1 ; then
+			cp ${RKBIN}/${BL32_BIN} tee.bin
+			TEE_OFFSET=`grep BL32_OPTION -A 3 ${INI} | grep ADDR= | awk -F "=" '{ printf $2 }' | tr -d '\r'`
+			TEE_ARG="-t ${TEE_OFFSET}"
+		fi
 	else
 		# TOS
 		TOS=`sed -n "/TOS=/s/TOS=//p" ${INI} | tr -d '\r'`
@@ -613,6 +617,7 @@ function pack_uboot_itb_image()
 		if [ "${TEE_OFFSET}" == "" ]; then
 			TEE_OFFSET=0x8400000
 		fi
+		TEE_ARG="-t ${TEE_OFFSET}"
 
 		# MCU
 		MCU_ENABLED=`awk -F"," '/MCU=/ { printf $3 }' ${INI} | tr -d ' '`
@@ -620,29 +625,25 @@ function pack_uboot_itb_image()
 			MCU=`awk -F"," '/MCU=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 5-`
 			cp ${RKBIN}/${MCU} mcu.bin
 			MCU_OFFSET=`awk -F"," '/MCU=/ { printf $2 }' ${INI} | tr -d ' '`
+			MCU_ARG="-m ${MCU_OFFSET}"
 		fi
-
-		COMPRESSION=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 13-`
-		if [ -z "${COMPRESSION}" ]; then
-			COMPRESSION="none"
-		fi
-
-		# its
-		SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
-		if [ ! -z ${SPL_FIT_SOURCE} ]; then
-			cp ${SPL_FIT_SOURCE} u-boot.its
-		else
-			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
-			if [ ! -z ${MCU_OFFSET} ]; then
-				${SPL_FIT_GENERATOR} -t ${TEE_OFFSET} -c ${COMPRESSION} -m ${MCU_OFFSET} > u-boot.its
-			else
-				${SPL_FIT_GENERATOR} -t ${TEE_OFFSET} -c ${COMPRESSION} > u-boot.its
-			fi
-		fi
-
-		./tools/mkimage -f u-boot.its -E u-boot.itb
-		echo "pack u-boot.itb okay! Input: ${INI}"
 	fi
+
+	COMPRESSION=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 13-`
+	if [ ! -z "${COMPRESSION}" -a "${COMPRESSION}" != "none" ]; then
+		COMPRESSION_ARG="-c ${COMPRESSION}"
+	fi
+
+	SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
+	if [ ! -z ${SPL_FIT_SOURCE} ]; then
+		cp ${SPL_FIT_SOURCE} u-boot.its
+	else
+		SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
+		${SPL_FIT_GENERATOR} ${TEE_ARG} ${COMPRESSION_ARG} ${MCU_ARG} > u-boot.its
+	fi
+
+	./tools/mkimage -f u-boot.its -E u-boot.itb
+	echo "pack u-boot.itb okay! Input: ${INI}"
 	echo
 }
 
