@@ -634,9 +634,9 @@ function pack_uboot_itb_image()
 		else
 			SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
 			if [ ! -z ${MCU_OFFSET} ]; then
-				${SPL_FIT_GENERATOR} -u -t ${TEE_OFFSET} -c ${COMPRESSION} -m ${MCU_OFFSET} > u-boot.its
+				${SPL_FIT_GENERATOR} -t ${TEE_OFFSET} -c ${COMPRESSION} -m ${MCU_OFFSET} > u-boot.its
 			else
-				${SPL_FIT_GENERATOR} -u -t ${TEE_OFFSET} -c ${COMPRESSION} > u-boot.its
+				${SPL_FIT_GENERATOR} -t ${TEE_OFFSET} -c ${COMPRESSION} > u-boot.its
 			fi
 		fi
 

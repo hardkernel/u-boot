@@ -23,48 +23,44 @@ function help()
 	echo "    -c [comp]     ==>   <string>   COMPRESSION           set compression: \"none\", \"gzip\""
 	echo "    -m [offset]   ==>   <hex>      MCU_LOAD_ADDR         set mcu.bin offset address"
 	echo "    -t [offset]   ==>   <hex>      TEE_LOAD_ADDR         set tee.bin offset address"
-	echo "    -u            ==>   -          UBOOT_LOAD_ADDR       auto get CONFIG_SYS_TEXT_BASE address"
 	echo
 }
 
-if [ -z $1 ]; then
-	help
-	exit
+if [ $# -eq 1 ]; then
+	# default
+	TEE_OFFSET=0x08400000
+else
+	# args
+	while [ $# -gt 0 ]; do
+		case $1 in
+			--help|-help|help|--h|-h)
+				help
+				exit
+				;;
+			-c)
+				COMPRESSION=$2
+				shift 2
+				;;
+			-m)
+				MCU_OFFSET=$2
+				shift 2
+				;;
+			-t)
+				TEE_OFFSET=$2
+				shift 2
+				;;
+			*)
+				echo "Invalid arg: $1"
+				help
+				exit 1
+				;;
+		esac
+	done
 fi
-
-# args
-while [ $# -gt 0 ]; do
-	case $1 in
-		--help|-help|help|--h|-h)
-			help
-			exit
-			;;
-		-c)
-			COMPRESSION=$2
-			shift 2
-			;;
-		-m)
-			MCU_OFFSET=$2
-			shift 2
-			;;
-		-t)
-			TEE_OFFSET=$2
-			shift 2
-			;;
-		-u)
-			UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
-			shift 1
-			;;
-		*)
-			echo "Invalid arg: $1"
-			help
-			exit 1
-			;;
-	esac
-done
 
 # Base
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
+UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
 
 # tee
 if [ ! -z "${TEE_OFFSET}" ]; then
