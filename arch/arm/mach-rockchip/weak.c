@@ -21,7 +21,6 @@ DECLARE_GLOBAL_DATA_PTR;
  * Override __weak board_fit_image_post_process() for SPL & U-Boot proper.
  */
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 
 #define FIT_UNCOMP_HASH_NODENAME	"digest"
 static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
@@ -43,10 +42,13 @@ static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
 	return 0;
 }
 
-static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
-			 ulong **src_addr, size_t *src_len)
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
+static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
+			    ulong **src_addr, size_t *src_len)
 {
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 	const void *prop;
+#endif
 	u64 len = *src_len;
 	int ret;
 	u8 comp;
@@ -62,9 +64,18 @@ static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
 	if (fit_image_check_type(fit, node, IH_TYPE_KERNEL))
 		return 0;
 #endif
+	/*
+	 * For smaller spl size, we don't use misc_decompress_process()
+	 * inside the gunzip().
+	 */
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 	ret = misc_decompress_process((ulong)(*load_addr),
 				      (ulong)(*src_addr), (ulong)(*src_len),
 				      DECOM_GZIP, false, &len);
+#else
+	ret = gunzip((void *)(*load_addr), ALIGN(len, SZ_1M),
+		     (void *)(*src_addr), (void *)(&len));
+#endif
 	if (ret) {
 		printf("%s: decompress error, ret=%d\n",
 		       fdt_get_name(fit, node, NULL), ret);
@@ -81,12 +92,14 @@ static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
 	*src_addr = (ulong *)*load_addr;
 	*src_len = len;
 
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 	/* mark for misc_decompress_cleanup() */
 	prop = fdt_getprop(fit, node, "decomp-async", NULL);
 	if (prop)
 		misc_decompress_async(comp);
 	else
 		misc_decompress_sync(comp);
+#endif
 
 	return 0;
 }
@@ -95,8 +108,8 @@ static int fit_hw_gunzip(void *fit, int node, ulong *load_addr,
 void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 				  ulong **src_addr, size_t *src_len)
 {
-#if CONFIG_IS_ENABLED(ROCKCHIP_HW_DECOMPRESS)
-	fit_hw_gunzip(fit, node, load_addr, src_addr, src_len);
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
+	fit_gunzip_image(fit, node, load_addr, src_addr, src_len);
 #endif
 
 #if CONFIG_IS_ENABLED(USING_KERNEL_DTB)
