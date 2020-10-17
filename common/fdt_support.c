@@ -22,6 +22,8 @@
 #include <linux/libfdt.h>
 #include <linux/types.h>
 
+DECLARE_GLOBAL_DATA_PTR;
+
 /**
  * fdt_getprop_u32_default_node - Return a node's property or a default
  *
@@ -342,6 +344,22 @@ int fdt_chosen(void *fdt)
 				 * this for compatible with legacy parameter.txt
 				 */
 				env_delete("bootargs", "initrd=", 0);
+
+				/*
+				 * If uart is required to be disabled during
+				 * power on, it would be not initialized by
+				 * any pre-loader and U-Boot.
+				 *
+				 * If we don't remove earlycon from commandline,
+				 * kernel hangs while using earlycon to putc/getc
+				 * which may dead loop for waiting uart status.
+				 * (It seems the root cause is baundrate is not
+				 * initilalized)
+				 *
+				 * So let's remove earlycon from commandline.
+				 */
+				if (gd->flags & GD_FLG_DISABLE_CONSOLE)
+					env_delete("bootargs", "earlycon=", 0);
 			}
 #endif
 		}
