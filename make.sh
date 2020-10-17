@@ -456,6 +456,7 @@ function sub_commands()
 	case ${CMD} in
 		elf|nm)
 			if [ "${CMD}" == "nm" ]; then
+				echo -e "\n${ELF}:     file format elf\n"
 				${TOOLCHAIN_NM} -r --size ${ELF} | less
 			else
 				if [ "${CMD}" == "elf" -a "${ARG}" == "elf" ]; then
