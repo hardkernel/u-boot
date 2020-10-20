@@ -520,6 +520,11 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 }
 #endif /* CONFIG_TARGET_ODROIDGO3 */
 
+#ifdef CONFIG_TARGET_ODROIDGO3
+#define BL_MAX_LEVEL		255
+#define BL_OGA_MAX_LEVEL	160
+#define BL_OGA_DEFAULT_LEVEL	80
+#endif
 static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
@@ -549,7 +554,11 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 	lcd_setfg_color("black");
 	while (1) {
 		period_ns = 25000;
-		duty_ns = period_ns * active[loop] / 100;
+#ifdef CONFIG_TARGET_ODROIDGO3
+		duty_ns = period_ns * (active[loop] / 100) * (BL_OGA_MAX_LEVEL / BL_MAX_LEVEL);
+#else
+		duty_ns = period_ns * (active[loop] / 100);
+#endif
 		printf("active percentage %d, duty_ns %d\n", active[loop], duty_ns);
 		lcd_printf(0, 8 + yoffs, 1, "PERCENTAGE : %d %", active[loop]);
 
@@ -584,8 +593,14 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 		mdelay(500);
 	}
 
+#ifdef CONFIG_TARGET_ODROIDGO3
+	/* set backlight as default */
+	duty_ns = period_ns * (BL_OGA_DEFAULT_LEVEL / BL_MAX_LEVEL);
+	pwm_set_config(dev, 1, period_ns, duty_ns);
+#else
 	/* set backlight as max */
 	pwm_set_config(dev, 1, period_ns, period_ns);
+#endif
 
 	lcd_setfg_color("black");
 	lcd_printf(0, 18 + yoffs, 1, "BACKLIGHT TEST TERMINATED!");
