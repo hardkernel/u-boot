@@ -198,12 +198,14 @@
                 "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " "\
                 "recovery_part=recovery recovery_offset=0; "\
             "movi read dtbs 0 ${cramfsaddr}; " \
-            "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
-            "if test ${variant} != c4; then " \
+            "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
+                "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
                 "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
                 "fdt addr ${dtb_mem_addr};" \
                 "fdt resize 8192;" \
                 "fdt apply ${loadaddr};" \
+            "else " \
+                "cramfsload ${dtb_mem_addr} meson64_odroid${variant}_android.dtb;" \
             "fi;" \
             "movi read recovery 0 ${loadaddr}; " \
             "booti ${loadaddr} - ${dtb_mem_addr}; " \
@@ -215,12 +217,14 @@
             "androidboot.selinux=permissive androidboot.firstboot=${firstboot} jtag=disable " \
             "androidboot.hardware=" CONFIG_DEVICE_PRODUCT "; " \
 	        "movi read dtbs 0 ${cramfsaddr}; " \
-	        "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
-            "if test ${variant} != c4; then " \
+            "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
+                "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
                 "cramfsload ${loadaddr} odroid${variant}-opp.dtbo;" \
                 "fdt addr ${dtb_mem_addr};" \
                 "fdt resize 8192;" \
                 "fdt apply ${loadaddr};" \
+            "else " \
+                "cramfsload ${dtb_mem_addr} meson64_odroid${variant}_android.dtb;" \
             "fi;" \
 	        "movi read boot 0 ${loadaddr}; " \
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
