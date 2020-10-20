@@ -311,9 +311,20 @@
 			ocv_table = <3500 3625 3685 3697 3718 3735 3748
 					3760 3774 3788 3802 3816 3834 3853
 					3877 3908 3946 3975 4018 4071 4106>;
-			design_capacity = <2500>;
-			design_qmax = <2750>;
-			bat_res = <100>;
+			/*
+				HCP775474ZC Battery
+				Capacity : 3.7V 4000mAh, 14.8Wh
+				Rated Voltage = 3.7V
+				Charge Cut-Off Voltage : 4.25V
+				Discharge Cut-Off Voltage : 3.0V
+				Internal Impedance : 180 mOhm
+				Charging Voltage : 4.2V
+				Charging Voltage Max : 4.25V
+				Sample resister : 10 mohm (R12)
+			*/
+			design_capacity = <4000>;
+			design_qmax = <4020>;
+			bat_res = <180>;
 			sleep_enter_current = <300>;
 			sleep_exit_current = <300>;
 			sleep_filter_current = <100>;
@@ -321,8 +332,8 @@
 			zero_algorithm_vol = <3850>;
 			max_soc_offset = <60>;
 			monitor_sec = <5>;
+			virtual_power = <0>;
 			sample_res = <10>;
-			virtual_power = <1>;
 		};
 
 		charger {
