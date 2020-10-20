@@ -799,8 +799,127 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 	return 0;
 }
 
+#define PWR_LED_GPIO	18	/* GPIO0_C2 */
+#define DC_DET_GPIO	11	/* GPIO0_B3 */
+#define CHG_LED_GPIO	13	/* GPIO0_B5 */
+static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
+				int argc, char * const argv[])
+{
+	struct udevice *fg;
+	int ret;
+
+	int key;
+
+	int is_bat_exist;
+	bool is_dcjack_exist;
+	bool is_chrg_online;
+
+	int bat_voltage;
+	int chrg_current;
+	int soc;
+
+	char cmd[64];
+
+	/* draw background */
+	lcd_setbg_color("black");
+	lcd_clear();
+
+	lcd_setfg_color("white");
+	lcd_printf(0, 1, 1, "[ BATTERY & CHARGE TEST ]");
+
+	lcd_setfg_color("grey");
+	lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BATTERY test");
+	lcd_printf(0, 24 + yoffs, 1,
+		"Long press on PWR key to turn off power");
+
+	/* check fuel gauge device */
+	ret = uclass_get_device(UCLASS_FG, 0, &fg);
+	if (ret) {
+		if (ret == -ENODEV)
+			printf("Can't find FG\n");
+		else
+			printf("Get UCLASS FG failed: %d\n", ret);
+		return ret;
+	}
+
+	gpio_request(PWR_LED_GPIO, "pwr_led");
+	gpio_request(CHG_LED_GPIO, "chg_led");
+
+	while (1) {
+		lcd_setfg_color("yellow");
+
+		/* 1. check battery connection */
+		is_bat_exist = fuel_gauge_bat_is_exist(fg);
+		printf("is_bat_exist %d\n", is_bat_exist);
+		if (is_bat_exist) {
+			lcd_printf(0, 7, 1, "  BATTERY : Connected  ");
+		} else {
+			lcd_printf(0, 7, 1, "BATTERY : Disconnected");
+		}
+
+		/* 2. check dc cable connection */
+		is_dcjack_exist = gpio_get_value(DC_DET_GPIO) ? 1 : 0;
+		printf("is_dcjack_exist %d\n", is_dcjack_exist);
+		if (is_dcjack_exist) {
+			lcd_printf(0, 10, 1, "  DC JACK : Connected  ");
+			gpio_direction_output(PWR_LED_GPIO, 1);
+		} else {
+			lcd_printf(0, 10, 1, "DC JACK : Disconnected");
+			gpio_direction_output(PWR_LED_GPIO, 0);
+		}
+
+		/* 3. get soc */
+		if (is_bat_exist) {
+			soc = fuel_gauge_update_get_soc(fg);
+			printf("charging online : soc %d\n", soc);
+		}
+
+		/* 4. check charging online */
+		is_chrg_online = fuel_gauge_get_chrg_online(fg);
+		printf("is_chrg_online %d\n", is_chrg_online);
+		if (is_chrg_online) {
+			lcd_printf(0, 13, 1, "  CHARGING STATE : Online  ");
+			gpio_direction_output(CHG_LED_GPIO, 1);
+		} else {
+			lcd_printf(0, 13, 1, "CHARGING STATE : Offline");
+			gpio_direction_output(CHG_LED_GPIO, 0);
+		}
+
+		/* 5. show battery level */
+		bat_voltage = fuel_gauge_get_voltage(fg);
+		printf("bat_voltage %d\n", bat_voltage);
+		sprintf(cmd, "BATTERY VOLTAGE : %d (mV)", bat_voltage);
+		lcd_printf(0, 16, 1, cmd);
+
+		/* 6. show charging current */
+		chrg_current = fuel_gauge_get_current(fg);
+		printf("chrg_current %d\n\n", chrg_current);
+		sprintf(cmd, "CHARGING CURRENT : %d (mA)", chrg_current);
+		lcd_printf(0, 19, 1, cmd);
+
+		/* 7. check key event */
+		key = wait_key_event(true);
+		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
+			if(!run_command("gpio input C2", 0)
+				&& !run_command("gpio input C5", 0)) {
+				printf("Got termination key!\n");
+				break;
+			}
+		}
+
+		/* loop delay 500ms+alpha */
+		mdelay(500);
+	}
+
+	gpio_free(PWR_LED_GPIO);
+	gpio_free(CHG_LED_GPIO);
+
+	return 0;
+}
+
 static cmd_tbl_t cmd_sub_odroidtest[] = {
 	U_BOOT_CMD_MKENT(all, 1, 0, do_odroidtest_all, "", ""),
+	U_BOOT_CMD_MKENT(bat, 1, 0, do_odroidtest_bat, "", ""),
 	U_BOOT_CMD_MKENT(btn, 1, 0, do_odroidtest_btn, "", ""),
 	U_BOOT_CMD_MKENT(lcd, 1, 0, do_odroidtest_lcd, "", ""),
 	U_BOOT_CMD_MKENT(backlight, 1, 0, do_odroidtest_backlight, "", ""),
@@ -871,6 +990,7 @@ U_BOOT_CMD(
 	"ODROID GO Advanced HW Test",
 	"odroidtest <subcmd>\n"
 	"odroidtest all - do all test\n"
+	"odroidtest bat - battery and charge test \n"
 	"odroidtest btn - gpio button test\n"
 	"odroidtest lcd - lcd test\n"
 	"odroidtest backlight - backlight test\n"

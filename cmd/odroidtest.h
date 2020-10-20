@@ -14,6 +14,10 @@
 #include <pwm.h>
 #include <odroidgo2_status.h>
 #include <rockchip_display_cmds.h>
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+#include <power/charge_display.h>
+#endif
+#include <power/fuel_gauge.h>
 
 struct key_arrays {
 	const char * name;
