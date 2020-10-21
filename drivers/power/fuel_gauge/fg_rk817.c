@@ -137,6 +137,8 @@ static int dbg_enable = 0;
 
 #define PMIC_CHRG_OUT		0x00e4
 #define USB_CTRL_REG		0x00E5
+#define PMIC_CHRG_STS		0x00eb
+#define BAT_EXS			BIT(7)
 #define PMIC_SYS_STS		0x00f0
 #define PLUG_IN_STS		BIT(6)
 
@@ -1239,7 +1241,15 @@ static int rk817_bat_update_get_soc(struct udevice *dev)
 		return VIRTUAL_POWER_SOC;
 }
 
+static int rk817_bat_bat_is_exist(struct udevice *dev)
+{
+	struct rk817_battery_device *battery = dev_get_priv(dev);
+
+	return (rk817_bat_read(battery, PMIC_CHRG_STS) & BAT_EXS) ? true : false;
+}
+
 static struct dm_fuel_gauge_ops fg_ops = {
+	.bat_is_exist = rk817_bat_bat_is_exist,
 	.get_soc = rk817_bat_update_get_soc,
 	.get_voltage = rk817_bat_update_get_voltage,
 	.get_current = rk817_bat_update_get_current,
