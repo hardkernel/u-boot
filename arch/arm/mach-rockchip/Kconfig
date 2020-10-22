@@ -365,6 +365,21 @@ config TPL_STACK
 
 endif
 
+config ROCKCHIP_RK3568
+	bool "Support Rockchip RK3568"
+	select ARM64
+	select SPL
+	select SUPPORT_SPL
+	help
+	  The Rockchip RK3568 is a ARM-based SoC with a quad-core Cortex-A55.
+
+if ROCKCHIP_RK3568
+
+config TPL_LDSCRIPT
+	default "arch/arm/mach-rockchip/u-boot-tpl-v8.lds"
+
+endif
+
 config ROCKCHIP_RK1808
 	bool "Support Rockchip RK1808"
 	select ARM64
@@ -489,6 +504,7 @@ config ROCKCHIP_BOOT_MODE_REG
 	default 0xff1005c8 if ROCKCHIP_RK3328
 	default 0xff738200 if ROCKCHIP_RK3368
 	default 0xff320300 if ROCKCHIP_RK3399
+	default 0xfdc20200 if ROCKCHIP_RK3568
 	default 0xfe020200 if ROCKCHIP_RK1808
 	default 0x10300580 if ROCKCHIP_RV1108
 	default 0xfe020200 if ROCKCHIP_RV1126
@@ -510,6 +526,7 @@ config ROCKCHIP_STIMER_BASE
 	default 0xff1d0020 if ROCKCHIP_RK3328
 	default 0xff830020 if ROCKCHIP_RK3368
 	default 0xff8680a0 if ROCKCHIP_RK3399
+	default 0xfdd1c020 if ROCKCHIP_RK3568
 	default 0x10350020 if ROCKCHIP_RV1108
 	default 0xff670020 if ROCKCHIP_RV1126
 	default 0
@@ -529,6 +546,7 @@ config ROCKCHIP_IRAM_START_ADDR
 	default 0xff091000 if ROCKCHIP_RK3328
 	default 0xff8c0000 if ROCKCHIP_RK3368
 	default 0xff8c0000 if ROCKCHIP_RK3399
+	default 0xfdcc0000 if ROCKCHIP_RK3568
 	default 0x10080000 if ROCKCHIP_RV1108
 	default 0xff700000 if ROCKCHIP_RV1126
 	default 0
@@ -763,6 +781,7 @@ source "arch/arm/mach-rockchip/rk3308/Kconfig"
 source "arch/arm/mach-rockchip/rk3328/Kconfig"
 source "arch/arm/mach-rockchip/rk3368/Kconfig"
 source "arch/arm/mach-rockchip/rk3399/Kconfig"
+source "arch/arm/mach-rockchip/rk3568/Kconfig"
 source "arch/arm/mach-rockchip/rk1808/Kconfig"
 source "arch/arm/mach-rockchip/rv1108/Kconfig"
 source "arch/arm/mach-rockchip/rv1126/Kconfig"
