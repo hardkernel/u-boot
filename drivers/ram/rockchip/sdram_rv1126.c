@@ -2014,7 +2014,7 @@ static void update_noc_timing(struct dram_info *dram,
 		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 3;
 
 	sdram_params->ch.noc_timings.ddrtimingc0.b.burstpenalty =
-		(bw == 32) ? 2 : ((bw == 16) ? 4 : 8);
+		(bl * bw / 8) > 16 ? (bl / 4) : (16 / (bl * bw / 8)) * bl / 4;
 
 	if (sdram_params->base.dramtype == LPDDR4) {
 		sdram_params->ch.noc_timings.ddrmode.b.mwrsize =
