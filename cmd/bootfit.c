@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <android_ab.h>
 #include <bootm.h>
 #include <boot_rkimg.h>
 #include <image.h>
@@ -92,6 +93,12 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	bootm_args[0] = fit_addr;
 
 	printf("at %s with size 0x%08lx\n", fit_addr, size);
+
+#ifdef CONFIG_ANDROID_AB
+	ab_update_root_uuid();
+	if (ab_decrease_tries())
+		printf("Decrease ab tries count fail!\n");
+#endif
 
 	ret = do_bootm_states(NULL, 0, ARRAY_SIZE(bootm_args), bootm_args,
 		BOOTM_STATE_START |
