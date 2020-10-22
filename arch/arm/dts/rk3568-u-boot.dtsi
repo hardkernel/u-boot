@@ -1,0 +1,64 @@
+/*
+ * (C) Copyright 2020 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/ {
+	aliases {
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
+		mmc2 = &sdmmc1;
+	};
+
+	chosen {
+		stdout-path = &uart2;
+	};
+};
+
+&uart2 {
+	clock-frequency = <24000000>;
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&pmugrf {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&cru {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&pmucru {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&saradc {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&sdmmc0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&sdmmc1 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&sdhci {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
