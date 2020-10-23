@@ -2445,9 +2445,24 @@ static int sdram_init_detect(struct dram_info *dram,
 	u32 ret;
 	u32 sys_reg = 0;
 	u32 sys_reg3 = 0;
+	struct sdram_head_info_index_v2 *index =
+		(struct sdram_head_info_index_v2 *)common_info;
+	struct dq_map_info *map_info;
 
-	if (sdram_init_(dram, sdram_params, 0) != 0)
-		return -1;
+	map_info = (struct dq_map_info *)((void *)common_info +
+		index->dq_map_index.offset * 4);
+
+	if (sdram_init_(dram, sdram_params, 0)) {
+		if (sdram_params->base.dramtype == DDR3) {
+			clrsetbits_le32(&map_info->byte_map[0], 0xff << 24,
+					((0x1 << 6) | (0x3 << 4) | (0x2 << 2) |
+					(0x0 << 0)) << 24);
+			if (sdram_init_(dram, sdram_params, 0))
+				return -1;
+		} else {
+			return -1;
+		}
+	}
 
 	if (sdram_params->base.dramtype == DDR3) {
 		writel(PATTERN, CONFIG_SYS_SDRAM_BASE);
