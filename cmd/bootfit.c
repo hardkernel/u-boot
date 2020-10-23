@@ -95,6 +95,14 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	printf("at %s with size 0x%08lx\n", fit_addr, size);
 
 #ifdef CONFIG_ANDROID_AB
+	char slot_suffix[3] = {0};
+	char slot_info[21] = "android_slotsufix=";
+
+	if (ab_get_slot_suffix(slot_suffix))
+		goto out;
+
+	strcat(slot_info, slot_suffix);
+	env_update("bootargs", slot_info);
 	ab_update_root_uuid();
 	if (ab_decrease_tries())
 		printf("Decrease ab tries count fail!\n");
