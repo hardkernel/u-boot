@@ -5,6 +5,7 @@
 
 #include <common.h>
 #include <blk.h>
+#include <boot_rkimg.h>
 #include <dm.h>
 #include <errno.h>
 #include <image.h>
@@ -105,17 +106,24 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 	struct image_header *header;
 	struct blk_desc *desc;
 	int ret = -1;
+	lbaint_t image_sector = CONFIG_MTD_BLK_U_BOOT_OFFS;
 
 	desc = find_mtd_device(spl_mtd_get_device_index(bootdev->boot_device));
 	if (!desc)
 		return -ENODEV;
 #ifdef CONFIG_SPL_LIBDISK_SUPPORT
+	disk_partition_t info;
+
 	mtd_blk_map_partitions(desc);
+	ret = part_get_info_by_name(desc, PART_UBOOT, &info);
+	if (ret > 0)
+		image_sector = info.start;
+
 #endif
 	if (IS_ENABLED(CONFIG_SPL_LOAD_FIT)) {
 		header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
 					 sizeof(struct image_header));
-		ret = blk_dread(desc, CONFIG_MTD_BLK_U_BOOT_OFFS, 1, header);
+		ret = blk_dread(desc, image_sector, 1, header);
 		if (ret != 1)
 			return -ENODEV;
 
@@ -134,7 +142,7 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 			load.read = mtd_spl_load_read;
 
 			ret = spl_load_simple_fit(spl_image, &load,
-						  CONFIG_MTD_BLK_U_BOOT_OFFS,
+						  image_sector,
 						  header);
 		}
 	}
