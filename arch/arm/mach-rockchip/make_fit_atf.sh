@@ -8,7 +8,7 @@
 # Process args and auto set variables
 source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
 
-rm -f ${srctree}/*.digest ${srctree}/*.bin.gz ${srctree}/bl31_0x*.gz
+rm -f ${srctree}/*.digest ${srctree}/*.bin.gz ${srctree}/bl31_0x*.bin
 ${srctree}/arch/arm/mach-rockchip/decode_bl31.py
 
 if [ "${COMPRESSION}" == "gzip" ]; then
