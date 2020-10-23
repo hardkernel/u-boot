@@ -595,6 +595,7 @@ function pack_uboot_itb_image()
 	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
 		BL31_ELF=`sed -n '/_bl31_/s/PATH=//p' ${INI} | tr -d '\r'`
 		BL32_BIN=`sed -n '/_bl32_/s/PATH=//p' ${INI} | tr -d '\r'`
+		rm bl31.elf tee.bin -rf
 		cp ${RKBIN}/${BL31_ELF} bl31.elf
 		if grep BL32_OPTION -A 1 ${INI} | grep SEC=1 ; then
 			cp ${RKBIN}/${BL32_BIN} tee.bin
