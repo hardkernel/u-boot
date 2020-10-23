@@ -641,7 +641,11 @@ function pack_uboot_itb_image()
 		cp ${SPL_FIT_SOURCE} u-boot.its
 	else
 		SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
-		${SPL_FIT_GENERATOR} ${TEE_ARG} ${COMPRESSION_ARG} ${MCU_ARG} > u-boot.its
+		if [[ ${SPL_FIT_GENERATOR} == *.py ]]; then
+			${SPL_FIT_GENERATOR} u-boot.dtb > u-boot.its
+		else
+			${SPL_FIT_GENERATOR} ${TEE_ARG} ${COMPRESSION_ARG} ${MCU_ARG} > u-boot.its
+		fi
 	fi
 
 	./tools/mkimage -f u-boot.its -E u-boot.itb
