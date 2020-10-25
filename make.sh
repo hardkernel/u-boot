@@ -209,8 +209,8 @@ function process_args()
 				ARG_UBOOT_SIZE="--size $2 $3"
 				shift 3
 				;;
-			--no-pack)  # FIT: build but not pack image
-				ARG_NO_PACK="y"
+			--raw-compile)  # FIT: build but not pack image
+				ARG_RAW_COMPILE="y"
 				shift 1
 				;;
 			--no-uboot) # FIT: pack uboot.img without u-boot
@@ -230,7 +230,7 @@ function process_args()
 				;;
 			*)
 				#1. FIT scripts args
-				NUM=$(${SCRIPT_FIT} --arg-check $1)
+				NUM=$(${SCRIPT_FIT} --args $1)
 				if  [ ${NUM} -ne 0 ]; then
 					[ ${NUM} -eq 1 ] && ARG_LIST_FIT="${ARG_LIST_FIT} $1"
 					[ ${NUM} -eq 2 ] && ARG_LIST_FIT="${ARG_LIST_FIT} $1 $2"
@@ -480,7 +480,7 @@ function sub_commands()
 			;;
 		fit)
 			# Non-secure
-			${SCRIPT_FIT} --uboot-itb --boot-itb --no-vboot ${ARG_LIST_FIT}
+			${SCRIPT_FIT} --boot_img_dir images/ ${ARG_LIST_FIT}
 			exit 0
 			;;
 		uboot)
@@ -723,15 +723,10 @@ function pack_fit_image()
 		touch u-boot-nodtb.bin u-boot.dtb
 	fi
 
-	# Verified boot=1:  must build both uboot.img and boot.img
-	# Verified boot=0:  build uboot.img
-	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
-		${SCRIPT_FIT} --uboot-itb --boot-itb ${ARG_LIST_FIT}
-	else
-		rm uboot.img trust*.img -f
-		${SCRIPT_FIT} --uboot-itb --no-vboot --no-rebuild ${ARG_LIST_FIT}
-		echo "pack uboot.img okay! Input: ${INI_TRUST}"
-	fi
+	rm uboot.img trust*.img -rf
+	${SCRIPT_FIT} ${ARG_LIST_FIT}
+
+	echo "pack uboot.img okay! Input: ${INI_TRUST}"
 }
 
 function handle_args_late()
@@ -747,16 +742,14 @@ function clean_files()
 
 function pack_images()
 {
-	if [ "${ARG_NO_PACK}" == "y" ]; then
-		return
-	fi
-
-	if [ "${PLAT_TYPE}" == "RKFW" ]; then
-		pack_uboot_image
-		pack_trust_image
-		pack_loader_image
-	elif [ "${PLAT_TYPE}" == "FIT" ]; then
-		pack_fit_image ${ARG_LIST_FIT}
+	if [ "${ARG_RAW_COMPILE}" != "y" ]; then
+		if [ "${PLAT_TYPE}" == "FIT" ]; then
+			pack_fit_image ${ARG_LIST_FIT}
+		else
+			pack_uboot_image
+			pack_trust_image
+			pack_loader_image
+		fi
 	fi
 }
 
