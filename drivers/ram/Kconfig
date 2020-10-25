@@ -35,16 +35,17 @@ config STM32_SDRAM
 	  This driver is for the sdram memory interface with the FMC.
 
 config DM_RAMDISK
-        bool "Enable Driver Model for RAMDISK drivers"
-        depends on DM
-        help
-          This enables the Ramdisk uclass support. These appear as block devices
-          in U-Boot.
+	bool "Enable Driver Model for RAMDISK drivers"
+	depends on DM
+	help
+	  This enables the Ramdisk uclass support. These appear as block devices
+	  in U-Boot.
 
 config RAMDISK_RO
-        bool "Enable read only ramdisk support"
-        depends on DM_RAMDISK && RKPARM_PARTITION
-        help
-          This enables the read only ramdisk support.
+	bool "Enable read only ramdisk support"
+	depends on DM_RAMDISK
+	select RKPARM_PARTITION
+	help
+	  This enables the read only ramdisk support.
 
 source "drivers/ram/rockchip/Kconfig"
