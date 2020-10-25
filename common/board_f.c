@@ -250,6 +250,11 @@ static int setup_mon_len(void)
 	return 0;
 }
 
+__weak int arch_fpga_init(void)
+{
+	return 0;
+}
+
 __weak int arch_cpu_init(void)
 {
 	return 0;
@@ -808,6 +813,7 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_HAVE_FSP)
 	arch_fsp_init,
 #endif
+	arch_fpga_init,
 	arch_cpu_init,		/* basic arch cpu dependent setup */
 	mach_cpu_init,		/* SoC/machine dependent CPU setup */
 	initf_dm,
