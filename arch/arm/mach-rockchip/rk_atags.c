@@ -186,7 +186,7 @@ int atags_set_tag(u32 magic, void *tagdata)
 	u32 length, size = 0, hash;
 	struct tag *t = (struct tag *)ATAGS_PHYS_BASE;
 
-#ifndef CONFIG_TPL_BUILD
+#if !defined(CONFIG_TPL_BUILD) && !defined(CONFIG_FPGA_ROCKCHIP)
 	if (!atags_is_available())
 		return -EPERM;
 #endif
