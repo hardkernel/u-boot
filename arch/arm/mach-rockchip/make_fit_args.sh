@@ -21,8 +21,10 @@ function help()
 	echo "    arg                 type       output variable       description"
 	echo "--------------------------------------------------------------------------------------------"
 	echo "    -c [comp]     ==>   <string>   COMPRESSION           set compression: \"none\", \"gzip\""
-	echo "    -m [offset]   ==>   <hex>      MCU_LOAD_ADDR         set mcu.bin offset address"
-	echo "    -t [offset]   ==>   <hex>      TEE_LOAD_ADDR         set tee.bin offset address"
+	echo "    -m [offset]   ==>   <hex>      MCU_LOAD_ADDR         set mcu.bin load address"
+	echo "    -t [offset]   ==>   <hex>      TEE_LOAD_ADDR         set tee.bin load address"
+	echo "    (none)        ==>   <hex>      UBOOT_LOAD_ADDR       set U-Boot load address"
+	echo "    (none)        ==>   <string>   ARCH                  set arch: \"arm\", \"arm64\""
 	echo
 }
 
@@ -61,6 +63,11 @@ fi
 # Base
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
 UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
+if grep -q '^CONFIG_ARM64=y' .config ; then
+	ARCH="arm64"
+else
+	ARCH="arm"
+fi
 
 # tee
 if [ ! -z "${TEE_OFFSET}" ]; then

@@ -8,6 +8,10 @@
 # Process args and auto set variables
 source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
 
+if [ ! -f ${srctree}/images/ramdisk ]; then
+	touch ${srctree}/images/ramdisk
+fi
+
 if [ "${COMPRESSION}" == "gzip" ]; then
 	gzip -k -f -9 ${srctree}/images/kernel
 	gzip -k -f -9 ${srctree}/images/ramdisk
@@ -35,7 +39,7 @@ cat << EOF
 		fdt {
 			data = /incbin/("./images/rk-kernel.dtb");
 			type = "flat_dt";
-			arch = "arm";
+			arch = "${ARCH}";
 			compression = "none";
 			load  = <0xffffff00>;
 			hash {
@@ -49,7 +53,7 @@ echo "			data = /incbin/(\"./images/kernel${SUFFIX}\");"
 echo "			compression = \"${COMPRESSION}\";"
 cat << EOF
 			type = "kernel";
-			arch = "arm";
+			arch = "${ARCH}";
 			os = "linux";
 			entry = <0xffffff01>;
 			load  = <0xffffff01>;
@@ -64,7 +68,7 @@ echo "			data = /incbin/(\"./images/ramdisk${SUFFIX}\");"
 echo "			compression = \"${COMPRESSION}\";"
 cat << EOF
 			type = "ramdisk";
-			arch = "arm";
+			arch = "${ARCH}";
 			os = "linux";
 			load  = <0xffffff02>;
 			hash {
@@ -75,7 +79,7 @@ cat << EOF
 		resource {
 			data = /incbin/("./images/resource");
 			type = "multi";
-			arch = "arm";
+			arch = "${ARCH}";
 			compression = "none";
 			hash {
 				algo = "sha256";
