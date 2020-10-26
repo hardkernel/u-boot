@@ -10,6 +10,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define PMU_BASE_ADDR		0xfdd90000
+#define PMU_NOC_AUTO_CON0	(0x70)
+#define PMU_NOC_AUTO_CON1	(0x74)
+
 static struct mm_region rk3568_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -39,5 +43,14 @@ void board_debug_uart_init(void)
 
 int arch_cpu_init(void)
 {
+#ifdef CONFIG_SPL_BUILD
+	/*
+	 * When perform idle operation, corresponding clock can
+	 * be opened or gated automatically.
+	 */
+	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
+	writel(0x000f000f, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
+#endif
+
 	return 0;
 }
