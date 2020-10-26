@@ -230,15 +230,24 @@ static int gic_irq_get(void)
 static int gic_irq_suspend(void)
 {
 	int irq_nr, i, irq;
-
+#ifndef CONFIG_GICV2
+	u32 reg;
+#endif
 	/* irq nr */
 	irq_nr = ((gicd_readl(GICD_TYPER) & 0x1f) + 1) * 32;
 	if (irq_nr > 1020)
 		irq_nr = 1020;
 
 	/* GICC save */
+#ifdef CONFIG_GICV2
 	gicc_save.ctlr = gicc_readl(GICC_CTLR);
 	gicc_save.pmr = gicc_readl(GICC_PMR);
+#else
+	asm volatile("mrs %0, " __stringify(ICC_CTLR_EL1) : "=r" (reg));
+	gicc_save.ctlr = reg;
+	asm volatile("mrs %0, " __stringify(ICC_PMR_EL1) : "=r" (reg));
+	gicc_save.pmr = reg;
+#endif
 
 	/* GICD save */
 	gicd_save.ctlr = gicd_readl(GICD_CTLR);
@@ -275,13 +284,20 @@ static int gic_irq_suspend(void)
 static int gic_irq_resume(void)
 {
 	int irq_nr, i, irq;
-
+#ifndef CONFIG_GICV2
+	u32 reg;
+#endif
 	irq_nr = ((gicd_readl(GICD_TYPER) & 0x1f) + 1) * 32;
 	if (irq_nr > 1020)
 		irq_nr = 1020;
 
 	/* Disable ctrl register */
+#ifdef CONFIG_GICV2
 	gicc_writel(0, GICC_CTLR);
+#else
+	reg = 0;
+	asm volatile("msr " __stringify(ICC_CTLR_EL1) ", %0" : : "r" (reg));
+#endif
 	gicd_writel(0, GICD_CTLR);
 	dsb();
 
@@ -315,8 +331,15 @@ static int gic_irq_resume(void)
 			    GICD_ISPENDRn + IRQ_REG_X32(irq));
 
 	dsb();
+#ifdef CONFIG_GICV2
 	gicc_writel(gicc_save.pmr, GICC_PMR);
 	gicc_writel(gicc_save.ctlr, GICC_CTLR);
+#else
+	reg = gicc_save.pmr;
+	asm volatile("msr " __stringify(ICC_PMR_EL1) ", %0" : : "r" (reg));
+	reg = gicc_save.ctlr;
+	asm volatile("msr " __stringify(ICC_CTLR_EL1) ", %0" : : "r" (reg));
+#endif
 	gicd_writel(gicd_save.ctlr, GICD_CTLR);
 	dsb();
 
