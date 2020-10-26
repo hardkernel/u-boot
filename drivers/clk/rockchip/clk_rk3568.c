@@ -67,9 +67,9 @@ static struct rockchip_pll_clock rk3568_pll_clks[] = {
 		     RK3568_MODE_CON, 0, 10, 0, rk3568_pll_rates),
 	[DPLL] = PLL(pll_rk3328, PLL_DPLL, RK3568_PLL_CON(8),
 		     RK3568_MODE_CON, 2, 10, 0, NULL),
-	[CPLL] = PLL(pll_rk3328, PLL_CPLL, RK3568_PLL_CON(16),
+	[CPLL] = PLL(pll_rk3328, PLL_CPLL, RK3568_PLL_CON(24),
 		     RK3568_MODE_CON, 4, 10, 0, rk3568_pll_rates),
-	[GPLL] = PLL(pll_rk3328, PLL_HPLL, RK3568_PLL_CON(24),
+	[GPLL] = PLL(pll_rk3328, PLL_HPLL, RK3568_PLL_CON(16),
 		     RK3568_MODE_CON, 6, 10, 0, rk3568_pll_rates),
 	[NPLL] = PLL(pll_rk3328, PLL_NPLL, RK3568_PLL_CON(32),
 		     RK3568_MODE_CON, 10, 10, 0, rk3568_pll_rates),
@@ -379,6 +379,10 @@ static ulong rk3568_pmuclk_get_rate(struct clk *clk)
 		rate = rockchip_pll_get_rate(&rk3568_pll_clks[PPLL],
 					     priv->pmucru, PPLL);
 		break;
+	case PLL_HPLL:
+		rate = rockchip_pll_get_rate(&rk3568_pll_clks[HPLL],
+					     priv->pmucru, HPLL);
+		break;
 	case CLK_RTC_32K:
 	case CLK_RTC32K_FRAC:
 		rate = rk3568_rtc32k_get_pmuclk(priv);
@@ -414,6 +418,10 @@ static ulong rk3568_pmuclk_set_rate(struct clk *clk, ulong rate)
 	case PLL_PPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[PPLL],
 					    priv->pmucru, PPLL, rate);
+		break;
+	case PLL_HPLL:
+		ret = rockchip_pll_set_rate(&rk3568_pll_clks[HPLL],
+					    priv->pmucru, HPLL, rate);
 		break;
 	case CLK_RTC_32K:
 	case CLK_RTC32K_FRAC:
