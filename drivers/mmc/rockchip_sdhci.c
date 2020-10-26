@@ -22,6 +22,19 @@
 DECLARE_GLOBAL_DATA_PTR;
 /* 400KHz is max freq for card ID etc. Use that as min */
 #define EMMC_MIN_FREQ	400000
+#define KHz	(1000)
+#define MHz	(1000 * KHz)
+
+#define PHYCTRL_CALDONE_MASK		0x1
+#define PHYCTRL_CALDONE_SHIFT		0x6
+#define PHYCTRL_CALDONE_DONE		0x1
+#define PHYCTRL_DLLRDY_MASK		0x1
+#define PHYCTRL_DLLRDY_SHIFT		0x5
+#define PHYCTRL_DLLRDY_DONE		0x1
+#define PHYCTRL_FREQSEL_200M            0x0
+#define PHYCTRL_FREQSEL_50M             0x1
+#define PHYCTRL_FREQSEL_100M            0x2
+#define PHYCTRL_FREQSEL_150M            0x3
 
 struct rockchip_sdhc_plat {
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
@@ -39,26 +52,22 @@ struct rockchip_emmc_phy {
 
 struct rockchip_sdhc {
 	struct sdhci_host host;
+	struct udevice *dev;
 	void *base;
 	struct rockchip_emmc_phy *phy;
 	struct clk emmc_clk;
 };
 
-#define PHYCTRL_CALDONE_MASK		0x1
-#define PHYCTRL_CALDONE_SHIFT		0x6
-#define PHYCTRL_CALDONE_DONE		0x1
+struct sdhci_data {
+	int (*emmc_set_clock)(struct sdhci_host *host, unsigned int clock);
+	int (*emmc_phy_init)(struct udevice *dev);
+	int (*get_phy)(struct udevice *dev);
+};
 
-#define PHYCTRL_DLLRDY_MASK		0x1
-#define PHYCTRL_DLLRDY_SHIFT		0x5
-#define PHYCTRL_DLLRDY_DONE		0x1
-
-#define PHYCTRL_FREQSEL_200M            0x0
-#define PHYCTRL_FREQSEL_50M             0x1
-#define PHYCTRL_FREQSEL_100M            0x2
-#define PHYCTRL_FREQSEL_150M            0x3
-
-#define KHz	(1000)
-#define MHz	(1000 * KHz)
+static int rk3399_emmc_phy_init(struct udevice *dev)
+{
+	return 0;
+}
 
 static void rk3399_emmc_phy_power_on(struct rockchip_emmc_phy *phy, u32 clock)
 {
@@ -124,7 +133,7 @@ static void rk3399_emmc_phy_power_off(struct rockchip_emmc_phy *phy)
 	writel(RK_CLRSETBITS(1 << 1, 0), &phy->emmcphy_con[6]);
 }
 
-static int rk3399_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
+static int rk3399_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
 {
 	unsigned int div, clk = 0, timeout;
 	unsigned int input_clk;
@@ -218,29 +227,7 @@ static int rk3399_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 	return 0;
 }
 
-static int arasan_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
-{
-	struct rockchip_sdhc *priv =
-			container_of(host, struct rockchip_sdhc, host);
-	int cycle_phy = host->clock != clock &&
-			clock > EMMC_MIN_FREQ;
-
-	if (cycle_phy)
-		rk3399_emmc_phy_power_off(priv->phy);
-
-	rk3399_sdhci_set_clock(host, clock);
-
-	if (cycle_phy)
-		rk3399_emmc_phy_power_on(priv->phy, clock);
-
-	return 0;
-}
-
-static struct sdhci_ops arasan_sdhci_ops = {
-	.set_clock	= arasan_sdhci_set_clock,
-};
-
-static int arasan_get_phy(struct udevice *dev)
+static int rk3399_emmc_get_phy(struct udevice *dev)
 {
 	struct rockchip_sdhc *priv = dev_get_priv(dev);
 
@@ -268,8 +255,42 @@ static int arasan_get_phy(struct udevice *dev)
 	return 0;
 }
 
+static int rk3399_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
+{
+	struct rockchip_sdhc *priv =
+			container_of(host, struct rockchip_sdhc, host);
+	int cycle_phy = host->clock != clock &&
+			clock > EMMC_MIN_FREQ;
+
+	if (cycle_phy)
+		rk3399_emmc_phy_power_off(priv->phy);
+
+	rk3399_emmc_set_clock(host, clock);
+
+	if (cycle_phy)
+		rk3399_emmc_phy_power_on(priv->phy, clock);
+
+	return 0;
+}
+
+static int arasan_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
+{
+	struct rockchip_sdhc *priv =
+			container_of(host, struct rockchip_sdhc, host);
+	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
+	if (!data)
+		return -EINVAL;
+
+	return data->emmc_set_clock(host, clock);
+}
+
+static struct sdhci_ops arasan_sdhci_ops = {
+	.set_clock	= arasan_sdhci_set_clock,
+};
+
 static int arasan_sdhci_probe(struct udevice *dev)
 {
+	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(dev);
 	struct mmc_uclass_priv *upriv = dev_get_uclass_priv(dev);
 	struct rockchip_sdhc_plat *plat = dev_get_platdata(dev);
 	struct rockchip_sdhc *prv = dev_get_priv(dev);
@@ -311,7 +332,12 @@ static int arasan_sdhci_probe(struct udevice *dev)
 	}
 
 	prv->emmc_clk = clk;
-	ret = arasan_get_phy(dev);
+	prv->dev = dev;
+	ret = data->get_phy(dev);
+	if (ret)
+		return ret;
+
+	ret = data->emmc_phy_init(dev);
 	if (ret)
 		return ret;
 
@@ -355,8 +381,17 @@ static int rockchip_sdhci_bind(struct udevice *dev)
 	return sdhci_bind(dev, &plat->mmc, &plat->cfg);
 }
 
+static const struct sdhci_data arasan_data = {
+	.emmc_set_clock = rk3399_sdhci_emmc_set_clock,
+	.get_phy = rk3399_emmc_get_phy,
+	.emmc_phy_init = rk3399_emmc_phy_init,
+};
+
 static const struct udevice_id arasan_sdhci_ids[] = {
-	{ .compatible = "arasan,sdhci-5.1" },
+	{
+		.compatible = "arasan,sdhci-5.1",
+		.data = (ulong)&arasan_data,
+	},
 	{ }
 };
 
