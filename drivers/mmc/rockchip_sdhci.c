@@ -36,6 +36,30 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PHYCTRL_FREQSEL_100M            0x2
 #define PHYCTRL_FREQSEL_150M            0x3
 
+/* Rockchip specific Registers */
+#define DWCMSHC_EMMC_DLL_CTRL		0x800
+#define DWCMSHC_EMMC_DLL_TXCLK		0x804
+#define DWCMSHC_EMMC_DLL_RXCLK		0x808
+#define DWCMSHC_EMMC_DLL_STRBIN		0x80c
+#define DWCMSHC_EMMC_DLL_STATUS0	0x820
+#define DWCMSHC_EMMC_DLL_START		BIT(0)
+#define DWCMSHC_EMMC_DLL_RXCLK_SRCSEL	29
+#define DWCMSHC_EMMC_DLL_START_POINT	16
+#define DWCMSHC_EMMC_DLL_INC		8
+#define DWCMSHC_EMMC_DLL_DLYENA		BIT(27)
+#define DLL_RXCLK_TAPNUM_DEFAULT	0x3
+#define DLL_STRBIN_TAPNUM_DEFAULT	0x3
+#define DLL_RXCLK_TAPNUM_FROM_SW	BIT(24)
+#define DWCMSHC_EMMC_DLL_LOCKED		BIT(8)
+#define DWCMSHC_EMMC_DLL_TIMEOUT	BIT(9)
+#define DLL_RXCLK_NO_INVERTER		1
+#define DLL_RXCLK_INVERTER		0
+#define DWCMSHC_ENHANCED_STROBE		BIT(8)
+#define DLL_LOCK_WO_TMOUT(x) \
+	((((x) & DWCMSHC_EMMC_DLL_LOCKED) == DWCMSHC_EMMC_DLL_LOCKED) && \
+	(((x) & DWCMSHC_EMMC_DLL_TIMEOUT) == 0))
+#define ROCKCHIP_MAX_CLKS		3
+
 struct rockchip_sdhc_plat {
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	struct dtd_rockchip_rk3399_sdhci_5_1 dtplat;
@@ -273,6 +297,55 @@ static int rk3399_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clo
 	return 0;
 }
 
+static int rk3568_emmc_phy_init(struct udevice *dev)
+{
+	struct rockchip_sdhc *prv = dev_get_priv(dev);
+	struct sdhci_host *host = &prv->host;
+	u32 extra;
+	int timeout = 500;
+
+	sdhci_writel(host, BIT(1), DWCMSHC_EMMC_DLL_CTRL);
+	udelay(1);
+	sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_CTRL);
+	/* Init DLL settings */
+	extra = 0x5 << DWCMSHC_EMMC_DLL_START_POINT |
+		0x2 << DWCMSHC_EMMC_DLL_INC |
+		DWCMSHC_EMMC_DLL_START;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_CTRL);
+	while(1) {
+		if (timeout < 0)
+			return ETIMEDOUT;
+		if (sdhci_readl(host, DWCMSHC_EMMC_DLL_STATUS0) == DLL_LOCK_WO_TMOUT(extra))
+			break;
+		udelay(1);
+		timeout--;
+	}
+
+	/* FixMe: clk inverter? */
+	extra = DWCMSHC_EMMC_DLL_DLYENA |
+		DLL_RXCLK_NO_INVERTER << DWCMSHC_EMMC_DLL_RXCLK_SRCSEL;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
+	extra = DWCMSHC_EMMC_DLL_DLYENA |
+		DLL_RXCLK_TAPNUM_DEFAULT |
+		DLL_RXCLK_TAPNUM_FROM_SW;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_TXCLK);
+	extra = DWCMSHC_EMMC_DLL_DLYENA |
+		DLL_STRBIN_TAPNUM_DEFAULT;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_STRBIN);
+
+	return 0;
+}
+
+static int rk3568_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
+{
+	return rk3399_emmc_set_clock(host, clock);
+}
+
+static int rk3568_emmc_get_phy(struct udevice *dev)
+{
+	return 0;
+}
+
 static int arasan_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 {
 	struct rockchip_sdhc *priv =
@@ -387,10 +460,20 @@ static const struct sdhci_data arasan_data = {
 	.emmc_phy_init = rk3399_emmc_phy_init,
 };
 
+static const struct sdhci_data snps_data = {
+	.emmc_set_clock = rk3568_sdhci_emmc_set_clock,
+	.get_phy = rk3568_emmc_get_phy,
+	.emmc_phy_init = rk3568_emmc_phy_init,
+};
+
 static const struct udevice_id arasan_sdhci_ids[] = {
 	{
 		.compatible = "arasan,sdhci-5.1",
 		.data = (ulong)&arasan_data,
+	},
+	{
+		.compatible = "snps,dwcmshc-sdhci",
+		.data = (ulong)&snps_data,
 	},
 	{ }
 };
