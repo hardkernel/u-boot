@@ -57,6 +57,7 @@ obj-${CONFIG_VIDEO_TEGRA124} += tegra124/
 obj-${CONFIG_EXYNOS_FB} += exynos/
 obj-${CONFIG_VIDEO_ROCKCHIP} += rockchip/
 obj-${CONFIG_DRM_ROCKCHIP} += drm/
+obj-${CONFIG_ROCKCHIP_EINK} += rk_eink/
 
 obj-y += bridge/
 obj-y += sunxi/
