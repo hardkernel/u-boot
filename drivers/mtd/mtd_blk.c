@@ -273,6 +273,48 @@ static __maybe_unused int mtd_map_write(struct mtd_info *mtd, loff_t offset,
 	return 0;
 }
 
+static __maybe_unused int mtd_map_erase(struct mtd_info *mtd, loff_t offset,
+					size_t length)
+{
+	struct erase_info ei;
+	loff_t pos, len;
+	int ret;
+
+	pos = offset;
+	len = length;
+
+	if ((pos & mtd->erasesize_mask) || (len & mtd->erasesize_mask)) {
+		pr_err("Attempt to erase non block-aligned data, pos= %llx, len= %llx\n",
+		       pos, len);
+
+		return -EINVAL;
+	}
+
+	while (len) {
+		if (mtd_block_isbad(mtd, pos) || mtd_block_isreserved(mtd, pos)) {
+			pr_debug("attempt to erase a bad/reserved block @%llx\n",
+				 pos);
+			pos += mtd->erasesize;
+			continue;
+		}
+
+		memset(&ei, 0, sizeof(struct erase_info));
+		ei.addr = pos;
+		ei.len  = mtd->erasesize;
+		ret = mtd_erase(mtd, &ei);
+		if (ret) {
+			pr_err("map_erase error %d while erasing %llx\n", ret,
+			       pos);
+			return ret;
+		}
+
+		pos += mtd->erasesize;
+		len -= mtd->erasesize;
+	}
+
+	return 0;
+}
+
 char *mtd_part_parse(void)
 {
 	char mtd_part_info_temp[MTD_SINGLE_PART_INFO_MAX_SIZE] = {0};
@@ -495,7 +537,35 @@ ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 ulong mtd_derase(struct udevice *udev, lbaint_t start,
 		 lbaint_t blkcnt)
 {
-	/* Not implemented */
+	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+#if defined(CONFIG_NAND) || defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_SPI_FLASH_MTD)
+	loff_t off = (loff_t)(start * 512);
+	size_t len = blkcnt * 512;
+#endif
+	struct mtd_info *mtd;
+	int ret = 0;
+
+	if (!desc)
+		return ret;
+
+	mtd = desc->bdev->priv;
+	if (!mtd)
+		return 0;
+
+	pr_debug("mtd derase %s %lx %lx\n", mtd->name, start, blkcnt);
+
+	if (blkcnt == 0)
+		return 0;
+
+	if (desc->devnum == BLK_MTD_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NAND) {
+		ret = mtd_map_erase(mtd, off, len);
+		if (ret)
+			return ret;
+	} else {
+		return 0;
+	}
+
 	return 0;
 }
 
