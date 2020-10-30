@@ -493,7 +493,7 @@ function fit_generate_uboot_boot()
 fit_process_args $*
 if [ ! -z "${ARG_VALIDATE}" ]; then
 	validate_arg ${ARG_VALIDATE}
-elif [ ! -z "${ARG_BOOT_IMG}" ]; then
+elif [ ! -z "${ARG_BOOT_IMG}" -o ! -z "${ARG_BOOT_IMG_DIR}" ]; then
 	fit_generate_uboot_boot
 else
 	fit_generate_uboot
