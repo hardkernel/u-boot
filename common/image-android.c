@@ -513,8 +513,7 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 		return -ENODEV;
 	}
 
-  #ifdef CONFIG_ROCKCHIP_CRYPTO_V1
-	/* v1: requires total length before sha init */
+	/* v1 & v2: requires total length before sha init */
 	ctx.length += hdr->kernel_size + sizeof(hdr->kernel_size) +
 		      hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
 		      hdr->second_size + sizeof(hdr->second_size);
@@ -523,7 +522,7 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 					sizeof(hdr->recovery_dtbo_size);
 	if (hdr->header_version > 1)
 		ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
-  #endif
+
 	crypto_sha_init(dev, &ctx);
 
 	/* load, never change order ! */
