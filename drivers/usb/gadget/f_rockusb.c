@@ -9,6 +9,7 @@
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/chip_info.h>
 #include <write_keybox.h>
+#include <linux/mtd/mtd.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -19,6 +20,9 @@
 #define ROCKUSB_INTERFACE_CLASS	0xff
 #define ROCKUSB_INTERFACE_SUB_CLASS	0x06
 #define ROCKUSB_INTERFACE_PROTOCOL	0x05
+
+#define ROCKCHIP_FLASH_BLOCK_SIZE	1024
+#define ROCKCHIP_FLASH_PAGE_SIZE	4
 
 static struct usb_interface_descriptor rkusb_intf_desc = {
 	.bLength		= USB_DT_INTERFACE_SIZE,
@@ -209,18 +213,34 @@ static int rkusb_do_test_bad_block(struct fsg_common *common,
 static int rkusb_do_read_flash_info(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
+	struct blk_desc *desc = &ums[common->lun].block_dev;
 	u8 *buf = (u8 *)bh->buf;
 	u32 len = sizeof(struct rk_flash_info);
 	struct rk_flash_info finfo = {
-		.block_size = 1024,
+		.block_size = ROCKCHIP_FLASH_BLOCK_SIZE,
 		.ecc_bits = 0,
-		.page_size = 4,
+		.page_size = ROCKCHIP_FLASH_PAGE_SIZE,
 		.access_time = 40,
 		.manufacturer = 0,
 		.flash_mask = 0
 	};
 
-	finfo.flash_size = (u32)ums[common->lun].block_dev.lba;
+	finfo.flash_size = (u32)desc->lba;
+
+	if (desc->if_type == IF_TYPE_MTD &&
+	    (desc->devnum == BLK_MTD_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NAND)) {
+		struct mtd_info *mtd = (struct mtd_info *)desc->bdev->priv;
+
+		if (mtd) {
+			finfo.block_size = mtd->erasesize >> 9;
+			finfo.page_size = mtd->writesize >> 9;
+		}
+	}
+
+	debug("Flash info: block_size= %x page_size= %x\n", finfo.block_size,
+	      finfo.page_size);
+
 	if (finfo.flash_size)
 		finfo.flash_mask = 1;
 
@@ -281,6 +301,60 @@ static int rkusb_do_lba_erase(struct fsg_common *common,
 	rc = ums[common->lun].erase_sector(&ums[common->lun],
 			       file_offset / SECTOR_SIZE,
 			       amount / SECTOR_SIZE);
+	if (!rc) {
+		curlun->sense_data = SS_MEDIUM_NOT_PRESENT;
+		rc = -EIO;
+	}
+
+out:
+	common->data_dir = DATA_DIR_NONE;
+	bh->state = BUF_STATE_EMPTY;
+
+	return rc;
+}
+
+static int rkusb_do_erase_force(struct fsg_common *common,
+				struct fsg_buffhd *bh)
+{
+	struct blk_desc *desc = &ums[common->lun].block_dev;
+	struct fsg_lun *curlun = &common->luns[common->lun];
+	u16 block_size = ROCKCHIP_FLASH_BLOCK_SIZE;
+	u32 lba, amount;
+	loff_t file_offset;
+	int rc;
+
+	lba = get_unaligned_be32(&common->cmnd[2]);
+	if (lba >= curlun->num_sectors) {
+		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
+		rc = -EINVAL;
+		goto out;
+	}
+
+	if (desc->if_type == IF_TYPE_MTD &&
+	    (desc->devnum == BLK_MTD_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NAND)) {
+		struct mtd_info *mtd = (struct mtd_info *)desc->bdev->priv;
+
+		if (mtd)
+			block_size = mtd->erasesize >> 9;
+	}
+
+	file_offset = ((loff_t)lba) * block_size;
+	amount = get_unaligned_be16(&common->cmnd[7]) * block_size;
+
+	debug("%s lba= %x, nsec= %x\n", __func__, lba,
+	      (u32)get_unaligned_be16(&common->cmnd[7]));
+
+	if (unlikely(amount == 0)) {
+		curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
+		rc = -EIO;
+		goto out;
+	}
+
+	/* Perform the erase */
+	rc = ums[common->lun].erase_sector(&ums[common->lun],
+					   file_offset,
+					   amount);
 	if (!rc) {
 		curlun->sense_data = SS_MEDIUM_NOT_PRESENT;
 		rc = -EIO;
@@ -464,11 +538,12 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 #endif
 
 static int rkusb_do_read_capacity(struct fsg_common *common,
-				    struct fsg_buffhd *bh)
+				  struct fsg_buffhd *bh)
 {
 	u8 *buf = (u8 *)bh->buf;
 	u32 len = common->data_size;
 	enum if_type type = ums[common->lun].block_dev.if_type;
+	int devnum = ums[common->lun].block_dev.devnum;
 
 	/*
 	 * bit[0]: Direct LBA, 0: Disabled;
@@ -484,8 +559,14 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	else
 		buf[0] = BIT(0) | BIT(4);
 
+	if (type == IF_TYPE_MTD &&
+	    (devnum == BLK_MTD_NAND ||
+	    devnum == BLK_MTD_SPI_NAND))
+		buf[0] |= (1 << 6);
+
 	/* Set data xfer size */
-	common->residue = common->data_size_from_cmnd = len;
+	common->residue = len;
+	common->data_size_from_cmnd = len;
 
 	return len;
 }
@@ -542,6 +623,11 @@ static int rkusb_cmd_process(struct fsg_common *common,
 
 	case RKUSB_TEST_BAD_BLOCK:
 		*reply = rkusb_do_test_bad_block(common, bh);
+		rc = RKUSB_RC_FINISHED;
+		break;
+
+	case RKUSB_ERASE_10_FORCE:
+		*reply = rkusb_do_erase_force(common, bh);
 		rc = RKUSB_RC_FINISHED;
 		break;
 
@@ -603,7 +689,6 @@ static int rkusb_cmd_process(struct fsg_common *common,
 	case RKUSB_ERASE_10:
 	case RKUSB_WRITE_SPARE:
 	case RKUSB_READ_SPARE:
-	case RKUSB_ERASE_10_FORCE:
 	case RKUSB_GET_VERSION:
 	case RKUSB_ERASE_SYS_DISK:
 	case RKUSB_SDRAM_READ_10:
