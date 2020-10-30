@@ -523,11 +523,11 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	if (hdr->header_version > 1)
 		ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
 
-	crypto_sha_init(dev, &ctx);
-
 	/* load, never change order ! */
 	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
 		return -1;
+
+	crypto_sha_init(dev, &ctx);
 	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, dev))
 		return -1;
 	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, dev))
