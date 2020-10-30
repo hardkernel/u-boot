@@ -477,6 +477,29 @@ crypto_calc:
 	return 0;
 }
 
+static int images_load_verify(struct andr_img_hdr *hdr, ulong part_start,
+			      void *ram_base, struct udevice *crypto)
+{
+	/* load, never change order ! */
+	if (image_load(IMG_KERNEL, hdr, part_start, ram_base, crypto))
+		return -1;
+	if (image_load(IMG_RAMDISK, hdr, part_start, ram_base, crypto))
+		return -1;
+	if (image_load(IMG_SECOND, hdr, part_start, ram_base, crypto))
+		return -1;
+	if (hdr->header_version > 0) {
+		if (image_load(IMG_RECOVERY_DTBO, hdr, part_start,
+			       ram_base, crypto))
+			return -1;
+	}
+	if (hdr->header_version > 1) {
+		if (image_load(IMG_DTB, hdr, part_start, ram_base, crypto))
+			return -1;
+	}
+
+	return 0;
+}
+
 /*
  * @ram_base: !NULL means require memcpy for an exist full android image.
  */
@@ -486,6 +509,7 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 				  void *ram_base)
 {
 	ulong bstart;
+	int ret;
 
 	if (android_image_check_header(hdr)) {
 		printf("Bad android image header\n");
@@ -500,76 +524,55 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	 * 1. Load images to their individual target ram position
 	 *    in order to disable fdt/ramdisk relocation.
 	 */
+
+	/* load rk-kernel.dtb alone */
+	if (image_load(IMG_RK_DTB, hdr, bstart, ram_base, NULL))
+		return -1;
+
 #if defined(CONFIG_DM_CRYPTO) && defined(CONFIG_ANDROID_BOOT_IMAGE_HASH)
-	struct udevice *dev;
-	sha_context ctx;
-	uchar hash[20];
+	if (hdr->header_version < 3) {
+		struct udevice *dev;
+		sha_context ctx;
+		uchar hash[20];
 
-	ctx.length = 0;
-	ctx.algo = CRYPTO_SHA1;
-	dev = crypto_get_device(ctx.algo);
-	if (!dev) {
-		printf("Can't find crypto device for SHA1 capability\n");
-		return -ENODEV;
-	}
+		ctx.length = 0;
+		ctx.algo = CRYPTO_SHA1;
+		dev = crypto_get_device(ctx.algo);
+		if (!dev) {
+			printf("Can't find crypto device for SHA1\n");
+			return -ENODEV;
+		}
 
-	/* v1 & v2: requires total length before sha init */
-	ctx.length += hdr->kernel_size + sizeof(hdr->kernel_size) +
-		      hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
-		      hdr->second_size + sizeof(hdr->second_size);
-	if (hdr->header_version > 0)
-		ctx.length += hdr->recovery_dtbo_size +
-					sizeof(hdr->recovery_dtbo_size);
-	if (hdr->header_version > 1)
-		ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
+		/* v1 & v2: requires total length before sha init */
+		ctx.length += hdr->kernel_size + sizeof(hdr->kernel_size) +
+			      hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
+			      hdr->second_size + sizeof(hdr->second_size);
+		if (hdr->header_version > 0)
+			ctx.length += hdr->recovery_dtbo_size +
+						sizeof(hdr->recovery_dtbo_size);
+		if (hdr->header_version > 1)
+			ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
 
-	/* load, never change order ! */
-	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
-		return -1;
+		crypto_sha_init(dev, &ctx);
+		ret = images_load_verify(hdr, bstart, ram_base, dev);
+		if (ret)
+			return ret;
+		crypto_sha_final(dev, &ctx, hash);
 
-	crypto_sha_init(dev, &ctx);
-	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, dev))
-		return -1;
-	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, dev))
-		return -1;
-	if (image_load(IMG_SECOND,  hdr, bstart, ram_base, dev))
-		return -1;
-	if (hdr->header_version > 0) {
-		if (image_load(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, dev))
-			return -1;
-	}
-	if (hdr->header_version > 1) {
-		if (image_load(IMG_DTB, hdr, bstart, ram_base, dev))
-			return -1;
-	}
-
-	crypto_sha_final(dev, &ctx, hash);
-	if (memcmp(hash, hdr->id, 20)) {
-		print_hash("Hash from header", (u8 *)hdr->id, 20);
-		print_hash("Hash real", (u8 *)hash, 20);
-		return -EBADFD;
-	} else {
-		printf("Image hash OK\n");
-	}
-
-#else /* !(CONFIG_DM_CRYPTO && CONFIG_ANDROID_BOOT_IMAGE_HASH) */
-	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
-		return -1;
-	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
-		return -1;
-	if (image_load(IMG_RAMDISK, hdr, bstart, ram_base, NULL))
-		return -1;
-	if (image_load(IMG_SECOND,  hdr, bstart, ram_base, NULL))
-		return -1;
-	if (hdr->header_version > 0) {
-		if (image_load(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, NULL))
-			return -1;
-	}
-	if (hdr->header_version > 1) {
-		if (image_load(IMG_DTB, hdr, bstart, ram_base, NULL))
-			return -1;
-	}
+		if (memcmp(hash, hdr->id, 20)) {
+			print_hash("Hash from header", (u8 *)hdr->id, 20);
+			print_hash("Hash real", (u8 *)hash, 20);
+			return -EBADFD;
+		} else {
+			printf("ANDROID: Hash OK\n");
+		}
+	} else
 #endif
+	{
+		ret = images_load_verify(hdr, bstart, ram_base, NULL);
+		if (ret)
+			return ret;
+	}
 
 	/* 2. Disable fdt/ramdisk relocation, it saves boot time */
 	env_set("bootm-no-reloc", "y");
