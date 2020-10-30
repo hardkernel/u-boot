@@ -463,6 +463,8 @@ static int rsa_verify_with_keynode(struct image_sign_info *info,
 		return -EFAULT;
 	}
 
+#if !defined(USE_HOSTCC)
+#if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
 #ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 	prop.factor_c = fdt_getprop(blob, node, "rsa,c", NULL);
 	if (!prop.factor_c)
@@ -471,6 +473,8 @@ static int rsa_verify_with_keynode(struct image_sign_info *info,
 	prop.factor_np = fdt_getprop(blob, node, "rsa,np", NULL);
 	if (!prop.factor_np)
 		return -EFAULT;
+#endif
+#endif
 #endif
 	ret = rsa_verify_key(info, &prop, sig, sig_len, hash,
 			     info->crypto->key_len);
