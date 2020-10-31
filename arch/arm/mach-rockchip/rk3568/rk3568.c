@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <asm/armv8/mmu.h>
+#include <asm/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rk3568.h>
 
