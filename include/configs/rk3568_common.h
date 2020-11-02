@@ -27,6 +27,7 @@
 
 #define GICD_BASE			0xfd400000
 #define GICR_BASE			0xfd460000
+#define GICC_BASE			0xfd800000
 
 /* MMC/SD IP block */
 #define CONFIG_BOUNCE_BUFFER
@@ -44,7 +45,7 @@
 #define ENV_MEM_LAYOUT_SETTINGS \
 	"scriptaddr=0x00500000\0" \
 	"pxefile_addr_r=0x00600000\0" \
-	"fdt_addr_r=0x01f00000\0" \
+	"fdt_addr_r=0x0a100000\0" \
 	"kernel_addr_no_bl32_r=0x00280000\0" \
 	"kernel_addr_r=0x00680000\0" \
 	"kernel_addr_c=0x04080000\0" \
@@ -58,6 +59,11 @@
 	ROCKCHIP_DEVICE_SETTINGS \
 	RKIMG_DET_BOOTDEV \
 	BOOTENV
+
+#undef RKIMG_BOOTCOMMAND
+#define RKIMG_BOOTCOMMAND		\
+	"boot_fit;"			\
+	"boot_android ${devtype} ${devnum};"
 #endif
 
 /* rockchip ohci host driver */
