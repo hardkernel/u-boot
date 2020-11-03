@@ -170,6 +170,17 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	if (rc < 0)
 		return CMD_RET_FAILURE;
 
+	if (g_rkusb->ums[0].block_dev.if_type == IF_TYPE_MTD &&
+	    g_rkusb->ums[0].block_dev.devnum == BLK_MTD_NAND) {
+#ifdef CONFIG_CMD_GO
+		pr_err("Enter bootrom rockusb...\n");
+		flushc();
+		run_command("rbrom", 0);
+#else
+		pr_err("rockusb: count not support loader upgrade!\n");
+#endif
+	}
+
 	controller_index = (unsigned int)(simple_strtoul(
 				usb_controller,	NULL, 0));
 	rc = usb_gadget_initialize(controller_index);
