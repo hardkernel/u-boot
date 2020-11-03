@@ -39,6 +39,7 @@ int rk_avb_get_pub_key(struct rk_pub_key *pub_key)
 
 	return 0;
 }
+
 int rk_avb_get_perm_attr_cer(uint8_t *cer, uint32_t size)
 {
 #ifdef CONFIG_OPTEE_CLIENT
@@ -63,142 +64,6 @@ int rk_avb_set_perm_attr_cer(uint8_t *cer, uint32_t size)
 #else
 	return -1;
 #endif
-}
-
-int rk_avb_read_slot_count(char *slot_count)
-{
-	*slot_count = SLOT_NUM;
-
-	return 0;
-}
-
-int rk_avb_read_slot_suffixes(char *slot_suffixes)
-{
-	memcpy(slot_suffixes, CURR_SYSTEM_SLOT_SUFFIX,
-	       strlen(CURR_SYSTEM_SLOT_SUFFIX));
-
-	return 0;
-}
-
-int rk_avb_set_slot_active(unsigned int *slot_number)
-{
-	AvbOps* ops;
-	ops = avb_ops_user_new();
-	int ret = 0;
-
-	if (ops == NULL) {
-		printf("avb_ops_user_new() failed!\n");
-		return -1;
-	}
-
-	debug("set_slot_active\n");
-	if (avb_ab_mark_slot_active(ops->ab_ops, *slot_number) != 0) {
-		printf("set_slot_active error!\n");
-		ret = -1;
-	}
-
-	avb_ops_user_free(ops);
-	return ret;
-}
-
-static bool slot_is_bootable(AvbABSlotData* slot) {
-	return (slot->priority > 0) && 
-	       (slot->successful_boot || (slot->tries_remaining > 0));
-}
-
-AvbABFlowResult rk_avb_ab_slot_select(AvbABOps* ab_ops,char* select_slot)
-{
-	AvbABFlowResult ret = AVB_AB_FLOW_RESULT_OK;
-	AvbIOResult io_ret = AVB_IO_RESULT_OK;
-	AvbABData ab_data;
-	size_t slot_index_to_boot;
-	static int last_slot_index = -1;
-
-	io_ret = ab_ops->read_ab_metadata(ab_ops, &ab_data);
-	if (io_ret != AVB_IO_RESULT_OK) {
-		avb_error("I/O error while loading A/B metadata.\n");
-		ret = AVB_AB_FLOW_RESULT_ERROR_IO;
-		goto out;
-	}
-	if (slot_is_bootable(&ab_data.slots[0]) && slot_is_bootable(&ab_data.slots[1])) {
-		if (ab_data.slots[1].priority > ab_data.slots[0].priority) {
-			slot_index_to_boot = 1;
-		} else {
-			slot_index_to_boot = 0;
-		}
-	} else if(slot_is_bootable(&ab_data.slots[0])) {
-		slot_index_to_boot = 0;
-	} else if(slot_is_bootable(&ab_data.slots[1])) {
-		slot_index_to_boot = 1;
-	} else {
-		avb_error("No bootable slots found.\n");
-		ret = AVB_AB_FLOW_RESULT_ERROR_NO_BOOTABLE_SLOTS;
-		goto out;
-	}
-
-	if (slot_index_to_boot == 0) {
-		strcpy(select_slot, "_a");
-	} else if(slot_index_to_boot == 1) {
-		strcpy(select_slot, "_b");
-	}
-
-	if (last_slot_index != slot_index_to_boot) {
-		last_slot_index = slot_index_to_boot;
-		printf("A/B-slot: %s, successful: %d, tries-remain: %d\n",
-		       select_slot,
-		       ab_data.slots[slot_index_to_boot].successful_boot,
-		       ab_data.slots[slot_index_to_boot].tries_remaining);
-	}
-out:
-	return ret;
-}
-
-int rk_avb_get_current_slot(char *select_slot)
-{
-	AvbOps* ops;
-	int ret = 0;
-
-	ops = avb_ops_user_new();
-	if (ops == NULL) {
-		printf("avb_ops_user_new() failed!\n");
-		return -1;
-	}
-
-	if (rk_avb_ab_slot_select(ops->ab_ops, select_slot) != 0) {
-#ifndef CONFIG_ANDROID_AVB
-		printf("###There is no bootable slot, bring up last_boot!###\n");
-		if (rk_get_lastboot() == 1)
-			memcpy(select_slot, "_b", 2);
-		else if(rk_get_lastboot() == 0)
-			memcpy(select_slot, "_a", 2);
-		else
-#endif
-			return -1;
-		ret = 0;
-	}
-
-	avb_ops_user_free(ops);
-	return ret;
-}
-
-int rk_avb_append_part_slot(const char *part_name, char *new_name)
-{
-	char slot_suffix[3] = {0};
-
-	if (!strcmp(part_name, "misc")) {
-		strcat(new_name, part_name);
-		return 0;
-	}
-
-	if (rk_avb_get_current_slot(slot_suffix)) {
-		printf("%s: failed to get slot suffix !\n", __func__);
-		return -1;
-	}
-
-	strcpy(new_name, part_name);
-	strcat(new_name, slot_suffix);
-
-	return 0;
 }
 
 int rk_avb_read_permanent_attributes(uint8_t *attributes, uint32_t size)
@@ -772,33 +637,6 @@ int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len)
 		return 0;
 	else
 		return -1;
-}
-
-int rk_get_lastboot(void)
-{
-
-	AvbIOResult io_ret = AVB_IO_RESULT_OK;
-	AvbABData ab_data;
-	int lastboot = -1;
-	AvbOps* ops;
-
-	ops = avb_ops_user_new();
-	if (ops == NULL) {
-		printf("avb_ops_user_new() failed!\n");
-		return -1;
-	}
-
-	io_ret = ops->ab_ops->read_ab_metadata(ops->ab_ops, &ab_data);
-	if (io_ret != AVB_IO_RESULT_OK) {
-		avb_error("I/O error while loading A/B metadata.\n");
-		goto out;
-	}
-
-	lastboot = ab_data.last_boot;
-out:
-	avb_ops_user_free(ops);
-
-	return lastboot;
 }
 
 int rk_avb_init_ab_metadata(void)

@@ -49,10 +49,9 @@ obj-$(CONFIG_OPTEE_CLIENT) += optee_clientApi/
 endif
 
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB) += avb/libavb/
-obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB_AB) += avb/libavb_ab/
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB_ATX) += avb/libavb_atx/
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB_USER) += avb/libavb_user/
-obj-$(CONFIG_$(SPL_TPL_)RK_AVB_LIBAVB_USER) += avb/rk_avb_user/
+obj-y += avb/rk_avb_user/
 
 obj-$(CONFIG_$(SPL_TPL_)RSA) += rsa/
 obj-$(CONFIG_SHA1) += sha1.o

@@ -484,19 +484,19 @@ AvbOps *avb_ops_user_new(void)
 
 	ops = calloc(1, sizeof(AvbOps));
 	if (!ops) {
-		avb_error("Error allocating memory for AvbOps.\n");
+		printf("Error allocating memory for AvbOps.\n");
 		goto out;
 	}
 	ops->ab_ops = calloc(1, sizeof(AvbABOps));
 	if (!ops->ab_ops) {
-		avb_error("Error allocating memory for AvbABOps.\n");
+		printf("Error allocating memory for AvbABOps.\n");
 		free(ops);
 		goto out;
 	}
 
 	ops->atx_ops = calloc(1, sizeof(AvbAtxOps));
 	if (!ops->atx_ops) {
-		avb_error("Error allocating memory for AvbAtxOps.\n");
+		printf("Error allocating memory for AvbAtxOps.\n");
 		free(ops->ab_ops);
 		free(ops);
 		goto out;
