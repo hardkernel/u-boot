@@ -28,6 +28,9 @@ void sdram_print_dram_type(unsigned char dramtype)
 	case LPDDR4:
 		printascii("LPDDR4");
 		break;
+	case LPDDR4X:
+		printascii("LPDDR4X");
+		break;
 	default:
 		printascii("Unknown Device");
 		break;
@@ -74,6 +77,14 @@ void sdram_print_ddr_info(struct sdram_cap_info *cap_info,
 			printdec(cap_info->cs1_high16bit_row);
 		}
 	}
+#ifdef CONFIG_ROCKCHIP_RK3568
+	if (cap_info->rank > 2) {
+		printascii(" CS2 Row=");
+		printdec(cap_info->cs2_row);
+		printascii(" CS3 Row=");
+		printdec(cap_info->cs3_row);
+	}
+#endif
 	printascii(" CS=");
 	printdec(cap_info->rank);
 	printascii(" Die BW=");
@@ -99,7 +110,7 @@ void sdram_print_ddr_info(struct sdram_cap_info *cap_info,
 u64 sdram_get_cs_cap(struct sdram_cap_info *cap_info, u32 cs, u32 dram_type)
 {
 	u32 bg;
-	u64 cap[2];
+	u64 cap[4];
 
 	if (dram_type == DDR4)
 		/* DDR4 8bit dram BG = 2(4bank groups),
@@ -111,18 +122,31 @@ u64 sdram_get_cs_cap(struct sdram_cap_info *cap_info, u32 cs, u32 dram_type)
 	cap[0] = 1llu << (cap_info->bw + cap_info->col +
 		bg + cap_info->bk + cap_info->cs0_row);
 
-	if (cap_info->rank == 2)
+	if (cap_info->rank >= 2)
 		cap[1] = 1llu << (cap_info->bw + cap_info->col +
 			bg + cap_info->bk + cap_info->cs1_row);
 	else
 		cap[1] = 0;
-
+#ifdef CONFIG_ROCKCHIP_RK3568
+	if (cap_info->rank == 4) {
+		cap[2] = 1llu << (cap_info->bw + cap_info->col +
+			bg + cap_info->bk + cap_info->cs2_row);
+		cap[3] = 1llu << (cap_info->bw + cap_info->col +
+			bg + cap_info->bk + cap_info->cs3_row);
+	} else {
+		cap[2] = 0;
+		cap[3] = 0;
+	}
+#else
+	cap[2] = 0;
+	cap[3] = 0;
+#endif
 	if (cs == 0)
 		return cap[0];
 	else if (cs == 1)
 		return cap[1];
 	else
-		return (cap[0] + cap[1]);
+		return (cap[0] + cap[1] + cap[2] + cap[3]);
 }
 
 /* n: Unit bytes */

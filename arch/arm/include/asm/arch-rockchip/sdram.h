@@ -14,6 +14,9 @@ enum {
 	LPDDR2 = 5,
 	LPDDR3 = 6,
 	LPDDR4 = 7,
+	LPDDR4X = 8,
+	LPDDR5 = 9,
+	DDR5 = 10,
 	UNUSED = 0xFF
 };
 
