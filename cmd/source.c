@@ -40,9 +40,12 @@ source (ulong addr, const char *fit_uname)
 	size_t		fit_len;
 #endif
 #if defined(CONFIG_IMAGE_FORMAT_LEGACY) || defined(CONFIG_FIT)
+#ifdef CONFIG_FIT_SIGNATURE
+	int		verify = 1;
+#else
 	int		verify = env_get_yesno("verify");
 #endif
-
+#endif
 	buf = map_sysmem(addr, 0);
 	switch (genimg_get_format(buf)) {
 #if defined(CONFIG_IMAGE_FORMAT_LEGACY)
@@ -114,6 +117,19 @@ source (ulong addr, const char *fit_uname)
 
 		/* verify integrity */
 		if (verify) {
+#ifdef CONFIG_FIT_SIGNATURE
+			int conf_noffset;
+
+			/* NULL for default conf */
+			conf_noffset = fit_conf_get_node(fit_hdr, NULL);
+			if (conf_noffset < 0)
+				return conf_noffset;
+
+			if (fit_config_verify(fit_hdr, conf_noffset)) {
+				puts ("Bad Data Hash\n");
+				return 1;
+			}
+#endif
 			if (!fit_image_verify(fit_hdr, noffset)) {
 				puts ("Bad Data Hash\n");
 				return 1;
