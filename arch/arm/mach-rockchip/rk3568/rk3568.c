@@ -13,9 +13,15 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PMUGRF_BASE		0xfdc20000
 #define GRF_BASE		0xfdc60000
+#define GRF_SOC_CON4		0x510
 #define PMU_BASE_ADDR		0xfdd90000
 #define PMU_NOC_AUTO_CON0	(0x70)
 #define PMU_NOC_AUTO_CON1	(0x74)
+#define CRU_BASE		0xfdd20000
+#define CRU_SOFTRST_CON26	0x468
+#define SGRF_BASE		0xFDD18000
+#define GRF_FIREWALL_SLV_CON0	0x240
+#define GRF_FIREWALL_SLV_CON7	0x25c
 
 enum {
 	/* PMU_GRF_GPIO0C_IOMUX_L */
@@ -721,3 +727,20 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_SPL_BUILD
+int spl_fit_standalone_release(uintptr_t entry_point)
+{
+	/* Reset the scr1 */
+	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON26);
+	udelay(100);
+	/* set the scr1 addr */
+	writel(entry_point >> 16, GRF_BASE + GRF_SOC_CON4);
+	writel(0x1 << (16 + 15), SGRF_BASE + GRF_FIREWALL_SLV_CON0);
+	writel(0x3 << (16 + 1), SGRF_BASE + GRF_FIREWALL_SLV_CON7);
+	/* release the scr1 */
+	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON02);
+
+	return 0;
+}
+#endif
