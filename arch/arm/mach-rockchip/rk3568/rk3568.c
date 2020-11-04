@@ -20,6 +20,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_BASE		0xfdd20000
 #define CRU_SOFTRST_CON26	0x468
 #define SGRF_BASE		0xFDD18000
+#define SGRF_SOC_CON4		0x10
 #define GRF_FIREWALL_SLV_CON0	0x240
 #define GRF_FIREWALL_SLV_CON7	0x25c
 
@@ -723,6 +724,9 @@ int arch_cpu_init(void)
 	 */
 	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
 	writel(0x000f000f, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
+
+	/* Set the emmc to secure */
+	writel(((0x3 << 11) << 16) | (0x0 << 11), SGRF_BASE + SGRF_SOC_CON4);
 #endif
 
 	return 0;
