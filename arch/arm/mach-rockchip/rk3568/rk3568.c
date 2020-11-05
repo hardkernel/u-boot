@@ -743,7 +743,7 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	writel(0x1 << (16 + 15), SGRF_BASE + GRF_FIREWALL_SLV_CON0);
 	writel(0x3 << (16 + 1), SGRF_BASE + GRF_FIREWALL_SLV_CON7);
 	/* release the scr1 */
-	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON02);
+	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON26);
 
 	return 0;
 }
