@@ -279,6 +279,11 @@ config ODROID_C4
 	select ODROID_COMMON
 	default n
 
+config ODROID_GO4
+	bool "Support Hardkernel ODROID-GO4 board"
+	select ODROID_COMMON
+	default n
+
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
@@ -542,4 +547,8 @@ endif
 
 if ODROID_C4
 source "board/hardkernel/odroidc4/Kconfig"
+endif
+
+if ODROID_GO4
+source "board/hardkernel/odroidgo4/Kconfig"
 endif

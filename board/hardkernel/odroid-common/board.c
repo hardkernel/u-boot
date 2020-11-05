@@ -79,9 +79,13 @@ static unsigned int get_hw_revision(void)
 		hwrev = BOARD_REVISION(2019, 11, 29);
 	else if (IS_RANGE(adc, 590, 610))	/* avg : 604 */
 		hwrev = BOARD_REVISION(2020, 8, 7);
+
+#elif defined(CONFIG_ODROID_GO4)
+	if (IS_RANGE(adc, 80, 100))	/* avg : 90 */
+		hwrev = BOARD_REVISION(2020, 10, 6);
 #endif
 
-	debug("ADC=%d, hwrev=0x%x\n", adc, hwrev);
+	printf("ADC=%d, hwrev=0x%x\n", adc, hwrev);
 
 	return hwrev;
 }
@@ -119,5 +123,10 @@ int board_is_odroidhc4(void)
 {
 	return (board_revision() == 0x20191210)
 		|| (board_revision() == 0x20200807);
+}
+#elif defined(CONFIG_ODROID_GO4)
+int board_is_odroidgo4(void)
+{
+	return (board_revision() >= 0x20201006);
 }
 #endif

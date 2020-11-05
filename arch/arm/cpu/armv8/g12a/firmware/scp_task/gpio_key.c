@@ -43,10 +43,6 @@ static struct gpio_array {
 	unsigned int function;
 } gpio_to_pin[] = {
 	{
-		.pin = (GPIOA_14 + EE_OFFSET),
-		.function = PK(0xe, 14),
-	},
-	{
 		.pin = (GPIOX_0 + EE_OFFSET),
 		.function = PK(3, 0),
 	},
@@ -133,8 +129,6 @@ static struct gpio_array {
 static struct meson_bank mesong12b_banks[] = {
 	/*   name    first         last
 	 *   pullen  pull  dir  out  in  */
-	BANK("GPIOA_", GPIOEE(GPIOA_0), GPIOEE(GPIOA_15),
-	5, 0,  5,  0,  16,  0, 17, 0, 18, 0),
 	BANK("GPIOX_", GPIOEE(GPIOX_0), GPIOEE(GPIOX_19),
 	2, 0,  2,  0,  6,  0, 7, 0, 8, 0),
 };
@@ -177,10 +171,7 @@ int init_gpio_key(void)
 	struct meson_bank bank;
 
 	key_index = gpio_wakeup_keyno - KERNEL_GPIO_OFFSET;
-	if ((key_index >= (GPIOA_0 + EE_OFFSET))
-		&& (key_index < (GPIOA_15 + EE_OFFSET))) {
-		g_bankindex = 0;
-	} else if ((key_index >= GPIOX_0 + EE_OFFSET)
+	if ((key_index >= GPIOX_0 + EE_OFFSET)
 		&& (key_index < (GPIOX_19 + EE_OFFSET))) {
 		g_bankindex = 1;
 	} else {
