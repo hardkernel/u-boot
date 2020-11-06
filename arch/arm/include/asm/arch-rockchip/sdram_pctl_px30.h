@@ -33,6 +33,26 @@ struct ddr_pctl_regs {
 #define DDR_PCTL2_RFSHTMG		0x64
 #define DDR_PCTL2_RFSHTMG1		0x68
 #define DDR_PCTL2_RFSHCTL5		0x6c
+#define DDR_PCTL2_ECCCFG0		0x70
+#define DDR_PCTL2_ECCCFG1		0x74
+#define DDR_PCTL2_ECCSTAT		0x78
+#define DDR_PCTL2_ECCCTL		0x7c
+#define DDR_PCTL2_ECCERRCNT		0x80
+#define DDR_PCTL2_ECCCADDR0		0x84
+#define DDR_PCTL2_ECCCADDR1		0x88
+#define DDR_PCTL2_ECCCSYN0		0x8c
+#define DDR_PCTL2_ECCCSYN1		0x90
+#define DDR_PCTL2_ECCCSYN2		0x94
+#define DDR_PCTL2_ECCBITMASK0		0x98
+#define DDR_PCTL2_ECCBITMASK1		0x9c
+#define DDR_PCTL2_ECCBITMASK2		0xa0
+#define DDR_PCTL2_ECCUADR0		0xa4
+#define DDR_PCTL2_ECCUADR1		0xa8
+#define DDR_PCTL2_ECCUSYNC0		0xac
+#define DDR_PCTL2_ECCUSYNC1		0xb0
+#define DDR_PCTL2_ECCUSYNC2		0xb4
+#define DDR_PCTL2_ECCPOSISONADDR0	0xb8
+#define DDR_PCTL2_ECCPOSISONADDR1	0xbc
 #define DDR_PCTL2_INIT0			0xd0
 #define DDR_PCTL2_INIT1			0xd4
 #define DDR_PCTL2_INIT2			0xd8
@@ -122,16 +142,17 @@ struct ddr_pctl_regs {
 #define UMCTL2_REGS_FREQ(n)	\
 	((0x1000 * (n) + (((n) > 0) ? 0x1000 : 0)))
 
-/* PCTL2_MRSTAT */
+/* PCTL2_MSTR */
 #define PCTL2_FREQUENCY_MODE_MASK	(1)
 #define PCTL2_FREQUENCY_MODE_SHIFT	(29)
 #define PCTL2_DLL_OFF_MODE		BIT(15)
-#define PCTL2_MR_WR_BUSY		BIT(0)
 /* PCTL2_STAT */
 #define PCTL2_SELFREF_TYPE_MASK		(3 << 4)
 #define PCTL2_SELFREF_TYPE_SR_NOT_AUTO	(2 << 4)
 #define PCTL2_OPERATING_MODE_MASK	(7)
-#define PCTL2_OPERATING_MODE_INIT	(1)
+#define PCTL2_OPERATING_MODE_INIT	(0)
+#define PCTL2_OPERATING_MODE_NORMAL	(1)
+#define PCTL2_OPERATING_MODE_PD		(2)
 #define PCTL2_OPERATING_MODE_SR		(3)
 /* PCTL2_MRCTRL0 */
 #define PCTL2_MR_WR			BIT(31)
@@ -142,6 +163,8 @@ struct ddr_pctl_regs {
 /* PCTL2_MRCTRL1 */
 #define PCTL2_MR_ADDRESS_SHIFT		(8)
 #define PCTL2_MR_DATA_MASK		(0xff)
+/* PCTL2_MRSTAT */
+#define PCTL2_MR_WR_BUSY		BIT(0)
 /* PCTL2_DERATEEN */
 #define PCTL2_DERATE_ENABLE		(1)
 /* PCTL2_PWRCTL */
@@ -213,6 +236,19 @@ struct ddr_pctl_regs {
 #define PCTL2_RD_PORT_BUSY_0		(1)
 /* PCTL2_PCTRLn */
 #define PCTL2_PORT_EN			(1)
+
+/* PCTL2_ECCCFG0 */
+#define ECC_MODE_MASK			(0x7)
+#define ECC_MODE_DIS			(0)
+#define ECC_MODE_SEC			(0x4)
+#define ECC_MODE_ADV			(0x5)
+#define ECC_MODE_SHIFT			(0)
+#define ECC_TEST_MODE			BIT(3)
+#define ECC_DIS_SCRUB			BIT(4)
+#define ECC_TYPE_SIDEBAND		(0)
+#define ECC_TYPE_INLINE			(1)
+#define ECC_TYPE_MASK			(1)
+#define ECC_TYPE_SHIFT			(5)
 
 void pctl_read_mr(void __iomem *pctl_base, u32 rank, u32 mr_num);
 int pctl_write_mr(void __iomem *pctl_base, u32 rank, u32 mr_num, u32 arg,
