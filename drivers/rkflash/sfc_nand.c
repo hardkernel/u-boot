@@ -111,8 +111,16 @@ static struct nand_info spi_nand_tbl[] = {
 	{ 0x0BF1, 4, 0x40, 1, 1024, 0x4C, 18, 0x1, 1, { 0x08, 0x0C, 0xFF, 0xFF }, &sfc_nand_get_ecc_status4 },
 	/* XT26G02B */
 	{ 0x0BF2, 4, 0x40, 1, 2048, 0x4C, 19, 0x1, 1, { 0x08, 0x0C, 0xFF, 0xFF }, &sfc_nand_get_ecc_status5 },
-	/* XT26G02E */
-	{ 0x2C24, 4, 0x40, 1, 2048, 0x4C, 19, 0x1, 1, { 0x20, 0x24, 0xFF, 0xFF }, &sfc_nand_get_ecc_status6 },
+
+	/* MT29F2G1ABA, XT26G02E, F50L2G41XA */
+	{ 0x2C24, 4, 0x40, 2, 1024, 0x4C, 19, 0x1, 1, { 0x20, 0x24, 0xFF, 0xFF }, &sfc_nand_get_ecc_status6 },
+
+	/* FM25S01 */
+	{ 0xA1A1, 4, 0x40, 1, 1024, 0x4C, 18, 0x1, 0, { 0x00, 0x04, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
+	/* FM25S01A */
+	{ 0xA1E4, 4, 0x40, 1, 1024, 0x4C, 18, 0x1, 0, { 0x04, 0x08, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
+	/* FM25S02A */
+	{ 0xA1E5, 4, 0x40, 2, 1024, 0x4C, 19, 0x1, 1, { 0x04, 0x08, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
 
 	/* IS37SML01G1 */
 	{ 0xC821, 4, 0x40, 1, 1024, 0x00, 18, 0x1, 0, { 0x08, 0x0C, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
@@ -120,8 +128,6 @@ static struct nand_info spi_nand_tbl[] = {
 	{ 0xC801, 4, 0x40, 1, 1024, 0x4C, 18, 0x1, 0, { 0x14, 0x24, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
 	/* ATO25D1GA */
 	{ 0x9B12, 4, 0x40, 1, 1024, 0x40, 18, 0x1, 1, { 0x14, 0x24, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
-	/* FM25S01 */
-	{ 0xA1A1, 4, 0x40, 1, 1024, 0x4C, 18, 0x1, 1, { 0x00, 0x04, 0xFF, 0xFF }, &sfc_nand_get_ecc_status1 },
 };
 
 static struct nand_info *p_nand_info;
@@ -652,13 +658,12 @@ u32 sfc_nand_prog_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
 	return ret;
 }
 
-u32 sfc_nand_read_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
+u32 sfc_nand_read(u32 row, u32 *p_page_buf, u32 column, u32 len)
 {
 	int ret;
 	u32 plane;
 	struct rk_sfc_op op;
 	u32 ecc_result;
-	u32 page_size = SFC_NAND_SECTOR_FULL_SIZE * p_nand_info->sec_per_page;
 	u8 status;
 
 	op.sfcmd.d32 = 0;
@@ -668,7 +673,7 @@ u32 sfc_nand_read_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
 
 	op.sfctrl.d32 = 0;
 
-	sfc_request(&op, addr, p_page_buf, 0);
+	sfc_request(&op, row, p_page_buf, 0);
 
 	if (sfc_nand_dev.read_lines == DATA_LINES_X4 &&
 	    p_nand_info->feature & FEA_SOFT_QOP_BIT &&
@@ -680,19 +685,28 @@ u32 sfc_nand_read_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
 
 	op.sfcmd.d32 = 0;
 	op.sfcmd.b.cmd = sfc_nand_dev.page_read_cmd;
-	op.sfcmd.b.addrbits = SFC_ADDR_24BITS;
+	op.sfcmd.b.addrbits = SFC_ADDR_XBITS;
+	op.sfcmd.b.dummybits = 8;
 
 	op.sfctrl.d32 = 0;
 	op.sfctrl.b.datalines = sfc_nand_dev.read_lines;
+	op.sfctrl.b.addrbits = 16;
 
-	plane = p_nand_info->plane_per_die == 2 ? ((addr >> 6) & 0x1) << 12 : 0;
-	ret = sfc_request(&op, plane << 8, p_page_buf, page_size);
-	rkflash_print_dio("%s %x %x\n", __func__, addr, p_page_buf[0]);
+	plane = p_nand_info->plane_per_die == 2 ? ((row >> 6) & 0x1) << 12 : 0;
+	ret = sfc_request(&op, plane | column, p_page_buf, len);
+	rkflash_print_dio("%s %x %x\n", __func__, row, p_page_buf[0]);
 
 	if (ret != SFC_OK)
 		return SFC_NAND_HW_ERROR;
 
 	return ecc_result;
+}
+
+u32 sfc_nand_read_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
+{
+	u32 page_size = SFC_NAND_SECTOR_FULL_SIZE * p_nand_info->sec_per_page;
+
+	return sfc_nand_read(addr, p_page_buf, 0, page_size);
 }
 
 u32 sfc_nand_read_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
@@ -732,17 +746,17 @@ u32 sfc_nand_check_bad_block(u8 cs, u32 addr)
 {
 	u32 ret;
 	u32 data_size = p_nand_info->sec_per_page * SFC_NAND_SECTOR_SIZE;
+	u32 marker = 0;
 
-	ret = sfc_nand_read_page_raw(cs, addr, gp_page_buf);
+	ret = sfc_nand_read(addr, &marker, data_size, 2);
 
 	/* unify with mtd framework */
 	if (ret == SFC_NAND_ECC_ERROR)
-		rkflash_print_error("%s page= %x ret= %x data0= %x, spare0= %x\n",
-				    __func__, addr, ret, gp_page_buf[0],
-				    (gp_page_buf[data_size / 4] & 0xFF));
+		rkflash_print_error("%s page= %x ret= %x spare= %x\n",
+				    __func__, addr, ret, marker);
 
 	/* Original bad block */
-	if ((gp_page_buf[data_size / 4] & 0xFFFF) != 0xFFFF)
+	if ((u16)marker != 0xffff)
 		return true;
 
 	return false;
