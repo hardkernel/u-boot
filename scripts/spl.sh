@@ -63,21 +63,34 @@ elif [ "${MAGIC}" == "RKPX30" ]; then
 	MAGIC="RK33"
 fi
 
+# tpl don't need replace MAGIC
+if grep -q '^NEWIDB=true' ${INI} ; then
+	ARG_NEWIDB="y"
+fi
+
 # replace
 if [ "${TPL_BIN}" != "" -a "${SPL_BIN}" != "" ]; then
-	cp ${TPL_BIN} tmp/u-boot-tpl.bin
-	cp ${SPL_BIN} tmp/u-boot-spl.bin
-	dd if=tmp/u-boot-tpl.bin of=tmp/tpl.bin bs=1 skip=4
+	if [ "${ARG_NEWIDB}" == "y" ]; then
+		cp ${TPL_BIN} tmp/tpl.bin
+	else
+		cp ${TPL_BIN} tmp/u-boot-tpl.bin
+		dd if=tmp/u-boot-tpl.bin of=tmp/tpl.bin bs=1 skip=4
+		sed -i "1s/^/${MAGIC:0:4}/" tmp/tpl.bin
+	fi
 
-	sed -i "1s/^/${MAGIC:0:4}/" tmp/tpl.bin
+	cp ${SPL_BIN} tmp/u-boot-spl.bin
 	sed -i "s/FlashData=.*$/FlashData=.\/tmp\/tpl.bin/"        ${TMP_INI}
 	sed -i "0,/Path1=.*/s/Path1=.*$/Path1=.\/tmp\/tpl.bin/"    ${TMP_INI}
 	sed -i "s/FlashBoot=.*$/FlashBoot=.\/tmp\/u-boot-spl.bin/" ${TMP_INI}
 	LABEL="TPL+SPL"
 elif [ "${TPL_BIN}" != "" ]; then
-	cp ${TPL_BIN} tmp/u-boot-tpl.bin
-	dd if=tmp/u-boot-tpl.bin of=tmp/tpl.bin bs=1 skip=4
-	sed -i "1s/^/${MAGIC:0:4}/" tmp/tpl.bin
+	if [ "${ARG_NEWIDB}" == "y" ]; then
+		cp ${TPL_BIN} tmp/tpl.bin
+	else
+		cp ${TPL_BIN} tmp/u-boot-tpl.bin
+		dd if=tmp/u-boot-tpl.bin of=tmp/tpl.bin bs=1 skip=4
+		sed -i "1s/^/${MAGIC:0:4}/" tmp/tpl.bin
+	fi
 	sed -i "s/FlashData=.*$/FlashData=.\/tmp\/tpl.bin/"        ${TMP_INI}
 	sed -i "0,/Path1=.*/s/Path1=.*$/Path1=.\/tmp\/tpl.bin/"    ${TMP_INI}
 	LABEL="TPL"
