@@ -33,15 +33,15 @@ void board_pwr_led(bool on)
 
 int odroid_check_dcjack(void)
 {
-	gpio_request(DC_DET_GPIO, "dc_det_gpio");
+	/* set pwr led on by default */
+	board_pwr_led(true);
 
+	gpio_request(DC_DET_GPIO, "dc_det_gpio");
 	if (gpio_get_value(DC_DET_GPIO)) {
 		debug("dc jack is connected\n");
-		board_pwr_led(1);
 		return 1;
 	} else {
 		debug("dc jack is NOT connected\n");
-		board_pwr_led(0);
 		return 0;
 	}
 }
