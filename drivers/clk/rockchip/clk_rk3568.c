@@ -1539,6 +1539,7 @@ static ulong rk3568_emmc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 	case 200 * MHz:
 		src_clk = CCLK_EMMC_SEL_200M;
 		break;
+	case 400 * KHz:
 	case 375 * KHz:
 		src_clk = CCLK_EMMC_SEL_375K;
 		break;
