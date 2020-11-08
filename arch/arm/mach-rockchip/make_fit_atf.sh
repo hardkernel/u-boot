@@ -153,6 +153,7 @@ cat << EOF
 			description = "U-Boot dtb";
 			data = /incbin/("./u-boot.dtb");
 			type = "flat_dt";
+			arch = "${ARCH}";
 			compression = "none";
 			hash {
 				algo = "sha256";
