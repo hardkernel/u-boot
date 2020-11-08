@@ -1527,6 +1527,7 @@ static ulong rk3568_emmc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 	case OSC_HZ:
 		src_clk = CCLK_EMMC_SEL_24M;
 		break;
+	case 52 * MHz:
 	case 50 * MHz:
 		src_clk = CCLK_EMMC_SEL_50M;
 		break;
