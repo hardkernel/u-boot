@@ -1,9 +1,10 @@
+// SPDX-License-Identifier:     GPL-2.0+
 /*
- * Copyright (C) 2018 Rockchip Electronics Co., Ltd
- * Author: Zhihuan He <huan.he@rock-chips.com>
- * SPDX-License-Identifier:	GPL-2.0+
+ * Copyright (C) 2020 Rockchip Electronics Co., Ltd
  */
+
 #include <common.h>
+#include <debug_uart.h>
 #include <dm.h>
 #include <dm/root.h>
 #include <dt-structs.h>
@@ -27,7 +28,7 @@
  * (due to 6K SRAM size limits), so these are hard-coded
  */
 
-static void copy_to_reg(u32 *dest, const u32 *src, u32 n)
+void copy_to_reg(u32 *dest, const u32 *src, u32 n)
 {
 	int i;
 
@@ -91,9 +92,7 @@ static void phy_dll_bypass_set(struct dram_info *priv, unsigned int freq)
 				&priv->phy->phy_regdll);
 	}
 
-	/* 45 degree delay */
-	writel(LEFT_CHN_A_READ_DQS_45_DELAY, &priv->phy->phy_reg28);
-	writel(RIGHT_CHN_A_READ_DQS_45_DELAY, &priv->phy->phy_reg38);
+	ddr_phy_dqs_rx_dll_cfg(priv, freq);
 }
 
 static void send_command(struct dram_info *priv,
@@ -108,49 +107,89 @@ static void send_command(struct dram_info *priv,
 static void memory_init(struct dram_info *priv,
 			struct sdram_params *params_priv)
 {
-	send_command(priv, RANK_SEL_CS0_CS1, DESELECT_CMD, 0);
-	udelay(1);
-	send_command(priv, RANK_SEL_CS0_CS1, PREA_CMD, 0);
+	u32 mr0;
 
-	send_command(priv, RANK_SEL_CS0_CS1, DESELECT_CMD, 0);
-	udelay(1);
-	send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
-		     (MR2 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
-		     (params_priv->ddr_timing_t.phy_timing.mr[2] &
-		     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
+	if (params_priv->ddr_config_t.ddr_type == DDR3 ||
+	    params_priv->ddr_config_t.ddr_type == DDR2) {
+		send_command(priv, RANK_SEL_CS0_CS1, DESELECT_CMD, 0);
+		udelay(1);
+		send_command(priv, RANK_SEL_CS0_CS1, PREA_CMD, 0);
+		send_command(priv, RANK_SEL_CS0_CS1, DESELECT_CMD, 0);
+		udelay(1);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (MR2 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[2] &
+			     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
 
-	send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
-		     (MR3 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
-		     (params_priv->ddr_timing_t.phy_timing.mr[3] &
-		     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (MR3 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[3] &
+			     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
 
-	send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
-		     (MR1 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
-		     (params_priv->ddr_timing_t.phy_timing.mr[1] &
-		     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (MR1 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[1] &
+			     CMD_ADDR_MASK) << CMD_ADDR_SHIFT);
 
-	send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
-		     (MR0 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
-		     (params_priv->ddr_timing_t.phy_timing.mr[0] &
-		     CMD_ADDR_MASK) << CMD_ADDR_SHIFT | DDR3_DLL_RESET);
+		mr0 = params_priv->ddr_timing_t.phy_timing.mr[0];
+		if (params_priv->ddr_config_t.ddr_type == DDR3) {
+			send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+				     (MR0 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
+				     (((mr0 | DDR3_DLL_RESET) &
+				       CMD_ADDR_MASK) << CMD_ADDR_SHIFT));
 
-	send_command(priv, RANK_SEL_CS0_CS1, ZQCL_CMD, 0);
-}
-
-static void set_bw(struct dram_info *priv,
-		   struct sdram_params *params_priv)
-{
-	if (readl(&params_priv->ddr_config.bw) == 1) {
-		clrsetbits_le32(&priv->pctl->ppcfg, PPMEM_EN_MASK, PPMEM_EN);
-		clrsetbits_le32(&priv->phy->phy_reg0, DQ_16BIT_EN_MASK,
-				DQ_16BIT_EN);
-		set_bw_grf(priv);
-		clrsetbits_le32(&priv->service_msch->ddrtiming,
-				BWRATIO_HALF_BW, BWRATIO_HALF_BW);
+			send_command(priv, RANK_SEL_CS0_CS1, ZQCL_CMD, 0);
+		} else {
+			send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+				     (MR0 & BANK_ADDR_MASK) << BANK_ADDR_SHIFT |
+				     (((mr0 | DDR3_DLL_RESET) &
+				       CMD_ADDR_MASK) << CMD_ADDR_SHIFT));
+			send_command(priv, RANK_SEL_CS0_CS1, PREA_CMD, 0);
+			send_command(priv, RANK_SEL_CS0_CS1, REF_CMD, 0);
+			send_command(priv, RANK_SEL_CS0_CS1, REF_CMD, 0);
+			send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+				     (MR0 & BANK_ADDR_MASK) <<
+				     BANK_ADDR_SHIFT |
+				     ((mr0 & CMD_ADDR_MASK) <<
+				      CMD_ADDR_SHIFT));
+		}
+	} else {
+		/* reset */
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (63 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (0 & LPDDR23_OP_MASK) <<
+			     LPDDR23_OP_SHIFT);
+		/* tINIT5 */
+		udelay(10);
+		/* ZQ calibration Init */
+		send_command(priv, RANK_SEL_CS0, MRS_CMD,
+			     (10 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (0xFF & LPDDR23_OP_MASK) <<
+			     LPDDR23_OP_SHIFT);
+		/* tZQINIT */
+		udelay(1);
+		send_command(priv, RANK_SEL_CS1, MRS_CMD,
+			     (10 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (0xFF & LPDDR23_OP_MASK) <<
+			     LPDDR23_OP_SHIFT);
+		/* tZQINIT */
+		udelay(1);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (1 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[1] &
+			     LPDDR23_OP_MASK) << LPDDR23_OP_SHIFT);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (2 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[2] &
+			     LPDDR23_OP_MASK) << LPDDR23_OP_SHIFT);
+		send_command(priv, RANK_SEL_CS0_CS1, MRS_CMD,
+			     (3 & LPDDR23_MA_MASK) << LPDDR23_MA_SHIFT |
+			     (params_priv->ddr_timing_t.phy_timing.mr[3] &
+			     LPDDR23_OP_MASK) << LPDDR23_OP_SHIFT);
 	}
 }
 
-static void move_to_config_state(struct dram_info *priv)
+void move_to_config_state(struct dram_info *priv)
 {
 	unsigned int state;
 
@@ -181,7 +220,7 @@ static void move_to_config_state(struct dram_info *priv)
 	}
 }
 
-static void move_to_access_state(struct dram_info *priv)
+void move_to_access_state(struct dram_info *priv)
 {
 	unsigned int state;
 
@@ -218,6 +257,8 @@ static void pctl_cfg(struct dram_info *priv,
 		     struct sdram_params *params_priv)
 {
 	u32 reg;
+	u32 burstlen;
+	u32 bl_mddr_lpddr2;
 
 	/* DFI config */
 	writel(DFI_DATA_BYTE_DISABLE_EN << DFI_DATA_BYTE_DISABLE_EN_SHIFT |
@@ -229,10 +270,6 @@ static void pctl_cfg(struct dram_info *priv,
 	       &priv->pctl->dfistcfg1);
 	writel(PARITY_EN << PARITY_EN_SHIFT |
 	       PARITY_INTR_EN << PARITY_INTR_EN_SHIFT, &priv->pctl->dfistcfg2);
-	writel(DFI_LP_EN_SR << DFI_LP_EN_SR_SHIFT |
-	       DFI_LP_WAKEUP_SR_32_CYCLES << DFI_LP_WAKEUP_SR_SHIFT |
-	       DFI_TLP_RESP << DFI_TLP_RESP_SHIFT,
-	       &priv->pctl->dfilpcfg0);
 
 	writel(TPHYUPD_TYPE0, &priv->pctl->dfitphyupdtype0);
 	writel(TPHY_RDLAT, &priv->pctl->dfitphyrdlat);
@@ -244,116 +281,160 @@ static void pctl_cfg(struct dram_info *priv,
 	copy_to_reg(&priv->pctl->togcnt1u,
 		    &(params_priv->ddr_timing_t.pctl_timing.togcnt1u),
 		    sizeof(struct pctl_timing));
+	/*
+	 * rv1108 phy is 1:2 mode, noc_timing.b.burstlen
+	 * have divide by scheuler clock, so need to * 4
+	 */
+	burstlen = params_priv->ddr_timing_t.noc_timing.b.burstlen * 4;
 
-	writel((RANK0_ODT_WRITE_SEL << RANK0_ODT_WRITE_SEL_SHIFT |
-	       RANK1_ODT_WRITE_SEL << RANK1_ODT_WRITE_SEL_SHIFT),
-	       &priv->pctl->dfiodtcfg);
+	if (params_priv->ddr_config_t.ddr_type == DDR3 ||
+	    params_priv->ddr_config_t.ddr_type == DDR2) {
+		writel((RANK0_ODT_WRITE_SEL << RANK0_ODT_WRITE_SEL_SHIFT |
+		       RANK1_ODT_WRITE_SEL << RANK1_ODT_WRITE_SEL_SHIFT),
+		       &priv->pctl->dfiodtcfg);
 
-	writel(ODT_LEN_BL8_W << ODT_LEN_BL8_W_SHIFT,
-	       &priv->pctl->dfiodtcfg1);
+		writel(ODT_LEN_BL8_W << ODT_LEN_BL8_W_SHIFT,
+		       &priv->pctl->dfiodtcfg1);
 
-	reg = readl(&priv->pctl->tcl);
-	writel((reg - 1) / 2 - 1, &priv->pctl->dfitrddataen);
-	reg = readl(&priv->pctl->tcwl);
-	writel((reg - 1) / 2 - 1, &priv->pctl->dfitphywrlat);
+		writel(params_priv->ddr_timing_t.pctl_timing.trsth,
+		       &priv->pctl->trsth);
+		if (params_priv->ddr_config_t.ddr_type == DDR3)
+			writel(MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS | DDR3_EN |
+			       MEM_BL_8 | TFAW_CFG_5_TDDR |
+			       PD_EXIT_SLOW_EXIT_MODE | PD_TYPE_ACT_PD |
+			       PD_IDLE_DISABLE |
+			       params_priv->ddr_2t_en << TWO_T_SHIFT,
+			       &priv->pctl->mcfg);
+		else if (burstlen == 8)
+			writel(MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS | DDR2_EN |
+			       MEM_BL_8 | TFAW_CFG_5_TDDR |
+			       PD_EXIT_SLOW_EXIT_MODE | PD_TYPE_ACT_PD |
+			       PD_IDLE_DISABLE |
+			       params_priv->ddr_2t_en << TWO_T_SHIFT,
+			       &priv->pctl->mcfg);
+		else
+			writel(MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS | DDR2_EN |
+			       MEM_BL_4 | TFAW_CFG_5_TDDR |
+			       PD_EXIT_SLOW_EXIT_MODE | PD_TYPE_ACT_PD |
+			       PD_IDLE_DISABLE |
+			       params_priv->ddr_2t_en << TWO_T_SHIFT,
+			       &priv->pctl->mcfg);
+		writel(DFI_LP_EN_SR << DFI_LP_EN_SR_SHIFT |
+		       DFI_LP_WAKEUP_SR_32_CYCLES << DFI_LP_WAKEUP_SR_SHIFT |
+		       DFI_TLP_RESP << DFI_TLP_RESP_SHIFT,
+		       &priv->pctl->dfilpcfg0);
 
-	writel(params_priv->ddr_timing_t.pctl_timing.trsth, &priv->pctl->trsth);
-	writel(MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS | DDR3_EN | MEM_BL_8 |
-	       TFAW_CFG_5_TDDR | PD_EXIT_SLOW_EXIT_MODE |
-	       PD_TYPE_ACT_PD | PD_IDLE_DISABLE, &priv->pctl->mcfg);
+		reg = readl(&priv->pctl->tcl);
+		writel((reg - 1) / 2 - 1, &priv->pctl->dfitrddataen);
+		reg = readl(&priv->pctl->tcwl);
+		writel((reg - 1) / 2 - 1, &priv->pctl->dfitphywrlat);
+	} else {
+		if (burstlen == 4)
+			bl_mddr_lpddr2 = MDDR_LPDDR2_BL_4;
+		else
+			bl_mddr_lpddr2 = MDDR_LPDDR2_BL_8;
+		writel((RANK0_ODT_WRITE_DIS << RANK0_ODT_WRITE_SEL_SHIFT |
+		       RANK1_ODT_WRITE_DIS << RANK1_ODT_WRITE_SEL_SHIFT),
+		       &priv->pctl->dfiodtcfg);
 
-	pctl_cfg_grf(priv);
+		writel(ODT_LEN_BL8_W_0 << ODT_LEN_BL8_W_SHIFT,
+		       &priv->pctl->dfiodtcfg1);
+
+		writel(0, &priv->pctl->trsth);
+		writel(MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS | LPDDR2_EN |
+			LPDDR2_S4 | bl_mddr_lpddr2 |
+		       TFAW_CFG_6_TDDR | PD_EXIT_FAST_EXIT_MODE |
+		       PD_TYPE_ACT_PD | PD_IDLE_DISABLE, &priv->pctl->mcfg);
+		writel(DFI_LP_EN_SR << DFI_LP_EN_SR_SHIFT |
+		       DFI_LP_WAKEUP_SR_32_CYCLES << DFI_LP_WAKEUP_SR_SHIFT |
+		       DFI_TLP_RESP << DFI_TLP_RESP_SHIFT |
+		       DFI_LP_WAKEUP_PD_32_CYCLES << DFI_LP_WAKEUP_PD_SHIFT |
+		       DFI_LP_EN_PD,
+		       &priv->pctl->dfilpcfg0);
+
+		reg = readl(&priv->pctl->tcl);
+		writel(reg / 2 - 1, &priv->pctl->dfitrddataen);
+		reg = readl(&priv->pctl->tcwl);
+		writel(reg / 2 - 1, &priv->pctl->dfitphywrlat);
+	}
+	pctl_cfg_grf(priv, params_priv);
 	setbits_le32(&priv->pctl->scfg, HW_LOW_POWER_EN);
+
+	/* only support x16 memory */
+	clrsetbits_le32(&priv->pctl->ppcfg, PPMEM_EN_MASK, PPMEM_EN);
 }
 
 static void phy_cfg(struct dram_info *priv,
 		    struct sdram_params *params_priv)
 {
-	writel((readl(&priv->service_msch->ddrtiming) & BWRATIO_HALF_BW)|
-	       params_priv->ddr_timing_t.noc_timing,
-	       &priv->service_msch->ddrtiming);
-	writel(params_priv->ddr_timing_t.readlatency,
-	       &priv->service_msch->readlatency);
-	writel(params_priv->ddr_timing_t.activate,
-	       &priv->service_msch->activate);
-	writel(params_priv->ddr_timing_t.devtodev,
-	       &priv->service_msch->devtodev);
+	u32 burstlen;
 
-	writel(MEMORY_SELECT_DDR3 | PHY_BL_8, &priv->phy->phy_reg1);
+	burstlen = params_priv->ddr_timing_t.noc_timing.b.burstlen * 4;
+	burstlen = (burstlen == 4) ? PHY_BL_4 : PHY_BL_8;
+	ddr_msch_cfg(priv, params_priv);
+	ddr_phy_skew_cfg(priv);
+	switch (params_priv->ddr_config_t.ddr_type) {
+	case DDR2:
+		writel(MEMORY_SELECT_DDR2 | PHY_BL_8, &priv->phy->phy_reg1);
+		break;
+	case DDR3:
+		writel(MEMORY_SELECT_DDR3 | PHY_BL_8, &priv->phy->phy_reg1);
+		break;
+	case LPDDR2:
+	default:
+		writel(MEMORY_SELECT_LPDDR2 | burstlen, &priv->phy->phy_reg1);
+		break;
+	}
 
 	writel(params_priv->ddr_timing_t.phy_timing.cl_al,
 	       &priv->phy->phy_regb);
 	writel(params_priv->ddr_timing_t.pctl_timing.tcwl,
 	       &priv->phy->phy_regc);
 
-	writel(PHY_RON_RTT_34OHM, &priv->phy->phy_reg11);
-	clrsetbits_le32(&priv->phy->phy_reg12, CMD_PRCOMP_MASK,
-			PHY_RON_RTT_34OHM << CMD_PRCOMP_SHIFT);
-	writel(PHY_RON_RTT_45OHM, &priv->phy->phy_reg16);
-	writel(PHY_RON_RTT_45OHM, &priv->phy->phy_reg18);
-	writel(PHY_RON_RTT_34OHM, &priv->phy->phy_reg20);
-	writel(PHY_RON_RTT_34OHM, &priv->phy->phy_reg2f);
-	writel(PHY_RON_RTT_34OHM, &priv->phy->phy_reg30);
-	writel(PHY_RON_RTT_34OHM, &priv->phy->phy_reg3f);
-	writel(PHY_RON_RTT_225OHM, &priv->phy->phy_reg21);
-	writel(PHY_RON_RTT_225OHM, &priv->phy->phy_reg2e);
-	writel(PHY_RON_RTT_225OHM, &priv->phy->phy_reg31);
-	writel(PHY_RON_RTT_225OHM, &priv->phy->phy_reg3e);
+	set_ds_odt(priv, params_priv);
+
+	/* only support x16 memory */
+	clrsetbits_le32(&priv->phy->phy_reg0, DQ_16BIT_EN_MASK,
+			DQ_16BIT_EN);
 }
 
 static void dram_cfg_rbc(struct dram_info *priv,
 			 struct sdram_params *params_priv)
 {
-	int i = 0;
-
 	move_to_config_state(priv);
-#if defined(CONFIG_ROCKCHIP_RV1108)
-	if (params_priv->ddr_config.col == 10)
-		i = 2;
-	else
-		i = 3;
-#elif defined(CONFIG_ROCKCHIP_RK3308)
-
-#endif
-	writel(i, &priv->service_msch->ddrconf);
+	ddr_msch_cfg_rbc(params_priv, priv);
 	move_to_access_state(priv);
-}
-
-static void enable_low_power(struct dram_info *priv)
-{
-	move_to_config_state(priv);
-
-	clrsetbits_le32(&priv->pctl->mcfg, PD_IDLE_MASK,
-			PD_IDLE << PD_IDLE_SHIFT);
-	clrsetbits_le32(&priv->pctl->mcfg1, SR_IDLE_MASK | HW_EXIT_IDLE_EN_MASK,
-			SR_IDLE | HW_EXIT_IDLE_EN);
-
-	/* uPCTL in low_power status because of auto self-refreh */
-	writel(GO_STATE, &priv->pctl->sctl);
 }
 
 static void data_training(struct dram_info *priv)
 {
 	u32 value;
 	u32 tmp = 0;
+	u32 tmp1 = 0;
+	u32 timeout = 1000;
 
 	/* disable auto refresh */
 	value = readl(&priv->pctl->trefi);
 	writel(UPD_REF, &priv->pctl->trefi);
 
-	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_DIS,
+	tmp1 = readl(&priv->phy->phy_reg2);
+
+	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_DIS | tmp1,
 	       &priv->phy->phy_reg2);
-	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_ACT,
+	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_ACT | tmp1,
 	       &priv->phy->phy_reg2);
 
-	/* delay untill data training done */
+		/* delay until data training done */
 	while (tmp != (CHN_A_HIGH_8BIT_TRAINING_DONE |
 	       CHN_A_LOW_8BIT_TRAINING_DONE)) {
 		udelay(1);
 		tmp = (readl(&priv->phy->phy_regff) & CHN_A_TRAINING_DONE_MASK);
+		timeout--;
+		if (!timeout)
+			break;
 	}
 
-	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_DIS,
+	writel(DQS_GATE_TRAINING_SEL_CS0 | DQS_GATE_TRAINING_DIS | tmp1,
 	       &priv->phy->phy_reg2);
 
 	send_command(priv, RANK_SEL_CS0_CS1, PREA_CMD, 0);
@@ -361,78 +442,165 @@ static void data_training(struct dram_info *priv)
 	writel(value | UPD_REF, &priv->pctl->trefi);
 }
 
-static u32 sdram_detect(struct dram_info *priv,
+static int sdram_detect(struct dram_info *priv,
 			struct sdram_params *params_priv)
 {
-	u32 row, col, row_max, col_max;
-	u32 test_addr;
+	u32 row, col, row_max, col_max, bank_max;
+	u32 bw = 1;
+	phys_addr_t test_addr;
+	struct ddr_schedule ddr_sch;
 
-	move_to_config_state(priv);
-#if defined(CONFIG_ROCKCHIP_RV1108)
-	writel(1, &priv->service_msch->ddrconf);
-	col_max = 11;
-	row_max = 16;
-#elif defined(CONFIG_ROCKCHIP_RK3308)
-
-#endif
-	move_to_access_state(priv);
+	/* if col detect wrong,row needs initial */
+	row = 0;
 
 	/* detect col */
+	move_to_config_state(priv);
+	ddr_msch_get_max_col(priv, &ddr_sch);
+	col_max = ddr_sch.col;
+	bank_max = ddr_sch.bank;
+	move_to_access_state(priv);
+
 	for (col = col_max; col >= 10; col--) {
-		writel(0, SDRAM_BEGIN_ADDR);
-		test_addr = SDRAM_BEGIN_ADDR + (1u << (col +
-				params_priv->ddr_config.bw - 1u));
+		writel(0, CONFIG_SYS_SDRAM_BASE);
+		test_addr = (phys_addr_t)(CONFIG_SYS_SDRAM_BASE +
+		    (1ul << (col + bw - 1ul)));
 		writel(PATTERN, test_addr);
 		if ((readl(test_addr) == PATTERN) &&
-		    (readl(SDRAM_BEGIN_ADDR) == 0))
-				break;
+		    (readl(CONFIG_SYS_SDRAM_BASE) == 0))
+			break;
 	}
-	if (col <= 8)
+	if (col <= 9)
 		goto cap_err;
-	params_priv->ddr_config.col = col;
+	params_priv->ddr_config_t.col = col;
+
+	if (params_priv->ddr_config_t.ddr_type == DDR3) {
+		params_priv->ddr_config_t.bank = 3;
+	} else {
+		writel(0, CONFIG_SYS_SDRAM_BASE);
+		test_addr = (phys_addr_t)(CONFIG_SYS_SDRAM_BASE +
+		    (1ul << (bank_max + col_max +
+		    bw - 1ul)));
+		writel(PATTERN, test_addr);
+		if ((readl(test_addr) == PATTERN) &&
+		    (readl(CONFIG_SYS_SDRAM_BASE) == 0))
+			params_priv->ddr_config_t.bank = 3;
+		else
+			params_priv->ddr_config_t.bank = 2;
+	}
 
 	/* detect row */
-	col = col_max;
+	move_to_config_state(priv);
+	ddr_msch_get_max_row(priv, &ddr_sch);
+	move_to_access_state(priv);
+	col_max = ddr_sch.col;
+	row_max = ddr_sch.row;
+
 	for (row = row_max; row >= 12; row--) {
-		writel(0, SDRAM_BEGIN_ADDR);
-		test_addr = SDRAM_BEGIN_ADDR + (1u << (row +
-				params_priv->ddr_config.bank + col +
-				params_priv->ddr_config.bw - 1u));
+		writel(0, CONFIG_SYS_SDRAM_BASE);
+		test_addr = (phys_addr_t)(CONFIG_SYS_SDRAM_BASE +
+				(1ul << (row + bank_max +
+				col_max + bw - 1ul)));
+
 		writel(PATTERN, test_addr);
 		if ((readl(test_addr) == PATTERN) &&
-		    (readl(SDRAM_BEGIN_ADDR) == 0))
+		    (readl(CONFIG_SYS_SDRAM_BASE) == 0))
 			break;
 	}
 	if (row <= 11)
 		goto cap_err;
-	params_priv->ddr_config.cs0_row = row;
+	params_priv->ddr_config_t.cs0_row = row;
 	return 0;
 cap_err:
-	return 1;
+	return -EAGAIN;
 }
+
+#define DDR_VERSION	0x2
 
 static void sdram_all_config(struct dram_info *priv,
 			     struct sdram_params *params_priv)
 {
+	u32 version = DDR_VERSION;
 	u32 os_reg = 0;
-	u32 cs1_row = 0;
+	u32 row_12 = 0;
+	u32 ddr_info = 0;
+	/* rk3308,rv1108 only support 1 channel, x16 ddr bus, x16 memory */
+	u32 chn_cnt = 0;
+	u32 rank = 1;
+	u32 bw = 1;
+	u32 dbw = 1;
+	size_t size = 0;
+	struct ddr_param ddr_param;
 
-	if (params_priv->ddr_config.rank > 1)
-		cs1_row = params_priv->ddr_config.cs1_row - 13;
-
-	os_reg = params_priv->ddr_config.ddr_type << SYS_REG_DDRTYPE_SHIFT |
-		 params_priv->ddr_config.chn_cnt << SYS_REG_NUM_CH_SHIFT |
-		 (params_priv->ddr_config.rank - 1) << SYS_REG_RANK_SHIFT(0) |
-		 (params_priv->ddr_config.col - 9) << SYS_REG_COL_SHIFT(0) |
-		 (params_priv->ddr_config.bank == 3 ? 0 : 1) <<
-		 SYS_REG_BK_SHIFT(0) |
-		 (params_priv->ddr_config.cs0_row - 13) <<
-		 SYS_REG_CS0_ROW_SHIFT(0) |
-		 cs1_row << SYS_REG_CS1_ROW_SHIFT(0) |
-		 params_priv->ddr_config.bw << SYS_REG_BW_SHIFT(0) |
-		 params_priv->ddr_config.dbw << SYS_REG_DBW_SHIFT(0);
+	/* os_reg2 */
+	os_reg = (params_priv->ddr_config_t.ddr_type & SYS_REG_DDRTYPE_MASK) <<
+		 SYS_REG_DDRTYPE_SHIFT |
+		 (chn_cnt & SYS_REG_NUM_CH_MASK) <<
+		 SYS_REG_NUM_CH_SHIFT |
+		 ((rank - 1) & SYS_REG_RANK_MASK) <<
+		 SYS_REG_RANK_SHIFT(0) |
+		 ((params_priv->ddr_config_t.col - 9) & SYS_REG_COL_MASK) <<
+		 SYS_REG_COL_SHIFT(0) |
+		 ((params_priv->ddr_config_t.bank == 3 ? 0 : 1) &
+		 SYS_REG_BK_MASK) << SYS_REG_BK_SHIFT(0) |
+		 ((params_priv->ddr_config_t.cs0_row - 13) &
+		 SYS_REG_CS0_ROW_MASK) << SYS_REG_CS0_ROW_SHIFT(0) |
+		 (bw & SYS_REG_BW_MASK) <<
+		 SYS_REG_BW_SHIFT(0) |
+		 (dbw & SYS_REG_DBW_MASK) <<
+		 SYS_REG_DBW_SHIFT(0);
 
 	writel(os_reg, &priv->grf->os_reg2);
+
+	/* os_reg3 */
+	if (params_priv->ddr_config_t.cs0_row == 12)
+		row_12 = 1;
+	os_reg = (version & SYS_REG1_VERSION_MASK) <<
+		 SYS_REG1_VERSION_SHIFT | (row_12 &
+		 SYS_REG1_EXTEND_CS0_ROW_MASK) <<
+		 SYS_REG1_EXTEND_CS0_ROW_SHIFT(0);
+	writel(os_reg, &priv->grf->os_reg3);
+
+	printascii("In\n");
+	printdec(params_priv->ddr_timing_t.freq);
+	printascii("MHz\n");
+	switch (params_priv->ddr_config_t.ddr_type & SYS_REG_DDRTYPE_MASK) {
+	case 2:
+		printascii("DDR2\n");
+		break;
+	case 5:
+		printascii("LPDDR2\n");
+		break;
+	case 3:
+	default:
+		printascii("DDR3\n");
+		break;
+	}
+	printascii(" Col=");
+	printdec(params_priv->ddr_config_t.col);
+	printascii(" Bank=");
+	printdec(params_priv->ddr_config_t.bank);
+	printascii(" Row=");
+	printdec(params_priv->ddr_config_t.cs0_row);
+
+	size = 1llu << (bw +
+	       params_priv->ddr_config_t.col +
+	       params_priv->ddr_config_t.cs0_row +
+	       params_priv->ddr_config_t.bank);
+	ddr_info = size >> 20;
+	printascii(" Size=");
+	printdec(ddr_info);
+	printascii("MB\n");
+	printascii("msch:");
+	ddr_info = readl(&priv->service_msch->ddrconf);
+	printdec(ddr_info);
+	printascii("\n");
+
+	priv->info.base = CONFIG_SYS_SDRAM_BASE;
+	priv->info.size = size;
+	ddr_param.count = 1;
+	ddr_param.para[0] = priv->info.base;
+	ddr_param.para[1] = priv->info.size;
+	rockchip_setup_ddr_param(&ddr_param);
 }
 
 int rv1108_sdram_init(struct dram_info *sdram_priv,
@@ -445,23 +613,28 @@ int rv1108_sdram_init(struct dram_info *sdram_priv,
 	phy_dll_bypass_set(sdram_priv, params_priv->ddr_timing_t.freq);
 	pctl_cfg(sdram_priv, params_priv);
 	phy_cfg(sdram_priv, params_priv);
-
 	writel(POWER_UP_START, &sdram_priv->pctl->powctl);
 	while (!(readl(&sdram_priv->pctl->powstat) & POWER_UP_DONE))
 		;
 
 	memory_init(sdram_priv, params_priv);
+re_training:
 	move_to_config_state(sdram_priv);
-	set_bw(sdram_priv, params_priv);
 	data_training(sdram_priv);
 	move_to_access_state(sdram_priv);
 	if (sdram_detect(sdram_priv, params_priv)) {
 		while (1)
 			;
 	}
+	if (check_rd_gate(sdram_priv))
+		goto re_training;
+
+	/* workaround data training not in middle */
+	modify_data_training(sdram_priv, params_priv);
+
 	dram_cfg_rbc(sdram_priv, params_priv);
 	sdram_all_config(sdram_priv, params_priv);
-	enable_low_power(sdram_priv);
+	enable_low_power(sdram_priv, params_priv);
 
 	return 0;
 }

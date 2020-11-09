@@ -167,12 +167,12 @@ struct ddr_phy {
 	u32 reserved0;
 	u32 phy_reg5;
 	u32 phy_reg6;
-	u32 reserveds1[(0x24-0x1c)/4];
+	u32 reserveds1[(0x24 - 0x1c) / 4];
 	u32 phy_reg9;
-	u32 reserveds2[(0x2c-0x28)/4];
+	u32 reserveds2[(0x2c - 0x28) / 4];
 	u32 phy_regb;
 	u32 phy_regc;
-	u32 reserveds3[(0x44-0x34)/4];
+	u32 reserveds3[(0x44 - 0x34) / 4];
 	u32 phy_reg11;
 	u32 phy_reg12;
 	u32 phy_reg13;
@@ -181,42 +181,46 @@ struct ddr_phy {
 	u32 phy_reg16;
 	u32 phy_reg17;
 	u32 phy_reg18;
-	u32 reserveds5[(0x80-0x64)/4];
+	u32 reserveds5[(0x80 - 0x64) / 4];
 	u32 phy_reg20;
 	u32 phy_reg21;
-	u32 reserveds6[(0x98-0x88)/4];
+	u32 reserveds6[(0x98 - 0x88) / 4];
 	u32 phy_reg26;
 	u32 phy_reg27;
 	u32 phy_reg28;
-	u32 reserveds7[(0xac-0xa4)/4];
+	u32 reserveds7[(0xac - 0xa4) / 4];
 	u32 phy_reg2b;
-	u32 reserveds8[(0xb8-0xb0)/4];
+	u32 phy_reg2c;
+	u32 reserveds8[(0xb8 - 0xb4) / 4];
 	u32 phy_reg2e;
 	u32 phy_reg2f;
 	u32 phy_reg30;
 	u32 phy_reg31;
-	u32 reserveds9[(0xd8-0xc8)/4];
+	u32 reserveds9[(0xd8 - 0xc8) / 4];
 	u32 phy_reg36;
 	u32 phy_reg37;
 	u32 phy_reg38;
-	u32 reserveds10[(0xec-0xe4)/4];
+	u32 reserveds10[(0xec - 0xe4) / 4];
 	u32 phy_reg3b;
-	u32 reserveds11[(0xf8-0xf0)/4];
+	u32 phy_reg3c;
+	u32 reserveds11[(0xf8 - 0xf4) / 4];
 	u32 phy_reg3e;
 	u32 phy_reg3f;
-	u32 reserveds12[(0x1c0-0x100)/4];
-	u32 phy_reg_skew_cs0data[(0x218-0x1c0)/4];
-	u32 reserveds13[(0x28c-0x218)/4];
+	u32 reserveds12[(0x1c0 - 0x100) / 4];
+	u32 phy_reg_skew_cs0data[(0x218 - 0x1c0) / 4];
+	u32 reserveds13[(0x28c - 0x218) / 4];
 	u32 phy_vref;
-	u32 phy_regdll;/*dll bypass switch reg,0x290*/
-	u32 reserveds14[(0x2c0-0x294)/4];
-	u32 phy_reg_ca_skew[(0x2f8-0x2c0)/4];
-	u32 reserveds15[(0x300-0x2f8)/4];
-	u32 phy_reg_skew_cs1data[(0x358-0x300)/4];
-	u32 reserveds16[(0x3c0-0x358)/4];
+	/*dll bypass switch reg,0x290*/
+	u32 phy_regdll;
+	u32 reserveds14[(0x2c0 - 0x294) / 4];
+	u32 phy_reg_ca_skew[(0x2f8 - 0x2c0) / 4];
+	u32 reserveds15[(0x300 - 0x2f8) / 4];
+	u32 phy_reg_skew_cs1data[(0x358 - 0x300) / 4];
+	u32 reserveds16[(0x3c0 - 0x358) / 4];
 	u32 phy_regf0;
 	u32 phy_regf1;
-	u32 reserveds17[(0x3e8-0x3c8)/4];
+	u32 reserveds17[(0x3e4 - 0x3c8) / 4];
+	u32 phy_regf9;
 	u32 phy_regfa;
 	u32 phy_regfb;
 	u32 phy_regfc;
@@ -225,6 +229,29 @@ struct ddr_phy {
 	u32 phy_regff;
 };
 check_member(ddr_phy, phy_regff, 0x03fc);
+
+union noc_timing_t {
+	u32 d32;
+	struct {
+	unsigned acttoact : 6;
+	unsigned rdtomiss : 6;
+	unsigned wrtomiss : 6;
+	unsigned burstlen : 3;
+	unsigned rdtowr : 5;
+	unsigned wrtord : 5;
+	unsigned bwratio : 1;
+	} b;
+};
+
+union noc_activate_t {
+	u32 d32;
+	struct {
+	unsigned rrd : 4;
+	unsigned faw : 6;
+	unsigned fawbank : 1;
+	unsigned reserved : 21;
+	} b;
+};
 
 struct ddr_timing {
 	u32 freq;
@@ -270,9 +297,9 @@ struct ddr_timing {
 		u32 bl;
 		u32 cl_al;
 	} phy_timing;
-	u32 noc_timing;
+	union noc_timing_t noc_timing;
 	u32 readlatency;
-	u32 activate;
+	union noc_activate_t activate;
 	u32 devtodev;
 };
 
@@ -301,6 +328,12 @@ struct ddr_config {
 	u32 bw;
 };
 
+struct ddr_schedule {
+	u32 col;
+	u32 bank;
+	u32 row;
+};
+
 enum {
 	PHY_LOW_SPEED_MHZ		= 400,
 	/* PHY_REG0 */
@@ -320,7 +353,10 @@ enum {
 
 	/* PHY_REG1 */
 	MEMORY_SELECT_DDR3		= 0,
+	MEMORY_SELECT_DDR2		= 1,
+	MEMORY_SELECT_LPDDR2		= 2,
 	PHY_BL_8			= 1 << 2,
+	PHY_BL_4			= 0 << 2,
 
 	/* PHY_REG2 */
 	DQS_GATE_TRAINING_SEL_CS0	= 1 << 5,
@@ -354,6 +390,7 @@ enum {
 	LEFT_CHN_A_DQS_DLL_BYPASS_DIS	= 0,
 
 	/* DDRPHY_REG28 */
+	LEFT_CHN_A_READ_DQS_22_5_DELAY	= 1,
 	LEFT_CHN_A_READ_DQS_45_DELAY	= 2,
 
 	/* DDRPHY_REG36 */
@@ -368,6 +405,7 @@ enum {
 	RIGHT_CHN_A_DQS_DLL_BYPASS_DIS	= 0,
 
 	/* DDRPHY_REG38 */
+	RIGHT_CHN_A_READ_DQS_22_5_DELAY	= 1,
 	RIGHT_CHN_A_READ_DQS_45_DELAY	= 2,
 
 	/* PHY_REGDLL */
@@ -417,6 +455,10 @@ enum {
 	BANK_ADDR_MASK				= 0x7,
 	CMD_ADDR_SHIFT				= 4,
 	CMD_ADDR_MASK				= 0x1fff,
+	LPDDR23_MA_SHIFT			= 4,
+	LPDDR23_MA_MASK				= 0xff,
+	LPDDR23_OP_SHIFT			= 12,
+	LPDDR23_OP_MASK				= 0xff,
 	DDR3_DLL_RESET				= 1 << 8,
 	DESELECT_CMD				= 0x0,
 	PREA_CMD				= 0x1,
@@ -467,6 +509,9 @@ enum {
 	PARITY_INTR_EN				= 1,
 
 	/* PCTL_DFILPCFG0 */
+	DFI_LP_EN_PD				= 1,
+	DFI_LP_WAKEUP_PD_SHIFT			= 4,
+	DFI_LP_WAKEUP_PD_32_CYCLES		= 1,
 	DFI_LP_EN_SR_SHIFT			= 8,
 	DFI_LP_EN_SR				= 1,
 	DFI_LP_WAKEUP_SR_SHIFT			= 12,
@@ -490,23 +535,36 @@ enum {
 	/* PCTL_DFIODTCFG */
 	RANK0_ODT_WRITE_SEL_SHIFT		= 3,
 	RANK0_ODT_WRITE_SEL			= 1,
+	RANK0_ODT_WRITE_DIS			= 0,
 	RANK1_ODT_WRITE_SEL_SHIFT		= 11,
 	RANK1_ODT_WRITE_SEL			= 1,
+	RANK1_ODT_WRITE_DIS			= 0,
 
 	/* PCTL_DFIODTCFG1 */
 	ODT_LEN_BL8_W_SHIFT			= 16,
 	ODT_LEN_BL8_W				= 7,
+	ODT_LEN_BL8_W_0				= 0,
 
 	/* PCTL_MCFG */
 	MDDR_LPDDR23_CLOCK_STOP_IDLE_DIS	= 0 << 24,
+	LPDDR2_EN				= 3 << 22,
 	DDR3_EN					= 1 << 5,
+	DDR2_EN					= 0 << 5,
+	LPDDR2_S4				= 1 << 6,
 	MEM_BL_8				= 1,
+	MEM_BL_4				= 0,
+	MDDR_LPDDR2_BL_4			= 1 << 20,
+	MDDR_LPDDR2_BL_8			= 2 << 20,
 	TFAW_CFG_5_TDDR				= 1 << 18,
+	TFAW_CFG_6_TDDR				= 2 << 18,
 	PD_EXIT_SLOW_EXIT_MODE			= 0 << 17,
+	PD_EXIT_FAST_EXIT_MODE			= 1 << 17,
 	PD_TYPE_ACT_PD				= 1 << 16,
 	PD_IDLE_DISABLE				= 0 << 8,
 	PD_IDLE_MASK				= 0xff << 8,
 	PD_IDLE_SHIFT				= 8,
+	TWO_T_SHIFT				= 3,
+
 
 	/* PCTL_MCFG1 */
 	SR_IDLE_MASK				= 0xff,
