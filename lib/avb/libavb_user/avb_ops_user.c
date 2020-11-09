@@ -252,8 +252,13 @@ static AvbIOResult read_rollback_index(AvbOps *ops,
 		}
 
 		return ret;
+#else
+		*out_rollback_index = 0;
+
+		return AVB_IO_RESULT_OK;
 #endif
 	}
+
 	return AVB_IO_RESULT_ERROR_IO;
 }
 
@@ -304,6 +309,10 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 			printf("%s: trusty_read_lock_state failed\n", __FILE__);
 		}
 		return ret;
+#else
+		*out_is_unlocked = 1;
+
+		return AVB_IO_RESULT_OK;
 #endif
 	}
 	return AVB_IO_RESULT_ERROR_IO;

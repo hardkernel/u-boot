@@ -370,13 +370,10 @@ out:
 int rk_avb_read_bootloader_locked_flag(uint8_t *flag)
 {
 #ifdef CONFIG_OPTEE_CLIENT
-	if (trusty_read_vbootkey_enable_flag(flag)) {
+	if (trusty_read_vbootkey_enable_flag(flag))
 		return -1;
-	}
-	return 0;
-#else
-	return -1;
 #endif
+	return 0;
 }
 
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
