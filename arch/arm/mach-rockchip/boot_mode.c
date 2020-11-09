@@ -37,13 +37,35 @@ int rockchip_get_boot_mode(void)
 	uint32_t reg_boot_mode;
 	char *env_reboot_mode;
 	static int boot_mode = -1;	/* static */
+	static int bcb_offset = -1;	/* static */
 	int clear_boot_reg = 0;
 	int ret, cnt;
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
-	u32 bcb_offset = android_bcb_msg_sector_offset();
+	u32 offset = android_bcb_msg_sector_offset();
 #else
-	u32 bcb_offset = BCB_MESSAGE_BLK_OFFSET;
+	u32 offset = BCB_MESSAGE_BLK_OFFSET;
 #endif
+	/*
+	 * Special handle:
+	 *    Once the BCB offset changes, reinitalize "boot_mode".
+	 *
+	 * Background:
+	 *    1. there are two Android BCB at the 0x00 and 0x20 offset in
+	 *       misc.img to compatible legacy(0x20) SDK.
+	 *    2. android_bcb_msg_sector_offset() is for android image:
+	 *       return 0x20 if image version < 10, otherwise 0x00.
+	 *    3. If not android image, BCB at 0x20 is the valid one.
+	 *
+	 * U-Boot can support booting both FIT & Android image, if FIT
+	 * boot flow enters here early than Android, the "boot_mode" is
+	 * set as BOOT_MODE_RECOVERY according to BCB at 0x20 offset.
+	 * After that, this function always return static variable "boot_mode"
+	 * as BOOT_MODE_RECOVERY even android(>=10) boot flow enter here.
+	 */
+	if (bcb_offset != offset) {
+		boot_mode = -1;
+		bcb_offset = offset;
+	}
 
 	/*
 	 * Here, we mainly check for:
