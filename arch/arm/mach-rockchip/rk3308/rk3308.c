@@ -1,15 +1,20 @@
+// SPDX-License-Identifier:     GPL-2.0+
 /*
- * Copyright (c) 2018 Rockchip Electronics Co., Ltd
- *
- * SPDX-License-Identifier:     GPL-2.0+
+ * Copyright (C) 2020 Rockchip Electronics Co., Ltd
  */
+
 #include <common.h>
+#include <ram.h>
 #include <asm/io.h>
+#include <asm/arch/boot_mode.h>
+#include <asm/arch/bootrom.h>
+#include <asm/arch/cru_rk3308.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/grf_rk3308.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/gpio.h>
+#include <asm/arch/sdram_common.h>
 #include <debug_uart.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -41,6 +46,8 @@ struct mm_region *mem_map = rk3308_mem_map;
 
 #define GRF_BASE	0xff000000
 #define SGRF_BASE	0xff2b0000
+#define CRU_BASE	0xff500000
+
 
 enum {
 
@@ -117,6 +124,11 @@ enum {
 	VCCIO3_1V8,
 };
 
+enum {
+	SND_GLB_WDT_RST		= BIT(3),
+	FST_GLB_WDT_RST		= BIT(2),
+};
+
 /*
  * The voltage of VCCIO3(which is the voltage domain of emmc/flash/sfc
  * interface) can indicated by GPIO0_A4 or io_vsel3. The SOC defaults
@@ -153,6 +165,93 @@ int rk_board_init(void)
 	return 0;
 }
 
+#define SERVICE_CPU_BASE		0xff5c0000
+#define SERVICE_VOICE_BASE		0xff5d0000
+#define SERVICE_LOGIC_BASE		0xff5d8000
+#define SERVICE_PERI_BASE		0xff5e0000
+#define SERVICE_CPU_ADDR		(SERVICE_CPU_BASE + 0x80)
+#define SERVICE_VOP_ADDR		(SERVICE_LOGIC_BASE + 0x100)
+#define SERVICE_DMAC0_ADDR		(SERVICE_LOGIC_BASE + 0x0)
+#define SERVICE_DMAC1_ADDR		(SERVICE_LOGIC_BASE + 0x80)
+#define SERVICE_CRYPTO_ADDR		(SERVICE_LOGIC_BASE + 0x180)
+#define SERVICE_VAD_ADDR		(SERVICE_VOICE_BASE + 0x80)
+#define SERVICE_EMMC_ADDR		(SERVICE_PERI_BASE + 0x80)
+#define SERVICE_GMAC_ADDR		(SERVICE_PERI_BASE + 0x100)
+#define SERVICE_NAND_ADDR		(SERVICE_PERI_BASE + 0x180)
+#define SERVICE_SDIO_ADDR		(SERVICE_PERI_BASE + 0x200)
+#define SERVICE_SDMMC_ADDR		(SERVICE_PERI_BASE + 0x280)
+#define SERVICE_SFC_ADDR		(SERVICE_PERI_BASE + 0x300)
+#define SERVICE_USB_HOST_ADDR		(SERVICE_PERI_BASE + 0x380)
+#define SERVICE_USB_OTG_ADDR		(SERVICE_PERI_BASE + 0x400)
+
+#define DOS_PRIORITY_OFFSET		0x8
+#define QOS_PRIORITY_P1_P0(p1, p0)	((((p1) & 0x3) << 8) |\
+					(((p0) & 0x3) << 0))
+
+enum {
+	IOVSEL4_SHIFT           = 4,
+	IOVSEL4_MASK            = BIT(4),
+	VCCIO4_3V3              = 0,
+	VCCIO4_1V8,
+};
+
+int arch_cpu_init(void)
+{
+#ifndef CONFIG_TPL_BUILD
+#ifdef CONFIG_SPL_BUILD
+	static struct rk3308_sgrf * const sgrf = (void *)SGRF_BASE;
+
+	/* Set CRYPTO SDMMC EMMC NAND SFC USB master bus to be secure access */
+	rk_clrreg(&sgrf->con_secure0, 0x2b83);
+#endif
+#else /* defined(CONFIG_TPL_BUILD) */
+	static struct rk3308_cru * const cru = (void *)CRU_BASE;
+	static struct rk3308_grf * const grf = (void *)GRF_BASE;
+	u32 glb_rst_st;
+
+	rk_clrsetreg(&grf->soc_con0, IOVSEL4_MASK, VCCIO4_3V3 << IOVSEL4_SHIFT);
+
+	glb_rst_st = readl(&cru->glb_rst_st);
+	writel(FST_GLB_WDT_RST | SND_GLB_WDT_RST, &cru->glb_rst_st);
+	if (glb_rst_st & (FST_GLB_WDT_RST | SND_GLB_WDT_RST))
+		writel(BOOT_WATCHDOG, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+
+	writel(WDT_GLB_SRST_CTRL << WDT_GLB_SRST_CTRL_SHIFT |
+	       TSADC_GLB_SRST_CTRL << TSADC_GLB_SRST_CTRL_SHIFT,
+	       &cru->glb_rst_con);
+
+	writel(QOS_PRIORITY_P1_P0(1, 1),
+	       SERVICE_CPU_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(3, 3),
+	       SERVICE_VOP_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_DMAC0_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_DMAC1_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_CRYPTO_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(3, 3),
+	       SERVICE_VAD_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_EMMC_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_GMAC_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_NAND_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_SDIO_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_SDMMC_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_SFC_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_USB_HOST_ADDR + DOS_PRIORITY_OFFSET);
+	writel(QOS_PRIORITY_P1_P0(2, 2),
+	       SERVICE_USB_OTG_ADDR + DOS_PRIORITY_OFFSET);
+#endif
+	return 0;
+}
+
 #ifdef CONFIG_SPL_BUILD
 int rk_board_init_f(void)
 {
@@ -178,25 +277,85 @@ int rk_board_init_f(void)
 
 void board_debug_uart_init(void)
 {
+	static struct rk3308_cru * const cru = (void *)CRU_BASE;
 	static struct rk3308_grf * const grf = (void *)GRF_BASE;
 
+#if defined(CONFIG_DEBUG_UART_BASE)
+#if (CONFIG_DEBUG_UART_BASE == 0xFF0C0000)
+	/*select 24M clock to UART2 */
+	rk_clrsetreg(&cru->clksel_con[16],
+		     CLK_UART2_PLL_SEL_MASK | CLK_UART2_DIV_CON_MASK,
+		     CLK_UART2_PLL_SEL_XIN_OSC0 << CLK_UART2_PLL_SEL_SHIFT |
+		     CLK_UART2_DIV_CON << CLK_UART2_DIV_CON_SHIFT);
+
+#if (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+	/* Enable early UART2 channel m0 on the rk3308 */
+	rk_clrsetreg(&grf->soc_con5, UART2_IO_SEL_MASK,
+		     UART2_IO_SEL_M0 << UART2_IO_SEL_SHIFT);
+	rk_clrsetreg(&grf->gpio1ch_iomux, GPIO1C7_MASK | GPIO1C6_MASK,
+		     GPIO1C7_UART2_TX_M0 << GPIO1C7_SHIFT |
+		     GPIO1C6_UART2_RX_M0 << GPIO1C6_SHIFT);
+
+#elif (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
 	/* Enable early UART2 channel m1 on the rk3308 */
 	rk_clrsetreg(&grf->soc_con5, UART2_IO_SEL_MASK,
 		     UART2_IO_SEL_M1 << UART2_IO_SEL_SHIFT);
-	rk_clrsetreg(&grf->gpio4d_iomux,
-		     GPIO4D3_MASK | GPIO4D2_MASK,
-		     GPIO4D2_UART2_RX_M1 << GPIO4D2_SHIFT |
-		     GPIO4D3_UART2_TX_M1 << GPIO4D3_SHIFT);
-}
-
-#if defined(CONFIG_SPL_BUILD)
-int arch_cpu_init(void)
-{
-	static struct rk3308_sgrf * const sgrf = (void *)SGRF_BASE;
-
-	/* Set CRYPTO SDMMC EMMC NAND SFC USB master bus to be secure access */
-	rk_clrreg(&sgrf->con_secure0, 0x2b83);
-
-	return 0;
-}
+	if (readl(BROM_BOOTSOURCE_ID_ADDR) != BROM_BOOTSOURCE_SD)
+		rk_clrsetreg(&grf->gpio4d_iomux,
+			     GPIO4D3_MASK | GPIO4D2_MASK,
+			     GPIO4D2_UART2_RX_M1 << GPIO4D2_SHIFT |
+			     GPIO4D3_UART2_TX_M1 << GPIO4D3_SHIFT);
+#else
+	#error "Please select M0 or M1 for uart2 !!!"
 #endif
+
+#elif (CONFIG_DEBUG_UART_BASE == 0xFF0E0000)
+	/*select 24M clock to UART4 */
+	rk_clrsetreg(&cru->clksel_con[22],
+		     CLK_UART4_PLL_SEL_MASK | CLK_UART4_DIV_CON_MASK,
+		     CLK_UART4_PLL_SEL_XIN_OSC0 << CLK_UART4_PLL_SEL_SHIFT |
+		     CLK_UART4_DIV_CON << CLK_UART4_DIV_CON_SHIFT);
+
+	rk_clrsetreg(&grf->gpio4b_iomux,
+		     GPIO4B1_SEL_MASK | GPIO4B0_SEL_MASK,
+		     GPIO4B1_SEL_UART4_TX << GPIO4B1_SEL_SHIFT |
+		     GPIO4B0_SEL_UART4_RX << GPIO4B0_SEL_SHIFT);
+#elif (CONFIG_DEBUG_UART_BASE == 0xFF0A0000)
+	/*select 24M clock to UART0 */
+	rk_clrsetreg(&cru->clksel_con[10],
+		     CLK_UART0_PLL_SEL_MASK | CLK_UART0_DIV_CON_MASK,
+		     CLK_UART0_PLL_SEL_XIN_OSC0 << CLK_UART0_PLL_SEL_SHIFT |
+		     CLK_UART0_DIV_CON << CLK_UART0_DIV_CON_SHIFT);
+
+	rk_clrsetreg(&grf->gpio2a_iomux,
+		     GPIO2A1_SEL_MASK | GPIO2A0_SEL_MASK,
+		     GPIO2A1_SEL_UART0_TX << GPIO2A1_SEL_SHIFT |
+		     GPIO2A0_SEL_UART0_RX << GPIO2A0_SEL_SHIFT);
+#elif (CONFIG_DEBUG_UART_BASE == 0xFF0B0000)
+	/*select 24M clock to UART1 */
+	rk_clrsetreg(&cru->clksel_con[13],
+		     CLK_UART1_PLL_SEL_MASK | CLK_UART1_DIV_CON_MASK,
+		     CLK_UART1_PLL_SEL_XIN_OSC0 << CLK_UART1_PLL_SEL_SHIFT |
+		     CLK_UART1_DIV_CON << CLK_UART1_DIV_CON_SHIFT);
+
+	rk_clrsetreg(&grf->gpio1d_iomux,
+		     GPIO1D1_SEL_MASK | GPIO1D0_SEL_MASK,
+		     GPIO1D1_SEL_UART1_TX << GPIO1D1_SEL_SHIFT |
+		     GPIO1D1_SEL_UART1_RX << GPIO1D0_SEL_SHIFT);
+#elif (CONFIG_DEBUG_UART_BASE == 0xFF0D0000)
+	/*select 24M clock to UART3 */
+	rk_clrsetreg(&cru->clksel_con[19],
+		     CLK_UART3_PLL_SEL_MASK | CLK_UART3_DIV_CON_MASK,
+		     CLK_UART3_PLL_SEL_XIN_OSC0 << CLK_UART3_PLL_SEL_SHIFT |
+		     CLK_UART3_DIV_CON << CLK_UART3_DIV_CON_SHIFT);
+
+	rk_clrsetreg(&grf->gpio3b_iomux,
+		     GPIO3B5_SEL_MASK | GPIO3B4_SEL_MASK,
+		     GPIO3B5_SEL_UART3_TX << GPIO3B5_SEL_SHIFT |
+		     GPIO3B4_SEL_UART3_RX << GPIO3B4_SEL_SHIFT);
+#else
+	#error "Please select proper uart as debug uart !!!"
+#endif
+#endif /* defined(CONFIG_DEBUG_UART_BASE) */
+}
+

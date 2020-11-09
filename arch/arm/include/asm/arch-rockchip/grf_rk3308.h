@@ -154,8 +154,8 @@ struct rk3308_grf {
 	unsigned int host0_status0;
 	unsigned int reserved31[(0x4a0 - 0x48C) / 4 - 1];
 	unsigned int mac_con0;
-	unsigned int upctrl_con0;
-	unsigned int upctrl_status0;
+	unsigned int upctl_con0;
+	unsigned int upctl_status0;
 	unsigned int reserved32[(0x500 - 0x4A8) / 4 - 1];
 	unsigned int os_reg0;
 	unsigned int os_reg1;
@@ -194,5 +194,41 @@ struct rk3308_sgrf {
 	unsigned int srst_con;
 };
 check_member(rk3308_sgrf, fastboot_en, 0x20);
+
+enum {
+	/* GPIO1D_IOMUX */
+	GPIO1D1_SEL_SHIFT		= 2,
+	GPIO1D1_SEL_MASK		= 0x3 << GPIO1D1_SEL_SHIFT,
+	GPIO1D1_SEL_UART1_TX		= 1,
+	GPIO1D0_SEL_SHIFT		= 0,
+	GPIO1D0_SEL_MASK		= 0x3 << GPIO1D0_SEL_SHIFT,
+	GPIO1D1_SEL_UART1_RX		= 1,
+	/* GPIO4D_IOMUX */
+	GPIO4D3_SEL_SHIFT		= 6,
+	GPIO4D3_SEL_MASK		= 0x3 << GPIO4D3_SEL_SHIFT,
+	GPIO4D3_SEL_UART2_TXM1		= 2,
+	GPIO4D2_SEL_SHIFT		= 4,
+	GPIO4D2_SEL_MASK		= 0x3 << GPIO4D2_SEL_SHIFT,
+	GPIO4D2_SEL_UART2_RXM1		= 2,
+	/* UPCTL_CON0 */
+	CYSYREQ_UPCTL_DDRSTDBY_SHIFT	= 5,
+	CYSYREQ_UPCTL_DDRSTDBY_MASK	= 1 << CYSYREQ_UPCTL_DDRSTDBY_SHIFT,
+	CYSYREQ_UPCTL_DDRSTDBY_EN	= 1,
+	GRF_DDR_16BIT_EN_SHIFT		= 0,
+	GRF_DDR_16BIT_EN_MASK		= 1 << GRF_DDR_16BIT_EN_SHIFT,
+	GRF_DDR_16BIT_EN		= 1,
+	/* SOC_CON5 */
+	UART2_MULTI_IOFUNC_SEL_SHIFT	= 2,
+	UART2_MULTI_IOFUNC_SEL_MASK	= 0x3 << UART2_MULTI_IOFUNC_SEL_SHIFT,
+	UART2_MULTI_IOFUNC_SEL_M1	= 1,
+	/* SOC_CON12 */
+	NOC_MSCH_MAIN_PARTIAL_SHIFT	= 1,
+	NOC_MSCH_MAIN_PARTIAL_MASK	= 0x1 << NOC_MSCH_MAIN_PARTIAL_SHIFT,
+	NOC_MSCH_MAIN_PARTIAL_EN	= 1,
+	NOC_MSCH_MAINDDR3_SHIFT		= 0,
+	NOC_MSCH_MAINDDR3_MASK		= 0x1 << NOC_MSCH_MAINDDR3_SHIFT,
+	NOC_MSCH_MAINDDR3_EN		= 1,
+	NOC_MSCH_MAINDDR3_DIS		= 0,
+};
 
 #endif
