@@ -106,7 +106,6 @@ static struct rockchip_mux_route_data rk3568_mux_route_data[] = {
 	MR_TOPGRF(RK_GPIO4, RK_PC2, RK_FUNC_4, 0x0314, RK_GENMASK_VAL(7, 6, 2)), /* PCIE30X2 IO mux selection M2 */
 };
 
-
 static int rk3568_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
 {
 	struct rockchip_pinctrl_priv *priv = bank->priv;
@@ -136,8 +135,8 @@ static int rk3568_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
 	return ret;
 }
 
-#define RK3568_PULL_GRF_OFFSET		0x20
-#define RK3568_PULL_PMU_OFFSET		0x80
+#define RK3568_PULL_PMU_OFFSET		0x20
+#define RK3568_PULL_GRF_OFFSET		0x80
 #define RK3568_PULL_BITS_PER_PIN	2
 #define RK3568_PULL_PINS_PER_REG	8
 #define RK3568_PULL_BANK_STRIDE		0x10
@@ -152,19 +151,15 @@ static void rk3568_calc_pull_reg_and_bit(struct rockchip_pin_bank *bank,
 		*regmap = info->regmap_pmu;
 		*reg = RK3568_PULL_PMU_OFFSET;
 		*reg += bank->bank_num * RK3568_PULL_BANK_STRIDE;
-		*reg += ((pin_num / RK3568_PULL_PINS_PER_REG) * 4);
-
-		*bit = pin_num % RK3568_PULL_PINS_PER_REG;
-		*bit *= RK3568_PULL_BITS_PER_PIN;
 	} else {
 		*regmap = info->regmap_base;
 		*reg = RK3568_PULL_GRF_OFFSET;
 		*reg += (bank->bank_num - 1) * RK3568_PULL_BANK_STRIDE;
-		*reg += ((pin_num / RK3568_PULL_PINS_PER_REG) * 4);
-
-		*bit = (pin_num % RK3568_PULL_PINS_PER_REG);
-		*bit *= RK3568_PULL_BITS_PER_PIN;
 	}
+
+	*reg += ((pin_num / RK3568_PULL_PINS_PER_REG) * 4);
+	*bit = (pin_num % RK3568_PULL_PINS_PER_REG);
+	*bit *= RK3568_PULL_BITS_PER_PIN;
 }
 
 #define RK3568_DRV_PMU_OFFSET		0x70
@@ -183,19 +178,43 @@ static void rk3568_calc_drv_reg_and_bit(struct rockchip_pin_bank *bank,
 	if (bank->bank_num == 0) {
 		*regmap = info->regmap_pmu;
 		*reg = RK3568_DRV_PMU_OFFSET;
-		*reg += ((pin_num / RK3568_DRV_PINS_PER_REG) * 4);
-
-		*bit = pin_num % RK3568_DRV_PINS_PER_REG;
-		*bit *= RK3568_DRV_BITS_PER_PIN;
 	} else {
 		*regmap = info->regmap_base;
 		*reg = RK3568_DRV_GRF_OFFSET;
 		*reg += (bank->bank_num - 1) * RK3568_DRV_BANK_STRIDE;
-		*reg += ((pin_num / RK3568_DRV_PINS_PER_REG) * 4);
-
-		*bit = (pin_num % RK3568_DRV_PINS_PER_REG);
-		*bit *= RK3568_DRV_BITS_PER_PIN;
 	}
+
+	*reg += ((pin_num / RK3568_DRV_PINS_PER_REG) * 4);
+	*bit = (pin_num % RK3568_DRV_PINS_PER_REG);
+	*bit *= RK3568_DRV_BITS_PER_PIN;
+}
+
+#define RK3568_SCHMITT_BITS_PER_PIN		2
+#define RK3568_SCHMITT_PINS_PER_REG		8
+#define RK3568_SCHMITT_BANK_STRIDE		0x10
+#define RK3568_SCHMITT_GRF_OFFSET		0xc0
+#define RK3568_SCHMITT_PMUGRF_OFFSET		0x30
+
+static int rk3568_calc_schmitt_reg_and_bit(struct rockchip_pin_bank *bank,
+					   int pin_num, struct regmap **regmap,
+					   int *reg, u8 *bit)
+{
+	struct rockchip_pinctrl_priv *info = bank->priv;
+
+	if (bank->bank_num == 0) {
+		*regmap = info->regmap_pmu;
+		*reg = RK3568_SCHMITT_PMUGRF_OFFSET;
+	} else {
+		*regmap = info->regmap_base;
+		*reg = RK3568_SCHMITT_GRF_OFFSET;
+		*reg += (bank->bank_num - 1) * RK3568_SCHMITT_BANK_STRIDE;
+	}
+
+	*reg += ((pin_num / RK3568_SCHMITT_PINS_PER_REG) * 4);
+	*bit = pin_num % RK3568_SCHMITT_PINS_PER_REG;
+	*bit *= RK3568_SCHMITT_BITS_PER_PIN;
+
+	return 0;
 }
 
 static int rk3568_set_pull(struct rockchip_pin_bank *bank,
@@ -233,16 +252,56 @@ static int rk3568_set_drive(struct rockchip_pin_bank *bank,
 	int reg;
 	u32 data;
 	u8 bit;
+	int drv = (1 << (strength + 1)) - 1;
+	int ret = 0;
 
 	rk3568_calc_drv_reg_and_bit(bank, pin_num, &regmap, &reg, &bit);
 
 	/* enable the write to the equivalent lower bits */
 	data = ((1 << RK3568_DRV_BITS_PER_PIN) - 1) << (bit + 16);
-	data |= (strength << bit);
+	data |= (drv << bit);
+
+	ret = regmap_write(regmap, reg, data);
+	if (ret)
+		return ret;
+
+	if (bank->bank_num == 1 && pin_num == 21)
+		reg = 0x0840;
+	else if (bank->bank_num == 2 && pin_num == 2)
+		reg = 0x0844;
+	else if (bank->bank_num == 2 && pin_num == 8)
+		reg = 0x0848;
+	else if (bank->bank_num == 3 && pin_num == 0)
+		reg = 0x084c;
+	else if (bank->bank_num == 3 && pin_num == 6)
+		reg = 0x0850;
+	else if (bank->bank_num == 4 && pin_num == 0)
+		reg = 0x0854;
+	else
+		return 0;
+
+	data = ((1 << RK3568_DRV_BITS_PER_PIN) - 1) << 16;
+	data |= drv;
 
 	return regmap_write(regmap, reg, data);
 }
 
+static int rk3568_set_schmitt(struct rockchip_pin_bank *bank,
+			      int pin_num, int enable)
+{
+	struct regmap *regmap;
+	int reg;
+	u32 data;
+	u8 bit;
+
+	rk3568_calc_schmitt_reg_and_bit(bank, pin_num, &regmap, &reg, &bit);
+
+	/* enable the write to the equivalent lower bits */
+	data = ((1 << RK3568_SCHMITT_BITS_PER_PIN) - 1) << (bit + 16);
+	data |= (enable << bit);
+
+	return regmap_write(regmap, reg, data);
+}
 static struct rockchip_pin_bank rk3568_pin_banks[] = {
 	PIN_BANK_IOMUX_FLAGS(0, 32, "gpio0", IOMUX_SOURCE_PMU | IOMUX_WIDTH_4BIT,
 			     IOMUX_SOURCE_PMU | IOMUX_WIDTH_4BIT,
@@ -277,6 +336,7 @@ static const struct rockchip_pin_ctrl rk3568_pin_ctrl = {
 	.set_mux		= rk3568_set_mux,
 	.set_pull		= rk3568_set_pull,
 	.set_drive		= rk3568_set_drive,
+	.set_schmitt		= rk3568_set_schmitt,
 };
 
 static const struct udevice_id rk3568_pinctrl_ids[] = {
