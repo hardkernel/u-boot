@@ -997,11 +997,12 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	uint8_t vboot_flag = 0;
 	disk_partition_t vbmeta_part_info;
 
+#ifdef CONFIG_OPTEE_CLIENT
 	if (trusty_read_vbootkey_enable_flag(&vboot_flag)) {
 		printf("Can't read vboot flag\n");
 		return -1;
 	}
-
+#endif
 	if (vboot_flag) {
 		printf("Vboot=1, SecureBoot enabled, AVB verify\n");
 		if (android_slot_verify(boot_partname, &load_address,
