@@ -168,6 +168,7 @@
 
 &sdhci {
 	u-boot,dm-spl;
+	mmc-hs200-1_8v;
 	status = "okay";
 };
 
