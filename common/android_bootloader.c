@@ -797,9 +797,11 @@ int android_fdt_overlay_apply(void *fdt_addr)
 	struct blk_desc *dev_desc;
 	const char *part_boot;
 	disk_partition_t part_info;
+	char *fdt_backup;
 	char *part_dtbo;
 	char buf[32] = {0};
 	ulong fdt_dtbo = -1;
+	u32 totalsize;
 	int index = -1;
 	int ret;
 
@@ -843,6 +845,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index, part_dtbo);
 	if (!ret) {
 		phys_size_t fdt_size;
+
 		/* Must incease size before overlay */
 		fdt_size = fdt_totalsize((void *)fdt_addr) +
 				fdt_totalsize((void *)fdt_dtbo);
@@ -853,6 +856,16 @@ int android_fdt_overlay_apply(void *fdt_addr)
 				       (phys_addr_t)fdt_addr,
 					fdt_size + CONFIG_SYS_FDT_PAD))
 			goto out;
+		/*
+		 * Backup main fdt in case of being destroyed by
+		 * fdt_overlay_apply() when it overlys failed.
+		 */
+		totalsize = fdt_totalsize(fdt_addr);
+		fdt_backup = malloc(totalsize);
+		if (!fdt_backup)
+			goto out;
+
+		memcpy(fdt_backup, fdt_addr, totalsize);
 		fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
 		ret = fdt_overlay_apply(fdt_addr, (void *)fdt_dtbo);
 		if (!ret) {
@@ -860,8 +873,11 @@ int android_fdt_overlay_apply(void *fdt_addr)
 			env_update("bootargs", buf);
 			printf("ANDROID: fdt overlay OK\n");
 		} else {
+			memcpy(fdt_addr, fdt_backup, totalsize);
 			printf("ANDROID: fdt overlay failed, ret=%d\n", ret);
 		}
+
+		free(fdt_backup);
 	}
 
 out:
