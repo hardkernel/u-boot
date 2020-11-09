@@ -59,11 +59,10 @@ function fit_repack()
 		exit 1
 	fi
 
-	IMAGE_BS=`ls -l ${IMAGE} | awk '{ print $5 }'`
-	ITB_SZ_KB=`expr ${IMAGE_BS} / ${COPIES} / 1024`
+	IMG_BS=`ls -l ${IMAGE} | awk '{ print $5 }'`
+	ITB_KB=`expr ${IMG_BS} / ${COPIES} / 1024`
 
-	rm -rf ${OUT}
-	mkdir -p ${OUT}
+	rm -rf ${OUT} && mkdir -p ${OUT}
 	${UNPACK} -f ${IMAGE} -o ${OUT}/
 	find ${DATA}/ -maxdepth 1 -type f | xargs cp -t ${OUT}/
 
@@ -73,7 +72,7 @@ function fit_repack()
 		for ((i = 0; i < ${COPIES}; i++));
 		do
 			cat ${ITB} >> ${IMAGE}
-			truncate -s %${ITB_SZ_KB}K ${IMAGE}
+			truncate -s %${ITB_KB}K ${IMAGE}
 		done
 	else
 		${MKIMAGE} -f ${ITS} -E -p ${OFFS} ${IMAGE}
