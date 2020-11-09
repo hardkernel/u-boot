@@ -217,6 +217,40 @@ static int mmc_dm_reinit(void)
 	return 0;
 }
 
+/*
+ * Simply check cru node:
+ * This kernel dtb is belong to current platform ?
+ */
+static int dtb_check_ok(void *fdt, void *ufdt)
+{
+	const char *compare[2] = { NULL, NULL, };
+	const char *compat;
+	void *blob = fdt;
+	int offset;
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		for (offset = fdt_next_node(blob, 0, NULL);
+		     offset >= 0;
+		     offset = fdt_next_node(blob, offset, NULL)) {
+			compat = fdt_getprop(blob, offset, "compatible", NULL);
+			if (!compat)
+				continue;
+			debug("[%d] compat: %s\n", i, compat);
+			if (strstr(compat, "-cru")) {
+				compare[i] = compat;
+				blob = ufdt;
+				break;
+			}
+		}
+	}
+
+	if (compare[0] && compare[1])
+		return !memcmp(compare[0], compare[1], strlen(compare[0]));
+
+	return 0;
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
@@ -226,26 +260,39 @@ int init_kernel_dtb(void)
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
 		printf("No Found FDT Load Address.\n");
-		return -1;
+		return -ENODEV;
 	}
 
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
-	if (ret < 0) {
-		if (!fdt_check_header(gd->fdt_blob_kern)) {
-			fdt_addr = (ulong)memalign(ARCH_DMA_MINALIGN,
-					fdt_totalsize(gd->fdt_blob_kern));
-			if (!fdt_addr)
-				return -ENOMEM;
-
-			memcpy((void *)fdt_addr, gd->fdt_blob_kern,
-			       fdt_totalsize(gd->fdt_blob_kern));
-			printf("DTB: embedded kern.dtb\n");
+	if (!ret) {
+		if (!dtb_check_ok((void *)fdt_addr, (void *)gd->fdt_blob)) {
+			ret = -EINVAL;
+			printf("Kernel dtb mismatch this platform!\n");
 		} else {
-			printf("Failed to get kernel dtb, ret=%d\n", ret);
-			return ret;
+			goto dtb_okay;
 		}
 	}
 
+	if (!fdt_check_header(gd->fdt_blob_kern)) {
+		if (!dtb_check_ok((void *)gd->fdt_blob_kern, (void *)gd->fdt_blob)) {
+			printf("Embedded kernel dtb mismatch this platform!\n");
+			return -EINVAL;
+		}
+
+		fdt_addr = (ulong)memalign(ARCH_DMA_MINALIGN,
+				fdt_totalsize(gd->fdt_blob_kern));
+		if (!fdt_addr)
+			return -ENOMEM;
+
+		memcpy((void *)fdt_addr, gd->fdt_blob_kern,
+		       fdt_totalsize(gd->fdt_blob_kern));
+		printf("DTB: embedded kern.dtb\n");
+	} else {
+		printf("Failed to get kernel dtb, ret=%d\n", ret);
+		return ret;
+	}
+
+dtb_okay:
 	ufdt_blob = (void *)gd->fdt_blob;
 	gd->fdt_blob = (void *)fdt_addr;
 
