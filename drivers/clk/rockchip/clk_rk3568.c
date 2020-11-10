@@ -77,7 +77,7 @@ static struct rockchip_pll_clock rk3568_pll_clks[] = {
 		     RK3568_MODE_CON, 12, 10, 0, rk3568_pll_rates),
 	[PPLL] = PLL(pll_rk3328, PLL_PPLL, RK3568_PMU_PLL_CON(0),
 		     RK3568_PMU_MODE, 0, 10, 0, rk3568_pll_rates),
-	[HPLL] = PLL(pll_rk3328, PLL_HPLL, RK3568_PMU_PLL_CON(8),
+	[HPLL] = PLL(pll_rk3328, PLL_HPLL, RK3568_PMU_PLL_CON(16),
 		     RK3568_PMU_MODE, 2, 10, 0, rk3568_pll_rates),
 };
 
@@ -1654,7 +1654,7 @@ static ulong rk3568_dclk_vop_set_clk(struct rk3568_clk_priv *priv,
 	sel = (con & DCLK0_VOP_SEL_MASK) >> DCLK0_VOP_SEL_SHIFT;
 
 	if (sel == DCLK_VOP_SEL_HPLL) {
-		div = DIV_ROUND_UP(RK3568_VOP_PLL_LIMIT_FREQ, rate);
+		div = 1;
 		rk_clrsetreg(&cru->clksel_con[conid],
 			     DCLK0_VOP_DIV_MASK | DCLK0_VOP_SEL_MASK,
 			     (DCLK_VOP_SEL_HPLL << DCLK0_VOP_SEL_SHIFT) |
