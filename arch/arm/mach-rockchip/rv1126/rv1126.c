@@ -98,6 +98,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDT_RESET_SRC_CLR	BIT(1)
 #define GRF_IOFUNC_CON3		0xFF01026C
 #define GRF1_GPIO0D_P		0xFE010104
+#define OTP_NS_BASE		0xFF5C0000
+#define OTP_S_BASE		0xFF5D0000
+#define OTP_NVM_TRWH		0x28
 
 enum {
 	GPIO1A7_SHIFT		= 12,
@@ -547,6 +550,10 @@ int arch_cpu_init(void)
 		/* clear flag for reset by wdt trigger */
 		writel(WDT_RESET_SRC_CLR, PMUGRF_RSTFUNC_CLR);
 	}
+
+	/* set otp tRWH to 0x9 for stable read */
+	writel(0x9, OTP_NS_BASE + OTP_NVM_TRWH);
+	writel(0x9, OTP_S_BASE + OTP_NVM_TRWH);
 
 #ifdef CONFIG_SPL_BUILD
 	/*
