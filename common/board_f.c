@@ -689,8 +689,13 @@ static int setup_reloc(void)
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
 
 #ifndef CONFIG_SUPPORT_USBPLUG
-	printf("Relocation Offset: %08lx, fdt: %08lx\n",
+	printf("Relocation Offset: %08lx, fdt: %08lx ",
 	      gd->reloc_off, (ulong)gd->new_fdt);
+  #ifdef CONFIG_USING_KERNEL_DTB
+	if (!fdt_check_header((void *)gd->fdt_blob_kern))
+		printf("kfdt: %08lx", (ulong)gd->fdt_blob_kern);
+  #endif
+	puts("\n");
 #endif
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",
 	      gd->relocaddr, (ulong)map_to_sysmem(gd->new_gd),
