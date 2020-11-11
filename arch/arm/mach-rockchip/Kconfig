@@ -384,6 +384,7 @@ endif
 config ROCKCHIP_RK3568
 	bool "Support Rockchip RK3568"
 	select ARM64
+	select GICV3
 	select SPL
 	select SUPPORT_TPL
 	select SUPPORT_SPL
