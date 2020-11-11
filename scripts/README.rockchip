@@ -51,3 +51,5 @@ Example usage of scripts/tools for Rockchip
 
 		./tools/loaderimage --pack --trustos ./bin/rk32/rk322x_tee_v2.00.bin trust.img 0x80000000  --size 1024 2
 		./tools/loaderimage --unpack --trustos trust.img tee.bin
+	# bmp2gray16
+		./tools/bmp2gray16 --uboot-logo uboot.bmp --charge-logo charging.bmp --lowpower-logo lowpower.bmp --kernel-logo kernel.bmp --output ./logo.img
