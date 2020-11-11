@@ -167,6 +167,7 @@
 };
 
 &sdhci {
+	bus-width = <8>;
 	u-boot,dm-spl;
 	mmc-hs200-1_8v;
 	status = "okay";
