@@ -66,6 +66,19 @@ ${MCU_DIGEST}
 else
 	SIGN_IMAGES="			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
 fi
+
+if [ -f ${srctree}/dts/kern.dtb ]; then
+	KFDT_NODE="		kernel-fdt {
+			description = \"Kernel dtb\";
+			data = /incbin/(\"./dts/kern.dtb\");
+			type = \"flat_dt\";
+			arch = \"${ARCH}\";
+			compression = \"none\";
+			hash {
+				algo = \"sha256\";
+			};
+		};"
+fi
 ########################################################################################################
 
 cat << EOF
@@ -124,6 +137,7 @@ cat << EOF
 			};
 		};
 EOF
+echo "${KFDT_NODE}"
 echo "${MCU_NODE}"
 cat  << EOF
 	};

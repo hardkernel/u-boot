@@ -47,6 +47,22 @@ function generate_uboot_node()
 	echo "		};"
 }
 
+function generate_kfdt_node()
+{
+	if [ -f ${srctree}/dts/kern.dtb ]; then
+	echo "		kernel-fdt {
+			description = \"Kernel dtb\";
+			data = /incbin/(\"./dts/kern.dtb\");
+			type = \"flat_dt\";
+			arch = \"${ARCH}\";
+			compression = \"none\";
+			hash {
+				algo = \"sha256\";
+			};
+		};"
+	fi
+}
+
 function generate_bl31_node()
 {
 	NUM=1
@@ -147,6 +163,7 @@ EOF
 	generate_uboot_node
 	generate_bl31_node
 	generate_bl32_node
+	generate_kfdt_node
 
 cat << EOF
 		fdt {
