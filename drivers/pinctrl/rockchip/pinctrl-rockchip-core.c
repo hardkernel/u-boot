@@ -123,7 +123,7 @@ static int rockchip_get_mux(struct rockchip_pin_bank *bank, int pin)
 
 	if (bank->iomux[iomux_num].type & IOMUX_UNROUTED) {
 		debug("pin %d is unrouted\n", pin);
-		return 0;
+		return -ENOTSUPP;
 	}
 
 	if (bank->iomux[iomux_num].type & IOMUX_GPIO_ONLY)
