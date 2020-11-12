@@ -831,5 +831,5 @@ U_BOOT_CMD(
 U_BOOT_CMD(
 	sysmem_search, 2, 1, do_sysmem_search,
 	"Search a available sysmem region",
-	"search_sysmem <size>"
+	"<size in hex>"
 );
