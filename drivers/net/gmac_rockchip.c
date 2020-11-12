@@ -712,6 +712,23 @@ static void rv1108_gmac_set_to_rmii(struct gmac_rockchip_platdata *pdata)
 		     RV1108_GMAC_PHY_INTF_SEL_RMII);
 }
 #else
+static void rv1126_set_to_rmii(struct gmac_rockchip_platdata *pdata)
+{
+	struct rv1126_grf *grf;
+
+	enum {
+		RV1126_GMAC_PHY_INTF_SEL_SHIFT = 4,
+		RV1126_GMAC_PHY_INTF_SEL_MASK  = GENMASK(6, 4),
+		RV1126_GMAC_PHY_INTF_SEL_RMII = BIT(6),
+	};
+
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+	rk_clrsetreg(&grf->mac_con0,
+		     RV1126_GMAC_PHY_INTF_SEL_MASK,
+		     RV1126_GMAC_PHY_INTF_SEL_RMII);
+}
+
 static void rv1126_set_to_rgmii(struct gmac_rockchip_platdata *pdata)
 {
 	struct rv1126_grf *grf;
@@ -1012,6 +1029,7 @@ const struct rk_gmac_ops rv1126_gmac_ops = {
 
 	.fix_mac_speed = rv1126_set_rgmii_speed,
 	.set_to_rgmii = rv1126_set_to_rgmii,
+	.set_to_rmii = rv1126_set_to_rmii,
 };
 #endif
 
