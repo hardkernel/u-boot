@@ -10,6 +10,7 @@
 
 #include <common.h>
 #include <dm.h>
+#include <dm/of_access.h>
 #include <syscon.h>
 #include <linux/errno.h>
 #include <asm/gpio.h>
@@ -18,9 +19,7 @@
 #include <dm/pinctrl.h>
 #include <dt-bindings/clock/rk3288-cru.h>
 
-enum {
-	ROCKCHIP_GPIOS_PER_BANK		= 32,
-};
+#include "../pinctrl/rockchip/pinctrl-rockchip.h"
 
 #define OFFSET_TO_BIT(bit)	(1UL << (bit))
 
@@ -128,27 +127,49 @@ static int rockchip_gpio_probe(struct udevice *dev)
 {
 	struct gpio_dev_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct rockchip_gpio_priv *priv = dev_get_priv(dev);
-	char *end;
-	int pins_num;
-	int ret;
+	struct rockchip_pinctrl_priv *pctrl_priv;
+	struct rockchip_pin_bank *bank;
+	char *end = NULL;
+	static int gpio;
+	int id = -1, ret;
 
 	priv->regs = dev_read_addr_ptr(dev);
 	ret = uclass_first_device_err(UCLASS_PINCTRL, &priv->pinctrl);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "failed to get pinctrl device %d\n", ret);
 		return ret;
-
-	uc_priv->gpio_count = ROCKCHIP_GPIOS_PER_BANK;
-	end = strrchr(dev->name, '@');
-	priv->bank = trailing_strtoln(dev->name, end);
-	priv->name[0] = 'A' + priv->bank;
-	uc_priv->bank_name = priv->name;
-
-	pins_num = pinctrl_get_pins_count(priv->pinctrl);
-	if (pins_num <= 0) {
-		printf("%s: fail to get pins from pinctrl\n", __func__);
-	} else if ((priv->bank + 1) * ROCKCHIP_GPIOS_PER_BANK >= pins_num) {
-		uc_priv->gpio_count = pins_num - priv->bank * ROCKCHIP_GPIOS_PER_BANK;
 	}
+
+	pctrl_priv = dev_get_priv(priv->pinctrl);
+	if (!pctrl_priv) {
+		dev_err(dev, "failed to get pinctrl priv\n");
+		return -EINVAL;
+	}
+
+	end = strrchr(dev->name, '@');
+	if (end)
+		id = trailing_strtoln(dev->name, end);
+	else
+		dev_read_alias_seq(dev, &id);
+
+	if (id < 0)
+		id = gpio++;
+
+	if (id >= pctrl_priv->ctrl->nr_banks) {
+		dev_err(dev, "bank id invalid\n");
+		return -EINVAL;
+	}
+
+	bank = &pctrl_priv->ctrl->pin_banks[id];
+	if (bank->bank_num != id) {
+		dev_err(dev, "bank id mismatch with pinctrl\n");
+		return -EINVAL;
+	}
+
+	priv->bank = bank->bank_num;
+	uc_priv->gpio_count = bank->nr_pins;
+	uc_priv->gpio_base = bank->pin_base;
+	uc_priv->bank_name = bank->name;
 
 	return 0;
 }
