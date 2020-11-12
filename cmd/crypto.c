@@ -295,7 +295,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #if !defined(CONFIG_ROCKCHIP_RK1808)
 	      CRYPTO_SHA512 |
 #endif
-	      CRYPTO_RSA2048 | CRYPTO_TRNG;
+	      CRYPTO_RSA2048;
 #endif
 	dev = crypto_get_device(cap);
 	if (!dev) {
@@ -386,11 +386,14 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 #endif
 
-	/* TRNG */
-	if (cap & CRYPTO_TRNG) {
+	dev = crypto_get_device(CRYPTO_TRNG);
+	if (dev) {
 		memset(hard_out, 0x00, sizeof(hard_out));
 		crypto_get_trng(dev, hard_out, sizeof(hard_out));
 		dump_hex("TRNG", hard_out, sizeof(hard_out));
+
+	} else {
+		printf("Can't find crypto device for CRYPTO_TRNG\n");
 	}
 
 	return 0;
