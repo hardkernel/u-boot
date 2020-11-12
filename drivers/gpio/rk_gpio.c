@@ -109,11 +109,13 @@ static int rockchip_gpio_get_function(struct udevice *dev, unsigned offset)
 	int ret;
 
 	ret = pinctrl_get_gpio_mux(priv->pinctrl, priv->bank, offset);
-	if (ret)
+	if (ret < 0) {
+		dev_err(dev, "fail to get gpio mux %d\n", ret);
 		return ret;
+	}
 
 	/* If it's not 0, then it is not a GPIO */
-	if (ret)
+	if (ret > 0)
 		return GPIOF_FUNC;
 
 	is_output = READ_REG(&regs->swport_ddr) & OFFSET_TO_BIT(offset);
