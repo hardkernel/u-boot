@@ -87,6 +87,19 @@ typedef u32 paddr_t;
 
 fdt_addr_t crypto_base;
 
+static int hw_check_trng_exist(void)
+{
+	u32 tmp = 0, val = 0;
+
+	tmp = crypto_read(CRYPTO_RNG_SAMPLE_CNT);
+	crypto_write(50, CRYPTO_RNG_SAMPLE_CNT);
+
+	val = crypto_read(CRYPTO_RNG_SAMPLE_CNT);
+	crypto_write(tmp, CRYPTO_RNG_SAMPLE_CNT);
+
+	return val;
+}
+
 static void word2byte(u32 word, u8 *ch, u32 endian)
 {
 	/* 0: Big-Endian 1: Little-Endian */
@@ -383,7 +396,9 @@ static int rk_trng(u8 *trng, u32 len)
 
 static u32 rockchip_crypto_capability(struct udevice *dev)
 {
-	return CRYPTO_MD5 |
+	u32 val = 0;
+
+	val =  CRYPTO_MD5 |
 	       CRYPTO_SHA1 |
 	       CRYPTO_SHA256 |
 #if !defined(CONFIG_ROCKCHIP_RK1808)
@@ -393,8 +408,12 @@ static u32 rockchip_crypto_capability(struct udevice *dev)
 	       CRYPTO_RSA1024 |
 	       CRYPTO_RSA2048 |
 	       CRYPTO_RSA3072 |
-	       CRYPTO_RSA4096 |
-	       CRYPTO_TRNG;
+	       CRYPTO_RSA4096;
+
+	if (hw_check_trng_exist())
+		val |= CRYPTO_TRNG;
+
+	return val;
 }
 
 static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
@@ -670,6 +689,7 @@ static const struct udevice_id rockchip_crypto_ids[] = {
 	{ .compatible = "rockchip,rk1808-crypto" },
 	{ .compatible = "rockchip,rk3308-crypto" },
 	{ .compatible = "rockchip,rv1126-crypto" },
+	{ .compatible = "rockchip,rk3568-crypto" },
 	{ }
 };
 
