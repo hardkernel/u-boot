@@ -324,6 +324,21 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 	ret = fdt_shrink_to_minimum(spl_image->fdt_addr, 8192);
 #endif
 
+	/*
+	 * If need, load kernel FDT right after U-Boot FDT.
+	 *
+	 * kernel FDT is for U-Boot if there is not valid one
+	 * from images, ie: resource.img, boot.img or recovery.img.
+	 */
+	node = fdt_subnode_offset(fit, images, FIT_KERNEL_FDT_PROP);
+	if (node < 0)
+		return ret;
+
+	image_info.load_addr =
+		(ulong)spl_image->fdt_addr + fdt_totalsize(spl_image->fdt_addr);
+	ret = spl_load_fit_image(info, sector, fit, base_offset, node,
+				 &image_info);
+
 	return ret;
 }
 
