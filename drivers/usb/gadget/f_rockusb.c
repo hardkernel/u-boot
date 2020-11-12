@@ -564,6 +564,9 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	    devnum == BLK_MTD_SPI_NAND))
 		buf[0] |= (1 << 6);
 
+#if defined(CONFIG_ROCKCHIP_RK3568)
+	buf[1] = BIT(0);
+#endif
 	/* Set data xfer size */
 	common->residue = len;
 	common->data_size_from_cmnd = len;
