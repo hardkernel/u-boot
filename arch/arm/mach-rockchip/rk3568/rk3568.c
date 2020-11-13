@@ -13,6 +13,12 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PMUGRF_BASE		0xfdc20000
 #define GRF_BASE		0xfdc60000
+#define GRF_GPIO1B_DS_2		0x218
+#define GRF_GPIO1B_DS_3		0x21c
+#define GRF_GPIO1C_DS_0		0x220
+#define GRF_GPIO1C_DS_1		0x224
+#define GRF_GPIO1C_DS_2		0x228
+#define GRF_GPIO1C_DS_3		0x22c
 #define GRF_SOC_CON4		0x510
 #define PMU_BASE_ADDR		0xfdd90000
 #define PMU_NOC_AUTO_CON0	(0x70)
@@ -727,6 +733,13 @@ int arch_cpu_init(void)
 
 	/* Set the emmc to secure */
 	writel(((0x3 << 11) << 16) | (0x0 << 11), SGRF_BASE + SGRF_SOC_CON4);
+	/* set the emmc ds to level 2 */
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_2);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_3);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_0);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_1);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_2);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_3);
 #endif
 
 	return 0;
