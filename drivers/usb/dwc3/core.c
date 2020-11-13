@@ -490,6 +490,16 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	if (ret)
 		goto err0;
 
+	if (dwc->revision >= DWC3_REVISION_250A) {
+		reg = dwc3_readl(dwc->regs, DWC3_GUCTL1);
+
+		if (dwc->maximum_speed == USB_SPEED_HIGH ||
+		    dwc->maximum_speed == USB_SPEED_FULL)
+			reg |= DWC3_GUCTL1_DEV_FORCE_20_CLK_FOR_30_CLK;
+
+		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
+	}
+
 	reg = dwc3_readl(dwc->regs, DWC3_GCTL);
 	reg &= ~DWC3_GCTL_SCALEDOWN_MASK;
 
