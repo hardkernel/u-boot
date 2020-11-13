@@ -20,6 +20,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GRF_GPIO1C_DS_2		0x228
 #define GRF_GPIO1C_DS_3		0x22c
 #define GRF_SOC_CON4		0x510
+#define EDP_PHY_GRF_BASE	0xfdcb0000
+#define EDP_PHY_GRF_CON0	(EDP_PHY_GRF_BASE + 0x00)
+#define EDP_PHY_GRF_CON10	(EDP_PHY_GRF_BASE + 0x28)
 #define PMU_BASE_ADDR		0xfdd90000
 #define PMU_NOC_AUTO_CON0	(0x70)
 #define PMU_NOC_AUTO_CON1	(0x74)
@@ -739,6 +742,10 @@ int arch_cpu_init(void)
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_1);
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_2);
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_3);
+
+	/* Disable eDP phy by default */
+	writel(0x00070007, EDP_PHY_GRF_CON10);
+	writel(0x0ff10ff1, EDP_PHY_GRF_CON0);
 #endif
 
 	return 0;
