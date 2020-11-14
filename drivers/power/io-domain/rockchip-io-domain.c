@@ -619,7 +619,7 @@ static int rockchip_iodomain_probe(struct udevice *dev)
 		supply->iod = priv;
 		supply->reg = reg;
 
-		ret = rockchip_iodomain_write(supply, uV);
+		ret = priv->write(supply, uV);
 		if (ret)
 			supply->reg = NULL;
 	}
