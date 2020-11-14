@@ -42,6 +42,8 @@ static struct gpio_bank gpio_banks[GPIO_BANK_NUM] = {
 #endif
 };
 
+static const char *gpio_alias[GPIO_BANK_NUM];
+
 static int gpio_is_valid(u32 gpio)
 {
 	if ((gpio == EINVAL_GPIO) ||
@@ -80,60 +82,64 @@ static int __hard_gpio_to_irq(u32 gpio)
 
 static int __phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
 {
-	int irq_gpio, bank, ret = EINVAL_GPIO;
-	const char *name;
-	char *name_tok;
-	bool found;
-	int node;
+	const void *blob = gd->fdt_blob;
+	const char *gpio_name;
+	char alias_name[6];
+	int irq, node;
+	int i, bank;
+	bool found = false;
 
-	node = fdt_node_offset_by_phandle(gd->fdt_blob, gpio_phandle);
+	node = fdt_node_offset_by_phandle(blob, gpio_phandle);
 	if (node < 0) {
-		IRQ_E("Can't find node by gpio_phandle=%d, ret=%d\n",
-		      gpio_phandle, node);
+		IRQ_E("No gpio node by phandle(0x%x), ret=%d\n", gpio_phandle, node);
 		return EINVAL_GPIO;
 	}
 
-	name = fdt_get_name(gd->fdt_blob, node, NULL);
-	if (!name) {
-		IRQ_E("Can't find gpio bank for phandle=%d\n", gpio_phandle);
+	gpio_name = fdt_get_name(blob, node, NULL);
+	if (!gpio_name)
 		return EINVAL_GPIO;
-	}
 
-	name_tok = strdup(name);
-	if (!name_tok) {
-		IRQ_E("Strdup '%s' failed!\n", name);
-		return -ENOMEM;
-	}
-
-	name = strtok(name_tok, "@");
-	if (!name) {
-		IRQ_E("Can't strtok '@' for '%s'\n", name_tok);
-		goto out;
-	}
-
-	for (bank = 0; bank < ARRAY_SIZE(gpio_banks); bank++) {
-		if (!strcmp(gpio_banks[bank].name, name)) {
+	for (bank = 0; bank < GPIO_BANK_NUM; bank++) {
+		if (!strstr(gpio_name, gpio_banks[bank].name)) {
 			found = true;
 			break;
 		}
 	}
 
 	if (!found) {
-		IRQ_E("GPIO irq framework can't find '%s'\n", name);
-		goto out;
+		/* initial getting all gpio alias */
+		if (!gpio_alias[0]) {
+			for (i = 0; i < GPIO_BANK_NUM; i++) {
+				snprintf(alias_name, 6, "gpio%d", i);
+				gpio_alias[i] = fdt_get_alias(blob, alias_name);
+				if (!gpio_alias[i]) {
+					IRQ_D("No gpio alias %s\n", alias_name);
+					return EINVAL_GPIO;
+				}
+			}
+		}
+
+		/* match alias ? */
+		for (bank = 0; bank < ARRAY_SIZE(gpio_banks); bank++) {
+			if (!strstr(gpio_alias[bank], gpio_name)) {
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (!found) {
+		IRQ_E("IRQ Framework can't find: %s\n", gpio_name);
+		return EINVAL_GPIO;
 	}
 
 	IRQ_D("%s: gpio%d-%d\n", __func__, bank, offset);
-	irq_gpio = RK_IRQ_GPIO(bank, offset);
-	if (!gpio_is_valid(irq_gpio))
-		goto out;
 
-	free(name_tok);
-	return __hard_gpio_to_irq(irq_gpio);
+	irq = RK_IRQ_GPIO(bank, offset);
+	if (!gpio_is_valid(irq))
+		return EINVAL_GPIO;
 
-out:
-	free(name_tok);
-	return ret;
+	return __hard_gpio_to_irq(irq);
 }
 
 static int __irq_to_gpio(int irq)
