@@ -727,7 +727,7 @@ function pack_fit_image()
 	${SCRIPT_FIT} ${ARG_LIST_FIT}
 
 	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
-		if ! fdtget -l uboot.img /images/atf@1 >/dev/null 2>&1 ; then
+		if ! fdtget -l uboot.img /images/atf-1 >/dev/null 2>&1 ; then
 			echo -e "\nERROR: Invalid uboot.img, please install: \"pip install pyelftools\""
 			echo
 			exit 1
