@@ -15,7 +15,7 @@ obj-tpl-y += tpl.o
 obj-spl-y += spl.o spl-boot-order.o
 
 ifndef CONFIG_TPL_BUILD
-obj-y += weak.o
+obj-$(CONFIG_$(SPL_)FIT) += fit_misc.o
 endif
 
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
