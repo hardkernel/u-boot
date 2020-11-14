@@ -53,12 +53,12 @@ function generate_bl31_node()
 	for NAME in `ls -l bl31_0x*.bin | sort --key=5 -nr | awk '{ print $9 }'`
 	do
 		ATF_LOAD_ADDR=`echo ${NAME} | awk -F "_" '{ printf $2 }' | awk -F "." '{ printf $1 }'`
-		# only atf@1 support compress
+		# only atf-1 support compress
 		if [ "${COMPRESSION}" == "gzip" -a ${NUM} -eq 1  ]; then
 			openssl dgst -sha256 -binary -out ${NAME}.digest ${NAME}
 			gzip -k -f -9 ${NAME}
 
-			echo "		atf@${NUM} {
+			echo "		atf-${NUM} {
 			description = \"ARM Trusted Firmware\";
 			data = /incbin/(\"./${NAME}${SUFFIX}\");
 			type = \"firmware\";
@@ -75,7 +75,7 @@ function generate_bl31_node()
 			};
 		};"
 		else
-			echo "		atf@${NUM} {
+			echo "		atf-${NUM} {
 			description = \"ARM Trusted Firmware\";
 			data = /incbin/(\"./${NAME}\");
 			type = \"firmware\";
@@ -90,7 +90,7 @@ function generate_bl31_node()
 		fi
 
 		if [ ${NUM} -gt 1 ]; then
-			LOADABLE_ATF=${LOADABLE_ATF}", \"atf@${NUM}\""
+			LOADABLE_ATF=${LOADABLE_ATF}", \"atf-${NUM}\""
 		fi
 		NUM=`expr ${NUM} + 1`
 	done
@@ -166,7 +166,7 @@ cat << EOF
 		conf {
 			description = "Rockchip armv8 with ATF";
 			rollback-index = <0x0>;
-			firmware = "atf@1";
+			firmware = "atf-1";
 			loadables = "uboot"${LOADABLE_ATF}${LOADABLE_OPTEE};
 			fdt = "fdt";
 			signature {
