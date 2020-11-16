@@ -1935,7 +1935,7 @@ static int rv1126_gmac_src_m0_set_parent(struct clk *clk, struct clk *parent)
 		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M0_SEL_MASK,
 			     GMAC_SRC_M0_SEL_INT << GMAC_SRC_M0_SEL_SHIFT);
 	else
-		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_SEL_MASK,
+		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M0_SEL_MASK,
 			     GMAC_SRC_M0_SEL_EXT << GMAC_SRC_M0_SEL_SHIFT);
 
 	return 0;
@@ -1947,10 +1947,10 @@ static int rv1126_gmac_src_m1_set_parent(struct clk *clk, struct clk *parent)
 	struct rv1126_cru *cru = priv->cru;
 
 	if (parent->id == CLK_GMAC_DIV)
-		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M0_SEL_MASK,
+		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M1_SEL_MASK,
 			     GMAC_SRC_M1_SEL_INT << GMAC_SRC_M1_SEL_SHIFT);
 	else
-		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_SEL_MASK,
+		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M1_SEL_MASK,
 			     GMAC_SRC_M1_SEL_EXT << GMAC_SRC_M1_SEL_SHIFT);
 
 	return 0;
