@@ -57,7 +57,7 @@ static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
 	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
 	RK3036_PLL_RATE(408000000, 1, 68, 2, 2, 1, 0),
-	RK3036_PLL_RATE(200000000, 1, 200, 6, 4, 1, 0),
+	RK3036_PLL_RATE(200000000, 1, 100, 6, 2, 1, 0),
 	RK3036_PLL_RATE(100000000, 1, 150, 6, 6, 1, 0),
 	{ /* sentinel */ },
 };
@@ -418,10 +418,14 @@ static ulong rk3568_pmuclk_set_rate(struct clk *clk, ulong rate)
 	case PLL_PPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[PPLL],
 					    priv->pmucru, PPLL, rate);
+		priv->ppll_hz = rockchip_pll_get_rate(&rk3568_pll_clks[PPLL],
+						      priv->pmucru, PPLL);
 		break;
 	case PLL_HPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[HPLL],
 					    priv->pmucru, HPLL, rate);
+		priv->hpll_hz = rockchip_pll_get_rate(&rk3568_pll_clks[HPLL],
+						      priv->pmucru, HPLL);
 		break;
 	case CLK_RTC_32K:
 	case CLK_RTC32K_FRAC:
