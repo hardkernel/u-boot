@@ -702,6 +702,7 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	/* set the scr1 addr */
 	writel(entry_point, SGRF_BASE + SGRF_CON_SCR1_BOOT_ADDR);
 	writel(0x00ff00bf, SGRF_BASE + SGRF_SOC_CON3);
+	udelay(10);
 	/* release the scr1 */
 	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON02);
 
