@@ -26,9 +26,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_BASE		0xfdd20000
 #define CRU_SOFTRST_CON26	0x468
 #define SGRF_BASE		0xFDD18000
+#define SGRF_SOC_CON3		0xc
 #define SGRF_SOC_CON4		0x10
-#define GRF_FIREWALL_SLV_CON0	0x240
-#define GRF_FIREWALL_SLV_CON7	0x25c
 
 enum {
 	/* PMU_GRF_GPIO0C_IOMUX_L */
@@ -752,9 +751,9 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON26);
 	udelay(100);
 	/* set the scr1 addr */
-	writel(entry_point >> 16, GRF_BASE + GRF_SOC_CON4);
-	writel(0x1 << (16 + 15), SGRF_BASE + GRF_FIREWALL_SLV_CON0);
-	writel(0x3 << (16 + 1), SGRF_BASE + GRF_FIREWALL_SLV_CON7);
+	writel((0xffff0000) | (entry_point >> 16), GRF_BASE + GRF_SOC_CON4);
+	writel(0x20 << 16, SGRF_BASE + SGRF_SOC_CON3);
+	udelay(10);
 	/* release the scr1 */
 	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON26);
 
