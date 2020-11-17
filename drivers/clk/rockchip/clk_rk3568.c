@@ -2525,6 +2525,12 @@ static void rk3568_clk_init(struct rk3568_clk_priv *priv)
 			priv->gpll_hz = GPLL_HZ;
 	}
 
+#ifdef CONFIG_SPL_BUILD
+	ret = rk3568_bus_set_clk(priv, ACLK_BUS, 150000000);
+	if (ret)
+		printf("Fail to set the ACLK_BUS clock.\n");
+#endif
+
 	priv->ppll_hz = rk3568_pmu_pll_get_rate(priv, PPLL);
 	priv->hpll_hz = rk3568_pmu_pll_get_rate(priv, HPLL);
 }
