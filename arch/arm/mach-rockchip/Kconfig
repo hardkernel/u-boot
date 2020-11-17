@@ -227,6 +227,22 @@ config ROCKCHIP_RK3308
 	  The Rockchip RK3308 is a ARM-based Soc which embeded with quad
 	  Cortex-A35 and highly integrated audio interfaces.
 
+if ROCKCHIP_RK3308
+
+config TPL_LDSCRIPT
+	default "arch/arm/mach-rockchip/u-boot-tpl-v8.lds"
+
+config TPL_TEXT_BASE
+	default 0xfff81000
+
+config TPL_MAX_SIZE
+	default 12288
+
+config TPL_STACK
+	default 0xfff84000
+
+endif
+
 config ROCKCHIP_RK3328
 	bool "Support Rockchip RK3328"
 	select ARM64
@@ -535,6 +551,7 @@ config ROCKCHIP_STIMER_BASE
 	default 0x2000e000 if ROCKCHIP_RK3188
 	default 0x110d0020 if ROCKCHIP_RK322X
 	default 0xff810020 if ROCKCHIP_RK3288
+	default 0xff1b00a0 if ROCKCHIP_RK3308
 	default 0xff1d0020 if ROCKCHIP_RK3328
 	default 0xff830020 if ROCKCHIP_RK3368
 	default 0xff8680a0 if ROCKCHIP_RK3399
