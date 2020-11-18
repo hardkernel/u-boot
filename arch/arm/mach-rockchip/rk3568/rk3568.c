@@ -29,7 +29,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_BASE		0xfdd20000
 #define CRU_SOFTRST_CON26	0x468
 #define SGRF_BASE		0xFDD18000
-#define SGRF_SOC_CON3		0xc
 #define SGRF_SOC_CON4		0x10
 
 enum {
@@ -759,7 +758,6 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	udelay(100);
 	/* set the scr1 addr */
 	writel((0xffff0000) | (entry_point >> 16), GRF_BASE + GRF_SOC_CON4);
-	writel(0x20 << 16, SGRF_BASE + SGRF_SOC_CON3);
 	udelay(10);
 	/* release the scr1 */
 	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON26);
