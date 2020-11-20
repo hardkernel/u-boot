@@ -244,7 +244,7 @@ static int rkfw_load_trust(struct spl_load_info *info, u32 image_sector,
 	}
 
 	if (i == try_count) {
-		printf("Can not find usable uboot\n");
+		printf("Can not find usable trust\n");
 		return -ENONET;
 	}
 
