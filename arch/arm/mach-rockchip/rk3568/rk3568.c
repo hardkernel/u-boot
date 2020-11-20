@@ -31,6 +31,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SGRF_BASE		0xFDD18000
 #define SGRF_SOC_CON4		0x10
 
+#define CPU_GRF_BASE		0xfdc30000
+#define GRF_CORE_PVTPLL_CON0	(0x10)
+
 enum {
 	/* PMU_GRF_GPIO0C_IOMUX_L */
 	GPIO0C1_SHIFT		= 4,
@@ -745,6 +748,9 @@ int arch_cpu_init(void)
 	/* Disable eDP phy by default */
 	writel(0x00070007, EDP_PHY_GRF_CON10);
 	writel(0x0ff10ff1, EDP_PHY_GRF_CON0);
+
+	/* Set core pvtpll ring length */
+	writel(0x00ff002b, CPU_GRF_BASE + GRF_CORE_PVTPLL_CON0);
 #endif
 
 	return 0;
