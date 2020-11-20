@@ -12,42 +12,62 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/*
- * Generally, we have 3 ways to get reboot mode:
- *
- * 1. from bootloader_message which is defined in MISC partition;
- * 2. from CONFIG_ROCKCHIP_BOOT_MODE_REG which supports "reboot xxx" commands;
- * 3. from env "reboot_mode" which is added by U-Boot code(currently only when
- *    recovery key pressed);
- *
- * 1st and 2nd cases are static determined at system start and we check it once,
- * while 3th case is dynamically added by U-Boot code, so we have to check it
- * everytime.
- *
- * Recovery mode from:
- *	- MISC partition;
- *	- "reboot recovery" command;
- *	- recovery key pressed without usb attach;
- */
-
 enum {
 	PH = 0,	/* P: Priority, H: high, M: middle, L: low*/
 	PM,
 	PL,
 };
 
+static int misc_require_recovery(u32 bcb_offset)
+{
+	struct bootloader_message *bmsg;
+	struct blk_desc *dev_desc;
+	disk_partition_t part;
+	int cnt, recovery = 0;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("dev_desc is NULL!\n");
+		goto out;
+	}
+
+	if (part_get_info_by_name(dev_desc, PART_MISC, &part) < 0) {
+		printf("No misc partition\n");
+		goto out;
+	}
+
+	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
+	bmsg = memalign(ARCH_DMA_MINALIGN, cnt * dev_desc->blksz);
+	if (blk_dread(dev_desc, part.start + bcb_offset, cnt, bmsg) != cnt)
+		recovery = 0;
+	else
+		recovery = !strcmp(bmsg->command, "boot-recovery");
+
+	free(bmsg);
+out:
+	return recovery;
+}
+
+/*
+ * There are three ways to get reboot-mode:
+ *
+ * No1. Android BCB which is defined in misc.img (0KB or 16KB offset)
+ * No2. CONFIG_ROCKCHIP_BOOT_MODE_REG that supports "reboot xxx" commands
+ * No3. Env variable "reboot_mode" which is added by U-Boot
+ *
+ * Recovery mode from:
+ *	- Android BCB in misc.img
+ *	- "reboot recovery" command
+ *	- recovery key pressed without usb attach
+ */
 int rockchip_get_boot_mode(void)
 {
-	struct bootloader_message *bmsg = NULL;
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
-	uint32_t reg_boot_mode;
-	char *env_reboot_mode;
 	static int boot_mode[] =		/* static */
 		{ -EINVAL, -EINVAL, -EINVAL };
 	static int bcb_offset = -EINVAL;	/* static */
+	uint32_t reg_boot_mode;
+	char *env_reboot_mode;
 	int clear_boot_reg = 0;
-	int ret, cnt;
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	u32 offset = android_bcb_msg_sector_offset();
 #else
@@ -55,9 +75,7 @@ int rockchip_get_boot_mode(void)
 #endif
 
 	/*
-	 * Here, we mainly check for:
-	 * In rockusb_download(), that recovery key is pressed without
-	 * USB attach will do env_set("reboot_mode", "recovery");
+	 * Env variable "reboot_mode" which is added by U-Boot, reading ever time.
 	 */
 	env_reboot_mode = env_get("reboot_mode");
 	if (env_reboot_mode) {
@@ -77,23 +95,20 @@ int rockchip_get_boot_mode(void)
 	}
 
 	/*
-	 * Special handle:
-	 *    Once the BCB offset changes, reinitalize "boot_mode".
+	 * Android BCB special handle:
+	 *    Once the Android BCB offset changed, reinitalize "boot_mode[PM]".
 	 *
 	 * Background:
-	 *    1. there are two Android BCB at the 0x00 and 0x20 offset in
-	 *       misc.img to compatible legacy(0x20) SDK.
-	 *    2. android_bcb_msg_sector_offset() is for android image:
-	 *       return 0x20 if image version < 10, otherwise 0x00.
-	 *    3. If not android image, BCB at 0x20 is the valid one.
+	 *    1. there are two Android BCB at the 0KB(google) and 16KB(rk)
+	 *       offset in misc.img
+	 *    2. Android image: return 0KB offset if image version >= 10,
+	 *	 otherwise 16KB
+	 *    3. Not Android image: return 16KB offset, eg: FIT image.
 	 *
-	 * U-Boot can support booting both FIT & Android image, if FIT
-	 * boot flow enters here early than Android, the "boot_mode" is
-	 * set as BOOT_MODE_RECOVERY according to BCB at 0x20 offset.
-	 * After that, this function always return static variable "boot_mode"
-	 * as BOOT_MODE_RECOVERY even android(>=10) boot flow enter here.
+	 * To handle the cases of 16KB and 0KB, we reinitial boot_mode[PM] once
+	 * Android BCB is changed.
 	 *
-	 * PH and PL is from boot mode register, reading once.
+	 * PH and PL is from boot mode register and reading once.
 	 * PM is from misc.img and should be updated if BCB offset is changed.
 	 * Return the boot mode according to priority: PH > PM > PL.
 	 */
@@ -110,32 +125,10 @@ int rockchip_get_boot_mode(void)
 	else if (boot_mode[PL] != -EINVAL)
 		return boot_mode[PL];
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("dev_desc is NULL!\n");
-		return -ENODEV;
-	}
-
-	ret = part_get_info_by_name(dev_desc, PART_MISC, &part_info);
-	if (ret < 0) {
-		printf("No misc partition\n");
-		goto fallback;
-	}
-
-	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
-	bmsg = memalign(ARCH_DMA_MINALIGN, cnt * dev_desc->blksz);
-	ret = blk_dread(dev_desc, part_info.start + bcb_offset, cnt, bmsg);
-	if (ret != cnt) {
-		free(bmsg);
-		return -EIO;
-	}
-
-fallback:
 	/*
 	 * Boot mode priority
 	 *
 	 * Anyway, we should set download boot mode as the highest priority, so:
-	 *
 	 * reboot loader/bootloader/fastboot > misc partition "recovery" > reboot xxx.
 	 */
 	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
@@ -147,7 +140,7 @@ fallback:
 		printf("boot mode: bootloader\n");
 		boot_mode[PH] = BOOT_MODE_BOOTLOADER;
 		clear_boot_reg = 1;
-	} else if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
+	} else if (misc_require_recovery(bcb_offset)) {
 		printf("boot mode: recovery (misc)\n");
 		boot_mode[PM] = BOOT_MODE_RECOVERY;
 	} else {
