@@ -36,13 +36,13 @@ hostprogs-$(CONFIG_VIDEO_LOGO) += bmp_logo
 HOSTCFLAGS_bmp_logo.o := -pedantic
 
 hostprogs-$(CONFIG_BUILD_ENVCRC) += envcrc
-envcrc-objs := envcrc.o lib/crc32.o env/embedded.o lib/sha1.o
+envcrc-objs := envcrc.o ../lib/crc32.o env/embedded.o ../lib/sha1.o
 
 hostprogs-$(CONFIG_CMD_NET) += gen_eth_addr
 HOSTCFLAGS_gen_eth_addr.o := -pedantic
 
 hostprogs-$(CONFIG_CMD_NET) += gen_ethaddr_crc
-gen_ethaddr_crc-objs := gen_ethaddr_crc.o lib/crc8.o
+gen_ethaddr_crc-objs := gen_ethaddr_crc.o ../lib/crc8.o
 HOSTCFLAGS_gen_ethaddr_crc.o := -pedantic
 
 hostprogs-$(CONFIG_CMD_LOADS) += img2srec
@@ -52,7 +52,7 @@ hostprogs-$(CONFIG_XWAY_SWAP_BYTES) += xway-swap-bytes
 HOSTCFLAGS_xway-swap-bytes.o := -pedantic
 
 hostprogs-y += mkenvimage
-mkenvimage-objs := mkenvimage.o os_support.o lib/crc32.o
+mkenvimage-objs := mkenvimage.o os_support.o ../lib/crc32.o
 
 hostprogs-y += dumpimage mkimage
 hostprogs-$(CONFIG_FIT_SIGNATURE) += fit_info fit_check_sign
@@ -65,50 +65,50 @@ hostprogs-y += loaderimage
 hostprogs-y += resource_tool
 hostprogs-y += checksum
 
-boot_merger-objs := rockchip/boot_merger.o rockchip/sha2.o lib/sha256.o
-trust_merger-objs := rockchip/trust_merger.o rockchip/sha2.o lib/sha256.o
-loaderimage-objs := rockchip/loaderimage.o rockchip/sha.o lib/sha256.o rockchip/crc32_rk.o
+boot_merger-objs := rockchip/boot_merger.o rockchip/sha2.o ../lib/sha256.o
+trust_merger-objs := rockchip/trust_merger.o rockchip/sha2.o ../lib/sha256.o
+loaderimage-objs := rockchip/loaderimage.o rockchip/sha.o ../lib/sha256.o rockchip/crc32_rk.o
 resource_tool-objs := rockchip/resource_tool.o
 checksum-objs := rockchip/checksum.o rockchip/crc32_rk.o
 endif
 
-FIT_SIG_OBJS-$(CONFIG_FIT_SIGNATURE) := common/image-sig.o
+FIT_SIG_OBJS-$(CONFIG_FIT_SIGNATURE) := ../common/image-sig.o
 
 # The following files are synced with upstream DTC.
 # Use synced versions from scripts/dtc/libfdt/.
 LIBFDT_SRCS_SYNCED := fdt.c fdt_wip.c fdt_sw.c fdt_rw.c \
 		fdt_strerror.c fdt_empty_tree.c fdt_addresses.c fdt_overlay.c
 # The following files are locally modified for U-Boot (unfotunately).
-# Use U-Boot own versions from lib/libfdt/.
+# Use U-Boot own versions from ../lib/libfdt/.
 LIBFDT_SRCS_UNSYNCED := fdt_ro.c fdt_region.c
 
 LIBFDT_OBJS := $(addprefix libfdt/, $(patsubst %.c, %.o, $(LIBFDT_SRCS_SYNCED))) \
-	       $(addprefix lib/libfdt/, $(patsubst %.c, %.o, $(LIBFDT_SRCS_UNSYNCED)))
+	       $(addprefix ../lib/libfdt/, $(patsubst %.c, %.o, $(LIBFDT_SRCS_UNSYNCED)))
 
-RSA_OBJS-$(CONFIG_FIT_SIGNATURE) := $(addprefix lib/rsa/, \
+RSA_OBJS-$(CONFIG_FIT_SIGNATURE) := $(addprefix ../lib/rsa/, \
 					rsa-sign.o rsa-verify.o rsa-checksum.o \
 					rsa-mod-exp.o)
 
-ROCKCHIP_OBS = lib/rc4.o rkcommon.o rkimage.o rknand.o rksd.o rkspi.o
+ROCKCHIP_OBS = ../lib/rc4.o rkcommon.o rkimage.o rknand.o rksd.o rkspi.o
 
 # common objs for dumpimage and mkimage
 dumpimage-mkimage-objs := aisimage.o \
 			atmelimage.o \
 			$(FIT_SIG_OBJS-y) \
-			common/bootm.o \
-			lib/crc32.o \
+			../common/bootm.o \
+			../lib/crc32.o \
 			default_image.o \
-			lib/fdtdec_common.o \
-			lib/fdtdec.o \
+			../lib/fdtdec_common.o \
+			../lib/fdtdec.o \
 			fit_common.o \
 			fit_image.o \
-			common/image-fit.o \
+			../common/image-fit.o \
 			image-host.o \
-			common/image.o \
+			../common/image.o \
 			imagetool.o \
 			imximage.o \
 			kwbimage.o \
-			lib/md5.o \
+			../lib/md5.o \
 			lpc32xximage.o \
 			mxsimage.o \
 			omapimage.o \
@@ -118,9 +118,9 @@ dumpimage-mkimage-objs := aisimage.o \
 			vybridimage.o \
 			$(ROCKCHIP_OBS) \
 			socfpgaimage.o \
-			lib/sha1.o \
-			lib/sha256.o \
-			common/hash.o \
+			../lib/sha1.o \
+			../lib/sha256.o \
+			../common/hash.o \
 			ublimage.o \
 			zynqimage.o \
 			zynqmpimage.o \
@@ -187,12 +187,12 @@ HOSTCFLAGS_mxsboot.o := -pedantic
 
 hostprogs-$(CONFIG_ARCH_SUNXI) += mksunxiboot
 hostprogs-$(CONFIG_ARCH_SUNXI) += sunxi-spl-image-builder
-sunxi-spl-image-builder-objs := sunxi-spl-image-builder.o lib/bch.o
+sunxi-spl-image-builder-objs := sunxi-spl-image-builder.o ../lib/bch.o
 
 hostprogs-$(CONFIG_NETCONSOLE) += ncb
 hostprogs-$(CONFIG_SHA1_CHECK_UB_IMG) += ubsha1
 
-ubsha1-objs := os_support.o ubsha1.o lib/sha1.o
+ubsha1-objs := os_support.o ubsha1.o ../lib/sha1.o
 
 HOSTCFLAGS_ubsha1.o := -pedantic
 
