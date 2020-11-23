@@ -159,6 +159,6 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 	return ret;
 }
 
-SPL_LOAD_IMAGE_METHOD("MTD1", 0, BOOT_DEVICE_MTD_BLK_NAND, spl_mtd_load_image);
-SPL_LOAD_IMAGE_METHOD("MTD2", 0, BOOT_DEVICE_MTD_BLK_SPI_NAND, spl_mtd_load_image);
-SPL_LOAD_IMAGE_METHOD("MTD3", 0, BOOT_DEVICE_MTD_BLK_SPI_NOR, spl_mtd_load_image);
+SPL_LOAD_IMAGE_METHOD("MTD0", 0, BOOT_DEVICE_MTD_BLK_NAND, spl_mtd_load_image);
+SPL_LOAD_IMAGE_METHOD("MTD1", 0, BOOT_DEVICE_MTD_BLK_SPI_NAND, spl_mtd_load_image);
+SPL_LOAD_IMAGE_METHOD("MTD2", 0, BOOT_DEVICE_MTD_BLK_SPI_NOR, spl_mtd_load_image);
