@@ -233,7 +233,7 @@ static int rk_hash_direct_calc(void *hw_data, const u8 *data,
 	struct rk_hash_ctx *hash_ctx = priv->hw_ctx;
 	struct crypto_lli_desc *lli = &hash_ctx->data_lli;
 	int ret = -EINVAL;
-	u32 tmp = 0;
+	u32 tmp = 0, mask = 0;
 
 	assert(IS_ALIGNED((ulong)data, DATA_ADDR_ALIGIN_SIZE));
 	assert(is_last || IS_ALIGNED(data_len, DATA_LEN_ALIGIN_SIZE));
@@ -274,8 +274,11 @@ static int rk_hash_direct_calc(void *hw_data, const u8 *data,
 	crypto_write(tmp << CRYPTO_WRITE_MASK_SHIFT | tmp,
 		     CRYPTO_DMA_CTL);
 
+	/* mask CRYPTO_SYNC_LOCKSTEP_INT_ST flag */
+	mask = ~(mask | CRYPTO_SYNC_LOCKSTEP_INT_ST);
+
 	/* wait calc ok */
-	RK_WHILE_TIME_OUT(!crypto_read(CRYPTO_DMA_INT_ST),
+	RK_WHILE_TIME_OUT(!(crypto_read(CRYPTO_DMA_INT_ST) & mask),
 			  RK_CRYPTO_TIME_OUT, ret);
 
 	/* clear interrupt status */

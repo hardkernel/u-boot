@@ -81,6 +81,8 @@ enum rk_hash_algo {
 
 /* Crypto DMA control registers*/
 #define	CRYPTO_DMA_INT_EN		0x0008
+#define	CRYPTO_NOSYNC_LOCKSTEP_INT_EN	_BIT(8)
+#define	CRYPTO_SYNC_LOCKSTEP_INT_EN	_BIT(7)
 #define	CRYPTO_ZERO_ERR_INT_EN		_BIT(6)
 #define	CRYPTO_LIST_ERR_INT_EN		_BIT(5)
 #define	CRYPTO_SRC_ERR_INT_EN		_BIT(4)
@@ -90,6 +92,7 @@ enum rk_hash_algo {
 #define	CRYPTO_LIST_DONE_INT_EN		_BIT(0)
 
 #define	CRYPTO_DMA_INT_ST		0x000C
+#define	CRYPTO_SYNC_LOCKSTEP_INT_ST	_BIT(7)
 #define	CRYPTO_ZERO_LEN_INT_ST		_BIT(6)
 #define	CRYPTO_LIST_ERR_INT_ST		_BIT(5)
 #define	CRYPTO_SRC_ERR_INT_ST		_BIT(4)
