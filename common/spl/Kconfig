@@ -858,6 +858,7 @@ config SPL_KERNEL_BOOT
 config SPL_KERNEL_BOOT_SECTOR
 	hex "Sector address to load kernel in SPL"
 	depends on SPL_KERNEL_BOOT
+	depends on !SPL_LIBDISK_SUPPORT
 	default 0xa000
 
 if SPL_LOAD_RKFW
