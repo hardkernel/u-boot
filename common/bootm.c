@@ -348,42 +348,24 @@ static int get_fdto_totalsize(u32 *tz)
 extern int get_boot_device(void);
 static int bootm_add_ignore_mpt_to_fdt(void *fdth)
 {
-	char *pathp = NULL;
-	int nodeoffset;
-	int ret;
 	bool is_emmc_boot = false;
 	const char * mmc_dev = getenv("mmc_dev");
+	const char * dev_type = getenv("devtype");
+	char boot_device[7];
 
 	if (mmc_dev == NULL)
 		is_emmc_boot = get_boot_device() == 1;
 	else
 		is_emmc_boot = simple_strtol(mmc_dev, NULL, 10) == 0;
 
-	if (is_emmc_boot) { // emmc boot
-		pathp = "/sd/sd";
-	} else { // sd boot
-		pathp = "/emmc/emmc";
+	memset(boot_device, 0x00, sizeof(boot_device));
+	if (!strncmp(dev_type, "mmc", sizeof("mmc"))) {
+		sprintf(boot_device, "%s%c", "mmcblk", is_emmc_boot? '0':'1');
+	} else {
+		sprintf(boot_device, "%s%c", "sd", is_emmc_boot ? 'a': 'b');
 	}
 
-	nodeoffset = fdt_path_offset (fdth, pathp);
-
-	if (nodeoffset < 0) {
-		printf("libfdt fdt_path_offset() returned %s\n",
-				fdt_strerror(nodeoffset));
-		return 1;
-	}
-
-	ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
-
-	if (ret == -FDT_ERR_NOSPACE) {
-		fdt_shrink_to_minimum(fdth, 0);
-		ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
-	}
-
-	if (ret < 0) {
-		printf("libfdt fdt_setprop(): %s\n", fdt_strerror(ret));
-		return 1;
-	}
+	setenv("boot_device", boot_device);
 
 	return 0;
 }

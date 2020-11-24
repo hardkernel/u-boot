@@ -179,8 +179,7 @@
             "if test ${reboot_mode} = factory_reset; then " \
                 "run boot_recovery;" \
             "else if test ${reboot_mode} = selfinstall; then " \
-                "oem fdisk;" \
-                "run boot_recovery;" \
+                "run boot_default;" \
             "else if test ${reboot_mode} = cold_boot; then " \
                 /*"run try_auto_burn; "*/ \
             "else if test ${reboot_mode} = fastboot; then " \
