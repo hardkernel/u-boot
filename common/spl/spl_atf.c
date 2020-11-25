@@ -119,7 +119,7 @@ void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
 
 static int spl_fit_images_find(void *blob, int os)
 {
-	int parent, node, ndepth;
+	int parent, node;
 	const void *data;
 
 	if (!blob)
@@ -129,19 +129,14 @@ static int spl_fit_images_find(void *blob, int os)
 	if (parent < 0)
 		return -FDT_ERR_NOTFOUND;
 
-	for (node = fdt_next_node(blob, parent, &ndepth);
-	     (node >= 0) && (ndepth > 0);
-	     node = fdt_next_node(blob, node, &ndepth)) {
-		if (ndepth != 1)
-			continue;
-
+	fdt_for_each_subnode(node, blob, parent) {
 		data = fdt_getprop(blob, node, FIT_OS_PROP, NULL);
 		if (!data)
 			continue;
 
 		if (genimg_get_os_id(data) == os)
 			return node;
-	};
+	}
 
 	return -FDT_ERR_NOTFOUND;
 }
