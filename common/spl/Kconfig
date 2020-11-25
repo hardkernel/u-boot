@@ -658,6 +658,23 @@ config SPL_SPI_FLASH_SUPPORT
 	  lines). This enables the drivers in drivers/mtd/spi as part of an
 	  SPL build. This normally requires SPL_SPI_SUPPORT.
 
+config SPL_RKNAND_SUPPORT
+	bool "Rockchip NAND FLASH device support"
+	depends on BLK
+	select RKNAND
+	select ZFTL if (ROCKCHIP_PX30 || ROCKCHIP_RK3568)
+	help
+	  This option enables support for Rockchip NAND FLASH devices.
+	  It supports block interface(with rk ftl) to read and write NAND FLASH.
+
+config RKNAND_BLK_U_BOOT_OFFS
+	hex "Location in RKNAND block to read U-Boot from"
+	default 0x4000
+	depends on SPL_RKNAND_SUPPORT
+	help
+	  Set the offset from the start of the rknand device where
+	  u-boot should be loaded from.
+
 if SPL_SPI_FLASH_SUPPORT
 
 config SPL_SPI_FLASH_TINY

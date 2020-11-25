@@ -40,6 +40,7 @@ obj-$(CONFIG_$(SPL_TPL_)UBI) += spl_ubi.o
 obj-$(CONFIG_$(SPL_TPL_)NET_SUPPORT) += spl_net.o
 obj-$(CONFIG_$(SPL_TPL_)MMC_SUPPORT) += spl_mmc.o
 obj-$(CONFIG_$(SPL_TPL_)MTD_SUPPORT) += spl_mtd_blk.o
+obj-$(CONFIG_$(SPL_TPL_)RKNAND_SUPPORT) += spl_rknand.o
 obj-$(CONFIG_$(SPL_TPL_)ATF) += spl_atf.o
 obj-$(CONFIG_$(SPL_TPL_)OPTEE) += spl_optee.o
 obj-$(CONFIG_$(SPL_TPL_)LOAD_RKFW) += spl_rkfw.o
