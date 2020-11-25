@@ -191,9 +191,11 @@ static int rockchip_nand_probe(struct udevice *udev)
 		ndev->read = ftl_read;
 		ndev->write = ftl_write;
 		ndev->erase = ftl_discard;
+#ifndef CONFIG_SPL_BUILD
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 		flash_vendor_dev_ops_register(rkftl_nand_vendor_read,
 					      rkftl_nand_vendor_write);
+#endif
 #endif
 	}
 
@@ -202,10 +204,8 @@ static int rockchip_nand_probe(struct udevice *udev)
 
 static const struct blk_ops rknand_blk_ops = {
 	.read	= rknand_bread,
-#ifndef CONFIG_SPL_BUILD
 	.write	= rknand_bwrite,
 	.erase	= rknand_berase,
-#endif
 };
 
 static const struct udevice_id rockchip_nand_ids[] = {

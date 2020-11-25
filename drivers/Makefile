@@ -59,7 +59,7 @@ obj-$(CONFIG_SPL_USB_HOST_SUPPORT) += block/
 obj-$(CONFIG_SPL_MMC_SUPPORT) += block/
 obj-$(CONFIG_SPL_MTD_SUPPORT) += block/
 obj-$(CONFIG_SPL_FPGA_SUPPORT) += fpga/
-
+obj-$(CONFIG_SPL_RKNAND_SUPPORT) += rknand/
 endif
 endif
 
