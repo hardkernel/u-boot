@@ -552,11 +552,11 @@ int arch_cpu_init(void)
 		writel(WDT_RESET_SRC_CLR, PMUGRF_RSTFUNC_CLR);
 	}
 
+#ifdef CONFIG_SPL_BUILD
 	/* set otp tRWH to 0x9 for stable read */
 	writel(0x9, OTP_NS_BASE + OTP_NVM_TRWH);
 	writel(0x9, OTP_S_BASE + OTP_NVM_TRWH);
 
-#ifdef CONFIG_SPL_BUILD
 	/*
 	 * Just set region 0 to unsecure.
 	 * (Note: only secure-world can access this register)
