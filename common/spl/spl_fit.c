@@ -725,6 +725,11 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 			continue;
 
 		if (os_type == IH_OS_U_BOOT) {
+#if CONFIG_IS_ENABLED(ATF)
+			spl_image->entry_point_bl33 = image_info.load_addr;
+#elif CONFIG_IS_ENABLED(OPTEE)
+			spl_image->entry_point_os = image_info.load_addr;
+#endif
 			spl_fit_append_fdt(&image_info, info, sector,
 					   fit, images, base_offset);
 			spl_image->fdt_addr = image_info.fdt_addr;
