@@ -19,9 +19,9 @@
 #define CONFIG_SYS_MALLOC_LEN		(32 << 20)
 #define CONFIG_SYS_CBSIZE		1024
 #define CONFIG_SKIP_LOWLEVEL_INIT
-#define CONFIG_SYS_TEXT_BASE		0x00600000
-#define CONFIG_SYS_INIT_SP_ADDR		0x00800000
-#define CONFIG_SYS_LOAD_ADDR		0x00800800
+#define CONFIG_SYS_TEXT_BASE		0x00a00000
+#define CONFIG_SYS_INIT_SP_ADDR		0x00c00000
+#define CONFIG_SYS_LOAD_ADDR		0x00c00800
 #define CONFIG_SYS_BOOTM_LEN		(64 << 20)	/* 64M */
 #define COUNTER_FREQUENCY		24000000
 
@@ -51,11 +51,11 @@
 #define CONFIG_ROCKUSB_G_DNL_PID	0x350a
 
 #define ENV_MEM_LAYOUT_SETTINGS \
-	"scriptaddr=0x00500000\0" \
-	"pxefile_addr_r=0x00600000\0" \
+	"scriptaddr=0x00b00000\0" \
+	"pxefile_addr_r=0x00a00000\0" \
 	"fdt_addr_r=0x0a100000\0" \
 	"kernel_addr_no_bl32_r=0x00280000\0" \
-	"kernel_addr_r=0x00680000\0" \
+	"kernel_addr_r=0x00a80000\0" \
 	"kernel_addr_c=0x04080000\0" \
 	"ramdisk_addr_r=0x0a200000\0"
 
