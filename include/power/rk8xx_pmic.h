@@ -216,6 +216,17 @@ enum {
 #define RK817_OFF_SOURCE	0xf6
 #define RK817_NUM_OF_REGS	0xff
 
+#define RK8XX_DEVCTRL_REG	0x4b
+#define RK817_PWRON_KEY		0xf7
+#define RK8XX_LP_ACTION_MSK	BIT(6)
+#define RK8XX_LP_OFF		(0 << 6)
+#define RK8XX_LP_RESTART	(1 << 6)
+#define RK8XX_LP_OFF_MSK	BIT(4) | BIT(5)
+#define RK8XX_LP_TIME_6S	(0 << 4)
+#define RK8XX_LP_TIME_8S	(1 << 4)
+#define RK8XX_LP_TIME_10S	(2 << 4)
+#define RK8XX_LP_TIME_12S	(3 << 4)
+
 /* IRQ definitions */
 #define RK8XX_IRQ_PWRON_FALL		0
 #define RK8XX_IRQ_PWRON_RISE		1
@@ -269,6 +280,8 @@ struct rk8xx_priv {
 	int variant;
 	int irq;
 	struct virq_chip *irq_chip;
+	int lp_off_time;
+	int lp_action;
 };
 
 int rk8xx_spl_configure_buck(struct udevice *pmic, int buck, int uvolt);

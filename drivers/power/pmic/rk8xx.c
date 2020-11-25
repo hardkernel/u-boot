@@ -333,7 +333,7 @@ static void rk8xx_plug_out_handler(int irq, void *data)
 static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 {
 	struct rk8xx_priv *rk8xx = dev_get_priv(dev);
-	u32 interrupt, phandle;
+	u32 interrupt, phandle, val;
 	int ret;
 
 	phandle = dev_read_u32_default(dev, "interrupt-parent", -ENODATA);
@@ -353,6 +353,22 @@ static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 		printf("Failed to request rk8xx irq, ret=%d\n", rk8xx->irq);
 		return rk8xx->irq;
 	}
+
+	val = dev_read_u32_default(dev, "long-press-off-time-sec", 0);
+	if (val <= 6)
+		rk8xx->lp_off_time = RK8XX_LP_TIME_6S;
+	else if (val <= 8)
+		rk8xx->lp_off_time = RK8XX_LP_TIME_8S;
+	else if (val <= 10)
+		rk8xx->lp_off_time = RK8XX_LP_TIME_10S;
+	else
+		rk8xx->lp_off_time = RK8XX_LP_TIME_12S;
+
+	val = dev_read_u32_default(dev, "long-press-restart", 0);
+	if (val)
+		rk8xx->lp_action = RK8XX_LP_RESTART;
+	else
+		rk8xx->lp_action = RK8XX_LP_OFF;
 
 	return 0;
 }
@@ -424,6 +440,7 @@ static int rk8xx_probe(struct udevice *dev)
 	int ret = 0, i, show_variant;
 	uint8_t msb, lsb, id_msb, id_lsb;
 	uint8_t on_source = 0, off_source = 0;
+	uint8_t pwron_key = 0, lp_off_msk = 0, lp_act_msk = 0;
 	uint8_t power_en0, power_en1, power_en2, power_en3;
 	uint8_t value;
 
@@ -449,15 +466,23 @@ static int rk8xx_probe(struct udevice *dev)
 	switch (priv->variant) {
 	case RK808_ID:
 		show_variant = 0x808;	/* RK808 hardware ID is 0 */
+		pwron_key = RK8XX_DEVCTRL_REG;
+		lp_off_msk = RK8XX_LP_OFF_MSK;
 		break;
 	case RK805_ID:
 	case RK816_ID:
 		on_source = RK8XX_ON_SOURCE;
 		off_source = RK8XX_OFF_SOURCE;
+		pwron_key = RK8XX_DEVCTRL_REG;
+		lp_off_msk = RK8XX_LP_OFF_MSK;
+		lp_act_msk = RK8XX_LP_ACTION_MSK;
 		break;
 	case RK818_ID:
 		on_source = RK8XX_ON_SOURCE;
 		off_source = RK8XX_OFF_SOURCE;
+		pwron_key = RK8XX_DEVCTRL_REG;
+		lp_off_msk = RK8XX_LP_OFF_MSK;
+		lp_act_msk = RK8XX_LP_ACTION_MSK;
 		/* set current if no fuel gauge */
 		if (!ofnode_valid(dev_read_subnode(dev, "battery"))) {
 			init_current = rk818_init_current;
@@ -468,6 +493,9 @@ static int rk8xx_probe(struct udevice *dev)
 	case RK817_ID:
 		on_source = RK817_ON_SOURCE;
 		off_source = RK817_OFF_SOURCE;
+		pwron_key = RK817_PWRON_KEY;
+		lp_off_msk = RK8XX_LP_OFF_MSK;
+		lp_act_msk = RK8XX_LP_ACTION_MSK;
 		init_data = rk817_init_reg;
 		init_data_num = ARRAY_SIZE(rk817_init_reg);
 		power_en0 = pmic_reg_read(dev, RK817_POWER_EN0);
@@ -516,6 +544,16 @@ static int rk8xx_probe(struct udevice *dev)
 		       pmic_reg_read(dev, on_source),
 		       pmic_reg_read(dev, off_source));
 	printf("\n");
+
+	if (pwron_key) {
+		value = pmic_reg_read(dev, pwron_key);
+		value &= ~(lp_off_msk | lp_act_msk);
+		if (lp_off_msk)
+			value |= priv->lp_off_time;
+		if (lp_act_msk)
+			value |= priv->lp_action;
+		pmic_reg_write(dev, pwron_key, value);
+	}
 
 	ret = rk8xx_irq_chip_init(dev);
 	if (ret) {
