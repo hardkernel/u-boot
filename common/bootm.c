@@ -344,33 +344,6 @@ static int get_fdto_totalsize(u32 *tz)
 }
 #endif
 
-#if defined(CONFIG_ODROID_COMMON)
-extern int get_boot_device(void);
-static int bootm_add_ignore_mpt_to_fdt(void *fdth)
-{
-	bool is_emmc_boot = false;
-	const char * mmc_dev = getenv("mmc_dev");
-	const char * dev_type = getenv("devtype");
-	char boot_device[7];
-
-	if (mmc_dev == NULL)
-		is_emmc_boot = get_boot_device() == 1;
-	else
-		is_emmc_boot = simple_strtol(mmc_dev, NULL, 10) == 0;
-
-	memset(boot_device, 0x00, sizeof(boot_device));
-	if (!strncmp(dev_type, "mmc", sizeof("mmc"))) {
-		sprintf(boot_device, "%s%c", "mmcblk", is_emmc_boot? '0':'1');
-	} else {
-		sprintf(boot_device, "%s%c", "sd", is_emmc_boot ? 'a': 'b');
-	}
-
-	setenv("boot_device", boot_device);
-
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_OF_LIBFDT_OVERLAY
 static int do_fdt_overlay(void)
 {
@@ -493,10 +466,6 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	}
 
 	set_working_fdt_addr(images.ft_addr);
-
-#if defined(CONFIG_ODROID_COMMON)
-	bootm_add_ignore_mpt_to_fdt(images.ft_addr);
-#endif
 
 	#ifdef CONFIG_OF_LIBFDT_OVERLAY
 	do_fdt_overlay();

@@ -177,7 +177,7 @@
         "switch_bootmode=" \
             "get_rebootmode;" \
             "if test ${reboot_mode} = factory_reset; then " \
-                "run boot_recovery;" \
+                "run boot_default;" \
             "else if test ${reboot_mode} = selfinstall; then " \
                 "run boot_default;" \
             "else if test ${reboot_mode} = cold_boot; then " \
@@ -195,7 +195,8 @@
                 "cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
                 "androidboot.selinux=permissive jtag=disable "\
                 "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " "\
-                "recovery_part=recovery recovery_offset=0; "\
+                "recovery_part=recovery recovery_offset=0 " \
+                "boot_device=${boot_device};" \
             "movi read dtbs 0 ${cramfsaddr}; " \
             "if test " CONFIG_DEVICE_PRODUCT " = odroidn2; then " \
                 "cramfsload ${dtb_mem_addr} meson64_" CONFIG_DEVICE_PRODUCT "_android.dtb;" \
