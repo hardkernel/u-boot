@@ -13,7 +13,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sdhci, &spi_nand, &spi_nor;
+		u-boot,spl-boot-order = &sdhci, &nandc0, &spi_nand, &spi_nor;
 	};
 };
 
@@ -137,3 +137,17 @@
 	status = "okay";
 };
 
+&nandc0 {
+	u-boot,dm-spl;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	nand@0 {
+		u-boot,dm-spl;
+		reg = <0>;
+		nand-ecc-mode = "hw_syndrome";
+		nand-ecc-strength = <16>;
+		nand-ecc-step-size = <1024>;
+	};
+};
