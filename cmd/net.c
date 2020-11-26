@@ -128,7 +128,11 @@ int do_tftpflash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	printf("## TFTP flash %s to partititon '%s' size 0x%lx ... ",
 	       argv[2], part_name, filesize);
 
+	if (dev_desc->if_type == IF_TYPE_MTD)
+		dev_desc->op_flag |= BLK_MTD_CONT_WRITE;
 	ret = blk_dwrite(dev_desc, part.start, blknum, (void *)fileaddr);
+	if (dev_desc->if_type == IF_TYPE_MTD)
+		dev_desc->op_flag &= ~(BLK_MTD_CONT_WRITE);
 	if (ret != blknum)
 		printf("Failed(%d)\n", ret);
 	else
