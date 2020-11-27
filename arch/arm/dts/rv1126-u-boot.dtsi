@@ -12,7 +12,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &spi_nand, &spi_nor, &nandc, &emmc;
+		u-boot,spl-boot-order = &sdmmc, &spi_nand, &spi_nor, &nandc, &emmc;
 	};
 
 	crypto: crypto@ff500000 {
@@ -39,8 +39,27 @@
 
 &sdmmc {
 	u-boot,dm-spl;
-	/delete-property/ pinctrl-names;
-	/delete-property/ pinctrl-0;
+	status = "okay";
+};
+
+&sdmmc0 {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_bus4 {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_clk {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_cmd {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_det {
+	u-boot,dm-spl;
 };
 
 &emmc {
@@ -85,6 +104,8 @@
 
 &sfc {
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	/delete-property/ assigned-clocks;
 	/delete-property/ assigned-clock-rates;
 	status = "okay";
@@ -113,6 +134,8 @@
 
 &nandc {
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -157,8 +180,21 @@
 };
 
 &pinctrl {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
+};
+
+&gpio1 {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&pcfg_pull_up_drv_level_2 {
+	u-boot,dm-spl;
+};
+
+&pcfg_pull_none {
+	u-boot,dm-spl;
 };
 
 &gpio3 {

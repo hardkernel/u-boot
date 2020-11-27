@@ -1123,7 +1123,7 @@
 				<2 RK_PC5 2 &pcfg_pull_none>;
 		};
 	};
-	sdmmc0 {
+	sdmmc0: sdmmc0 {
 		sdmmc0_bus4: sdmmc0-bus4 {
 			rockchip,pins =
 				/* sdmmc0_d0 */
