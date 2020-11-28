@@ -417,13 +417,6 @@
 			05 32 01 29
 		];
 
-		/* 28: DisplayOff */
-		/* 10: SleepIn */
-		panel-exit-sequence = [
-			05 00 01 28
-			05 00 01 10
-		];
-
 		display-timings {
 			native-mode = <&timing0>;
 

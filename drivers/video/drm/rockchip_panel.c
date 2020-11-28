@@ -366,8 +366,16 @@ static void panel_simple_unprepare(struct rockchip_panel *panel)
 			printf("failed to send off cmds: %d\n", ret);
 	}
 
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+	if (dm_gpio_is_valid(&priv->reset_gpio))
+		dm_gpio_set_value(&priv->reset_gpio, 0);
+
+	if (plat->delay.reset)
+		mdelay(plat->delay.reset);
+#else
 	if (dm_gpio_is_valid(&priv->reset_gpio))
 		dm_gpio_set_value(&priv->reset_gpio, 1);
+#endif
 
 	if (dm_gpio_is_valid(&priv->enable_gpio))
 		dm_gpio_set_value(&priv->enable_gpio, 0);
