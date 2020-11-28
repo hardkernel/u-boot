@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
-#ifndef _ODROIDGO2_STATUS_H_
-#define _ODROIDGO2_STATUS_H_
+#ifndef _ODROIDGOA_STATUS_H_
+#define _ODROIDGOA_STATUS_H_
 
 enum logo_storage {
 	LOGO_STORAGE_SPIFLASH = 0,
@@ -25,4 +25,8 @@ void odroid_wait_pwrkey(void);
 void odroid_alert_leds(void);
 void odroid_drop_errorlog(const char *err, unsigned int size);
 
-#endif /* _ODROIDGO2_STATUS_H_ */
+int board_check_recovery(void);
+void board_odroid_recovery(void);
+int board_check_power(void);
+int odroid_check_dcjack(void);
+#endif /* _ODROIDGOA_STATUS_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#ifndef __ODROIDGO3_H
-#define __ODROIDGO3_H
+#ifndef __ODROIDGOA_H
+#define __ODROIDGOA_H
 
 #include <configs/px30_common.h>
 
@@ -30,6 +30,7 @@
 		"devnum=1\0"
 #endif
 
+/* FIXME */
 /* default env of spi flash layout */
 #define SPI_FLASH_LAYOUT \
 		"st_boot1=0x0\0" \
@@ -66,10 +67,10 @@
 #define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 #endif
 
+/* FIXME */
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"fdt_addr_r=0x01f00000\0" \
-	"dtb_name=rk3326-odroidgo3-linux.dtb\0" \
 	"loadaddr=0x100000\0" \
 	ENV_DEV_TYPE \
 	ENV_DEV_NUM \
@@ -84,7 +85,7 @@
 		"net.iframes=0 fbcon=rotate:3\0"	\
 	"bootcmd=mmc dev 1; cfgload; run setbootargs;"	\
 		"load mmc 1:1 0x02000000 Image; "		\
-		"load mmc 1:1 0x01f00000 rk3326-odroidgo3-linux.dtb; "	\
+		"load mmc 1:1 0x01f00000 ${dtb_name}; "	\
 		"booti 0x02000000 - 0x01f00000\0"
 
 #undef CONFIG_BOOTDELAY

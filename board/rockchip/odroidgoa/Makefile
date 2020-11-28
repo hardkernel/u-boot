@@ -4,4 +4,4 @@
 # SPDX-License-Identifier:     GPL-2.0+
 #
 
-obj-y	+= odroidgo3.o odroidgo3_power.o odroidgo3_recovery.o odroidgo3_status.o
+obj-y	+= odroidgoa.o odroidgoa_power.o odroidgoa_recovery.o odroidgoa_status.o

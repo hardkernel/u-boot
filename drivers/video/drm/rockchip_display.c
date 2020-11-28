@@ -1042,8 +1042,18 @@ void rockchip_show_fbbase(ulong fbbase)
 	list_for_each_entry(s, &rockchip_display_list, head) {
 		s->logo.mode = ROCKCHIP_DISPLAY_FULLSCREEN;
 		s->logo.mem = (char *)fbbase;
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+		if (!strcmp(env_get("hwrev"), "v10-go3")) {
+			s->logo.width = 480;
+			s->logo.height = 854;
+		} else {
+			s->logo.width = 320;
+			s->logo.height = 480;
+		}
+#else
 		s->logo.width = DRM_ROCKCHIP_FB_WIDTH;
 		s->logo.height = DRM_ROCKCHIP_FB_HEIGHT;
+#endif
 		s->logo.bpp = 32;
 		s->logo.ymirror = 0;
 
@@ -1407,8 +1417,18 @@ static int rockchip_display_probe(struct udevice *dev)
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+	if (!strcmp(env_get("hwrev"), "v10-go3")) {
+		uc_priv->xsize = 480;
+		uc_priv->ysize = 854;
+	} else {
+		uc_priv->xsize = 320;
+		uc_priv->ysize = 480;
+	}
+#else
 	uc_priv->xsize = DRM_ROCKCHIP_FB_WIDTH;
 	uc_priv->ysize = DRM_ROCKCHIP_FB_HEIGHT;
+#endif
 	uc_priv->bpix = VIDEO_BPP32;
 
 	#ifdef CONFIG_DRM_ROCKCHIP_VIDEO_FRAMEBUFFER

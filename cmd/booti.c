@@ -14,7 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/sizes.h>
 #ifdef CONFIG_PLATFORM_ODROID_GOADV
-#include <odroidgo2_status.h>
+#include <odroidgoa_status.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;

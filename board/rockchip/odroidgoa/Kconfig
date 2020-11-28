@@ -1,13 +1,13 @@
-if TARGET_ODROIDGO2
+if TARGET_ODROIDGOA
 
 config SYS_BOARD
-	default "odroidgo2"
+	default "odroidgoa"
 
 config SYS_VENDOR
 	default "rockchip"
 
 config SYS_CONFIG_NAME
-	default "odroidgo2"
+	default "odroidgoa"
 
 config BOARD_SPECIFIC_OPTIONS # dummy
 	def_bool y

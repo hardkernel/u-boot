@@ -37,7 +37,7 @@
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/vendor.h>
-#include <odroidgo2_status.h>
+#include <odroidgoa_status.h>
 extern int recovery_check_mandatory_files(void);
 
 DECLARE_GLOBAL_DATA_PTR;

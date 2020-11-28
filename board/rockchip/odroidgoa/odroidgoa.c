@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019 Hardkernel Co., Ltd
+ * (C) Copyright 2020 Hardkernel Co., Ltd
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
@@ -10,23 +10,31 @@
 #include <asm/gpio.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#include <key.h>
+#include <fs.h>
+#include <version.h>
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 #include <power/charge_display.h>
 #endif
-#include <key.h>
 #include <rockchip_display_cmds.h>
-#include <odroidgo2_status.h>
-#include <fs.h>
-#include <version.h>
+#include <odroidgoa_status.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-extern int board_check_recovery(void);
-extern void board_odroid_recovery(void);
-extern int board_check_power(void);
-
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 #define WIFI_EN_GPIO	110 /* GPIO3_B6 */
+
+unsigned char disp_offs = 0;
+
+bool is_odroidgo3(void)
+{
+	char *hwrev = env_get("hwrev");
+
+	if (!strcmp(hwrev, "v10-go3"))
+		return true;
+	else
+		return false;
+}
 
 void board_alive_led(void)
 {
@@ -117,7 +125,10 @@ void board_init_switch_gpio(void)
 	rk_clrsetreg(&grf->gpio1b_p, 0xff00, 0x5500);
 	rk_clrsetreg(&grf->gpio1a_p, 0xfcc0, 0x5440);
 	rk_clrsetreg(&grf->gpio2a_p, 0xffff, 0x5555);
-	rk_clrsetreg(&grf->gpio3b_p, 0xC030, 0x4010);
+	if (is_odroidgo3())
+		rk_clrsetreg(&grf->gpio3b_p, 0xC33C, 0x4114);
+	else
+		rk_clrsetreg(&grf->gpio3b_p, 0xC030, 0x4010);
 }
 
 void board_check_mandatory_files(void)
@@ -146,11 +157,15 @@ err:
 
 int rk_board_late_init(void)
 {
+	if (is_odroidgo3())
+		disp_offs = 9;
+
 	/* turn on blue led */
 	board_alive_led();
 
 	/* set wifi_en as default high */
-	board_wifi_en();
+	if (!is_odroidgo3())
+		board_wifi_en();
 
 	/* set uart2-m1 port as a default debug console */
 	board_debug_uart2m1();
@@ -165,6 +180,7 @@ int rk_board_late_init(void)
 	if(board_check_power())
 		return 0;
 
+	/* check recovery */
 	if (!board_check_recovery()) {
 		printf("Now start recovery mode\n");
 		board_odroid_recovery();
@@ -172,21 +188,23 @@ int rk_board_late_init(void)
 	}
 
 #ifdef CONFIG_DM_CHARGE_DISPLAY
-	if (CMD_RET_SUCCESS != run_command("fatload mmc 1:1 $loadaddr manufacture", 0))
+	if (odroid_check_dcjack() &&
+		(CMD_RET_SUCCESS != run_command("fatload mmc 1:1 $loadaddr manufacture", 0)))
 		charge_display();
 #endif
 
-	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
+	/* show boot logo and version */
 	lcd_show_logo();
-	lcd_setfg_color("white");
-	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
-	lcd_printf(0, 19, 1, "%s %s", U_BOOT_DATE, U_BOOT_TIME);
+	lcd_setfg_color("grey");
+	lcd_printf(0, 18 + disp_offs, 1, " %s", U_BOOT_VERSION);
+	lcd_printf(0, 19 + disp_offs, 1, " %s %s", U_BOOT_DATE, U_BOOT_TIME);
 
 	if (!board_check_autotest()) {
 		board_run_autotest();
 		return 0;
 	}
 
+	/* check sd card and es launcher */
 	board_check_mandatory_files();
 
 	return 0;

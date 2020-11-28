@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019 Hardkernel Co., Ltd
+ * (C) Copyright 2020 Hardkernel Co., Ltd
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
@@ -9,16 +9,18 @@
 #include <dm.h>
 #include <console.h>
 #include <rockchip_display_cmds.h>
-#include <odroidgo2_status.h>
 #include <asm/io.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
 #include <version.h>
+#include <odroidgoa_status.h>
 
 #define POWERDOWN_WAIT_TIME	10000
 #define LOOP_DELAY		25
 
 #define PMUGRF_BASE	0xFF010000
+
+extern unsigned char disp_offs;
 
 static const char *st_logo_modes[] = {
 	"st_logo_hardkernel",
@@ -107,7 +109,7 @@ void odroid_wait_pwrkey(void)
 		printf("[%s] show_bmp Fail!\n", __func__);
 
 	printf("power key long pressed...\n");
-	lcd_printf(0, 18, 1, "%s", "power off...");
+	lcd_printf(0, 18 + disp_offs, 1, "%s", "power off...");
 	mdelay(500);
 	run_command("poweroff", 0);
 }
@@ -181,7 +183,7 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 	case LOGO_MODE_NO_SDCARD:
 		lcd_setfg_color("grey");
 		lcd_setbg_color("white");
-		lcd_printf(0, 19, 1, "U-BOOT (spinor) : %s %s", U_BOOT_DATE, U_BOOT_TIME);
+		lcd_printf(0, 19 + disp_offs, 1, "U-BOOT (spinor) : %s %s", U_BOOT_DATE, U_BOOT_TIME);
 		lcd_setfg_color("black");
 		break;
 	case LOGO_MODE_LOW_BATT:
@@ -194,7 +196,7 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 
 	/* draw text */
 	if (str)
-		lcd_printf(0, 18, 1, "%s", str);
+		lcd_printf(0, 18 + disp_offs, 1, "%s", str);
 
 	return 0;
 }

@@ -28,7 +28,8 @@ RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
-if [[ "${BOARD}" == "odroidgo"* ]]; then
+# if [[ "${BOARD}" == "odroidgo"* ]]; then
+if [[ "${BOARD}" == "odroidgoa"* ]]; then
 RKBIN_TOOLS=./tools/rk_tools/tools
 else
 RKBIN_TOOLS=../rkbin/tools
@@ -452,7 +453,8 @@ fixup_platform_configure()
 	elif [ $RKCHIP = "RK1808" ]; then
 		PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
 		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
-	elif [ ${BOARD} = "odroidgo2-spi" -o ${BOARD} = "odroidgo3-spi" ]; then
+#	elif [ ${BOARD} = "odroidgo2-spi" -o ${BOARD} = "odroidgo3-spi" ]; then
+	elif [ ${BOARD} = "odroidgoa-spi" ]; then
 		PLATFORM_UBOOT_IMG_SIZE="--size 1024 1"
 		PLATFORM_TRUST_IMG_SIZE="--size 2048 1"
 	fi
@@ -822,7 +824,8 @@ pack_idbloader()
 
 finish()
 {
-	if [ "${BOARD}" = 'odroidgo2-spi' -o "${BOARD}" = 'odroidgo3-spi' ]; then
+	# if [ "${BOARD}" = 'odroidgo2-spi' -o "${BOARD}" = 'odroidgo3-spi' ]; then
+	if [ "${BOARD}" = 'odroidgoa-spi' ]; then
 		mv ${OUTDIR}/uboot.img ./sd_fuse/uboot_spi.img
 		mv ${OUTDIR}/trust.img ./sd_fuse/trust_spi.img
 	else
@@ -847,7 +850,8 @@ make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
 pack_uboot_image
 pack_loader_image
 pack_trust_image
-if [ "${BOARD}" = 'odroidgo2' -o "${BOARD}" = 'odroidgo3' ]; then
+# if [ "${BOARD}" = 'odroidgo2' -o "${BOARD}" = 'odroidgo3' ]; then
+if [ "${BOARD}" = 'odroidgoa' ]; then
 pack_idbloader
 fi
 finish

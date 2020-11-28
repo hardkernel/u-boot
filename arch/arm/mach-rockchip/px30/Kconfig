@@ -11,15 +11,10 @@ config PLATFORM_ODROID_GOADV
 	   ODROID-GO Advanced configuration
 
 if PLATFORM_ODROID_GOADV
-config TARGET_ODROIDGO2
-	bool "Target ODROID-GO2"
+config TARGET_ODROIDGOA
+	bool "Target ODROID-GO Advanced"
 	help
-	   ODROID-GO Advanced 2nd configuration
-
-config TARGET_ODROIDGO3
-	bool "Target ODROID-GO3"
-	help
-	   ODROID-GO Advanced 3rd configuration
+	   Support all ODROID-GO Advanced boards
 endif
 
 config SYS_SOC
@@ -32,7 +27,6 @@ config SPL_SERIAL_SUPPORT
 	default y
 
 source "board/rockchip/evb_px30/Kconfig"
-source "board/rockchip/odroidgo2/Kconfig"
-source "board/rockchip/odroidgo3/Kconfig"
+source "board/rockchip/odroidgoa/Kconfig"
 
 endif

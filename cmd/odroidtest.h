@@ -12,7 +12,7 @@
 #include <key.h>
 #include <adc.h>
 #include <pwm.h>
-#include <odroidgo2_status.h>
+#include <odroidgoa_status.h>
 #include <rockchip_display_cmds.h>
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 #include <power/charge_display.h>

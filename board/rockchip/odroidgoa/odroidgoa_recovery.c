@@ -8,7 +8,9 @@
 #include <rksfc.h>
 #include <fs.h>
 #include <rockchip_display_cmds.h>
-#include "odroidgo3_status.h"
+#include <odroidgoa_status.h>
+
+extern unsigned char disp_offs;
 
 int recovery_check_mandatory_files(void)
 {
@@ -81,7 +83,7 @@ void board_odroid_recovery(void)
 
 		percentage = progress * 100 / filesize;
 		sprintf(str, "recovery progress :%3d %%", (int) percentage);
-		lcd_printf(0, 27, 1, "%s", str);
+		lcd_printf(0, 18 + disp_offs, 1, "%s", str);
 
 		offs += unit;
 		addr += unit * 512;
@@ -89,7 +91,7 @@ void board_odroid_recovery(void)
 	}
 
 	sprintf(str, "recovery progress :%3d %%", (int) percentage);
-	lcd_printf(0, 27, 1, "%s", str);
+	lcd_printf(0, 18 + disp_offs, 1, "%s", str);
 
 	/* readback & calculate md5sum */
 	run_command("rksfc read $loadaddr 0x0 $sz_total", 0);

@@ -22,7 +22,7 @@
 #include "rockchip_display.h"
 #include "bmp_helper.h"
 #include <rockchip_display_cmds.h>
-#include <odroidgo2_status.h>
+#include <odroidgoa_status.h>
 
 /*----------------------------------------------------------------------------*/
 struct lcd *lcd = NULL;

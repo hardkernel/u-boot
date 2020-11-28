@@ -302,6 +302,7 @@ static void autowakeup_timer_uninit(void)
 
 #ifdef CONFIG_DRM_ROCKCHIP
 #if defined(CONFIG_PLATFORM_ODROID_GOADV)
+extern unsigned char disp_offs;
 static int bmp_dev;
 static void charge_show_bmp(int idx, struct udevice *fg)
 {
@@ -348,11 +349,11 @@ static void charge_show_bmp(int idx, struct udevice *fg)
 
 	/* show battery voltage level */
 	sprintf(cmd, "battery : %d.%d V", (battery / 1000), ((battery % 1000) / 100));
-	lcd_setfg_color("white");
-	lcd_printf(0, 24, 1, "%s", cmd);
+	lcd_setfg_color("grey");
+	lcd_printf(0, 18 + disp_offs, 1, "%s", cmd);
 
 	sprintf(cmd, "current : %d mA", current_avg);
-	lcd_printf(0, 26, 1, "%s", cmd);
+	lcd_printf(0, 19 + disp_offs, 1, "%s", cmd);
 
 
 	printf("charge_show_bmp end!\n");
@@ -599,7 +600,8 @@ static int charge_animation_show(struct udevice *dev)
 		lcd_onoff(false);
 
 		/* set CHG LED on before screen off */
-		led_set_state(priv->led_charging, LEDST_ON);
+		if (priv->led_charging)
+			led_set_state(priv->led_charging, LEDST_ON);
 #else
 		charge_show_bmp(NULL);
 #endif
@@ -817,7 +819,8 @@ show_images:
 				lcd_onoff(false);
 
 				/* set CHG LED on before screen off */
-				led_set_state(priv->led_charging, LEDST_ON);
+				if (priv->led_charging)
+					led_set_state(priv->led_charging, LEDST_ON);
 #else
 				charge_show_bmp(NULL); /* Turn off screen */
 #endif
