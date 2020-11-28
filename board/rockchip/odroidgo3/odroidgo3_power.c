@@ -19,8 +19,8 @@
 void board_chg_led(void)
 {
 	gpio_request(CHG_LED_GPIO, "chg_led");
-	/* default on */
-	gpio_direction_output(CHG_LED_GPIO, 1);
+	/* default off, controlled by charge animation logic */
+	gpio_direction_output(CHG_LED_GPIO, 0);
 	gpio_free(CHG_LED_GPIO);
 }
 

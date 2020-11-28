@@ -142,9 +142,9 @@
 		};
 
 		battery {
-			label = "battery_full";
+			label = "battery_charging";
 			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
+			default-state = "on";
 		};
 	};
 

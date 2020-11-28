@@ -351,7 +351,7 @@ static void charge_show_bmp(int idx, struct udevice *fg)
 	lcd_setfg_color("white");
 	lcd_printf(0, 24, 1, "%s", cmd);
 
-	sprintf(cmd, "current %d mA", current_avg);
+	sprintf(cmd, "current : %d mA", current_avg);
 	lcd_printf(0, 26, 1, "%s", cmd);
 
 
@@ -376,15 +376,21 @@ static void charge_show_logo(void) {}
 static int leds_update(struct udevice *dev, int soc)
 {
 	struct charge_animation_priv *priv = dev_get_priv(dev);
-	static int old_soc = -1;
 	int ret, ledst;
+#if !defined(CONFIG_PLATFORM_ODROID_GOADV)
+	static int old_soc = -1;
 
 	if (old_soc == soc)
 		return 0;
 
 	old_soc = soc;
+#endif
 	if (priv->led_charging) {
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+		ledst = (soc < 100) ? LEDST_TOGGLE : LEDST_OFF;
+#else
 		ledst = (soc < 100) ? LEDST_ON : LEDST_OFF;
+#endif
 		ret = led_set_state(priv->led_charging, ledst);
 		if (ret) {
 			printf("set charging led %s failed, ret=%d\n",
@@ -591,6 +597,9 @@ static int charge_animation_show(struct udevice *dev)
 		ever_lowpower_screen_off = true;
 #if defined(CONFIG_PLATFORM_ODROID_GOADV)
 		lcd_onoff(false);
+
+		/* set CHG LED on before screen off */
+		led_set_state(priv->led_charging, LEDST_ON);
 #else
 		charge_show_bmp(NULL);
 #endif
@@ -688,11 +697,12 @@ show_images:
 			       current, charging, screen_on);
 		}
 
+#if !defined(CONFIG_PLATFORM_ODROID_GOADV)
 		/* Update leds */
 		ret = leds_update(dev, soc);
 		if (ret)
 			printf("update led failed: %d\n", ret);
-
+#endif
 		/*
 		 * If ever lowpower screen off, force screen_on=false, which
 		 * means key event can't modify screen_on, only voltage higher
@@ -752,6 +762,7 @@ show_images:
 				debug("SHOW: %s\n", image[show_idx].name);
 #if defined(CONFIG_PLATFORM_ODROID_GOADV)
 				charge_show_bmp(show_idx, fg);
+				leds_update(dev, soc);
 #else
 				charge_show_bmp(image[show_idx].name);
 #endif
@@ -804,6 +815,9 @@ show_images:
 			if (screen_on) {
 #if defined(CONFIG_PLATFORM_ODROID_GOADV)
 				lcd_onoff(false);
+
+				/* set CHG LED on before screen off */
+				led_set_state(priv->led_charging, LEDST_ON);
 #else
 				charge_show_bmp(NULL); /* Turn off screen */
 #endif
