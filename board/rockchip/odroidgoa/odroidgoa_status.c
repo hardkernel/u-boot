@@ -21,6 +21,7 @@
 #define PMUGRF_BASE	0xFF010000
 
 extern unsigned char disp_offs;
+extern bool is_odroidgo3(void);
 
 static const char *st_logo_modes[] = {
 	"st_logo_hardkernel",
@@ -31,11 +32,11 @@ static const char *st_logo_modes[] = {
 };
 
 static const char *logo_bmp_names[] = {
-	"logo.bmp",
-	"low_battery.bmp",
-	"recovery.bmp",
-	"system_error.bmp",
-	"no_sdcard.bmp",
+	"logo",
+	"low_battery",
+	"recovery",
+	"system_error",
+	"no_sdcard",
 };
 
 unsigned long bmp_mem;
@@ -145,8 +146,13 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 			printf("[%s] show_bmp Fail!\n", __func__);
 		break;
 	case LOGO_STORAGE_SDCARD:
-		sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
-			logo_bmp_names[logo_mode]);
+		if (is_odroidgo3())
+			sprintf(cmd, "fatload mmc 1:1 %p %s_b.bmp", (void *)bmp_mem,
+				logo_bmp_names[logo_mode]);
+		else
+			sprintf(cmd, "fatload mmc 1:1 %p %s.bmp", (void *)bmp_mem,
+				logo_bmp_names[logo_mode]);
+
 		run_command(cmd, 0);
 
 		if (show_bmp(bmp_mem))
@@ -165,8 +171,13 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 
 		if (show_bmp(bmp_mem)) {
 			/* then, check sd card */
-			sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
-				logo_bmp_names[logo_mode]);
+			if (is_odroidgo3())
+				sprintf(cmd, "fatload mmc 1:1 %p %s_b.bmp", (void *)bmp_mem,
+					logo_bmp_names[logo_mode]);
+			else
+				sprintf(cmd, "fatload mmc 1:1 %p %s.bmp", (void *)bmp_mem,
+					logo_bmp_names[logo_mode]);
+
 			run_command(cmd, 0);
 
 			if (show_bmp(bmp_mem))

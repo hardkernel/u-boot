@@ -308,6 +308,44 @@ void board_check_hwrev(void)
 	run_command("hwrev", 0);
 }
 
+void board_set_spilayout(void)
+{
+	char *hwrev = env_get("hwrev");
+
+	/* adjust only offsets, size values are same */
+	if (!strcmp(hwrev, "v10-go3")) {
+		/* GO3 rev1.0 */
+		env_set_hex("st_dtb", 0x3068);
+
+		env_set_hex("st_logo_hardkernel", 0x3130);
+		env_set_hex("st_logo_lowbatt", 0x32C0);
+		env_set_hex("st_logo_recovery", 0x3450);
+		env_set_hex("st_logo_err", 0x35E0);
+		env_set_hex("st_logo_nosdcard", 0x3770);
+
+		env_set_hex("st_battery_0", 0x3900);
+		env_set_hex("st_battery_1", 0x3A90);
+		env_set_hex("st_battery_2", 0x3C20);
+		env_set_hex("st_battery_3", 0x3DB0);
+		env_set_hex("st_battery_fail", 0x3F40);
+	} else {
+		/* GO2 rev1.0/rev1.1 */
+		env_set_hex("st_dtb", 0x2000);
+
+		env_set_hex("st_logo_hardkernel", 0x20C8);
+		env_set_hex("st_logo_lowbatt", 0x2258);
+		env_set_hex("st_logo_recovery", 0x23E8);
+		env_set_hex("st_logo_err", 0x2578);
+		env_set_hex("st_logo_nosdcard", 0x2708);
+
+		env_set_hex("st_battery_0", 0x2898);
+		env_set_hex("st_battery_1", 0x2A28);
+		env_set_hex("st_battery_2", 0x2BB8);
+		env_set_hex("st_battery_3", 0x2D48);
+		env_set_hex("st_battery_fail", 0x2ED8);
+	}
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
@@ -315,6 +353,9 @@ int init_kernel_dtb(void)
 
 	/* check hw revision */
 	board_check_hwrev();
+
+	/* adjust offsets of spi flash layout */
+	board_set_spilayout();
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
@@ -330,7 +371,7 @@ int init_kernel_dtb(void)
 			printf("dtb in resource read fail, try dtb in spi flash\n");
 			run_command("rksfc scan", 0);
 			run_command("rksfc dev 1", 0);
-			ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
+			ret = run_command("rksfc read ${fdt_addr_r} ${st_dtb} ${sz_dtb}", 0);
 			if (ret == CMD_RET_SUCCESS)
 				ret = check_fdt_header(fdt_addr);
 		}

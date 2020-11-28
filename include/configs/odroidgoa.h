@@ -30,8 +30,8 @@
 		"devnum=1\0"
 #endif
 
-/* FIXME */
-/* default env of spi flash layout */
+/* default env of spi flash layout,
+ * set active offsets in mach-rockchip/board.c */
 #define SPI_FLASH_LAYOUT \
 		"st_boot1=0x0\0" \
 		"sz_boot1=0x800\0" \
@@ -52,7 +52,7 @@
 		"st_battery_2=0x2BB8\0" \
 		"st_battery_3=0x2D48 \0" \
 		"st_battery_fail=0x2ED8\0" \
-		"sz_total=0x3068\0"
+		"sz_total=0x40D0\0"
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
@@ -67,7 +67,6 @@
 #define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 #endif
 
-/* FIXME */
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"fdt_addr_r=0x01f00000\0" \
