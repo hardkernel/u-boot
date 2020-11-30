@@ -27,9 +27,11 @@ struct key_arrays {
 	u32 chk; /* 0:red, 1:blue */
 };
 
-#ifdef CONFIG_TARGET_ODROIDGO3
-#define NUMGPIOKEYS	20
-static struct key_arrays gpiokeys[NUMGPIOKEYS] = {
+#define NUMGPIOKEYS_GO2		18
+#define NUMGPIOKEYS_GO3		20
+
+struct key_arrays *gpiokeys;
+struct key_arrays gpiokeys_go3[NUMGPIOKEYS_GO3] = {
 	{"[sw1]", BTN_DPAD_UP, 170, 13, 0},
 	{"[sw2]", BTN_DPAD_DOWN, 170, 17, 0},
 	{"[sw3]", BTN_DPAD_LEFT, 85, 15, 0},
@@ -52,7 +54,29 @@ static struct key_arrays gpiokeys[NUMGPIOKEYS] = {
 	{"[sw22]", BTN_TRIGGER_HAPPY2, 532, 9, 0},
 };
 
-struct key_arrays adckeys[8] = {
+struct key_arrays gpiokeys_go2[NUMGPIOKEYS_GO2] = {
+	{"[sw1]", BTN_DPAD_UP, 96, 7, 0},
+	{"[sw2]", BTN_DPAD_DOWN, 96, 11, 0},
+	{"[sw3]", BTN_DPAD_LEFT, 48, 9, 0},
+	{"[sw4]", BTN_DPAD_RIGHT, 144, 9, 0},
+	{"[sw5]", BTN_EAST, 384, 9, 0},
+	{"[sw6]", BTN_SOUTH, 336, 11, 0},
+	{"[sw7]", BTN_WEST, 288, 9, 0},
+	{"[sw8]", BTN_NORTH, 336, 7, 0},
+	{"[sw9]", BTN_TRIGGER_HAPPY1, 50, 14, 0},
+	{"[sw10]", BTN_TRIGGER_HAPPY2, 96, 14, 0},
+	{"[sw11]", BTN_TRIGGER_HAPPY3, 188, 14, 0},
+	{"[sw12]", BTN_TRIGGER_HAPPY4, 242, 14, 0},
+	{"[sw13]", BTN_TRIGGER_HAPPY5, 332, 14, 0},
+	{"[sw14]", BTN_TRIGGER_HAPPY6, 386, 14, 0},
+	{"[sw15]", BTN_TL, 48, 5, 0},
+	{"[sw16]", BTN_TR, 384, 5, 0},
+	{"[sw20]", BTN_TL2, 48, 3, 0},
+	{"[sw21]", BTN_TR2, 384, 3, 0},
+};
+
+static struct key_arrays *adckeys;
+struct key_arrays adckeys_go3[8] = {
 	/* LEFT */
 	{"[WEST]", 0, 85, 11, 0},
 	{"[EAST]", 0, 275, 11, 0},
@@ -64,34 +88,11 @@ struct key_arrays adckeys[8] = {
 	{"[NORTH]", 0, 595, 6, 0},
 	{"[SOUTH]", 0, 595, 16, 0},
 };
-#else
-#define NUMGPIOKEYS	18
-static struct key_arrays gpiokeys[NUMGPIOKEYS] = {
-	{"[sw1]", BTN_DPAD_UP, 96, 7, 0},
-	{"[sw2]", BTN_DPAD_DOWN, 96, 11, 0},
-	{"[sw3]", BTN_DPAD_LEFT, 48, 9, 0},
-	{"[sw4]", BTN_DPAD_RIGHT, 144, 9, 0},
-	{"[sw5]", BTN_EAST, 384, 9, 0},
-	{"[sw6]", BTN_SOUTH, 336, 11, 0},
-	{"[sw7]", BTN_WEST, 288, 9, 0},
-	{"[sw8]", BTN_NORTH, 336, 7, 0},
-	{"[sw9]", BTN_TRIGGER_HAPPY1, 50, 15, 0},
-	{"[sw10]", BTN_TRIGGER_HAPPY2, 96, 15, 0},
-	{"[sw11]", BTN_TRIGGER_HAPPY3, 188, 15, 0},
-	{"[sw12]", BTN_TRIGGER_HAPPY4, 242, 15, 0},
-	{"[sw13]", BTN_TRIGGER_HAPPY5, 332, 15, 0},
-	{"[sw14]", BTN_TRIGGER_HAPPY6, 386, 15, 0},
-	{"[sw15]", BTN_TL, 48, 5, 0},
-	{"[sw16]", BTN_TR, 384, 5, 0},
-	{"[sw20]", BTN_TL2, 48, 3, 0},
-	{"[sw21]", BTN_TR2, 384, 3, 0},
-};
 
-struct key_arrays adckeys[4] = {
-	{"[LEFT]", 0, 90, 9, 0},
-	{"[RIGHT]", 0, 340, 9, 0},
-	{"[UP]", 0, 220, 4, 0},
-	{"[DOWN]", 0, 218, 14, 0},
+struct key_arrays adckeys_go2[4] = {
+	{"[WEST]", 0, 90, 7, 0},
+	{"[EAST]", 0, 340, 7, 0},
+	{"[NORTH]", 0, 218, 3, 0},
+	{"[SOUTH]", 0, 218, 11, 0},
 };
-#endif
 #endif /* _CMD_ODROIDTEST_ */

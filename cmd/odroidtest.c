@@ -6,11 +6,9 @@
 
 #include "odroidtest.h"
 
-#ifdef CONFIG_TARGET_ODROIDGO3
-static int yoffs = 4;
-#else
-static int yoffs = 0;
-#endif
+extern bool is_odroidgo3(void);
+
+static int yoffs;
 
 static int do_odroidtest_all(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[]);
@@ -53,11 +51,37 @@ int wait_key_event(bool timeout)
 	return 0;
 }
 
-#ifdef CONFIG_TARGET_ODROIDGO3
+bool check_termination_key(int key)
+{
+	if (is_odroidgo3()) {
+		/* termination using F3+F6 */
+		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
+			if(!run_command("gpio input C2", 0)
+					&& !run_command("gpio input C5", 0)) {
+				printf("Got termination key!\n");
+				return true;
+			}
+		}
+	} else {
+		/* termination using F1+F6 */
+		if ((key == BTN_TRIGGER_HAPPY1) || (key == BTN_TRIGGER_HAPPY6)) {
+			if(!run_command("gpio input C0", 0)
+					&& !run_command("gpio input C5", 0)) {
+				printf("Got termination key!\n");
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 /* adc mux controls */
 #define GPIO_ADCMUX_EN		109 /* GPIO3_B5 */
 #define GPIO_ADCMUX_SEL_A	107 /* GPIO3_B3 */
 #define GPIO_ADCMUX_SEL_B	104 /* GPIO3_B0 */
+
+static unsigned int num_adcch;
 
 #define NUM_ADC_CH	4
 #define ADC_RIGHT_Y	0
@@ -77,50 +101,82 @@ void adc_draw_key_arrays(struct key_adc *adcs, int key_idx)
 
 	lcd_setfg_color("yellow");
 
-	/* center */
-	sprintf(cmd, "X %d", adcs[ADC_RIGHT_X].center);
-	lcd_printf(599, 10, 0, cmd);
-	sprintf(cmd, "Y %d", adcs[ADC_RIGHT_Y].center);
-	lcd_printf(599, 12, 0, cmd);
+	if (is_odroidgo3()) {
+		/* center */
+		sprintf(cmd, "X %d", adcs[ADC_RIGHT_X].center);
+		lcd_printf(599, 10, 0, cmd);
+		sprintf(cmd, "Y %d", adcs[ADC_RIGHT_Y].center);
+		lcd_printf(599, 12, 0, cmd);
 
-	sprintf(cmd, "X %d", adcs[ADC_LEFT_X].center);
-	lcd_printf(184, 10, 0, cmd);
-	sprintf(cmd, "Y %d", adcs[ADC_LEFT_Y].center);
-	lcd_printf(184, 12, 0, cmd);
+		sprintf(cmd, "X %d", adcs[ADC_LEFT_X].center);
+		lcd_printf(184, 10, 0, cmd);
+		sprintf(cmd, "Y %d", adcs[ADC_LEFT_Y].center);
+		lcd_printf(184, 12, 0, cmd);
 
-	/* value */
-	sprintf(cmd, "X %d   ",
-		(int)adcs[ADC_RIGHT_X].value - adcs[ADC_RIGHT_X].center);
-	lcd_printf(599, 18, 0, cmd);
-	sprintf(cmd, "Y %d   ",
-		(int)adcs[ADC_RIGHT_Y].value - adcs[ADC_RIGHT_Y].center);
-	lcd_printf(599, 20, 0, cmd);
+		/* value */
+		sprintf(cmd, "X %d   ",
+				(int)adcs[ADC_RIGHT_X].value - adcs[ADC_RIGHT_X].center);
+		lcd_printf(599, 18, 0, cmd);
+		sprintf(cmd, "Y %d   ",
+				(int)adcs[ADC_RIGHT_Y].value - adcs[ADC_RIGHT_Y].center);
+		lcd_printf(599, 20, 0, cmd);
 
-	sprintf(cmd, "X %d   ",
-		(int)adcs[ADC_LEFT_X].value - adcs[ADC_LEFT_X].center);
-	lcd_printf(184, 18, 0, cmd);
-	sprintf(cmd, "Y %d   ",
-		(int)adcs[ADC_LEFT_Y].value - adcs[ADC_LEFT_Y].center);
-	lcd_printf(184, 20, 0, cmd);
+		sprintf(cmd, "X %d   ",
+				(int)adcs[ADC_LEFT_X].value - adcs[ADC_LEFT_X].center);
+		lcd_printf(184, 18, 0, cmd);
+		sprintf(cmd, "Y %d   ",
+				(int)adcs[ADC_LEFT_Y].value - adcs[ADC_LEFT_Y].center);
+		lcd_printf(184, 20, 0, cmd);
 
-	for (i = 0; i < 8; i++) {
-		if (adckeys[i].chk) {
-			if (i != key_idx)
-				lcd_setfg_color("green");
+		for (i = 0; i < 8; i++) {
+			if (adckeys[i].chk) {
+				if (i != key_idx)
+					lcd_setfg_color("green");
+				else
+					lcd_setfg_color("blue");
+			}
 			else
-				lcd_setfg_color("blue");
-		}
-		else
-			lcd_setfg_color("red");
+				lcd_setfg_color("red");
 
-		lcd_printf(adckeys[i].x, adckeys[i].y,
-				0, adckeys[i].name);
+			lcd_printf(adckeys[i].x, adckeys[i].y,
+					0, adckeys[i].name);
+		}
+	} else {
+		/* center */
+		sprintf(cmd, "X %d", adcs[ADC_LEFT_X].center);
+		lcd_printf(222, 6, 0, cmd);
+		sprintf(cmd, "Y %d", adcs[ADC_LEFT_Y].center);
+		lcd_printf(222, 8, 0, cmd);
+
+		/* value */
+		sprintf(cmd, "X %d   ",
+				(int)adcs[ADC_LEFT_X].value - adcs[ADC_LEFT_X].center);
+		lcd_printf(222, 13, 0, cmd);
+		sprintf(cmd, "Y %d   ",
+				(int)adcs[ADC_LEFT_Y].value - adcs[ADC_LEFT_Y].center);
+		lcd_printf(222, 14, 0, cmd);
+
+		for (i = 0; i < 4; i++) {
+			if (adckeys[i].chk) {
+				if (i != key_idx)
+					lcd_setfg_color("green");
+				else
+					lcd_setfg_color("blue");
+			}
+			else
+				lcd_setfg_color("red");
+
+			lcd_printf(adckeys[i].x, adckeys[i].y,
+					0, adckeys[i].name);
+		}
 	}
 
 	mdelay(200);
-	lcd_setfg_color("green");
-	lcd_printf(adckeys[key_idx].x, adckeys[key_idx].y,
-		0, adckeys[key_idx].name);
+	if (key_idx > 0) {
+		lcd_setfg_color("green");
+		lcd_printf(adckeys[key_idx].x, adckeys[key_idx].y,
+				0, adckeys[key_idx].name);
+	}
 }
 
 int adc_amux_select(int channel)
@@ -162,20 +218,46 @@ int adc_get_center(struct key_adc *adc, int adc_ch)
 	int i = 0;
 	unsigned int val;
 
+	printf("adc_get_center : adc_ch %d\n", adc_ch);
 	adc->center = 0;
 
-	adc_amux_select(adc_ch);
+	if (is_odroidgo3()) {
+		adc_amux_select(adc_ch);
 
-	while (i < ADC_CENTER_CHECK_COUNT) {
-		if (adc_channel_single_shot("saradc", 1, &val)) {
-			printf("adc_channel_single_shot fail!\n");
-			return CMD_RET_FAILURE;
+		while (i < ADC_CENTER_CHECK_COUNT) {
+			if (adc_channel_single_shot("saradc", 1, &val)) {
+				printf("adc_channel_single_shot fail!\n");
+				return CMD_RET_FAILURE;
+			}
+
+			adc->center += val;
+
+			mdelay(50);
+			i++;
 		}
+	} else {
+		while (i < ADC_CENTER_CHECK_COUNT) {
+			/* Left X (CH3) */
+			if (adc_ch == ADC_LEFT_X) {
+				if (adc_channel_single_shot("saradc", 1, &val)) {
+					printf("adc_channel_single_shot fail!\n");
+					return CMD_RET_FAILURE;
+				}
+			}
 
-		adc->center += val;
+			/* Left Y (CH2) */
+			if (adc_ch == ADC_LEFT_Y) {
+				if (adc_channel_single_shot("saradc", 2, &val)) {
+					printf("adc_channel_single_shot fail!\n");
+					return CMD_RET_FAILURE;
+				}
+			}
 
-		mdelay(50);
-		i++;
+			adc->center += val;
+
+			mdelay(50);
+			i++;
+		}
 	}
 
 	adc->center /= ADC_CENTER_CHECK_COUNT;
@@ -185,11 +267,29 @@ int adc_get_center(struct key_adc *adc, int adc_ch)
 
 int adc_read_value(struct key_adc *adc, int adc_ch)
 {
-	adc_amux_select(adc_ch);
+	if (is_odroidgo3()) {
+		adc_amux_select(adc_ch);
 
-	if (adc_channel_single_shot("saradc", 1, &adc->value)) {
-		printf("adc_channel_single_shot fail!\n");
-		return CMD_RET_FAILURE;
+		if (adc_channel_single_shot("saradc", 1, &adc->value)) {
+			printf("adc_channel_single_shot fail!\n");
+			return CMD_RET_FAILURE;
+		}
+	} else {
+		/* Left X */
+		if (adc_ch == ADC_LEFT_X) {
+			if (adc_channel_single_shot("saradc", 1, &adc->value)) {
+				printf("adc_channel_single_shot fail!\n");
+				return CMD_RET_FAILURE;
+			}
+		}
+
+		/* Left Y */
+		if (adc_ch == ADC_LEFT_Y) {
+			if (adc_channel_single_shot("saradc", 2, &adc->value)) {
+				printf("adc_channel_single_shot fail!\n");
+				return CMD_RET_FAILURE;
+			}
+		}
 	}
 
 	return CMD_RET_SUCCESS;
@@ -214,6 +314,15 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 	/* init adcs arrays */
 	memset(adcs, 0, sizeof(adcs));
 
+	/* set adc key table */
+	if (is_odroidgo3()) {
+		adckeys = adckeys_go3;
+		num_adcch = 4;
+	} else {
+		adckeys = adckeys_go2;
+		num_adcch = 2;
+	}
+
 	/* draw background */
 	lcd_setbg_color("black");
 	lcd_clear();
@@ -221,41 +330,43 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 	lcd_printf(0, 1, 1, "[ ADC KEY TEST ]");
 
 	/* calibration preparation */
-	lcd_printf(0, 8, 1, "For the Accuracy of Analog Joysticks Test,");
-	lcd_printf(0, 10, 1, "Calibration will be Run First.");
+	lcd_printf(0, 4 + yoffs, 1, "For the Accuracy of Analog Joysticks Test,");
+	lcd_printf(0, 6 + yoffs, 1, "Calibration will be Run First.");
 	mdelay(1000);
 	lcd_setfg_color("red");
-	lcd_printf(0, 14, 1, "DO NOT Control Analog Joysticks During Calibration.");
+	lcd_printf(0, 9+ yoffs, 1, "DO NOT Control Analog Joysticks During Calibration.");
 	mdelay(1000);
 	lcd_setfg_color("white");
-	lcd_printf(0, 18, 1, "Now, Press Any Button to Start.");
-	lcd_printf(0, 20, 1, "Then, Calibration will Start in 2 Seconds.");
+	lcd_printf(0, 13 + yoffs, 1, "Now, Press Any Button to Start.");
+	lcd_printf(0, 15 + yoffs, 1, "Then, Calibration will Start in 2 Seconds.");
 	mdelay(500);
 
 	key = wait_key_event(false);
 
-	lcd_printf(0, 22, 1, "...          ");
+	lcd_printf(0, 17 + yoffs, 1, "...          ");
 	mdelay(400);
-	lcd_printf(0, 22, 1, "......       ");
+	lcd_printf(0, 17 + yoffs, 1, "......       ");
 	mdelay(400);
-	lcd_printf(0, 22, 1, ".........    ");
+	lcd_printf(0, 17 + yoffs, 1, ".........    ");
 	mdelay(400);
-	lcd_printf(0, 22, 1, ".............");
+	lcd_printf(0, 17 + yoffs, 1, ".............");
 	mdelay(400);
 
 	/* start calibration */
 	lcd_clear();
 	lcd_setfg_color("white");
 	lcd_printf(0, 1, 1, "[ ADC KEY TEST ]");
-	lcd_printf(0, 14, 1, "Calibration Starts...");
-	lcd_printf(0, 16, 1, "It may take 1 or 2 seconds.");
+	lcd_printf(0, 10 + yoffs, 1, "Calibration Starts...");
+	lcd_printf(0, 12 + yoffs, 1, "It may take 1 or 2 seconds.");
 
-	gpio_request(GPIO_ADCMUX_EN, "adcmux_en");
-	gpio_direction_output(GPIO_ADCMUX_EN, 1); /* default disable */
-	gpio_request(GPIO_ADCMUX_SEL_A, "adcmux_sel_a");
-	gpio_direction_output(GPIO_ADCMUX_SEL_A, 0);
-	gpio_request(GPIO_ADCMUX_SEL_B, "adcmux_sel_b");
-	gpio_direction_output(GPIO_ADCMUX_SEL_B, 0);
+	if (is_odroidgo3()) {
+		gpio_request(GPIO_ADCMUX_EN, "adcmux_en");
+		gpio_direction_output(GPIO_ADCMUX_EN, 1); /* default disable */
+		gpio_request(GPIO_ADCMUX_SEL_A, "adcmux_sel_a");
+		gpio_direction_output(GPIO_ADCMUX_SEL_A, 0);
+		gpio_request(GPIO_ADCMUX_SEL_B, "adcmux_sel_b");
+		gpio_direction_output(GPIO_ADCMUX_SEL_B, 0);
+	}
 
 	for (i = 0; i < NUM_ADC_CH; i++) {
 		if (adc_get_center(&adcs[i], i))
@@ -263,8 +374,8 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 	}
 
 	mdelay(500);
-	lcd_printf(0, 14, 1, "  Calibration Done !  ");
-	lcd_printf(0, 16, 1, "Press Any Button to Start Analog Joysticks Test.");
+	lcd_printf(0, 10 + yoffs, 1, "  Calibration Done !  ");
+	lcd_printf(0, 12 + yoffs, 1, "Press Any Button to Start Analog Joysticks Test.");
 	mdelay(500);
 
 	key = wait_key_event(false);
@@ -275,84 +386,128 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 	lcd_setfg_color("white");
 	lcd_printf(0, 1, 1, "[ ADC KEY TEST ]");
 	lcd_setfg_color("grey");
-	lcd_printf(0, 26, 1, "F3+F6 press to exit ADC KEY test");
-	lcd_printf(0, 28, 1, "Long press on PWR key to turn off power");
+	if (is_odroidgo3()) {
+		lcd_printf(0, 26, 1, "F3+F6 press to exit ADC KEY test");
+		lcd_printf(0, 28, 1, "Long press on PWR key to turn off power");
+	} else {
+		lcd_printf(0, 16, 1, "F1+F6 press to exit ADC KEY test");
+		lcd_printf(0, 17, 1, "Long press on PWR key to turn off power");
+	}
 
 	adc_draw_key_arrays(adcs, key_idx);
 
 	while (1) {
-		/* LEFT ADC */
-		for (i = 2; i < 4; i++) {
-			if (adc_read_value(&adcs[i], i))
-				return CMD_RET_FAILURE;
-		}
+		if (is_odroidgo3()) {
+			/* LEFT ADC */
+			for (i = 2; i < 4; i++) {
+				if (adc_read_value(&adcs[i], i))
+					return CMD_RET_FAILURE;
+			}
 
-		center_x = adcs[ADC_LEFT_X].center;
-		center_y = adcs[ADC_LEFT_Y].center;
-		val_x = adcs[ADC_LEFT_X].value;
-		val_y = adcs[ADC_LEFT_Y].value;
+			center_x = adcs[ADC_LEFT_X].center;
+			center_y = adcs[ADC_LEFT_Y].center;
+			val_x = adcs[ADC_LEFT_X].value;
+			val_y = adcs[ADC_LEFT_Y].value;
 
-		debug("[LEFT]center x %d y %d / value x %d, y %d ",
-			center_x, center_y,
-			val_x, val_y);
+			debug("[LEFT]center x %d y %d / value x %d, y %d ",
+					center_x, center_y,
+					val_x, val_y);
 
-		/* WEST */
-		if (val_x < center_x - ADC_CHECK_OFFSET) {
-			if (!adckeys[0].chk)
-				adckeys[0].chk = 1;
-			key_idx = 0;
-		/* EAST */
-		} else if (val_x > center_x + ADC_CHECK_OFFSET) {
-			if (!adckeys[1].chk)
-				adckeys[1].chk = 1;
-			key_idx = 1;
-		/* NORTH */
-		} else if (val_y < center_y - ADC_CHECK_OFFSET) {
-			if (!adckeys[2].chk)
-				adckeys[2].chk = 1;
-			key_idx = 2;
-		/* SOUTH */
-		} else if (val_y > center_y + ADC_CHECK_OFFSET) {
-			if (!adckeys[3].chk)
-				adckeys[3].chk = 1;
-			key_idx = 3;
-		}
+			/* WEST */
+			if (val_x < center_x - ADC_CHECK_OFFSET) {
+				if (!adckeys[0].chk)
+					adckeys[0].chk = 1;
+				key_idx = 0;
+				/* EAST */
+			} else if (val_x > center_x + ADC_CHECK_OFFSET) {
+				if (!adckeys[1].chk)
+					adckeys[1].chk = 1;
+				key_idx = 1;
+				/* NORTH */
+			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+				if (!adckeys[2].chk)
+					adckeys[2].chk = 1;
+				key_idx = 2;
+				/* SOUTH */
+			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+				if (!adckeys[3].chk)
+					adckeys[3].chk = 1;
+				key_idx = 3;
+			}
 
-		for (i = 0; i < 3; i++) {
-			if (adc_read_value(&adcs[i], i))
-				return CMD_RET_FAILURE;
-		}
+			/* RIGHT ADC */
+			for (i = 0; i < 2; i++) {
+				if (adc_read_value(&adcs[i], i))
+					return CMD_RET_FAILURE;
+			}
 
-		/* RIGHT ADC */
-		center_x = adcs[ADC_RIGHT_X].center;
-		center_y = adcs[ADC_RIGHT_Y].center;
-		val_x = adcs[ADC_RIGHT_X].value;
-		val_y = adcs[ADC_RIGHT_Y].value;
+			center_x = adcs[ADC_RIGHT_X].center;
+			center_y = adcs[ADC_RIGHT_Y].center;
+			val_x = adcs[ADC_RIGHT_X].value;
+			val_y = adcs[ADC_RIGHT_Y].value;
 
-		debug("[RIGHT]center x %d y %d / value x %d, y %d\n",
-			center_x, center_y,
-			val_x, val_y);
+			debug("[RIGHT]center x %d y %d / value x %d, y %d\n",
+					center_x, center_y,
+					val_x, val_y);
 
-		/* WEST */
-		if (val_x < center_x - ADC_CHECK_OFFSET) {
-			if (!adckeys[4].chk)
-				adckeys[4].chk = 1;
-			key_idx = 4;
-		/* EAST */
-		} else if (val_x > center_x + ADC_CHECK_OFFSET) {
-			if (!adckeys[5].chk)
-				adckeys[5].chk = 1;
-			key_idx = 5;
-		/* NORTH */
-		} else if (val_y < center_y - ADC_CHECK_OFFSET) {
-			if (!adckeys[6].chk)
-				adckeys[6].chk = 1;
-			key_idx = 6;
-		/* SOUTH */
-		} else if (val_y > center_y + ADC_CHECK_OFFSET) {
-			if (!adckeys[7].chk)
-				adckeys[7].chk = 1;
-			key_idx = 7;
+			/* WEST */
+			if (val_x < center_x - ADC_CHECK_OFFSET) {
+				if (!adckeys[4].chk)
+					adckeys[4].chk = 1;
+				key_idx = 4;
+				/* EAST */
+			} else if (val_x > center_x + ADC_CHECK_OFFSET) {
+				if (!adckeys[5].chk)
+					adckeys[5].chk = 1;
+				key_idx = 5;
+				/* NORTH */
+			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+				if (!adckeys[6].chk)
+					adckeys[6].chk = 1;
+				key_idx = 6;
+				/* SOUTH */
+			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+				if (!adckeys[7].chk)
+					adckeys[7].chk = 1;
+				key_idx = 7;
+			}
+		} else {
+			/* LEFT ADC Only */
+			for (i = 2; i < 4; i++) {
+				if (adc_read_value(&adcs[i], i))
+					return CMD_RET_FAILURE;
+			}
+
+			center_x = adcs[ADC_LEFT_X].center;
+			center_y = adcs[ADC_LEFT_Y].center;
+			val_x = adcs[ADC_LEFT_X].value;
+			val_y = adcs[ADC_LEFT_Y].value;
+
+			printf("[LEFT]center x %d y %d / value x %d, y %d \n",
+					center_x, center_y,
+					val_x, val_y);
+
+			/* WEST : plus value */
+			if (val_x > center_x + ADC_CHECK_OFFSET) {
+				if (!adckeys[0].chk)
+					adckeys[0].chk = 1;
+				key_idx = 0;
+			/* EAST : minus value */
+			} else if (val_x < center_x - ADC_CHECK_OFFSET) {
+				if (!adckeys[1].chk)
+					adckeys[1].chk = 1;
+				key_idx = 1;
+			/* NORTH : minus value */
+			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+				if (!adckeys[2].chk)
+					adckeys[2].chk = 1;
+				key_idx = 2;
+			/* SOUTH : plus value */
+			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+				if (!adckeys[3].chk)
+					adckeys[3].chk = 1;
+				key_idx = 3;
+			}
 		}
 
 		adc_draw_key_arrays(adcs, key_idx);
@@ -361,170 +516,30 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 
 		/* termination using F3+F6 */
 		key = wait_key_event(true);
-		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C2", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
+		if (check_termination_key(key))
+			break;
 	}
 
 	lcd_setfg_color("white");
-	lcd_printf(0, 22, 1, "ADC KEY TEST TERMINATED!");
+	lcd_printf(0, 18 + yoffs, 1, "ADC KEY TEST TERMINATED!");
 
 	for (i = 0; i < 8; i++)
 		adckeys[i].chk = 0;
 
 	mdelay(1000);
 
-	gpio_free(GPIO_ADCMUX_EN);
-	gpio_free(GPIO_ADCMUX_SEL_A);
-	gpio_free(GPIO_ADCMUX_SEL_B);
+	if (is_odroidgo3()) {
+		gpio_free(GPIO_ADCMUX_EN);
+		gpio_free(GPIO_ADCMUX_SEL_A);
+		gpio_free(GPIO_ADCMUX_SEL_B);
+	}
 
 	return CMD_RET_SUCCESS;
 }
 
-#else /* CONFIG_TARGET_ODROIDGO3 */
-
-void adc_draw_key_arrays(void)
-{
-	int i;
-
-	lcd_setbg_color("black");
-	lcd_clear();
-
-	lcd_setfg_color("white");
-	lcd_printf(0, 1, 1, "[ ADC KEY TEST ]");
-
-	for (i = 0; i < 4; i++) {
-		if (adckeys[i].chk)
-			lcd_setfg_color("blue");
-		else
-			lcd_setfg_color("red");
-
-		lcd_printf(adckeys[i].x, adckeys[i].y,
-				0, adckeys[i].name);
-	}
-}
-
-#define ADC_CENTER_CHECK_COUNT	10
-int adc_get_center(unsigned int *center_x, unsigned int *center_y)
-{
-	int i = 0;
-	unsigned int val_x, val_y;
-
-	*center_x = 0;
-	*center_y = 0;
-
-	while (i < ADC_CENTER_CHECK_COUNT) {
-		if (adc_channel_single_shot("saradc", 1, &val_x)) {
-			printf("adc_channel_single_shot fail!\n");
-			return CMD_RET_FAILURE;
-		}
-
-		if (adc_channel_single_shot("saradc", 2, &val_y)) {
-			printf("adc_channel_single_shot fail!\n");
-			return CMD_RET_FAILURE;
-		}
-
-		*center_x += val_x;
-		*center_y += val_y;
-
-		mdelay(50);
-		i++;
-	}
-
-	*center_x /= ADC_CENTER_CHECK_COUNT;
-	*center_y /= ADC_CENTER_CHECK_COUNT;
-
-	return CMD_RET_SUCCESS;
-}
-
-#define ADC_CHECK_OFFSET	100
-static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
-				int argc, char * const argv[])
-{
-	struct udevice *dev;
-	unsigned int val_x, val_y;
-	unsigned int center_x, center_y;
-	int adc_passed = 0;
-	int i;
-
-	if (uclass_get_device(UCLASS_ADC, 0, &dev))
-		return CMD_RET_FAILURE;
-
-	if (adc_get_center(&center_x, &center_y))
-		return CMD_RET_FAILURE;
-
-	adc_draw_key_arrays();
-
-	while (adc_passed < 4) {
-		/* XOUT */
-		if (adc_channel_single_shot("saradc", 1, &val_x)) {
-			printf("adc_channel_single_shot fail!\n");
-			return CMD_RET_FAILURE;
-		}
-
-		/* YOUT */
-		if (adc_channel_single_shot("saradc", 2, &val_y)) {
-			printf("adc_channel_single_shot fail!\n");
-			return CMD_RET_FAILURE;
-		}
-
-		printf("center x %d y %d / value x %d, y %d\n",
-			center_x, center_y, val_x, val_y);
-
-		/* LEFT */
-		if (val_x > center_x + ADC_CHECK_OFFSET) {
-			if (!adckeys[0].chk) {
-				adckeys[0].chk = 1;
-				adc_draw_key_arrays();
-				adc_passed++;
-			}
-		/* RIGHT */
-		} else if (val_x < center_x - ADC_CHECK_OFFSET) {
-			if (!adckeys[1].chk) {
-				adckeys[1].chk = 1;
-				adc_draw_key_arrays();
-				adc_passed++;
-			}
-		/* UP */
-		} else if (val_y < center_y - ADC_CHECK_OFFSET) {
-			if (!adckeys[2].chk) {
-				adckeys[2].chk = 1;
-				adc_draw_key_arrays();
-				adc_passed++;
-			}
-		/* DOWN */
-		} else if (val_y > center_y + ADC_CHECK_OFFSET) {
-			if (!adckeys[3].chk) {
-				adckeys[3].chk = 1;
-				adc_draw_key_arrays();
-				adc_passed++;
-			}
-		}
-
-		mdelay(100);
-	}
-
-	lcd_setfg_color("white");
-	lcd_printf(0, 18 + yoffs, 1, "ADC KEY TEST PASS!");
-
-	for (i = 0; i < 4; i++)
-		adckeys[i].chk = 0;
-
-	mdelay(1000);
-
-	return CMD_RET_SUCCESS;
-}
-#endif /* CONFIG_TARGET_ODROIDGO3 */
-
-#ifdef CONFIG_TARGET_ODROIDGO3
 #define BL_MAX_LEVEL		255
 #define BL_OGA_MAX_LEVEL	160
 #define BL_OGA_DEFAULT_LEVEL	80
-#endif
 static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
@@ -545,20 +560,26 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 	lcd_printf(0, 12 + yoffs, 1, "Press any key to go on next step");
 
 	lcd_setfg_color("grey");
-	lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BACKLIGHT test");
-	lcd_printf(0, 24 + yoffs, 1,
-		"Long press on PWR key to turn off power");
+	if (is_odroidgo3()) {
+		lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BACKLIGHT test");
+		lcd_printf(0, 24 + yoffs, 1,
+				"Long press on PWR key to turn off power");
+	} else {
+		lcd_printf(0, 16, 1, "F1+F6 press to exit BACKLIGHT test");
+		lcd_printf(0, 17, 1,
+				"Long press on PWR key to turn off power");
+	}
 
 	loop = 0;
 
 	lcd_setfg_color("black");
 	while (1) {
 		period_ns = 25000;
-#ifdef CONFIG_TARGET_ODROIDGO3
-		duty_ns = period_ns * active[loop] / 100 * BL_OGA_MAX_LEVEL / BL_MAX_LEVEL;
-#else
-		duty_ns = period_ns * active[loop] / 100;
-#endif
+		if (is_odroidgo3())
+			duty_ns = period_ns * active[loop] / 100 * BL_OGA_MAX_LEVEL / BL_MAX_LEVEL;
+		else
+			duty_ns = period_ns * active[loop] / 100;
+
 		printf("active percentage %d, duty_ns %d\n", active[loop], duty_ns);
 		lcd_printf(0, 8 + yoffs, 1, "PERCENTAGE : %d %", active[loop]);
 
@@ -571,36 +592,20 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 			loop = 0;
 
 		key = wait_key_event(false);
-#ifdef CONFIG_TARGET_ODROIDGO3
-		/* termination using F3+F6 */
-		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C2", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#else
-		/* termination using F1+F6 */
-		if ((key == BTN_TRIGGER_HAPPY1) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C0", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#endif
+		if (check_termination_key(key))
+			break;
+
 		mdelay(500);
 	}
 
-#ifdef CONFIG_TARGET_ODROIDGO3
-	/* set backlight as default */
-	duty_ns = period_ns * BL_OGA_DEFAULT_LEVEL / BL_MAX_LEVEL;
-	pwm_set_config(dev, 1, period_ns, duty_ns);
-#else
-	/* set backlight as max */
-	pwm_set_config(dev, 1, period_ns, period_ns);
-#endif
+	if (is_odroidgo3()) {
+		/* set backlight as default */
+		duty_ns = period_ns * BL_OGA_DEFAULT_LEVEL / BL_MAX_LEVEL;
+		pwm_set_config(dev, 1, period_ns, duty_ns);
+	} else {
+		/* set backlight as max */
+		pwm_set_config(dev, 1, period_ns, period_ns);
+	}
 
 	lcd_setfg_color("black");
 	lcd_printf(0, 18 + yoffs, 1, "BACKLIGHT TEST TERMINATED!");
@@ -626,9 +631,15 @@ static int do_odroidtest_lcd(cmd_tbl_t * cmdtp, int flag,
 		run_command("lcd clear", 0);
 
 		lcd_setfg_color("grey");
-		lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit LCD test");
-		lcd_printf(0, 24 + yoffs, 1,
-			"Long press on PWR key to turn off power");
+		if (is_odroidgo3()) {
+			lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit LCD test");
+			lcd_printf(0, 24 + yoffs, 1,
+					"Long press on PWR key to turn off power");
+		} else {
+			lcd_printf(0, 16, 1, "F1+F6 press to exit LCD test");
+			lcd_printf(0, 17, 1,
+					"Long press on PWR key to turn off power");
+		}
 
 		if (!strcmp(colors[loop], "red"))
 			lcd_setfg_color("black");
@@ -646,25 +657,9 @@ static int do_odroidtest_lcd(cmd_tbl_t * cmdtp, int flag,
 		else		loop = 0;
 
 		key = wait_key_event(false);
-#ifdef CONFIG_TARGET_ODROIDGO3
-		/* termination using F3+F6 */
-		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C2", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#else
-		/* termination using F1+F6 */
-		if ((key == BTN_TRIGGER_HAPPY1) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C0", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#endif
+		if (check_termination_key(key))
+			break;
+
 		mdelay(500);
 	}
 
@@ -695,9 +690,11 @@ void btn_draw_key_arrays(int numkeys, int key_idx)
 
 	mdelay(200);
 
-	lcd_setfg_color("green");
-	lcd_printf(gpiokeys[key_idx].x, gpiokeys[key_idx].y,
-			0, gpiokeys[key_idx].name);
+	if (key_idx > 0) {
+		lcd_setfg_color("green");
+		lcd_printf(gpiokeys[key_idx].x, gpiokeys[key_idx].y,
+				0, gpiokeys[key_idx].name);
+	}
 }
 
 static int btn_passed;
@@ -734,10 +731,16 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 	int key, numkeys, key_idx;
 	const char *hwrev = env_get("hwrev");
 
-	if (hwrev && !strcmp(hwrev, "v10"))
-		numkeys = NUMGPIOKEYS - 2;
-	else
-		numkeys = NUMGPIOKEYS;
+	if (is_odroidgo3()) {
+		numkeys = NUMGPIOKEYS_GO3;
+		gpiokeys = gpiokeys_go3;
+	} else {
+		if (hwrev && !strcmp(hwrev, "v10"))
+			numkeys = NUMGPIOKEYS_GO2 - 2;
+		else
+			numkeys = NUMGPIOKEYS_GO2;
+		gpiokeys = gpiokeys_go2;
+	}
 
 	/* draw background */
 	lcd_setbg_color("black");
@@ -747,9 +750,15 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 	lcd_printf(0, 1, 1, "[ GPIO KEY TEST ]");
 
 	lcd_setfg_color("grey");
-	lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BUTTON test");
-	lcd_printf(0, 24 + yoffs, 1,
-		"Long press on PWR key to turn off power");
+	if (is_odroidgo3()) {
+		lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BUTTON test");
+		lcd_printf(0, 24 + yoffs, 1,
+				"Long press on PWR key to turn off power");
+	} else {
+		lcd_printf(0, 16, 1, "F1+F6 press to exit BUTTON test");
+		lcd_printf(0, 17, 1,
+				"Long press on PWR key to turn off power");
+	}
 
 	/* key initialization */
 	key_idx = -1;
@@ -764,29 +773,8 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 		btn_draw_key_arrays(numkeys, key_idx);
 		printf("key 0x%x, passed %d\n", key, btn_passed);
 
-#ifdef CONFIG_TARGET_ODROIDGO3
-		/* check termination using F3+F6 */
-		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
-			printf("check termination keys, key_idx %d\n", key_idx);
-
-			if(!run_command("gpio input C2", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#else
-		/* check termination using F1+F6 */
-		if ((key == BTN_TRIGGER_HAPPY1) || (key == BTN_TRIGGER_HAPPY6)) {
-			printf("check termination keys, key_idx %d\n", key_idx);
-
-			if(!run_command("gpio input C0", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
-#endif
+		if (check_termination_key(key))
+			break;
 	}
 
 	lcd_setfg_color("white");
@@ -828,9 +816,15 @@ static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
 	lcd_printf(0, 1, 1, "[ BATTERY & CHARGE TEST ]");
 
 	lcd_setfg_color("grey");
-	lcd_printf(0, 22 + yoffs, 1, "F3+F6 press to exit BATTERY test");
-	lcd_printf(0, 24 + yoffs, 1,
-		"Long press on PWR key to turn off power");
+	if (is_odroidgo3()) {
+		lcd_printf(0, 26, 1, "F3+F6 press to exit BATTERY test");
+		lcd_printf(0, 28, 1,
+				"Long press on PWR key to turn off power");
+	} else {
+		lcd_printf(0, 18, 1, "F1+F6 press to exit BATTERY test");
+		lcd_printf(0, 19 + yoffs, 1,
+				"Long press on PWR key to turn off power");
+	}
 
 	/* check fuel gauge device */
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
@@ -852,19 +846,19 @@ static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
 		is_bat_exist = fuel_gauge_bat_is_exist(fg);
 		printf("is_bat_exist %d\n", is_bat_exist);
 		if (is_bat_exist) {
-			lcd_printf(0, 7, 1, "  BATTERY : Connected  ");
+			lcd_printf(0, 3 + yoffs, 1, "  BATTERY : Connected  ");
 		} else {
-			lcd_printf(0, 7, 1, "BATTERY : Disconnected");
+			lcd_printf(0, 3 + yoffs, 1, "BATTERY : Disconnected");
 		}
 
 		/* 2. check dc cable connection */
 		is_dcjack_exist = gpio_get_value(DC_DET_GPIO) ? 1 : 0;
 		printf("is_dcjack_exist %d\n", is_dcjack_exist);
 		if (is_dcjack_exist) {
-			lcd_printf(0, 10, 1, "  DC JACK : Connected  ");
+			lcd_printf(0, 6 + yoffs, 1, "  DC JACK : Connected  ");
 			gpio_direction_output(PWR_LED_GPIO, 1);
 		} else {
-			lcd_printf(0, 10, 1, "DC JACK : Disconnected");
+			lcd_printf(0, 6 + yoffs, 1, "DC JACK : Disconnected");
 			gpio_direction_output(PWR_LED_GPIO, 0);
 		}
 
@@ -878,10 +872,10 @@ static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
 		is_chrg_online = fuel_gauge_get_chrg_online(fg);
 		printf("is_chrg_online %d\n", is_chrg_online);
 		if (is_chrg_online) {
-			lcd_printf(0, 13, 1, "  CHARGING STATE : Online  ");
+			lcd_printf(0, 9 + yoffs, 1, "  CHARGING STATE : Online  ");
 			gpio_direction_output(CHG_LED_GPIO, 1);
 		} else {
-			lcd_printf(0, 13, 1, "CHARGING STATE : Offline");
+			lcd_printf(0, 9 + yoffs, 1, "CHARGING STATE : Offline");
 			gpio_direction_output(CHG_LED_GPIO, 0);
 		}
 
@@ -889,23 +883,19 @@ static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
 		bat_voltage = fuel_gauge_get_voltage(fg);
 		printf("bat_voltage %d\n", bat_voltage);
 		sprintf(cmd, "BATTERY VOLTAGE : %d (mV)", bat_voltage);
-		lcd_printf(0, 16, 1, cmd);
+		lcd_printf(0, 12 + yoffs, 1, cmd);
 
 		/* 6. show charging current */
 		chrg_current = fuel_gauge_get_current(fg);
 		printf("chrg_current %d\n\n", chrg_current);
 		sprintf(cmd, "CHARGING CURRENT : %d (mA)", chrg_current);
-		lcd_printf(0, 19, 1, cmd);
+		lcd_printf(0, 15 + yoffs, 1, cmd);
 
 		/* 7. check key event */
 		key = wait_key_event(true);
-		if ((key == BTN_TRIGGER_HAPPY3) || (key == BTN_TRIGGER_HAPPY6)) {
-			if(!run_command("gpio input C2", 0)
-				&& !run_command("gpio input C5", 0)) {
-				printf("Got termination key!\n");
-				break;
-			}
-		}
+
+		if (check_termination_key(key))
+			break;
 
 		/* loop delay 500ms+alpha */
 		mdelay(500);
@@ -972,6 +962,11 @@ static int do_odroidtest(cmd_tbl_t *cmdtp,
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
+
+	if (is_odroidgo3())
+		yoffs = 4;
+	else
+		yoffs = 0;
 
 	cp = find_cmd_tbl(argv[1], cmd_sub_odroidtest,
 			ARRAY_SIZE(cmd_sub_odroidtest));
