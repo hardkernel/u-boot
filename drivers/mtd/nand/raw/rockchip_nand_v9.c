@@ -19,7 +19,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_ROCKCHIP_RK3568
+#define NANDC_V9_BOOTROM_ECC	16
+#else
 #define NANDC_V9_BOOTROM_ECC	70
+#endif
 #define NANDC_V9_NUM_BANKS	4
 #define NANDC_V9_DEF_TIMEOUT	20000
 #define NANDC_V9_READ		0
@@ -78,7 +82,6 @@ struct rk_nand {
 	uint32_t banks[NANDC_V9_NUM_BANKS];
 	struct nand_hw_control controller;
 	uint32_t ecc_strength;
-	uint32_t max_ecc_strength;
 	struct mtd_info mtd;
 	bool bootromblocks;
 	void __iomem *regs;
@@ -90,13 +93,13 @@ static struct nand_ecclayout nand_oob_fix = {
 	.eccbytes = 24,
 	.eccpos = {
 		4, 5, 6, 7, 8, 9, 10
-        },
+	},
 	.oobfree = {
 		{
 			.offset = 0,
 			.length = 4
-                }
-        }
+		}
+	}
 };
 
 static inline struct rk_nand *to_rknand(struct nand_hw_control *ctrl)
@@ -485,7 +488,7 @@ static int rockchip_nand_hw_ecc_ctrl_init(struct mtd_info *mtd,
 
 	if (fdtdec_get_bool(gd->fdt_blob, chip->flash_node,
 			    "rockchip,protect-bootrom-blocks"))
-                rknand->bootromblocks = true;
+		rknand->bootromblocks = true;
 	else
 		rknand->bootromblocks = false;
 
@@ -493,10 +496,6 @@ static int rockchip_nand_hw_ecc_ctrl_init(struct mtd_info *mtd,
 		strength = ecc->strength;
 	else
 		strength = rockchip_nand_ecc_max_strength(mtd, ecc);
-
-	rknand->max_ecc_strength = 70;
-	if (strength > rknand->max_ecc_strength)
-		strength = rknand->max_ecc_strength;
 
 	rockchip_nand_hw_ecc_setup(mtd, ecc, strength);
 
@@ -540,7 +539,7 @@ static int rockchip_nand_ecc_init(struct mtd_info *mtd,
 
 static int rockchip_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
 {
-	int page, res = 0, i;
+	int page, res = 0;
 	struct nand_chip *chip = mtd_to_nand(mtd);
 	u16 bad = 0xff;
 	int chipnr = (int)(ofs >> chip->chip_shift);
@@ -550,13 +549,23 @@ static int rockchip_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
 	chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 	if(rockchip_nand_hw_syndrome_pio_read_page(mtd,
 	   chip, chip->buffers->databuf, 0, page) == -1) {
+		/* first page of the block*/
 		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
-		for (i = 0; i < 8; i++) {
-			bad = chip->read_byte(mtd);
-			if (bad)
-				break;
-		}
-		if (i >= 8)
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
+			res = 1;
+		/* second page of the block*/
+		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos,
+			      page + 1);
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
+			res = 1;
+		/* last page of the block */
+		page += ((mtd->erasesize - mtd->writesize) >> chip->chip_shift);
+		page--;
+		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
 			res = 1;
 	}
 	chip->select_chip(mtd, -1);
@@ -619,6 +628,8 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 		return ret;
 	}
 	mtd->name = "rk-nand";
+	memcpy(&rknand->mtd, mtd, sizeof(struct mtd_info));
+
 	return 0;
 }
 
@@ -648,6 +659,7 @@ static int rockchip_nandc_probe(struct udevice *dev)
 {
 	const void *blob = gd->fdt_blob;
 	struct rk_nand *rknand = dev_get_priv(dev);
+	struct mtd_info *mtd = dev_get_uclass_priv(dev);
 	fdt_addr_t regs;
 	int ret = 0, node;
 
@@ -671,6 +683,8 @@ static int rockchip_nandc_probe(struct udevice *dev)
 	ret = rockchip_nand_chips_init(node, rknand);
 	if (ret)
 		debug("Failed to init nand chips\n");
+
+	memcpy(mtd, &rknand->mtd, sizeof(struct mtd_info));
 
 	return ret;
 }

@@ -78,5 +78,6 @@ obj-$(CONFIG_NAND_MXC) += mxc_nand_spl.o
 obj-$(CONFIG_NAND_MXS) += mxs_nand_spl.o mxs_nand.o
 obj-$(CONFIG_NAND_SUNXI) += sunxi_nand_spl.o
 obj-$(CONFIG_NAND_ROCKCHIP) += rockchip_nand_spl.o
+obj-$(CONFIG_NAND_ROCKCHIP_V9) += rockchip_nand_spl_v9.o
 
 endif # drivers
