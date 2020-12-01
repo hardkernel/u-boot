@@ -57,6 +57,7 @@ static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
 	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
 	RK3036_PLL_RATE(408000000, 1, 68, 2, 2, 1, 0),
+	RK3036_PLL_RATE(400000000, 1, 100, 6, 1, 1, 0),
 	RK3036_PLL_RATE(200000000, 1, 100, 6, 2, 1, 0),
 	RK3036_PLL_RATE(100000000, 1, 150, 6, 6, 1, 0),
 	{ /* sentinel */ },
@@ -81,7 +82,7 @@ static struct rockchip_pll_clock rk3568_pll_clks[] = {
 		     RK3568_PMU_MODE, 2, 10, 0, rk3568_pll_rates),
 };
 
-#if (!IS_ENABLED(CONFIG_SPL_BUILD))
+#ifndef CONFIG_SPL_BUILD
 #define RK3568_CLK_DUMP(_id, _name, _iscru)	\
 {						\
 	.id = _id,				\
@@ -111,8 +112,9 @@ static const struct rk3568_clk_info clks_dump[] = {
 };
 #endif
 
-static ulong rk3568_pmu_pll_set_rate(struct rk3568_clk_priv *priv,
-				     ulong pll_id, ulong rate)
+static ulong __maybe_unused
+rk3568_pmu_pll_set_rate(struct rk3568_clk_priv *priv,
+			ulong pll_id, ulong rate)
 {
 	struct udevice *pmucru_dev;
 	struct rk3568_pmuclk_priv *pmu_priv;
@@ -606,6 +608,119 @@ static int rk3568_armclk_set_clk(struct rk3568_clk_priv *priv, ulong hz)
 	}
 
 	return 0;
+}
+
+static ulong rk3568_cpll_div_get_rate(struct rk3568_clk_priv *priv,
+				      ulong clk_id)
+{
+	struct rk3568_cru *cru = priv->cru;
+	int div, mask, shift, con;
+
+	switch (clk_id) {
+	case CPLL_500M:
+		con = 78;
+		mask = CPLL_500M_DIV_MASK;
+		shift = CPLL_500M_DIV_SHIFT;
+		break;
+	case CPLL_333M:
+		con = 79;
+		mask = CPLL_333M_DIV_MASK;
+		shift = CPLL_333M_DIV_SHIFT;
+		break;
+	case CPLL_250M:
+		con = 79;
+		mask = CPLL_250M_DIV_MASK;
+		shift = CPLL_250M_DIV_SHIFT;
+		break;
+	case CPLL_125M:
+		con = 80;
+		mask = CPLL_125M_DIV_MASK;
+		shift = CPLL_125M_DIV_SHIFT;
+		break;
+	case CPLL_100M:
+		con = 82;
+		mask = CPLL_100M_DIV_MASK;
+		shift = CPLL_100M_DIV_SHIFT;
+		break;
+	case CPLL_62P5M:
+		con = 80;
+		mask = CPLL_62P5M_DIV_MASK;
+		shift = CPLL_62P5M_DIV_SHIFT;
+		break;
+	case CPLL_50M:
+		con = 81;
+		mask = CPLL_50M_DIV_MASK;
+		shift = CPLL_50M_DIV_SHIFT;
+		break;
+	case CPLL_25M:
+		con = 81;
+		mask = CPLL_25M_DIV_MASK;
+		shift = CPLL_25M_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	div = (readl(&cru->clksel_con[con]) & mask) >> shift;
+	return DIV_TO_RATE(priv->cpll_hz, div);
+}
+
+static ulong rk3568_cpll_div_set_rate(struct rk3568_clk_priv *priv,
+				      ulong clk_id, ulong rate)
+{
+	struct rk3568_cru *cru = priv->cru;
+	int div, mask, shift, con;
+
+	switch (clk_id) {
+	case CPLL_500M:
+		con = 78;
+		mask = CPLL_500M_DIV_MASK;
+		shift = CPLL_500M_DIV_SHIFT;
+		break;
+	case CPLL_333M:
+		con = 79;
+		mask = CPLL_333M_DIV_MASK;
+		shift = CPLL_333M_DIV_SHIFT;
+		break;
+	case CPLL_250M:
+		con = 79;
+		mask = CPLL_250M_DIV_MASK;
+		shift = CPLL_250M_DIV_SHIFT;
+		break;
+	case CPLL_125M:
+		con = 80;
+		mask = CPLL_125M_DIV_MASK;
+		shift = CPLL_125M_DIV_SHIFT;
+		break;
+	case CPLL_100M:
+		con = 82;
+		mask = CPLL_100M_DIV_MASK;
+		shift = CPLL_100M_DIV_SHIFT;
+		break;
+	case CPLL_62P5M:
+		con = 80;
+		mask = CPLL_62P5M_DIV_MASK;
+		shift = CPLL_62P5M_DIV_SHIFT;
+		break;
+	case CPLL_50M:
+		con = 81;
+		mask = CPLL_50M_DIV_MASK;
+		shift = CPLL_50M_DIV_SHIFT;
+		break;
+	case CPLL_25M:
+		con = 81;
+		mask = CPLL_25M_DIV_MASK;
+		shift = CPLL_25M_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	assert(div - 1 <= 31);
+	rk_clrsetreg(&cru->clksel_con[con],
+		     mask, (div - 1) << shift);
+	return rk3568_cpll_div_get_rate(priv, clk_id);
 }
 
 static ulong rk3568_bus_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
@@ -1559,6 +1674,7 @@ static ulong rk3568_emmc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 	return rk3568_emmc_get_clk(priv);
 }
 
+#ifndef CONFIG_SPL_BUILD
 static ulong rk3568_aclk_vop_get_clk(struct rk3568_clk_priv *priv)
 {
 	struct rk3568_cru *cru = priv->cru;
@@ -1900,7 +2016,7 @@ static ulong rk3568_gmac_tx_rx_set_clk(struct rk3568_clk_priv *priv,
 	return 0;
 }
 
-static ulong rk3568_ebc_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
+static ulong rk3568_ebc_get_clk(struct rk3568_clk_priv *priv)
 {
 	struct rk3568_cru *cru = priv->cru;
 	u32 con, div, p_rate;
@@ -1908,8 +2024,6 @@ static ulong rk3568_ebc_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
 	con = readl(&cru->clksel_con[79]);
 	div = (con & CPLL_333M_DIV_MASK) >> CPLL_333M_DIV_SHIFT;
 	p_rate = DIV_TO_RATE(priv->cpll_hz, div);
-	if (clk_id == CPLL_333M)
-		return p_rate;
 
 	con = readl(&cru->clksel_con[43]);
 	div = (con & DCLK_EBC_SEL_MASK) >> DCLK_EBC_SEL_SHIFT;
@@ -1925,8 +2039,7 @@ static ulong rk3568_ebc_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
 	}
 }
 
-static ulong rk3568_ebc_set_clk(struct rk3568_clk_priv *priv,
-				ulong clk_id, ulong rate)
+static ulong rk3568_ebc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 {
 	struct rk3568_cru *cru = priv->cru;
 	int src_clk_div;
@@ -1936,13 +2049,13 @@ static ulong rk3568_ebc_set_clk(struct rk3568_clk_priv *priv,
 	rk_clrsetreg(&cru->clksel_con[79],
 		     CPLL_333M_DIV_MASK,
 		     (src_clk_div - 1) << CPLL_333M_DIV_SHIFT);
-	if (clk_id == DCLK_EBC)
-		rk_clrsetreg(&cru->clksel_con[43],
-			     DCLK_EBC_SEL_MASK,
-			     DCLK_EBC_SEL_CPLL_333M << DCLK_EBC_SEL_SHIFT);
+	rk_clrsetreg(&cru->clksel_con[43],
+		     DCLK_EBC_SEL_MASK,
+		     DCLK_EBC_SEL_CPLL_333M << DCLK_EBC_SEL_SHIFT);
 
-	return rk3568_ebc_get_clk(priv, clk_id);
+	return rk3568_ebc_get_clk(priv);
 }
+#endif
 
 static ulong rk3568_clk_get_rate(struct clk *clk)
 {
@@ -2031,6 +2144,7 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case CCLK_EMMC:
 		rate = rk3568_emmc_get_clk(priv);
 		break;
+#ifndef CONFIG_SPL_BUILD
 	case ACLK_VOP:
 		rate = rk3568_aclk_vop_get_clk(priv);
 		break;
@@ -2061,10 +2175,10 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case CLK_GMAC1_PTP_REF:
 		rate = rk3568_gmac_ptp_ref_get_clk(priv, 1);
 		break;
-	case CPLL_333M:
 	case DCLK_EBC:
-		rate = rk3568_ebc_get_clk(priv, clk->id);
+		rate = rk3568_ebc_get_clk(priv);
 		break;
+#endif
 	case ACLK_SECURE_FLASH:
 	case ACLK_CRYPTO_NS:
 	case HCLK_SECURE_FLASH:
@@ -2073,6 +2187,16 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case CLK_CRYPTO_NS_CORE:
 	case CLK_CRYPTO_NS_PKA:
 		rate = rk3568_crypto_get_rate(priv, clk->id);
+		break;
+	case CPLL_500M:
+	case CPLL_333M:
+	case CPLL_250M:
+	case CPLL_125M:
+	case CPLL_100M:
+	case CPLL_62P5M:
+	case CPLL_50M:
+	case CPLL_25M:
+		rate = rk3568_cpll_div_get_rate(priv, clk->id);
 		break;
 	default:
 		return -ENOENT;
@@ -2101,10 +2225,14 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case PLL_CPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[CPLL], priv->cru,
 					    CPLL, rate);
+		priv->cpll_hz = rockchip_pll_get_rate(&rk3568_pll_clks[CPLL],
+						      priv->cru, CPLL);
 		break;
 	case PLL_GPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[GPLL], priv->cru,
 					    GPLL, rate);
+		priv->gpll_hz = rockchip_pll_get_rate(&rk3568_pll_clks[GPLL],
+						      priv->cru, GPLL);
 		break;
 	case PLL_NPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[NPLL], priv->cru,
@@ -2113,6 +2241,9 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case PLL_VPLL:
 		ret = rockchip_pll_set_rate(&rk3568_pll_clks[VPLL], priv->cru,
 					    VPLL, rate);
+		priv->vpll_hz = rockchip_pll_get_rate(&rk3568_pll_clks[VPLL],
+						      priv->cru,
+						      VPLL);
 		break;
 	case ACLK_BUS:
 	case PCLK_BUS:
@@ -2165,6 +2296,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CCLK_EMMC:
 		rate = rk3568_emmc_set_clk(priv, rate);
 		break;
+#ifndef CONFIG_SPL_BUILD
 	case ACLK_VOP:
 		rate = rk3568_aclk_vop_set_clk(priv, rate);
 		break;
@@ -2201,10 +2333,10 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_GMAC1_PTP_REF:
 		rate = rk3568_gmac_ptp_ref_set_clk(priv, 1, rate);
 		break;
-	case CPLL_333M:
 	case DCLK_EBC:
-		rate = rk3568_ebc_set_clk(priv, clk->id, rate);
+		rate = rk3568_ebc_set_clk(priv, rate);
 		break;
+#endif
 	case ACLK_SECURE_FLASH:
 	case ACLK_CRYPTO_NS:
 	case HCLK_SECURE_FLASH:
@@ -2213,6 +2345,16 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_CRYPTO_NS_CORE:
 	case CLK_CRYPTO_NS_PKA:
 		rate = rk3568_crypto_set_rate(priv, clk->id, rate);
+		break;
+	case CPLL_500M:
+	case CPLL_333M:
+	case CPLL_250M:
+	case CPLL_125M:
+	case CPLL_100M:
+	case CPLL_62P5M:
+	case CPLL_50M:
+	case CPLL_25M:
+		rate = rk3568_cpll_div_set_rate(priv, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
@@ -2617,7 +2759,7 @@ U_BOOT_DRIVER(rockchip_rk3568_cru) = {
 	.probe		= rk3568_clk_probe,
 };
 
-#if (!IS_ENABLED(CONFIG_SPL_BUILD))
+#ifndef CONFIG_SPL_BUILD
 /**
  * soc_clk_dump() - Print clock frequencies
  * Returns zero on success
