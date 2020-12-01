@@ -83,19 +83,42 @@ __weak int rk_board_init(void)
 #define CPUID_LEN	0x10
 #define CPUID_OFF	0x07
 
+#define MAX_ETHERNET	0x2
+
 static int rockchip_set_ethaddr(void)
 {
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
-	char buf[ARP_HLEN_ASCII + 1];
-	u8 ethaddr[ARP_HLEN];
-	int ret;
+	char buf[ARP_HLEN_ASCII + 1], mac[16];
+	u8 ethaddr[ARP_HLEN * MAX_ETHERNET] = {0};
+	int ret, i;
+	bool need_write = false;
 
 	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
-	if (ret > 0 && is_valid_ethaddr(ethaddr)) {
-		sprintf(buf, "%pM", ethaddr);
-		env_set("ethaddr", buf);
+	for (i = 0; i < MAX_ETHERNET; i++) {
+		if (ret <= 0 || !is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
+			net_random_ethaddr(&ethaddr[i * ARP_HLEN]);
+			need_write = true;
+		}
+
+		if (is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
+			sprintf(buf, "%pM", &ethaddr[i * ARP_HLEN]);
+			if (i == 0)
+				memcpy(mac, "ethaddr", sizeof("ethaddr"));
+			else
+				sprintf(mac, "eth%daddr", i);
+			env_set(mac, buf);
+		}
+	}
+
+	if (need_write) {
+		ret = vendor_storage_write(VENDOR_LAN_MAC_ID,
+					   ethaddr, sizeof(ethaddr));
+		if (ret < 0)
+			printf("%s: vendor_storage_write failed %d\n",
+			       __func__, ret);
 	}
 #endif
+
 	return 0;
 }
 
