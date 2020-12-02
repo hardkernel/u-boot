@@ -138,3 +138,16 @@ int sound_play(u32 msec, u32 frequency)
 
 	return ret;
 }
+
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+int sound_path(u32 path)
+{
+	const struct snd_soc_dai_ops *ops = dev_get_driver_ops(codec_dev);
+
+	if (!ops || !ops->set_path)
+		return -ENOTSUPP;
+
+	return ops->set_path(codec_dev, path);
+
+}
+#endif

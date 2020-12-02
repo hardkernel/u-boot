@@ -53,6 +53,30 @@ int sound_init(const void *blob);
  */
 int sound_play(uint32_t msec, uint32_t frequency);
 
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+enum {
+	OFF,
+	RCV,
+	SPK_PATH,
+	HP_PATH,
+	HP_NO_MIC,
+	BT,
+	SPK_HP,
+	RING_SPK,
+	RING_HP,
+	RING_HP_NO_MIC,
+	RING_SPK_HP,
+};
+
+/*
+ * Set playback path
+ * @param path
+ *
+ * @return	int 0 for success, -1 for error
+ */
+int sound_path(uint32_t path);
+#endif
+
 struct snd_soc_dai_ops {
 	int (*hw_params)(struct udevice *dev, unsigned int samplerate,
 			 unsigned int fmt, unsigned int channels);
@@ -61,6 +85,9 @@ struct snd_soc_dai_ops {
 	int (*transfer)(struct udevice *dev, unsigned int *data,
 			unsigned long data_size);
 	int (*set_sysclk)(struct udevice *dev, unsigned int freq);
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+	int (*set_path)(struct udevice *dev, unsigned int path);
+#endif
 };
 
 #endif  /* __SOUND__H__ */

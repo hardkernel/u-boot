@@ -310,8 +310,20 @@ static int rk817_startup(struct udevice *dev)
 {
 	struct rk817_codec_priv *rk817 = dev_get_priv(dev);
 
+#ifndef CONFIG_PLATFORM_ODROID_GOADV
 	rk817_playback_path_put(rk817, SPK_HP);
+#endif
 	rk817_digital_mute(rk817, 0);
+
+	return 0;
+}
+
+static int rk817_set_path(struct udevice *dev, unsigned path)
+{
+	struct rk817_codec_priv *rk817 = dev_get_priv(dev);
+
+	DBG("[%s] path %d\n", __func__, path);
+	rk817_playback_path_put(rk817, path);
 
 	return 0;
 }
@@ -319,6 +331,7 @@ static int rk817_startup(struct udevice *dev)
 static const struct snd_soc_dai_ops rk817_codec_ops = {
 	.hw_params = rk817_hw_params,
 	.startup = rk817_startup,
+	.set_path = rk817_set_path,
 };
 
 static int rk817_codec_probe(struct udevice *dev)

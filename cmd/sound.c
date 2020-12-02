@@ -47,9 +47,26 @@ static int do_play(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
+/* set playback path */
+static int do_path(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	if (!strcmp(argv[1], "spk"))
+		sound_path(SPK_PATH);
+	else if (!strcmp(argv[1], "hp"))
+		sound_path(HP_PATH);
+	else
+		return CMD_RET_USAGE;
+
+	return 0;
+}
+
 static cmd_tbl_t cmd_sound_sub[] = {
 	U_BOOT_CMD_MKENT(init, 0, 1, do_init, "", ""),
 	U_BOOT_CMD_MKENT(play, 2, 1, do_play, "", ""),
+	U_BOOT_CMD_MKENT(path, 1, 1, do_path, "", ""),
 };
 
 /* process sound command */
@@ -77,4 +94,5 @@ U_BOOT_CMD(
 	"sound sub-system",
 	"init - initialise the sound driver\n"
 	"sound play [len] [freq] - play a sound for len ms at freq hz\n"
+	"path [path] - set playback, use spk or hp\n"
 );

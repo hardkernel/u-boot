@@ -168,6 +168,7 @@ enum {
 	RK817_STEREO,
 };
 
+#ifndef CONFIG_PLATFORM_ODROID_GOADV
 enum {
 	OFF,
 	RCV,
@@ -181,6 +182,7 @@ enum {
 	RING_HP_NO_MIC,
 	RING_SPK_HP,
 };
+#endif
 
 enum {
 	MIC_OFF,
