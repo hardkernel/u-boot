@@ -281,13 +281,17 @@ function fit_gen_uboot_itb()
 			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_SPL_ROCKCHIP_CRYPTO_V1=y' .config ; then
 				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
+				fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@np
 			else
 				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
+				fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@c
 			fi
 		else
 			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
 			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
 			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
+			fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@c
+			fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@np
 		fi
 
 		# repack spl
@@ -394,6 +398,8 @@ function fit_gen_boot_itb()
 			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np
 			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
 		fi
+		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@c
+		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@np
 	fi
 
 	mv ${ITS_BOOT} ${FIT_DIR}
