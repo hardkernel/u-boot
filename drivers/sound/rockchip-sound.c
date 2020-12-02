@@ -13,7 +13,12 @@
 #include <sound.h>
 #include <asm/arch-rockchip/resource_img.h>
 
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+/* about 3 seconds */
+#define WAV_SIZE		(512 * 1024) /* BYTE */
+#else
 #define WAV_SIZE		(5 * 1024 * 1024) /* BYTE */
+#endif
 #define SAMPLERATE		44100
 
 static struct udevice *i2s_dev, *codec_dev;
@@ -21,8 +26,15 @@ static struct udevice *i2s_dev, *codec_dev;
 static int load_audio_wav(void *buf, const char *wav_name, int size)
 {
 	int ret = 0;
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+	char cmd[128];
+	sprintf(cmd, "fatload mmc 1:1 %p boot.wav", (void *)buf);
+	if (CMD_RET_SUCCESS == run_command(cmd, 0))
+		ret = 1;
+#else
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
 	ret = rockchip_read_resource_file(buf, wav_name, 0, size);
+#endif
 #endif
 
 	return ret;
