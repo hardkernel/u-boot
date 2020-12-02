@@ -280,14 +280,14 @@ function fit_gen_uboot_itb()
 		if grep -q '^CONFIG_SPL_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_SPL_ROCKCHIP_CRYPTO_V1=y' .config ; then
-				fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
 			else
-				fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
 			fi
 		else
-			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
-			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
-			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
+			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
+			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
+			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
 		fi
 
 		# repack spl
@@ -385,14 +385,14 @@ function fit_gen_boot_itb()
 		if grep -q '^CONFIG_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_ROCKCHIP_CRYPTO_V1=y' .config ; then
-				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+				fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np
 			else
-				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+				fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c
 			fi
 		else
-			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
-			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
-			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
+			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c
+			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np
+			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
 		fi
 	fi
 
