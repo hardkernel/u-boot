@@ -228,11 +228,6 @@ function fit_gen_uboot_itb()
 			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_UBOOT}>;/g" ${ITS_UBOOT}
 		fi
 
-		# burn-key-hash
-		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
-			sed -i "s/burn-key-hash = <0>;/burn-key-hash = <1>;/g" ${ITS_UBOOT}
-		fi
-
 		# u-boot.dtb must contains rsa key
 		if ! fdtget -l ${UBOOT_DTB} /signature >/dev/null 2>&1 ; then
 			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
@@ -243,6 +238,10 @@ function fit_gen_uboot_itb()
 		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		mv ${SIG_BIN} ${SIG_UBOOT}
 
+		# burn-key-hash
+		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
+			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} burn-key-hash 0x1
+		fi
 		# rollback-index read back check
 		if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
 			VERSION=`fdtget -ti ${ITB_UBOOT} /configurations/conf rollback-index`
@@ -254,8 +253,8 @@ function fit_gen_uboot_itb()
 
 		# burn-key-hash read back check
 		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
-			if [ "`fdtget -ti ${ITB_UBOOT} /configurations/conf burn-key-hash`" != "1" ]; then
-				echo "ERROR: Failed to set burn-key-hash for ${ITB_UBOOT}";
+			if [ "`fdtget -ti ${SPL_DTB} ${SIGNATURE_KEY_NODE} burn-key-hash`" != "1" ]; then
+				echo "ERROR: Failed to set burn-key-hash for ${SPL_DTB}";
 				exit 1
 			fi
 		fi
@@ -304,9 +303,13 @@ function fit_gen_uboot_itb()
 			cat ${SPL_DTB} >> spl/u-boot-spl.bin
 
 			./make.sh --spl ${ARG_INI_LOADER}
-			echo "pack loader with new: spl/u-boot-spl.bin"
+			echo "## pack loader with new: spl/u-boot-spl.bin"
 		else
 			./make.sh loader ${ARG_INI_LOADER}
+		fi
+
+		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
+			echo "## ${SPL_DTB}: burn-key-hash=1"
 		fi
 	fi
 
@@ -455,11 +458,6 @@ function fit_msg_uboot()
 	VERSION=`fdtget -ti ${ITB_UBOOT} / version`
 	if [ "${VERSION}" != "" ]; then
 		MSG_VER=", version=${VERSION}"
-	fi
-
-	if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
-		echo "uboot.img: burn-key-hash=1"
-		echo
 	fi
 
 	if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
