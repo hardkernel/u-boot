@@ -18,6 +18,7 @@
 #include <power/charge_display.h>
 #endif
 #include <power/fuel_gauge.h>
+#include <sound.h>
 
 struct key_arrays {
 	const char * name;

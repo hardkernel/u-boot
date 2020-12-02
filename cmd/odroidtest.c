@@ -907,6 +907,148 @@ static int do_odroidtest_bat(cmd_tbl_t * cmdtp, int flag,
 	return 0;
 }
 
+bool check_audio_keys(int key)
+{
+	bool ret = false;
+
+	if (is_odroidgo3()) {
+		switch (key) {
+		case BTN_DPAD_UP:
+		case BTN_DPAD_DOWN:
+		case BTN_DPAD_LEFT:
+		case BTN_DPAD_RIGHT:
+		case BTN_EAST:
+		case BTN_SOUTH:
+		case BTN_WEST:
+		case BTN_NORTH:
+		case KEY_VOLUMEUP:
+		case KEY_VOLUMEDOWN:
+		case BTN_TL:
+		case BTN_TR:
+		case BTN_TL2:
+		case BTN_TR2:
+		case BTN_TRIGGER_HAPPY1:
+		case BTN_TRIGGER_HAPPY2:
+			ret = true;
+			break;
+		case BTN_TRIGGER_HAPPY3:
+		case BTN_TRIGGER_HAPPY4:
+		case BTN_TRIGGER_HAPPY5:
+		case BTN_TRIGGER_HAPPY6:
+		default:
+			ret = false;
+			break;
+		}
+	} else {
+		switch (key) {
+		case BTN_DPAD_UP:
+		case BTN_DPAD_DOWN:
+		case BTN_DPAD_LEFT:
+		case BTN_DPAD_RIGHT:
+		case BTN_EAST:
+		case BTN_SOUTH:
+		case BTN_WEST:
+		case BTN_NORTH:
+		case BTN_TL:
+		case BTN_TR:
+		case BTN_TL2:
+		case BTN_TR2:
+			ret = true;
+			break;
+		case BTN_TRIGGER_HAPPY1:
+		case BTN_TRIGGER_HAPPY2:
+		case BTN_TRIGGER_HAPPY3:
+		case BTN_TRIGGER_HAPPY4:
+		case BTN_TRIGGER_HAPPY5:
+		case BTN_TRIGGER_HAPPY6:
+		default:
+			ret = false;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+#define PHONE_DET_GPIO		86 /* GPIO2_C6 */
+static int do_odroidtest_audio(cmd_tbl_t * cmdtp, int flag,
+				int argc, char * const argv[])
+{
+	int ret;
+	int key;
+	int is_phone_det;
+
+	/* draw background */
+	lcd_setbg_color("black");
+	lcd_clear();
+
+	lcd_setfg_color("white");
+	lcd_printf(0, 2, 1, "[ AUDIO TEST ]");
+
+	lcd_setfg_color("grey");
+	if (is_odroidgo3()) {
+		lcd_printf(0, 24, 1, "During Audio Playing, Key Event is Ignored.");
+		lcd_printf(0, 26, 1, "F3+F6 press to exit AUDIO test");
+		lcd_printf(0, 28, 1,
+				"Long press on PWR key to turn off power");
+	} else {
+		lcd_printf(0, 15, 1, "During Audio Playing, Key Event is Ignored.");
+		lcd_printf(0, 16, 1, "F1+F6 press to exit AUDIO test");
+		lcd_printf(0, 17, 1,
+				"Long press on PWR key to turn off power");
+	}
+
+	/* init sound system */
+	ret = sound_init(gd->fdt_blob);
+	if (ret) {
+		printf("Initialise Audio driver failed\n");
+		lcd_printf(0, 18 + yoffs, 1, "ADC KEY TEST TERMINATED!");
+		return 0;
+	}
+
+	/* init headphone detect gpio */
+	gpio_request(PHONE_DET_GPIO, "phone_det");
+	gpio_direction_input(PHONE_DET_GPIO);
+
+	while (1) {
+		lcd_setfg_color("yellow");
+
+		/* 1. check headphone detect */
+		is_phone_det = gpio_get_value(PHONE_DET_GPIO);
+		printf("phone detected %d\n", is_phone_det);
+		if (is_phone_det) {
+			lcd_printf(0, 6 + yoffs, 1, "  HEADPHONE : Connected  ");
+			sound_path(HP_PATH);
+		} else {
+			lcd_printf(0, 6 + yoffs, 1, "HEADPHONE : Disconnected");
+			sound_path(SPK_PATH);
+		}
+
+		/* 2. check key event */
+		key = wait_key_event(true);
+		if (check_termination_key(key))
+			break;
+
+		/* 3. play test file */
+		if (check_audio_keys(key)) {
+			lcd_printf(0, 10 + yoffs, 1, "  Audio Playing : Running  ");
+			sound_play(0, 0);
+		}
+
+		lcd_printf(0, 10 + yoffs, 1, "  Audio Playing : Stopped  ");
+		mdelay(500);
+
+	}
+
+	gpio_free(PHONE_DET_GPIO);
+
+	lcd_setfg_color("white");
+	lcd_printf(0, 18 + yoffs, 1, "AUDIO TEST TERMINATED!");
+
+	return 0;
+}
+
+
 static cmd_tbl_t cmd_sub_odroidtest[] = {
 	U_BOOT_CMD_MKENT(all, 1, 0, do_odroidtest_all, "", ""),
 	U_BOOT_CMD_MKENT(bat, 1, 0, do_odroidtest_bat, "", ""),
@@ -914,6 +1056,7 @@ static cmd_tbl_t cmd_sub_odroidtest[] = {
 	U_BOOT_CMD_MKENT(lcd, 1, 0, do_odroidtest_lcd, "", ""),
 	U_BOOT_CMD_MKENT(backlight, 1, 0, do_odroidtest_backlight, "", ""),
 	U_BOOT_CMD_MKENT(adc, 1, 0, do_odroidtest_adc, "", ""),
+	U_BOOT_CMD_MKENT(audio, 1, 0, do_odroidtest_audio, "", ""),
 };
 
 static int do_odroidtest_all(cmd_tbl_t * cmdtp, int flag,
@@ -989,5 +1132,6 @@ U_BOOT_CMD(
 	"odroidtest btn - gpio button test\n"
 	"odroidtest lcd - lcd test\n"
 	"odroidtest backlight - backlight test\n"
-	"odroidtest adc - analog switch test"
+	"odroidtest adc - analog switch test\n"
+	"odroidtest audio - audio test"
 );
