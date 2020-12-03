@@ -1416,6 +1416,7 @@ static ulong rk3568_sdmmc_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
 	u32 sel, con;
 
 	switch (clk_id) {
+	case HCLK_SDMMC0:
 	case CLK_SDMMC0:
 		con = readl(&cru->clksel_con[30]);
 		sel = (con & CLK_SDMMC0_SEL_MASK) >> CLK_SDMMC0_SEL_SHIFT;
@@ -1469,10 +1470,12 @@ static ulong rk3568_sdmmc_set_clk(struct rk3568_clk_priv *priv,
 	case 100 * MHz:
 		src_clk = CLK_SDMMC_SEL_100M;
 		break;
+	case 52 * MHz:
 	case 50 * MHz:
 		src_clk = CLK_SDMMC_SEL_50M;
 		break;
 	case 750 * KHz:
+	case 400 * KHz:
 		src_clk = CLK_SDMMC_SEL_750K;
 		break;
 	default:
@@ -1480,6 +1483,7 @@ static ulong rk3568_sdmmc_set_clk(struct rk3568_clk_priv *priv,
 	}
 
 	switch (clk_id) {
+	case HCLK_SDMMC0:
 	case CLK_SDMMC0:
 		rk_clrsetreg(&cru->clksel_con[30],
 			     CLK_SDMMC0_SEL_MASK,
@@ -2130,6 +2134,7 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case CLK_TSADC:
 		rate = rk3568_adc_get_clk(priv, clk->id);
 		break;
+	case HCLK_SDMMC0:
 	case CLK_SDMMC0:
 	case CLK_SDMMC1:
 	case CLK_SDMMC2:
@@ -2282,6 +2287,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_TSADC:
 		rate = rk3568_adc_set_clk(priv, clk->id, rate);
 		break;
+	case HCLK_SDMMC0:
 	case CLK_SDMMC0:
 	case CLK_SDMMC1:
 	case CLK_SDMMC2:
