@@ -295,7 +295,8 @@ int adc_read_value(struct key_adc *adc, int adc_ch)
 	return CMD_RET_SUCCESS;
 }
 
-#define ADC_CHECK_OFFSET	100
+#define ADC_CHECK_OFFSET_GO2	100
+#define ADC_CHECK_OFFSET_GO3	200
 static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
@@ -414,22 +415,22 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 					val_x, val_y);
 
 			/* WEST */
-			if (val_x < center_x - ADC_CHECK_OFFSET) {
+			if (val_x < center_x - ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[0].chk)
 					adckeys[0].chk = 1;
 				key_idx = 0;
 				/* EAST */
-			} else if (val_x > center_x + ADC_CHECK_OFFSET) {
+			} else if (val_x > center_x + ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[1].chk)
 					adckeys[1].chk = 1;
 				key_idx = 1;
 				/* NORTH */
-			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+			} else if (val_y < center_y - ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[2].chk)
 					adckeys[2].chk = 1;
 				key_idx = 2;
 				/* SOUTH */
-			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+			} else if (val_y > center_y + ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[3].chk)
 					adckeys[3].chk = 1;
 				key_idx = 3;
@@ -451,22 +452,22 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 					val_x, val_y);
 
 			/* WEST */
-			if (val_x < center_x - ADC_CHECK_OFFSET) {
+			if (val_x < center_x - ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[4].chk)
 					adckeys[4].chk = 1;
 				key_idx = 4;
 				/* EAST */
-			} else if (val_x > center_x + ADC_CHECK_OFFSET) {
+			} else if (val_x > center_x + ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[5].chk)
 					adckeys[5].chk = 1;
 				key_idx = 5;
 				/* NORTH */
-			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+			} else if (val_y < center_y - ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[6].chk)
 					adckeys[6].chk = 1;
 				key_idx = 6;
 				/* SOUTH */
-			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+			} else if (val_y > center_y + ADC_CHECK_OFFSET_GO3) {
 				if (!adckeys[7].chk)
 					adckeys[7].chk = 1;
 				key_idx = 7;
@@ -488,22 +489,22 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 					val_x, val_y);
 
 			/* WEST : plus value */
-			if (val_x > center_x + ADC_CHECK_OFFSET) {
+			if (val_x > center_x + ADC_CHECK_OFFSET_GO2) {
 				if (!adckeys[0].chk)
 					adckeys[0].chk = 1;
 				key_idx = 0;
 			/* EAST : minus value */
-			} else if (val_x < center_x - ADC_CHECK_OFFSET) {
+			} else if (val_x < center_x - ADC_CHECK_OFFSET_GO2) {
 				if (!adckeys[1].chk)
 					adckeys[1].chk = 1;
 				key_idx = 1;
 			/* NORTH : minus value */
-			} else if (val_y < center_y - ADC_CHECK_OFFSET) {
+			} else if (val_y < center_y - ADC_CHECK_OFFSET_GO2) {
 				if (!adckeys[2].chk)
 					adckeys[2].chk = 1;
 				key_idx = 2;
 			/* SOUTH : plus value */
-			} else if (val_y > center_y + ADC_CHECK_OFFSET) {
+			} else if (val_y > center_y + ADC_CHECK_OFFSET_GO2) {
 				if (!adckeys[3].chk)
 					adckeys[3].chk = 1;
 				key_idx = 3;
@@ -512,9 +513,9 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 
 		adc_draw_key_arrays(adcs, key_idx);
 		key_idx = -1;
-		mdelay(200);
+		mdelay(80);
 
-		/* termination using F3+F6 */
+		/* check termination keys */
 		key = wait_key_event(true);
 		if (check_termination_key(key))
 			break;
