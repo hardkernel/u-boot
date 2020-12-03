@@ -738,8 +738,8 @@ int arch_cpu_init(void)
 	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
 	writel(0x000f000f, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
 
-	/* Set the emmc to secure */
-	writel(((0x3 << 11) << 16) | (0x0 << 11), SGRF_BASE + SGRF_SOC_CON4);
+	/* Set the emmc sdmmc0 to secure */
+	writel(((0x3 << 11 | 0x1 << 4) << 16), SGRF_BASE + SGRF_SOC_CON4);
 	/* set the emmc ds to level 2 */
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_2);
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_3);
