@@ -13,12 +13,7 @@
 #include <sound.h>
 #include <asm/arch-rockchip/resource_img.h>
 
-#ifdef CONFIG_PLATFORM_ODROID_GOADV
-/* about 3 seconds */
-#define WAV_SIZE		(512 * 1024) /* BYTE */
-#else
 #define WAV_SIZE		(5 * 1024 * 1024) /* BYTE */
-#endif
 #define SAMPLERATE		44100
 
 static struct udevice *i2s_dev, *codec_dev;
@@ -133,7 +128,14 @@ int sound_play(u32 msec, u32 frequency)
 					 buf_size / sizeof(unsigned short),
 					 frequency);
 
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+	/* FIXME : about 1 seconds,
+	 * data_size and play time should be calculated
+	 * using sampling reate, channel number and bits per sample. */
+	ret = _sound_play(i2s_dev, buf, ((100 * 1024) / sizeof(int)));
+#else
 	ret = _sound_play(i2s_dev, buf, (buf_size / sizeof(int)));
+#endif
 	free(buf);
 
 	return ret;

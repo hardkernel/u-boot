@@ -33,7 +33,8 @@
 #define CODEC_SET_SPK 1
 #define CODEC_SET_HP 2
 #ifdef CONFIG_PLATFORM_ODROID_GOADV
-#define INITIAL_VOLUME	0x50 /* -30db */
+#define INITIAL_VOLUME_HP	0x85 /* -50db */
+#define INITIAL_VOLUME_SPK	0x6A /* -40db */
 #else
 #define INITIAL_VOLUME	3 /* -1.125db */
 #endif
@@ -314,11 +315,7 @@ static int rk817_startup(struct udevice *dev)
 {
 	struct rk817_codec_priv *rk817 = dev_get_priv(dev);
 
-	/* For OGA, playback path is set
-	 * from headphone detect status. */
-#ifndef CONFIG_PLATFORM_ODROID_GOADV
 	rk817_playback_path_put(rk817, SPK_HP);
-#endif
 	rk817_digital_mute(rk817, 0);
 
 	return 0;
@@ -359,8 +356,8 @@ static int rk817_codec_probe(struct udevice *dev)
 	}
 
 	rk817_codec->dev = dev;
-	rk817_codec->hp_volume = INITIAL_VOLUME;
-	rk817_codec->spk_volume = INITIAL_VOLUME;
+	rk817_codec->hp_volume = INITIAL_VOLUME_HP;
+	rk817_codec->spk_volume = INITIAL_VOLUME_SPK;
 	rk817_codec->playback_path = OFF;
 	rk817_reset(rk817_codec);
 

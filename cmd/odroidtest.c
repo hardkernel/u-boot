@@ -1032,7 +1032,8 @@ static int do_odroidtest_audio(cmd_tbl_t * cmdtp, int flag,
 		/* 3. play test file */
 		if (check_audio_keys(key)) {
 			lcd_printf(0, 10 + yoffs, 1, "  Audio Playing : Running  ");
-			sound_play(0, 0);
+			/* if boot.wav not found, 400Hz square wave will be used */
+			sound_play(1000, 400);
 		}
 
 		lcd_printf(0, 10 + yoffs, 1, "  Audio Playing : Stopped  ");
