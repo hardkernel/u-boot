@@ -1499,7 +1499,7 @@
 				<1 RK_PA5 3 &pcfg_pull_none>;
 		};
 	};
-	sdmmc0 {
+	sdmmc0_pins: sdmmc0_pins {
 		sdmmc0_bus4: sdmmc0-bus4 {
 			rockchip,pins =
 				/* sdmmc0_d0 */
@@ -1514,7 +1514,7 @@
 		sdmmc0_clk: sdmmc0-clk {
 			rockchip,pins =
 				/* sdmmc0_clk */
-				<2 RK_PA2 1 &pcfg_pull_up_drv_level_1>;
+				<2 RK_PA2 1 &pcfg_pull_up_drv_level_2>;
 		};
 		sdmmc0_cmd: sdmmc0-cmd {
 			rockchip,pins =

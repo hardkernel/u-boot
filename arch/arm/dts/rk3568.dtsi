@@ -1818,6 +1818,8 @@
 		fifo-depth = <0x100>;
 		resets = <&cru SRST_SDMMC0>;
 		reset-names = "reset";
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_det &sdmmc0_bus4>;
 		status = "disabled";
 	};
 

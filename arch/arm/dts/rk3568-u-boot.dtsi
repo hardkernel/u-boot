@@ -13,7 +13,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sdhci, &nandc0, &spi_nand, &spi_nor;
+		u-boot,spl-boot-order = &sdmmc0, &sdhci, &nandc0, &spi_nand, &spi_nor;
 	};
 };
 
@@ -24,6 +24,8 @@
 &uart2 {
 	clock-frequency = <24000000>;
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	status = "okay";
 };
 
@@ -89,6 +91,8 @@
 
 &sfc {
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	/delete-property/ assigned-clocks;
 	/delete-property/ assigned-clock-rates;
 	status = "okay";
@@ -125,14 +129,38 @@
 	status = "okay";
 };
 
+&sdmmc0_pins {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_bus4 {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_clk {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_cmd {
+	u-boot,dm-spl;
+};
+
+&sdmmc0_det {
+	u-boot,dm-spl;
+};
+
 &sdmmc1 {
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	status = "okay";
 };
 
 &sdhci {
 	bus-width = <8>;
 	u-boot,dm-spl;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 	mmc-hs200-1_8v;
 	status = "okay";
 };
@@ -142,6 +170,8 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	/delete-property/ pinctrl-names;
+	/delete-property/ pinctrl-0;
 
 	nand@0 {
 		u-boot,dm-spl;
@@ -150,4 +180,29 @@
 		nand-ecc-strength = <16>;
 		nand-ecc-step-size = <1024>;
 	};
+};
+
+&pinctrl {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&gpio0 {
+	u-boot,dm-spl;
+};
+
+&gpio1 {
+	u-boot,dm-spl;
+};
+
+&gpio2 {
+	u-boot,dm-spl;
+};
+
+&pcfg_pull_up_drv_level_2 {
+	u-boot,dm-spl;
+};
+
+&pcfg_pull_none {
+	u-boot,dm-spl;
 };
