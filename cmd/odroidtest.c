@@ -18,7 +18,12 @@ int wait_key_event(bool timeout)
 	struct udevice *dev;
 	struct dm_key_uclass_platdata *key;
 	int evt;
-	unsigned int cnt = 15;
+	unsigned int cnt;
+
+	if (is_odroidgo3())
+		cnt = NUMGPIOKEYS_GO3;
+	else
+		cnt = NUMGPIOKEYS_GO2;
 
 	while (!ctrlc()) {
 		for (uclass_first_device(UCLASS_KEY, &dev);
@@ -736,10 +741,10 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 		numkeys = NUMGPIOKEYS_GO3;
 		gpiokeys = gpiokeys_go3;
 	} else {
-		if (hwrev && !strcmp(hwrev, "v10"))
-			numkeys = NUMGPIOKEYS_GO2 - 2;
-		else
+		if (hwrev && !strcmp(hwrev, "v11"))
 			numkeys = NUMGPIOKEYS_GO2;
+		else
+			numkeys = NUMGPIOKEYS_GO2 - 2;
 		gpiokeys = gpiokeys_go2;
 	}
 
