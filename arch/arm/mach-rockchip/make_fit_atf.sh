@@ -183,7 +183,6 @@ cat << EOF
 		conf {
 			description = "Rockchip armv8 with ATF";
 			rollback-index = <0x0>;
-			burn-key-hash = <0>;
 			firmware = "atf-1";
 			loadables = "uboot"${LOADABLE_ATF}${LOADABLE_OPTEE};
 			fdt = "fdt";
