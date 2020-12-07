@@ -97,6 +97,57 @@ read_end:
 	return ret;
 }
 
+static int rockchip_rk3568_otp_read(struct udevice *dev, int offset, void *buf,
+				    int size)
+{
+	struct rockchip_otp_platdata *otp = dev_get_platdata(dev);
+	unsigned int addr_start, addr_end, addr_offset, addr_len;
+	u32 out_value;
+	u8 *buffer;
+	int ret = 0, i = 0;
+
+	addr_start = rounddown(offset, RK3568_NBYTES) / RK3568_NBYTES;
+	addr_end = roundup(offset + size, RK3568_NBYTES) / RK3568_NBYTES;
+	addr_offset = offset % RK3568_NBYTES;
+	addr_len = addr_end - addr_start;
+
+	buffer = calloc(1, sizeof(*buffer) * addr_len * RK3568_NBYTES);
+	if (!buffer)
+		return -ENOMEM;
+
+	ret = rockchip_otp_ecc_enable(otp, false);
+	if (ret < 0) {
+		printf("%s rockchip_otp_ecc_enable err\n", __func__);
+		return ret;
+	}
+
+	writel(OTPC_USE_USER | OTPC_USE_USER_MASK, otp->base + OTPC_USER_CTRL);
+	udelay(5);
+	while (addr_len--) {
+		writel(addr_start++ | OTPC_USER_ADDR_MASK,
+		       otp->base + OTPC_USER_ADDR);
+		writel(OTPC_USER_FSM_ENABLE | OTPC_USER_FSM_ENABLE_MASK,
+		       otp->base + OTPC_USER_ENABLE);
+		ret = rockchip_otp_wait_status(otp, OTPC_USER_DONE);
+		if (ret < 0) {
+			printf("%s timeout during read setup\n", __func__);
+			goto read_end;
+		}
+		out_value = readl(otp->base + OTPC_USER_Q);
+		memcpy(&buffer[i], &out_value, RK3568_NBYTES);
+		i += RK3568_NBYTES;
+	}
+
+	memcpy(buf, buffer + addr_offset, size);
+
+read_end:
+	writel(0x0 | OTPC_USE_USER_MASK, otp->base + OTPC_USER_CTRL);
+
+	kfree(buffer);
+
+	return ret;
+}
+
 static int rockchip_rv1126_otp_init(struct udevice *dev)
 {
 	struct rockchip_otp_platdata *otp = dev_get_platdata(dev);
@@ -189,6 +240,10 @@ static const struct otp_data px30_data = {
 	.read = rockchip_px30_otp_read,
 };
 
+static const struct otp_data rk3568_data = {
+	.read = rockchip_rk3568_otp_read,
+};
+
 static const struct otp_data rv1126_data = {
 	.init = rockchip_rv1126_otp_init,
 	.read = rockchip_rv1126_otp_read,
@@ -202,6 +257,10 @@ static const struct udevice_id rockchip_otp_ids[] = {
 	{
 		.compatible = "rockchip,rk3308-otp",
 		.data = (ulong)&px30_data,
+	},
+	{
+		.compatible = "rockchip,rk3568-otp",
+		.data = (ulong)&rk3568_data,
 	},
 	{
 		.compatible = "rockchip,rv1126-otp",

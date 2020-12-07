@@ -42,6 +42,8 @@
 
 #define OTPC_TIMEOUT			10000
 
+#define RK3568_NBYTES			2
+
 #define RV1126_OTP_NVM_CEB		0x00
 #define RV1126_OTP_NVM_RSTB		0x04
 #define RV1126_OTP_NVM_ST		0x18
