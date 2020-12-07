@@ -9,6 +9,8 @@
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rk3568.h>
 #include <asm/arch/rk_atags.h>
+#include <linux/libfdt.h>
+#include <dt-bindings/clock/rk3568-cru.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -33,7 +35,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_SOFTRST_CON26	0x468
 #define SGRF_BASE		0xFDD18000
 #define SGRF_SOC_CON4		0x10
-
+#define PMUGRF_SOC_CON15	0xfdc20100
 #define CPU_GRF_BASE		0xfdc30000
 #define GRF_CORE_PVTPLL_CON0	(0x10)
 
@@ -783,3 +785,51 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	return 0;
 }
 #endif
+
+#define CRU_NODE_FDT_PATH	"/clock-controller@fdd20000"
+#define CRU_RATE_CNT_MIN	6
+#define CRU_PARENT_CNT_MIN	3
+
+int rk_board_fdt_fixup(const void *blob)
+{
+	int node, len;
+	u32 *pp;
+
+	/* Don't go further if new variant */
+	if (readl(PMUGRF_SOC_CON15) & GENMASK(15, 14))
+		return 0;
+
+	node = fdt_path_offset(blob, CRU_NODE_FDT_PATH);
+	if (node < 0)
+		return 0;
+
+	/*
+	 * fixup as:
+	 *	rate[1] = <408000000>;	// ACLK_RKVDEC_PRE
+	 *	rate[2] = <408000000>;	// CLK_RKVDEC_CORE
+	 *	rate[5] = <408000000>;	// PLL_CPLL
+	 */
+	pp = (u32 *)fdt_getprop(blob, node, "assigned-clock-rates", &len);
+	if (!pp)
+		return 0;
+	if ((len / 4) >= CRU_RATE_CNT_MIN) {
+		pp[1] = cpu_to_fdt32(408000000);
+		pp[2] = cpu_to_fdt32(408000000);
+		pp[5] = cpu_to_fdt32(408000000);
+	}
+
+	/*
+	 * fixup as:
+	 *	parents[1] = <&cru PLL_CPLL>;
+	 *	parents[2] = <&cru PLL_CPLL>;
+	 */
+	pp = (u32 *)fdt_getprop(blob, node, "assigned-clock-parents", &len);
+	if (!pp)
+		return 0;
+	if ((len / 8) >= CRU_PARENT_CNT_MIN) {
+		pp[3] = cpu_to_fdt32(PLL_CPLL);
+		pp[5] = cpu_to_fdt32(PLL_CPLL);
+	}
+
+	return 0;
+}
