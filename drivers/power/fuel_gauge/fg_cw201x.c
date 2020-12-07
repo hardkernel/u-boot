@@ -53,10 +53,10 @@ struct cw201x_info {
 	int divider_res1;
 	int divider_res2;
 	int hw_id_check;
-	int hw_id0;
-	int hw_id1;
+	struct gpio_desc hw_id0;
+	struct gpio_desc hw_id1;
 	int support_dc_adp;
-	int dc_det_gpio;
+	struct gpio_desc dc_det_gpio;
 	int dc_det_flag;
 };
 
@@ -103,14 +103,12 @@ static u16 cw201x_read_half_word(struct cw201x_info *cw201x, int reg)
 
 static int cw201x_ofdata_to_platdata(struct udevice *dev)
 {
-	const void *blob = gd->fdt_blob;
-	int node = dev_of_offset(dev);
 	struct cw201x_info *cw201x = dev_get_priv(dev);
 	int ret;
 	int len, size;
 	int hw_id0_val, hw_id1_val;
 
-	if (fdt_getprop(blob, node, "bat_config_info", &len)) {
+	if (dev_read_prop(dev, "bat_config_info", &len)) {
 		len /= sizeof(u32);
 		size = sizeof(*cw201x->cw_bat_config_info) * len;
 		cw201x->cw_bat_config_info = calloc(size, 1);
@@ -118,52 +116,46 @@ static int cw201x_ofdata_to_platdata(struct udevice *dev)
 			debug("calloc cw_bat_config_info fail\n");
 			return -EINVAL;
 		}
-		ret = fdtdec_get_int_array(blob, node,
-					   "bat_config_info",
-					   cw201x->cw_bat_config_info, len);
+		ret = dev_read_u32_array(dev, "bat_config_info",
+					 cw201x->cw_bat_config_info, len);
 		if (ret) {
 			debug("fdtdec_get cw_bat_config_info fail\n");
 			return -EINVAL;
 		}
 	}
 
-	cw201x->support_dc_adp = fdtdec_get_int(blob, node,
-						"support_dc_adp", 0);
-	if (cw201x->support_dc_adp) {
-		cw201x->dc_det_gpio = fdtdec_get_int(blob, node,
-						     "dc_det_gpio", 0);
-		if (!cw201x->dc_det_gpio)
-			return -EINVAL;
-		gpio_request(cw201x->dc_det_gpio, "dc_det_gpio");
-		gpio_direction_input(cw201x->dc_det_gpio);
-
-		cw201x->dc_det_flag = fdtdec_get_int(blob, node,
-						     "dc_det_flag", 0);
+	ret = gpio_request_by_name_nodev(dev_ofnode(dev), "dc_det_gpio",
+					 0, &cw201x->dc_det_gpio, GPIOD_IS_IN);
+	if (!ret) {
+		cw201x->support_dc_adp = 1;
+		debug("DC is valid\n");
+	} else {
+		debug("DC is invalid, ret=%d\n", ret);
 	}
 
-	cw201x->hw_id_check = fdtdec_get_int(blob, node, "hw_id_check", 0);
+	cw201x->hw_id_check = dev_read_u32_default(dev, "hw_id_check", 0);
 	if (cw201x->hw_id_check) {
-		cw201x->hw_id0 = fdtdec_get_int(blob, node, "hw_id0_gpio", 0);
-		if (!cw201x->hw_id0)
+		ret = gpio_request_by_name_nodev(dev_ofnode(dev),
+						 "hw_id0_gpio", 0,
+						 &cw201x->hw_id0, GPIOD_IS_IN);
+		if (ret)
 			return -EINVAL;
-		gpio_request(cw201x->hw_id0, "hw_id0_gpio");
-		gpio_direction_input(cw201x->hw_id0);
-		hw_id0_val = gpio_get_value(cw201x->hw_id0);
+		hw_id0_val = dm_gpio_get_value(&cw201x->hw_id0);
 
-		cw201x->hw_id1 = fdtdec_get_int(blob, node, "hw_id1_gpio", 0);
-		if (!cw201x->hw_id1)
+		ret = gpio_request_by_name_nodev(dev_ofnode(dev),
+						 "hw_id1_gpio", 0,
+						 &cw201x->hw_id1, GPIOD_IS_IN);
+		if (ret)
 			return -EINVAL;
-		gpio_request(cw201x->hw_id1, "hw_id1_gpio");
-		gpio_direction_input(cw201x->hw_id1);
-		hw_id1_val = gpio_get_value(cw201x->hw_id1);
+		hw_id1_val = dm_gpio_get_value(&cw201x->hw_id1);
 
 		/* ID1 = 0, ID0 = 1 : Battery */
 		if (!hw_id0_val || hw_id1_val)
 			return -EINVAL;
 	}
 
-	cw201x->divider_res1 = fdtdec_get_int(blob, node, "divider_res1", 0);
-	cw201x->divider_res2 = fdtdec_get_int(blob, node, "divider_res2", 0);
+	cw201x->divider_res1 = dev_read_u32_default(dev, "divider_res1", 0);
+	cw201x->divider_res2 = dev_read_u32_default(dev, "divider_res2", 0);
 
 	return 0;
 }
@@ -252,7 +244,7 @@ static int cw201x_get_usb_state(struct cw201x_info *cw201x)
 
 static bool cw201x_get_dc_state(struct cw201x_info *cw201x)
 {
-	if (gpio_get_value(cw201x->dc_det_gpio) == cw201x->dc_det_flag)
+	if (dm_gpio_get_value(&cw201x->dc_det_gpio))
 		return true;
 
 	return false;
