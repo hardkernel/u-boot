@@ -46,7 +46,9 @@
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/vendor.h>
-
+#ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
+#include <rk_eink.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 __weak int rk_board_late_init(void)
@@ -335,6 +337,9 @@ int board_late_init(void)
 #endif
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
+#endif
+#ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
+	rockchip_eink_show_uboot_logo();
 #endif
 	env_fixup();
 	soc_clk_dump();
