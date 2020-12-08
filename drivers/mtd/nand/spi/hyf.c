@@ -89,6 +89,35 @@ static const struct mtd_ooblayout_ops hyf1gq4udacae_ooblayout = {
 	.rfree = hyf1gq4udacae_ooblayout_free,
 };
 
+static int hyf2gq4uaacae_ooblayout_ecc(struct mtd_info *mtd, int section,
+				       struct mtd_oob_region *region)
+{
+	if (section > 3)
+		return -ERANGE;
+
+	region->offset = (32 * section) + 8;
+	region->length = 24;
+
+	return 0;
+}
+
+static int hyf2gq4uaacae_ooblayout_free(struct mtd_info *mtd, int section,
+					struct mtd_oob_region *region)
+{
+	if (section > 3)
+		return -ERANGE;
+
+	region->offset = 16 * section;
+	region->length = 8;
+
+	return 0;
+}
+
+static const struct mtd_ooblayout_ops hyf2gq4uaacae_ooblayout = {
+	.ecc = hyf2gq4uaacae_ooblayout_ecc,
+	.rfree = hyf2gq4uaacae_ooblayout_free,
+};
+
 static int hyf1gq4udacae_ecc_get_status(struct spinand_device *spinand,
 					u8 status)
 {
@@ -121,13 +150,31 @@ static const struct spinand_info hyf_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf1gq4upacae_ooblayout, NULL)),
 	SPINAND_INFO("HYF1GQ4UDACAE", 0x21,
-		     NAND_MEMORG(1, 2048, 64, 64, 1024, 2, 1, 1),
+		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
 					      &write_cache_variants,
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf1gq4udacae_ooblayout,
+				     hyf1gq4udacae_ecc_get_status)),
+	SPINAND_INFO("HYF2GQ4UAACAE", 0x52,
+		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(14, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&hyf2gq4uaacae_ooblayout,
+				     hyf1gq4udacae_ecc_get_status)),
+	SPINAND_INFO("HYF2GQ4UHCCAE", 0x5A,
+		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(14, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&hyf2gq4uaacae_ooblayout,
 				     hyf1gq4udacae_ecc_get_status)),
 };
 
