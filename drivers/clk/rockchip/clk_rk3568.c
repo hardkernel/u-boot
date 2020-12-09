@@ -2059,6 +2059,91 @@ static ulong rk3568_ebc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 
 	return rk3568_ebc_get_clk(priv);
 }
+
+static ulong rk3568_rkvdec_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
+{
+	struct rk3568_cru *cru = priv->cru;
+	u32 con, div, src, p_rate;
+
+	switch (clk_id) {
+	case ACLK_RKVDEC_PRE:
+	case ACLK_RKVDEC:
+		con = readl(&cru->clksel_con[47]);
+		src = (con & ACLK_RKVDEC_SEL_MASK) >> ACLK_RKVDEC_SEL_SHIFT;
+		div = (con & ACLK_RKVDEC_DIV_MASK) >> ACLK_RKVDEC_DIV_SHIFT;
+		if (src == ACLK_RKVDEC_SEL_CPLL)
+			p_rate = priv->cpll_hz;
+		else
+			p_rate = priv->gpll_hz;
+		return DIV_TO_RATE(p_rate, div);
+	case CLK_RKVDEC_CORE:
+		con = readl(&cru->clksel_con[49]);
+		src = (con & CLK_RKVDEC_CORE_SEL_MASK)
+		      >> CLK_RKVDEC_CORE_SEL_SHIFT;
+		div = (con & CLK_RKVDEC_CORE_DIV_MASK)
+		      >> CLK_RKVDEC_CORE_DIV_SHIFT;
+		if (src == CLK_RKVDEC_CORE_SEL_CPLL)
+			p_rate = priv->cpll_hz;
+		else if (src == CLK_RKVDEC_CORE_SEL_NPLL)
+			p_rate = priv->npll_hz;
+		else if (src == CLK_RKVDEC_CORE_SEL_VPLL)
+			p_rate = priv->vpll_hz;
+		else
+			p_rate = priv->gpll_hz;
+		return DIV_TO_RATE(p_rate, div);
+	default:
+		return -ENOENT;
+	}
+}
+
+static ulong rk3568_rkvdec_set_clk(struct rk3568_clk_priv *priv,
+				   ulong clk_id, ulong rate)
+{
+	struct rk3568_cru *cru = priv->cru;
+	int src_clk_div, src, p_rate;
+
+	switch (clk_id) {
+	case ACLK_RKVDEC_PRE:
+	case ACLK_RKVDEC:
+		src = (readl(&cru->clksel_con[47]) & ACLK_RKVDEC_SEL_MASK)
+		      >> ACLK_RKVDEC_SEL_SHIFT;
+		if (src == ACLK_RKVDEC_SEL_CPLL)
+			p_rate = priv->cpll_hz;
+		else
+			p_rate = priv->gpll_hz;
+		src_clk_div = DIV_ROUND_UP(p_rate, rate);
+		assert(src_clk_div - 1 <= 31);
+		rk_clrsetreg(&cru->clksel_con[47],
+			     ACLK_RKVDEC_SEL_MASK |
+			     ACLK_RKVDEC_DIV_MASK,
+			     (src << ACLK_RKVDEC_SEL_SHIFT) |
+			     (src_clk_div - 1) << ACLK_RKVDEC_DIV_SHIFT);
+		break;
+	case CLK_RKVDEC_CORE:
+		src = (readl(&cru->clksel_con[49]) & CLK_RKVDEC_CORE_SEL_MASK)
+		      >> CLK_RKVDEC_CORE_SEL_SHIFT;
+		if (src == CLK_RKVDEC_CORE_SEL_CPLL)
+			p_rate = priv->cpll_hz;
+		else if (src == CLK_RKVDEC_CORE_SEL_NPLL)
+			p_rate = priv->npll_hz;
+		else if (src == CLK_RKVDEC_CORE_SEL_VPLL)
+			p_rate = priv->vpll_hz;
+		else
+			p_rate = priv->gpll_hz;
+		src_clk_div = DIV_ROUND_UP(p_rate, rate);
+		assert(src_clk_div - 1 <= 31);
+		rk_clrsetreg(&cru->clksel_con[49],
+			     CLK_RKVDEC_CORE_SEL_MASK |
+			     CLK_RKVDEC_CORE_DIV_MASK,
+			     (src << CLK_RKVDEC_CORE_SEL_SHIFT) |
+			     (src_clk_div - 1) << CLK_RKVDEC_CORE_DIV_SHIFT);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return rk3568_rkvdec_get_clk(priv, clk_id);
+}
 #endif
 
 static ulong rk3568_clk_get_rate(struct clk *clk)
@@ -2182,6 +2267,11 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 		break;
 	case DCLK_EBC:
 		rate = rk3568_ebc_get_clk(priv);
+		break;
+	case ACLK_RKVDEC_PRE:
+	case ACLK_RKVDEC:
+	case CLK_RKVDEC_CORE:
+		rate = rk3568_rkvdec_get_clk(priv, clk->id);
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
@@ -2341,6 +2431,11 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case DCLK_EBC:
 		rate = rk3568_ebc_set_clk(priv, rate);
+		break;
+	case ACLK_RKVDEC_PRE:
+	case ACLK_RKVDEC:
+	case CLK_RKVDEC_CORE:
+		rate = rk3568_rkvdec_set_clk(priv, clk->id, rate);
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
@@ -2610,6 +2705,38 @@ static int __maybe_unused rk3568_dclk_vop_set_parent(struct clk *clk,
 	return 0;
 }
 
+static int __maybe_unused rk3568_rkvdec_set_parent(struct clk *clk,
+						   struct clk *parent)
+{
+	struct rk3568_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3568_cru *cru = priv->cru;
+	u32 con_id, mask, shift;
+
+	switch (clk->id) {
+	case ACLK_RKVDEC_PRE:
+		con_id = 47;
+		mask = ACLK_RKVDEC_SEL_MASK;
+		shift = ACLK_RKVDEC_SEL_SHIFT;
+		break;
+	case CLK_RKVDEC_CORE:
+		con_id = 49;
+		mask = CLK_RKVDEC_CORE_SEL_MASK;
+		shift = CLK_RKVDEC_CORE_SEL_SHIFT;
+		break;
+	default:
+		return -EINVAL;
+	}
+	if (parent->id == PLL_CPLL) {
+		rk_clrsetreg(&cru->clksel_con[con_id], mask,
+			     ACLK_RKVDEC_SEL_CPLL << shift);
+	} else {
+		rk_clrsetreg(&cru->clksel_con[con_id], mask,
+			     ACLK_RKVDEC_SEL_GPLL << shift);
+	}
+
+	return 0;
+}
+
 static int rk3568_clk_set_parent(struct clk *clk, struct clk *parent)
 {
 	switch (clk->id) {
@@ -2625,6 +2752,9 @@ static int rk3568_clk_set_parent(struct clk *clk, struct clk *parent)
 	case DCLK_VOP1:
 	case DCLK_VOP2:
 		return rk3568_dclk_vop_set_parent(clk, parent);
+	case ACLK_RKVDEC_PRE:
+	case CLK_RKVDEC_CORE:
+		return rk3568_rkvdec_set_parent(clk, parent);
 	default:
 		return -ENOENT;
 	}
