@@ -155,6 +155,27 @@ static int xt26g02b_ecc_get_status(struct spinand_device *spinand,
 		return -EBADMSG;
 }
 
+/*
+ * ecc bits: 0xC0[4,7]
+ * [0b0000], No bit errors were detected;
+ * [0b0001, 0b0111], 1-7 Bit errors were detected and corrected. Not
+ *	reach Flipping Bits;
+ * [0b1000], 8 Bit errors were detected and corrected. Bit error count
+ *	equals the bit flip detectionthreshold;
+ * [0b1111], Bit errors greater than ECC capability(8 bits) and not corrected;
+ * others, Reserved.
+ */
+static int xt26g01c_ecc_get_status(struct spinand_device *spinand,
+				   u8 status)
+{
+	u8 eccsr = (status & GENMASK(7, 4)) >> 4;
+
+	if (eccsr <= 8)
+		return eccsr;
+	else
+		return -EBADMSG;
+}
+
 static const struct spinand_info xtx_spinand_table[] = {
 	SPINAND_INFO("XT26G01A", 0xE1,
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
@@ -201,6 +222,15 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g02b_ooblayout,
 				     xt26g02b_ecc_get_status)),
+	SPINAND_INFO("XT26G01C", 0x11,
+		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
+				     xt26g01c_ecc_get_status)),
 };
 
 static int xtx_spinand_detect(struct spinand_device *spinand)
