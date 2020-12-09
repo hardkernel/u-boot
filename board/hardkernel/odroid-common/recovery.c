@@ -65,7 +65,7 @@ int board_get_recovery_message(void)
 
 	message.recovery[strlen(misc_magic)] = 0;
 	if (0 == strncmp(message.recovery, misc_magic, strlen(misc_magic))) {
-		return AMLOGIC_SELFINSTALL;
+		return AMLOGIC_FACTORY_RESET_REBOOT;
 	}
 
 	return AMLOGIC_REBOOT_UNKNOWN;

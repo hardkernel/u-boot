@@ -178,8 +178,6 @@
             "get_rebootmode;" \
             "if test ${reboot_mode} = factory_reset; then " \
                 "run boot_default;" \
-            "else if test ${reboot_mode} = selfinstall; then " \
-                "run boot_default;" \
             "else if test ${reboot_mode} = cold_boot; then " \
                 /*"run try_auto_burn; "*/ \
             "else if test ${reboot_mode} = fastboot; then " \

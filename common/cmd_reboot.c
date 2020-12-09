@@ -110,11 +110,6 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","rpmbp");
 			break;
 		}
-		case AMLOGIC_SELFINSTALL:
-		{
-			setenv("reboot_mode","selfinstall");
-			break;
-		}
 		default:
 		{
 			setenv("reboot_mode","charging");
