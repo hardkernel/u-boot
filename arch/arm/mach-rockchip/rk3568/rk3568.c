@@ -805,17 +805,17 @@ int rk_board_fdt_fixup(const void *blob)
 
 	/*
 	 * fixup as:
-	 *	rate[1] = <408000000>;	// ACLK_RKVDEC_PRE
-	 *	rate[2] = <408000000>;	// CLK_RKVDEC_CORE
-	 *	rate[5] = <408000000>;	// PLL_CPLL
+	 *	rate[1] = <400000000>;	// ACLK_RKVDEC_PRE
+	 *	rate[2] = <400000000>;	// CLK_RKVDEC_CORE
+	 *	rate[5] = <400000000>;	// PLL_CPLL
 	 */
 	pp = (u32 *)fdt_getprop(blob, node, "assigned-clock-rates", &len);
 	if (!pp)
 		return 0;
 	if ((len / 4) >= CRU_RATE_CNT_MIN) {
-		pp[1] = cpu_to_fdt32(408000000);
-		pp[2] = cpu_to_fdt32(408000000);
-		pp[5] = cpu_to_fdt32(408000000);
+		pp[1] = cpu_to_fdt32(400000000);
+		pp[2] = cpu_to_fdt32(400000000);
+		pp[5] = cpu_to_fdt32(400000000);
 	}
 
 	/*
