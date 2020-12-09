@@ -69,6 +69,22 @@ static const struct spinand_info foresee_spinand_table[] = {
 					      &update_cache_variants),
 		     0,
 		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
+	SPINAND_INFO("FS35ND02G-S3Y2", 0xEB,
+		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(4, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     0,
+		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
+	SPINAND_INFO("FS35ND04G-S2Y2", 0xEC,
+		     NAND_MEMORG(1, 2048, 64, 64, 4096, 1, 1, 1),
+		     NAND_ECCREQ(4, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     0,
+		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
 };
 
 /**
