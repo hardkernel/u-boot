@@ -8,14 +8,20 @@
 #ifndef __GENERIC_PHY_H
 #define __GENERIC_PHY_H
 
+#include <generic-phy-mipi-dphy.h>
+
 enum phy_mode {
 	PHY_MODE_INVALID,
 };
 
 /**
  * union phy_configure_opts - Opaque generic phy configuration
+ *
+ * @mipi_dphy: Configuration set applicable for phys supporting
+ *	       the MIPI_DPHY phy mode.
  */
 union phy_configure_opts {
+	struct phy_configure_opts_mipi_dphy     mipi_dphy;
 };
 
 /**
