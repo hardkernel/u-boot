@@ -424,6 +424,12 @@ int fit_config_check_sig(const void *fit, int noffset, int required_keynode,
 		*err_msgp = "Verification failed";
 		return -1;
 	}
+	/* Get the secure flag here and write the secure data and the secure flag */
+#if !defined(USE_HOSTCC)
+#ifdef CONFIG_SPL_FIT_HW_CRYPTO
+	rsa_burn_key_hash(&info);
+#endif
+#endif
 
 	return 0;
 }

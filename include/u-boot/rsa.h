@@ -103,6 +103,12 @@ int padding_pkcs_15_verify(struct image_sign_info *info,
 			   uint8_t *msg, int msg_len,
 			   const uint8_t *hash, int hash_len);
 
+#if !defined(USE_HOSTCC)
+#ifdef CONFIG_SPL_FIT_HW_CRYPTO
+int rsa_burn_key_hash(struct image_sign_info *info);
+#endif
+#endif
+
 #ifdef CONFIG_FIT_ENABLE_RSASSA_PSS_SUPPORT
 int padding_pss_verify(struct image_sign_info *info,
 		       uint8_t *msg, int msg_len,
