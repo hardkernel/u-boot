@@ -790,6 +790,10 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 #define CRU_RATE_CNT_MIN	6
 #define CRU_PARENT_CNT_MIN	3
 
+#define RKVDEC_NODE_FDT_PATH    "/rkvdec@fdf80200"
+#define RKVDEC_NORMAL_RATE_CNT_MIN     5
+#define RKVDEC_RATE_CNT_MIN     4
+
 int rk_board_fdt_fixup(const void *blob)
 {
 	int node, len;
@@ -829,6 +833,32 @@ int rk_board_fdt_fixup(const void *blob)
 	if ((len / 8) >= CRU_PARENT_CNT_MIN) {
 		pp[3] = cpu_to_fdt32(PLL_CPLL);
 		pp[5] = cpu_to_fdt32(PLL_CPLL);
+	}
+
+	node = fdt_path_offset(blob, RKVDEC_NODE_FDT_PATH);
+	if (node < 0)
+		return 0;
+	pp = (u32 *)fdt_getprop(blob, node, "rockchip,normal-rates", &len);
+	if (!pp)
+		return 0;
+
+	if ((len / 4) >= RKVDEC_NORMAL_RATE_CNT_MIN) {
+		pp[0] = cpu_to_fdt32(400000000);
+		pp[1] = cpu_to_fdt32(0);
+		pp[2] = cpu_to_fdt32(400000000);
+		pp[3] = cpu_to_fdt32(400000000);
+		pp[4] = cpu_to_fdt32(400000000);
+	}
+
+	pp = (u32 *)fdt_getprop(blob, node, "assigned-clock-rates", &len);
+	if (!pp)
+		return 0;
+
+	if ((len / 4) >= RKVDEC_RATE_CNT_MIN) {
+		pp[0] = cpu_to_fdt32(400000000);
+		pp[1] = cpu_to_fdt32(400000000);
+		pp[2] = cpu_to_fdt32(400000000);
+		pp[3] = cpu_to_fdt32(400000000);
 	}
 
 	return 0;
