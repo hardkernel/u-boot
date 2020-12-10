@@ -8,10 +8,12 @@
 #ifndef __GENERIC_PHY_H
 #define __GENERIC_PHY_H
 
+#include <generic-phy-dp.h>
 #include <generic-phy-mipi-dphy.h>
 
 enum phy_mode {
 	PHY_MODE_INVALID,
+	PHY_MODE_DP,
 };
 
 /**
@@ -19,9 +21,12 @@ enum phy_mode {
  *
  * @mipi_dphy: Configuration set applicable for phys supporting
  *	       the MIPI_DPHY phy mode.
+ * @dp:	       Configuration set applicable for phys supporting
+ *	       the DisplayPort protocol.
  */
 union phy_configure_opts {
 	struct phy_configure_opts_mipi_dphy     mipi_dphy;
+	struct phy_configure_opts_dp		dp;
 };
 
 /**
