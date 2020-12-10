@@ -151,6 +151,29 @@ int generic_phy_power_off(struct phy *phy)
 	return ops->power_off ? ops->power_off(phy) : 0;
 }
 
+int generic_phy_configure(struct phy *phy, union phy_configure_opts *opts)
+{
+	struct phy_ops const *ops;
+
+	if (!generic_phy_valid(phy))
+		return 0;
+	ops = phy_dev_ops(phy->dev);
+
+	return ops->configure ? ops->configure(phy, opts) : 0;
+}
+
+int generic_phy_validate(struct phy *phy, enum phy_mode mode, int submode,
+			 union phy_configure_opts *opts)
+{
+	struct phy_ops const *ops;
+
+	if (!generic_phy_valid(phy))
+		return 0;
+	ops = phy_dev_ops(phy->dev);
+
+	return ops->validate ? ops->validate(phy, mode, submode, opts) : 0;
+}
+
 UCLASS_DRIVER(phy) = {
 	.id		= UCLASS_PHY,
 	.name		= "phy",
