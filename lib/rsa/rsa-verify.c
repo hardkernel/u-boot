@@ -647,7 +647,7 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 		goto error;
 
 	if (memcmp(digest, prop.hash, digest_len) != 0) {
-		printf("RSA: Compare public key fail.\n");
+		printf("RSA: Compare public key hash fail.\n");
 		goto error;
 	}
 
@@ -667,6 +667,16 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	ret = misc_otp_write(dev, OTP_RSA_HASH_ADDR, digest, OTP_RSA_HASH_SIZE);
 	if (ret)
 		goto error;
+
+	memset(digest_read, 0, FIT_MAX_HASH_LEN);
+	ret = misc_otp_read(dev, OTP_RSA_HASH_ADDR, digest_read, OTP_RSA_HASH_SIZE);
+	if (ret)
+		goto error;
+
+	if (memcmp(digest, digest_read, digest_len) != 0) {
+		printf("RSA: Write public key hash fail.\n");
+		goto error;
+	}
 
 	secure_boot_enable = 0xff;
 	ret = misc_otp_write(dev, OTP_SECURE_BOOT_ENABLE_ADDR,
