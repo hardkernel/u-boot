@@ -77,6 +77,12 @@ config PHY_ROCKCHIP_INNO_USB3
 	help
 	  Support for Rockchip USB 3.0 PHY with Innosilicon IP block.
 
+config PHY_ROCKCHIP_NANENG_EDP
+	bool "Support Rockchip Naneng eDP Transmitter PHY"
+	depends on PHY && ARCH_ROCKCHIP
+	help
+	  Support for Rockchip eDP Transmitter PHY with Naneng IP block.
+
 config PHY_ROCKCHIP_TYPEC
 	bool "Support Rockchip TYPEC PHY Driver"
 	depends on PHY && ARCH_ROCKCHIP
