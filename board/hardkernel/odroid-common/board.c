@@ -83,6 +83,10 @@ static unsigned int get_hw_revision(void)
 #elif defined(CONFIG_ODROID_GO4)
 	if (IS_RANGE(adc, 80, 100))	/* avg : 90 */
 		hwrev = BOARD_REVISION(2020, 10, 6);
+	else if (IS_RANGE(adc, 150, 180))	/* avg : 90 */
+		hwrev = BOARD_REVISION(2020, 12, 11);
+	else 
+		hwrev = BOARD_REVISION(2020, 10, 6);
 #endif
 
 	printf("ADC=%d, hwrev=0x%x\n", adc, hwrev);

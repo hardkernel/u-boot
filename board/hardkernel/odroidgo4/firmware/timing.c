@@ -346,9 +346,9 @@ bl2_reg_t __bl2_reg[] = {
 	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG1,  0},
 	/* VDDEE init done */
 	/* Enable 5V_EN */
-#if 0	// FIXME
-	{GPIO_O_EN_N_REG3,    (0 << 8),                (1 << 8),     0, BL2_INIT_STAGE_1, 0},
-	{GPIO_O_REG3,         (1 << 8),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+#if 1	// FIXME
+	{GPIO_O_EN_N_REG3,    (1 << 4)|(1 << 5), (1 << 4)|(1 << 5),     0, BL2_INIT_STAGE_1, 0},
+	{GPIO_O_REG3,         (1 << 4)|(0 << 5),       0xffffffff,   0, BL2_INIT_STAGE_1, 0},
 #endif
 	/* Enable VCCK */
 	{AO_SEC_REG0,         (1 << 0),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},

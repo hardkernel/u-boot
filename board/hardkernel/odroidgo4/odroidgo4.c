@@ -64,56 +64,8 @@ void secondary_boot_func(void)
 {
 }
 
-#ifdef ETHERNET_EXTERNAL_PHY
-
-static int dwmac_meson_cfg_drive_strength(void)
-{
-	writel(0xaaaaaaa5, P_PAD_DS_REG4A);
-	return 0;
-}
-
-static void setup_net_chip_ext(void)
-{
-	eth_aml_reg0_t eth_reg0;
-	writel(0x11111111, P_PERIPHS_PIN_MUX_6);
-	writel(0x111111, P_PERIPHS_PIN_MUX_7);
-
-	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 1;
-	eth_reg0.b.rx_clk_rmii_invert = 0;
-	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 1;
-	eth_reg0.b.rgmii_tx_clk_ratio = 4;
-	eth_reg0.b.phy_ref_clk_enable = 1;
-	eth_reg0.b.clk_rmii_i_invert = 0;
-	eth_reg0.b.clk_en = 1;
-	eth_reg0.b.adj_enable = 0;
-	eth_reg0.b.adj_setup = 0;
-	eth_reg0.b.adj_delay = 0;
-	eth_reg0.b.adj_skew = 0;
-	eth_reg0.b.cali_start = 0;
-	eth_reg0.b.cali_rise = 0;
-	eth_reg0.b.cali_sel = 0;
-	eth_reg0.b.rgmii_rx_reuse = 0;
-	eth_reg0.b.eth_urgent = 0;
-	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
-
-	setbits_le32(HHI_GCLK_MPEG1, 0x1 << 3);
-	/* power on memory */
-	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
-}
-#endif
-extern struct eth_board_socket* eth_board_setup(char *name);
-extern int designware_initialize(ulong base_addr, u32 interface);
-
 int board_eth_init(bd_t *bis)
 {
-#ifdef ETHERNET_EXTERNAL_PHY
-	dwmac_meson_cfg_drive_strength();
-	setup_net_chip_ext();
-#endif
-	udelay(1000);
-	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
 	return 0;
 }
 
@@ -275,9 +227,6 @@ int board_early_init_f(void){
 static void gpio_set_vbus_power(char is_power_on)
 {
 	int ret;
-
-	/* USB Host power enable/disable */
-	usbhost_set_power(is_power_on);
 
 	/* usb otg power enable */
 	ret = gpio_request(CONFIG_USB_GPIO_PWR,
