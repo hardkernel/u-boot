@@ -283,6 +283,9 @@ static void autowakeup_timer_init(struct udevice *dev, uint32_t seconds)
 
 static void autowakeup_timer_uninit(void)
 {
+	writel(0, TIMER_BASE + TIMER_CTRL);
+
+	irq_handler_disable(TIMER_IRQ);
 	irq_free_handler(TIMER_IRQ);
 }
 #endif
