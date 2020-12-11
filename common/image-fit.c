@@ -722,7 +722,7 @@ bool fit_image_is_preload(const void *fit, int noffset)
 		return false;
 	}
 
-	if (*data != 1)
+	if (fdt32_to_cpu(*data) != 1)
 		return false;
 
 	return true;
