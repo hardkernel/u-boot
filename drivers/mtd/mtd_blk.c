@@ -647,8 +647,8 @@ static int mtd_blk_probe(struct udevice *udev)
 
 static const struct blk_ops mtd_blk_ops = {
 	.read	= mtd_dread,
-#ifndef CONFIG_SPL_BUILD
 	.write	= mtd_dwrite,
+#ifndef CONFIG_SPL_BUILD
 	.erase	= mtd_derase,
 #endif
 };
