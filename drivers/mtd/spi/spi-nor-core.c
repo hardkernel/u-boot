@@ -2288,6 +2288,11 @@ int spi_nor_scan(struct spi_nor *nor)
 	mtd->size = params.size;
 	mtd->_erase = spi_nor_erase;
 	mtd->_read = spi_nor_read;
+	if (is_power_of_2(mtd->erasesize))
+		mtd->erasesize_shift = ffs(mtd->erasesize) - 1;
+	else
+		mtd->erasesize_shift = 0;
+	mtd->erasesize_mask = (1 << mtd->erasesize_shift) - 1;
 
 #if defined(CONFIG_SPI_FLASH_STMICRO) || defined(CONFIG_SPI_FLASH_SST)
 	/* NOR protection support for STmicro/Micron chips and similar */
