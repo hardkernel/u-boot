@@ -206,3 +206,7 @@
 &pcfg_pull_none {
 	u-boot,dm-spl;
 };
+
+&secure_otp {
+	u-boot,dm-spl;
+};
