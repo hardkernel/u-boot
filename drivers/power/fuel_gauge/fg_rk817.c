@@ -461,6 +461,8 @@ static void rk817_bat_calibration(struct rk817_battery_device *battery)
 	}
 }
 
+static int rk817_bat_get_rsoc(struct rk817_battery_device *battery);
+
 static void rk817_bat_init_coulomb_cap(struct rk817_battery_device *battery,
 				       u32 capacity)
 {
@@ -486,7 +488,7 @@ static void rk817_bat_init_coulomb_cap(struct rk817_battery_device *battery,
 		val |= rk817_bat_read(battery, Q_INIT_L0) << 0;
 	} while (cap != val);
 
-	battery->rsoc = capacity * 1000 * 100 / battery->fcc;
+	battery->rsoc = rk817_bat_get_rsoc(battery);
 	battery->remain_cap = capacity * 1000;
 }
 
