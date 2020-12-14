@@ -61,6 +61,7 @@ struct rockchip_otp_platdata {
 	void __iomem *base;
 	unsigned long secure_conf_base;
 	unsigned long otp_mask_base;
+	unsigned long otp_cru_rst_base;
 };
 
 #endif
