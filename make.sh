@@ -620,17 +620,18 @@ function pack_uboot_itb_image()
 			TEE_OFFSET=0x8400000
 		fi
 		TEE_ARG="-t ${TEE_OFFSET}"
-
-		# MCU
-		MCU_ENABLED=`awk -F"," '/MCU=/ { printf $3 }' ${INI} | tr -d ' '`
-		if [ "${MCU_ENABLED}" == "enabled" -o "${MCU_ENABLED}" == "okay" ]; then
-			MCU=`awk -F"," '/MCU=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 5-`
-			cp ${RKBIN}/${MCU} mcu.bin
-			MCU_OFFSET=`awk -F"," '/MCU=/ { printf $2 }' ${INI} | tr -d ' '`
-			MCU_ARG="-m ${MCU_OFFSET}"
-		fi
 	fi
 
+	# MCU
+	MCU_ENABLED=`awk -F"," '/MCU=/ { printf $3 }' ${INI} | tr -d ' '`
+	if [ "${MCU_ENABLED}" == "enabled" -o "${MCU_ENABLED}" == "okay" ]; then
+		MCU=`awk -F"," '/MCU=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 5-`
+		cp ${RKBIN}/${MCU} mcu.bin
+		MCU_OFFSET=`awk -F"," '/MCU=/ { printf $2 }' ${INI} | tr -d ' '`
+		MCU_ARG="-m ${MCU_OFFSET}"
+	fi
+
+	# COMPRESSION
 	COMPRESSION=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 13-`
 	if [ ! -z "${COMPRESSION}" -a "${COMPRESSION}" != "none" ]; then
 		COMPRESSION_ARG="-c ${COMPRESSION}"

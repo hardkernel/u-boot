@@ -15,7 +15,7 @@ SIG_BIN="data2sign.bin"
 SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
 # offs
-OFFS_NS_UBOOT="0xa00"
+OFFS_NS_UBOOT="0xc00"
 OFFS_S_UBOOT="0xc00"
 OFFS_NS_BOOT="0x800"
 OFFS_S_BOOT="0xc00"
