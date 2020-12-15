@@ -141,6 +141,36 @@ function generate_bl32_node()
 	LOADABLE_OPTEE=", \"optee\""
 	echo "		};"
 }
+
+function generate_mcu_node()
+{
+	if [ -z ${MCU_LOAD_ADDR} ]; then
+		return
+	fi
+
+	echo "		mcu {
+			description = \"mcu\";
+			type = \"standalone\";
+			arch = \"riscv\";
+			data = /incbin/(\"./mcu.bin${SUFFIX}\");
+			compression = \"${COMPRESSION}\";
+			load = <0x"${MCU_LOAD_ADDR}">;
+			hash {
+				algo = \"sha256\";
+			};"
+	if [ "${COMPRESSION}" == "gzip" ]; then
+		echo "			digest {
+				value = /incbin/(\"./mcu.bin.digest\");
+				algo = \"sha256\";
+			};"
+		openssl dgst -sha256 -binary -out mcu.bin.digest mcu.bin
+		gzip -k -f -9 mcu.bin
+	fi
+
+	SIGN_MCU=", \"mcu\""
+	STANDALONE_MCU="standalone = \"mcu\";"
+	echo "		};"
+}
 ########################################################################################################
 
 cat << EOF
@@ -163,6 +193,7 @@ EOF
 	generate_uboot_node
 	generate_bl31_node
 	generate_bl32_node
+	generate_mcu_node
 	generate_kfdt_node
 
 cat << EOF
@@ -185,12 +216,13 @@ cat << EOF
 			rollback-index = <0x0>;
 			firmware = "atf-1";
 			loadables = "uboot"${LOADABLE_ATF}${LOADABLE_OPTEE};
+			${STANDALONE_MCU}
 			fdt = "fdt";
 			signature {
 				algo = "sha256,rsa2048";
 				padding = "pss";
 				key-name-hint = "dev";
-				sign-images = "fdt", "firmware", "loadables";
+				sign-images = "fdt", "firmware", "loadables"${SIGN_MCU};
 			};
 		};
 	};
