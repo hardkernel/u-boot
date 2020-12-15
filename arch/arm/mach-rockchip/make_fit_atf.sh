@@ -172,6 +172,7 @@ function generate_mcu_node()
 	echo "		};"
 }
 ########################################################################################################
+THIS_PLAT=`sed -n "/CONFIG_DEFAULT_DEVICE_TREE/p" .config | awk -F "=" '{ print $2 }' | tr -d '"'`
 
 cat << EOF
 /*
@@ -212,7 +213,7 @@ cat << EOF
 	configurations {
 		default = "conf";
 		conf {
-			description = "Rockchip armv8 with ATF";
+			description = "${THIS_PLAT}";
 			rollback-index = <0x0>;
 			firmware = "atf-1";
 			loadables = "uboot"${LOADABLE_ATF}${LOADABLE_OPTEE};
