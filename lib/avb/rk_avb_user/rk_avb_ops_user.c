@@ -120,7 +120,9 @@ int rk_avb_read_flash_lock_state(uint8_t *flash_lock_state)
 
 	return ret;
 #else
-	return -1;
+	*flash_lock_state = 1;
+
+	return 0;
 #endif
 }
 
