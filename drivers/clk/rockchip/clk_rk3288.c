@@ -106,7 +106,8 @@ enum {
 	M0_DIV_MASK		= 0xf << M0_DIV_SHIFT,
 
 	/* CLKSEL1: pd bus clk pll sel: codec or general */
-	PD_BUS_SEL_PLL_MASK	= 15,
+	PD_BUS_SEL_PLL_SHIFT	= 15,
+	PD_BUS_SEL_PLL_MASK	= 1 << PD_BUS_SEL_PLL_SHIFT,
 	PD_BUS_SEL_CPLL		= 0,
 	PD_BUS_SEL_GPLL,
 
@@ -852,6 +853,89 @@ static ulong rockchip_spi_set_clk(struct rk3288_cru *cru, uint gclk_rate,
 	return rockchip_spi_get_clk(cru, gclk_rate, periph);
 }
 
+static ulong rockchip_aclk_peri_get_clk(struct rk3288_cru *cru)
+{
+	uint div, mux;
+	u32 con;
+	ulong rate, parent_rate;
+
+	con = readl(&cru->cru_clksel_con[10]);
+	mux = (con & PERI_SEL_PLL_MASK) >> PERI_SEL_PLL_SHIFT;
+	div = (con & PERI_ACLK_DIV_MASK) >> PERI_ACLK_DIV_SHIFT;
+	if (mux)
+		parent_rate = rkclk_pll_get_rate(cru, CLK_GENERAL);
+	else
+		parent_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
+	rate = DIV_TO_RATE(parent_rate, div);
+
+	return rate;
+}
+
+static ulong rockchip_aclk_cpu_get_clk(struct rk3288_cru *cru)
+{
+	uint div, mux;
+	u32 con;
+	ulong rate, parent_rate;
+
+	con = readl(&cru->cru_clksel_con[1]);
+	mux = (con & PD_BUS_SEL_PLL_MASK) >> PD_BUS_SEL_PLL_SHIFT;
+	div = (con & PD_BUS_ACLK_DIV0_MASK) >> PD_BUS_ACLK_DIV0_SHIFT;
+	if (mux)
+		parent_rate = rkclk_pll_get_rate(cru, CLK_GENERAL);
+	else
+		parent_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
+	parent_rate = DIV_TO_RATE(parent_rate, div);
+
+	div = (con & PD_BUS_ACLK_DIV1_MASK) >> PD_BUS_ACLK_DIV1_SHIFT;
+	rate = DIV_TO_RATE(parent_rate, div);
+
+	return rate;
+}
+
+static ulong rockchip_pclk_peri_get_clk(struct rk3288_cru *cru)
+{
+	uint div;
+	u32 con;
+	ulong rate, parent_rate;
+
+	parent_rate = rockchip_aclk_peri_get_clk(cru);
+	con = readl(&cru->cru_clksel_con[10]);
+	div = (con & PERI_PCLK_DIV_MASK) >> PERI_PCLK_DIV_SHIFT;
+	rate = parent_rate / (1 << div);
+
+	return rate;
+}
+
+static ulong rockchip_pclk_cpu_get_clk(struct rk3288_cru *cru)
+{
+	uint div;
+	u32 con;
+	ulong rate, parent_rate;
+
+	parent_rate = rockchip_aclk_cpu_get_clk(cru);
+	con = readl(&cru->cru_clksel_con[1]);
+	div = (con & PD_BUS_PCLK_DIV_MASK) >> PD_BUS_PCLK_DIV_SHIFT;
+	rate = DIV_TO_RATE(parent_rate, div);
+
+	return rate;
+}
+
+static ulong rockchip_i2c_get_clk(struct rk3288_cru *cru, int periph)
+{
+	switch (periph) {
+	case PCLK_I2C0:
+	case PCLK_I2C2:
+		return rockchip_pclk_cpu_get_clk(cru);
+	case PCLK_I2C1:
+	case PCLK_I2C3:
+	case PCLK_I2C4:
+	case PCLK_I2C5:
+		return rockchip_pclk_peri_get_clk(cru);
+	default:
+		return -EINVAL;
+	}
+}
+
 static ulong rockchip_saradc_get_clk(struct rk3288_cru *cru)
 {
 	u32 div, val;
@@ -902,35 +986,24 @@ static ulong rockchip_tsadc_set_clk(struct rk3288_cru *cru, uint hz)
 	return rockchip_tsadc_get_clk(cru);
 }
 
-static ulong rockchip_aclk_cpu_get_clk(struct rk3288_cru *cru, uint gclk_rate)
-{
-	u32 div, val;
-
-	val = readl(&cru->cru_clksel_con[1]);
-	div = (val & PD_BUS_ACLK_DIV0_MASK) >> PD_BUS_ACLK_DIV0_SHIFT;
-
-	return DIV_TO_RATE(gclk_rate, div);
-}
-
 #ifndef CONFIG_SPL_BUILD
 
-static ulong rockchip_crypto_get_clk(struct rk3288_cru *cru, uint gclk_rate)
+static ulong rockchip_crypto_get_clk(struct rk3288_cru *cru)
 {
 	u32 div, val;
 
 	val = readl(&cru->cru_clksel_con[26]);
 	div = (val & CLK_CRYPTO_DIV_CON_MASK) >> CLK_CRYPTO_DIV_CON_SHIFT;
 
-	return DIV_TO_RATE(rockchip_aclk_cpu_get_clk(cru, gclk_rate), div);
+	return DIV_TO_RATE(rockchip_aclk_cpu_get_clk(cru), div);
 }
 
-static ulong rockchip_crypto_set_clk(struct rk3288_cru *cru,
-				     uint gclk_rate, uint hz)
+static ulong rockchip_crypto_set_clk(struct rk3288_cru *cru, uint hz)
 {
 	int src_clk_div;
 	uint p_rate;
 
-	p_rate = rockchip_aclk_cpu_get_clk(cru, gclk_rate);
+	p_rate = rockchip_aclk_cpu_get_clk(cru);
 	src_clk_div = DIV_ROUND_UP(p_rate, hz) - 1;
 	assert(src_clk_div < 3);
 
@@ -938,7 +1011,7 @@ static ulong rockchip_crypto_set_clk(struct rk3288_cru *cru,
 		     CLK_CRYPTO_DIV_CON_MASK,
 		     src_clk_div << CLK_CRYPTO_DIV_CON_SHIFT);
 
-	return rockchip_crypto_get_clk(cru, gclk_rate);
+	return rockchip_crypto_get_clk(cru);
 }
 
 static ulong rk3288_alive_get_clk(struct rk3288_cru *cru, uint gclk_rate)
@@ -984,7 +1057,8 @@ static ulong rk3288_clk_get_rate(struct clk *clk)
 	case PCLK_I2C3:
 	case PCLK_I2C4:
 	case PCLK_I2C5:
-		return gclk_rate;
+		new_rate = rockchip_i2c_get_clk(priv->cru, clk->id);
+		break;
 	case PCLK_PWM:
 		return PD_BUS_PCLK_HZ;
 	case SCLK_SARADC:
@@ -994,11 +1068,20 @@ static ulong rk3288_clk_get_rate(struct clk *clk)
 		new_rate = rockchip_tsadc_get_clk(priv->cru);
 		break;
 	case ACLK_CPU:
-		new_rate = rockchip_aclk_cpu_get_clk(priv->cru, gclk_rate);
+		new_rate = rockchip_aclk_cpu_get_clk(priv->cru);
+		break;
+	case ACLK_PERI:
+		new_rate = rockchip_aclk_peri_get_clk(priv->cru);
+		break;
+	case PCLK_CPU:
+		new_rate = rockchip_pclk_cpu_get_clk(priv->cru);
+		break;
+	case PCLK_PERI:
+		new_rate = rockchip_pclk_peri_get_clk(priv->cru);
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_CRYPTO:
-		new_rate = rockchip_crypto_get_clk(priv->cru, gclk_rate);
+		new_rate = rockchip_crypto_get_clk(priv->cru);
 		break;
 	case PCLK_WDT:
 		new_rate = rk3288_alive_get_clk(priv->cru, gclk_rate);
@@ -1073,7 +1156,7 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		new_rate = rate;
 		break;
 	case SCLK_CRYPTO:
-		new_rate = rockchip_crypto_set_clk(priv->cru, gclk_rate, rate);
+		new_rate = rockchip_crypto_set_clk(priv->cru, rate);
 		break;
 #endif
 	case SCLK_SARADC:
