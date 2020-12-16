@@ -189,7 +189,7 @@ function fit_raw_compile()
 
 function fit_gen_uboot_itb()
 {
-	./make.sh itb ${ARG_INI_TRUST} >/dev/null 2>&1
+	./make.sh itb ${ARG_INI_TRUST}
 	check_its ${ITS_UBOOT}
 
 	if [ "${ARG_SIGN}" != "y" ]; then

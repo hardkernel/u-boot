@@ -649,7 +649,7 @@ function pack_uboot_itb_image()
 		fi
 	fi
 
-	./tools/mkimage -f u-boot.its -E u-boot.itb
+	./tools/mkimage -f u-boot.its -E u-boot.itb >/dev/null 2>&1
 	echo "pack u-boot.itb okay! Input: ${INI}"
 	echo
 }
