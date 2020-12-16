@@ -105,6 +105,7 @@ SCRIPT_SPL="${SRCTREE}/scripts/spl.sh"
 SCRIPT_UBOOT="${SRCTREE}/scripts/uboot.sh"
 SCRIPT_LOADER="${SRCTREE}/scripts/loader.sh"
 
+REP_DIR="./rep"
 #########################################################################################################
 function help()
 {
@@ -227,6 +228,29 @@ function process_args()
 			--spl|spl*) # use spl file
 				ARG_SPL_BIN="spl/u-boot-spl.bin"
 				shift 1
+				;;
+			--uboot|--fdt|--optee|--mcu|--bl31) # uboot.img components
+				mkdir -p ${REP_DIR}
+				if [ ! -f $2 ]; then
+					echo "ERROR: No $2"
+					exit 1
+				fi
+				if [ "$1" == "--uboot" ]; then
+					cp $2 ${REP_DIR}/u-boot-nodtb.bin
+				elif [ "$1" == "--fdt" ]; then
+					cp $2 ${REP_DIR}/u-boot.dtb
+				elif [ "$1" == "--optee" ]; then
+					cp $2 ${REP_DIR}/tee.bin
+				elif [ "$1" == "--mcu" ]; then
+					cp $2 ${REP_DIR}/mcu.bin
+				elif [ "$1" == "--bl31" ]; then
+					if ! file $2 | grep 'ELF ' >/dev/null 2>&1 ; then
+						echo "ERROR: $2 is not a bl31.elf file"
+						exit 1
+					fi
+					cp $2 ${REP_DIR}/bl31.elf
+				fi
+				shift 2
 				;;
 			*)
 				#1. FIT scripts args
@@ -637,6 +661,10 @@ function pack_uboot_itb_image()
 		COMPRESSION_ARG="-c ${COMPRESSION}"
 	fi
 
+	if [ -d ${REP_DIR} ]; then
+		mv ${REP_DIR}/* ./
+	fi
+
 	SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
 	if [ ! -z ${SPL_FIT_SOURCE} ]; then
 		cp ${SPL_FIT_SOURCE} u-boot.its
@@ -735,6 +763,7 @@ function pack_fit_image()
 		fi
 	fi
 
+	rm ${REP_DIR} -rf
 	echo "pack uboot.img okay! Input: ${INI_TRUST}"
 }
 
