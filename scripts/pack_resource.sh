@@ -7,9 +7,14 @@
 
 RSCE_OLD=$1
 RSCE_NEW=resource.img
+
+BOOT_OLD=$1
+BOOT_NEW=boot.img
+
 TOOL=../rkbin/tools/resource_tool
 IMAGES=./tools/images/
 TMP_DIR=.resource_tmp
+TMP_DIR2=.boot_tmp
 
 usage()
 {
@@ -61,6 +66,32 @@ append_images_to_resource()
 	echo "./resource.img with battery images is ready"
 }
 
+append_images_to_android_img()
+{
+	./scripts/unpack_bootimg --boot_img ${BOOT_OLD} --out ${TMP_DIR2}/
+	RSCE_OLD="${TMP_DIR2}/second"
+	append_images_to_resource
+	./scripts/repack-bootimg --boot_img ${BOOT_OLD} --second ${RSCE_NEW} -o ${BOOT_NEW}
+	rm -rf ${TMP_DIR2}
+}
+
+append_images_to_fit_img()
+{
+	./scripts/fit-unpack.sh -f ${BOOT_OLD} -o ${TMP_DIR2}/
+	RSCE_OLD="${TMP_DIR2}/resource"
+	append_images_to_resource
+	rm -rf ${TMP_DIR2}/*
+	mv ${RSCE_NEW} ${TMP_DIR2}/resource
+	 ./scripts/fit-repack.sh -f ${BOOT_OLD} -d ${TMP_DIR2}
+	rm -rf ${TMP_DIR2}
+}
+
 prepare
-append_images_to_resource
+if file ${RSCE_OLD} | grep 'Android bootimg' >/dev/null 2>&1 ; then
+	append_images_to_android_img
+elif file ${RSCE_OLD} | grep 'Device Tree Blob' >/dev/null 2>&1 ; then
+	append_images_to_fit_img
+elif strings ${RSCE_OLD} | grep "RSCE" >/dev/null 2>&1 ; then
+	append_images_to_resource
+fi
 
