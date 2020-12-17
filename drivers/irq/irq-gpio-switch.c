@@ -100,7 +100,7 @@ static int __phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
 		return EINVAL_GPIO;
 
 	for (bank = 0; bank < GPIO_BANK_NUM; bank++) {
-		if (!strstr(gpio_name, gpio_banks[bank].name)) {
+		if (strstr(gpio_name, gpio_banks[bank].name)) {
 			found = true;
 			break;
 		}
@@ -121,7 +121,7 @@ static int __phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
 
 		/* match alias ? */
 		for (bank = 0; bank < ARRAY_SIZE(gpio_banks); bank++) {
-			if (!strstr(gpio_alias[bank], gpio_name)) {
+			if (strstr(gpio_alias[bank], gpio_name)) {
 				found = true;
 				break;
 			}
