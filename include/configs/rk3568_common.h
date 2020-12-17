@@ -54,6 +54,8 @@
 #define SDRAM_MAX_SIZE			0xf0000000
 #define CONFIG_PREBOOT
 
+#define CONFIG_SYS_NONCACHED_MEMORY	(1 << 20)	/* 1 MiB */
+
 #ifndef CONFIG_SPL_BUILD
 /* usb mass storage */
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
