@@ -167,7 +167,7 @@ function generate_mcu_node()
 		gzip -k -f -9 mcu.bin
 	fi
 
-	SIGN_MCU=", \"mcu\""
+	STANDALONE_SIGN=", \"standalone\""
 	STANDALONE_MCU="standalone = \"mcu\";"
 	echo "		};"
 }
@@ -223,7 +223,7 @@ cat << EOF
 				algo = "sha256,rsa2048";
 				padding = "pss";
 				key-name-hint = "dev";
-				sign-images = "fdt", "firmware", "loadables"${SIGN_MCU};
+				sign-images = "fdt", "firmware", "loadables"${STANDALONE_SIGN};
 			};
 		};
 	};
