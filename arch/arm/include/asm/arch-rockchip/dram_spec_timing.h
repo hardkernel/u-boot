@@ -387,6 +387,11 @@ enum ddr4_speed_rate {
 #define LPDDR4_SOC_ODT_40	(6)
 #define LPDDR4_SOC_ODT_DIS	(0)
 
+/* LPDDR4x */
+/* MR3 */
+#define LPDDR4X_VDDQ_0_6	(0)
+#define LPDDR4X_VDDQ_0_5	(1)
+
 /* mr0 for ddr4 */
 #define DDR4_BL8		(0)
 #define DDR4_BC4_8		(1)

@@ -171,6 +171,9 @@ struct sdram_head_info_index_v2 {
 
 	struct index_info skew_index;
 	struct index_info dq_map_index;
+
+	struct index_info lp4x_index;
+	struct index_info reserved;
 };
 
 struct global_info {
