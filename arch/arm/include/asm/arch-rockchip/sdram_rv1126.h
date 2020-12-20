@@ -301,7 +301,7 @@ struct sdram_msch_timings {
 	union noc_ddrtiminga0 ddrtiminga0;
 	union noc_ddrtimingb0 ddrtimingb0;
 	union noc_ddrtimingc0 ddrtimingc0;
-	union noc_devtodev0 devtodev0;
+	union noc_devtodev_rv1126 devtodev0;
 	union noc_ddrmode ddrmode;
 	union noc_ddr4timing ddr4timing;
 	u32 agingx0;
