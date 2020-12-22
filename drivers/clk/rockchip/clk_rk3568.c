@@ -2805,7 +2805,7 @@ static void rk3568_clk_init(struct rk3568_clk_priv *priv)
 
 #ifdef CONFIG_SPL_BUILD
 	ret = rk3568_bus_set_clk(priv, ACLK_BUS, 150000000);
-	if (ret)
+	if (ret < 0)
 		printf("Fail to set the ACLK_BUS clock.\n");
 #endif
 
