@@ -85,14 +85,13 @@ struct vendor_info {
 	u32 *version2;
 };
 
-struct mtd_nand_info {
+struct mtd_flash_info {
 	u32 part_offset;
 	u32 part_size;
 	u32 blk_offset;
 	u32 page_offset;
 	u32 version;
 	u32 ops_size;
-	u32 page_size;
 	u32 blk_size;
 };
 
@@ -129,7 +128,7 @@ static struct vendor_info vendor_info;
 static int bootdev_type;
 
 #ifdef CONFIG_MTD_BLK
-static struct mtd_nand_info nand_info;
+static struct mtd_flash_info s_flash_info;
 static const char *vendor_mtd_name = "vnvm";
 #endif
 
@@ -175,48 +174,49 @@ static int mtd_vendor_storage_init(struct blk_desc *dev_desc)
 	if (part_num < 0)
 		return -EIO;
 
-	nand_info.part_offset = (u32)vnvm_part_info.start;
-	nand_info.part_size = (u32)vnvm_part_info.size;
-	nand_info.page_offset = 0;
-	nand_info.blk_offset = 0;
-	nand_info.version = 0;
-	nand_info.page_size = mtd->writesize >> 9;
-	nand_info.blk_size = mtd->erasesize >> 9;
-	nand_info.ops_size = (FLASH_VENDOR_INFO_SIZE + mtd->writesize - 1) /
-			     mtd->writesize;
-	nand_info.ops_size *= nand_info.page_size;
+	s_flash_info.part_offset = (u32)vnvm_part_info.start;
+	s_flash_info.part_size = (u32)vnvm_part_info.size;
+	s_flash_info.page_offset = 0;
+	s_flash_info.blk_offset = 0;
+	s_flash_info.version = 0;
+	/* SPI Nor unified to Support 64KB erase block */
+	if (dev_desc->devnum == BLK_MTD_SPI_NOR)
+		s_flash_info.blk_size = 0x80;
+	else
+		s_flash_info.blk_size = mtd->erasesize >> 9;
+	s_flash_info.ops_size = roundup(FLASH_VENDOR_INFO_SIZE, mtd->writesize) >> 9;
 
 	/* scan bad block and calculate the real size can be used */
 	bad_block_size = 0;
-	for (offset = 0; offset < nand_info.part_size; offset += nand_info.blk_size) {
-		if (mtd_block_isbad(mtd, (nand_info.part_offset + offset) << 9))
-			bad_block_size += nand_info.blk_size;
+	for (offset = 0; offset < s_flash_info.part_size; offset += s_flash_info.blk_size) {
+		if (mtd_block_isbad(mtd, (s_flash_info.part_offset + offset) << 9))
+			bad_block_size += s_flash_info.blk_size;
 	}
-	nand_info.part_size -= bad_block_size;
+	s_flash_info.part_size -= bad_block_size;
 
-	for (offset = 0; offset < nand_info.part_size; offset += nand_info.blk_size) {
-		ret = blk_dread(dev_desc, nand_info.part_offset + offset,
+	for (offset = 0; offset < s_flash_info.part_size; offset += s_flash_info.blk_size) {
+		ret = blk_dread(dev_desc, s_flash_info.part_offset + offset,
 				FLASH_VENDOR_INFO_SIZE >> 9,
 				(u8 *)buf);
 		debug("%s: read %x version = %x\n", __func__,
-		      nand_info.part_offset + offset,
+		      s_flash_info.part_offset + offset,
 		      vendor_info.hdr->version);
 		if (ret == (FLASH_VENDOR_INFO_SIZE >> 9) && vendor_info.hdr->tag == VENDOR_TAG &&
 		    vendor_info.hdr->version == *vendor_info.version2) {
-			if (vendor_info.hdr->version > nand_info.version) {
-				nand_info.version = vendor_info.hdr->version;
-				nand_info.blk_offset = offset;
+			if (vendor_info.hdr->version > s_flash_info.version) {
+				s_flash_info.version = vendor_info.hdr->version;
+				s_flash_info.blk_offset = offset;
 			}
 		}
 	}
 
-	debug("%s: nand_info.version = %x %x\n", __func__, nand_info.version, nand_info.blk_offset);
-	if (nand_info.version) {
-		for (offset = nand_info.blk_size  - nand_info.ops_size;
+	debug("%s: s_flash_info.version = %x %x\n", __func__, s_flash_info.version, s_flash_info.blk_offset);
+	if (s_flash_info.version) {
+		for (offset = s_flash_info.blk_size  - s_flash_info.ops_size;
 		     offset >= 0;
-		     offset -= nand_info.ops_size) {
-			ret = blk_dread(dev_desc, nand_info.part_offset +
-					nand_info.blk_offset + offset,
+		     offset -= s_flash_info.ops_size) {
+			ret = blk_dread(dev_desc, s_flash_info.part_offset +
+					s_flash_info.blk_offset + offset,
 					1,
 					(u8 *)buf);
 
@@ -225,22 +225,22 @@ static int mtd_vendor_storage_init(struct blk_desc *dev_desc)
 				continue;
 
 			/* point to the last programed page */
-			if (nand_info.page_offset < offset)
-				nand_info.page_offset = offset;
+			if (s_flash_info.page_offset < offset)
+				s_flash_info.page_offset = offset;
 
 			if (ret != 1 || vendor_info.hdr->tag != VENDOR_TAG)
 				continue;
-			ret = blk_dread(dev_desc, nand_info.part_offset +
-					nand_info.blk_offset + offset,
+			ret = blk_dread(dev_desc, s_flash_info.part_offset +
+					s_flash_info.blk_offset + offset,
 					FLASH_VENDOR_INFO_SIZE >> 9,
 					(u8 *)buf);
 			debug("%s: read %x version = %x\n", __func__,
-			      nand_info.part_offset + nand_info.blk_offset  + offset,
+			      s_flash_info.part_offset + s_flash_info.blk_offset  + offset,
 			      vendor_info.hdr->version);
 
 			if (ret == (FLASH_VENDOR_INFO_SIZE >> 9)  && vendor_info.hdr->tag == VENDOR_TAG &&
 			    vendor_info.hdr->version == *vendor_info.version2) {
-				nand_info.version = vendor_info.hdr->version;
+				s_flash_info.version = vendor_info.hdr->version;
 				break;
 			}
 		}
@@ -265,21 +265,23 @@ static int mtd_vendor_write(struct blk_desc *dev_desc,
 	int ret, count = 0, err = 0;
 
 re_write:
-	debug("[Vendor INFO]:%s page_offset=0x%x count = %x\n", __func__, nand_info.part_offset +
-	      nand_info.blk_offset + nand_info.page_offset, count);
-	if (nand_info.page_offset >= nand_info.blk_size) {
-		nand_info.blk_offset += nand_info.blk_size;
-		if (nand_info.blk_offset >= nand_info.part_size)
-			nand_info.blk_offset = 0;
-		nand_info.page_offset = 0;
+	debug("[Vendor INFO]:%s page_offset=0x%x count = %x\n", __func__, s_flash_info.part_offset +
+	      s_flash_info.blk_offset + s_flash_info.page_offset, count);
+	if (s_flash_info.page_offset >= s_flash_info.blk_size) {
+		s_flash_info.blk_offset += s_flash_info.blk_size;
+		if (s_flash_info.blk_offset >= s_flash_info.part_size)
+			s_flash_info.blk_offset = 0;
+		s_flash_info.page_offset = 0;
 	}
 
-	ret = blk_dwrite(dev_desc, nand_info.part_offset +
-			 nand_info.blk_offset + nand_info.page_offset,
+	dev_desc->op_flag |= BLK_MTD_CONT_WRITE;
+	ret = blk_dwrite(dev_desc, s_flash_info.part_offset +
+			 s_flash_info.blk_offset + s_flash_info.page_offset,
 			 FLASH_VENDOR_INFO_SIZE >> 9,
 			 (u8 *)buf);
+	dev_desc->op_flag &= ~(BLK_MTD_CONT_WRITE);
 
-	nand_info.page_offset += nand_info.ops_size;
+	s_flash_info.page_offset += s_flash_info.ops_size;
 	if (ret != (FLASH_VENDOR_INFO_SIZE >> 9)) {
 		err++;
 		if (err > 3)
