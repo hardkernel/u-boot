@@ -93,12 +93,24 @@ static int rockchip_set_ethaddr(void)
 	char buf[ARP_HLEN_ASCII + 1], mac[16];
 	u8 ethaddr[ARP_HLEN * MAX_ETHERNET] = {0};
 	int ret, i;
-	bool need_write = false;
+	bool need_write = false, randomed = false;
 
 	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
 	for (i = 0; i < MAX_ETHERNET; i++) {
 		if (ret <= 0 || !is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
-			net_random_ethaddr(&ethaddr[i * ARP_HLEN]);
+			if (!randomed) {
+				net_random_ethaddr(&ethaddr[i * ARP_HLEN]);
+				randomed = true;
+			} else {
+				if (i > 0) {
+					memcpy(&ethaddr[i * ARP_HLEN],
+					       &ethaddr[(i - 1) * ARP_HLEN],
+					       ARP_HLEN);
+					ethaddr[i * ARP_HLEN] |= 0x02;
+					ethaddr[i * ARP_HLEN] += (i << 2);
+				}
+			}
+
 			need_write = true;
 		}
 
