@@ -13,7 +13,11 @@
 #define KHz		1000
 #define OSC_HZ		(24 * MHz)
 
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
 #define APLL_HZ		(1008 * MHz)
+#else
+#define APLL_HZ		(816 * MHz)
+#endif
 #define GPLL_HZ		(1188 * MHz)
 #define CPLL_HZ		(500 * MHz)
 #define HPLL_HZ		(1400 * MHz)
