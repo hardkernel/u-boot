@@ -14,17 +14,17 @@ struct ddr_pctl {
 	u32 sctl;
 	u32 stat;
 	u32 intrstat;
-	u32 reserved0[(0x40-0x10)/4];
+	u32 reserved0[(0x40 - 0x10) / 4];
 	u32 mcmd;
 	u32 powctl;
 	u32 powstat;
 	u32 cmdtstat;
 	u32 cmdtstaten;
-	u32 reserved1[(0x60-0x54)/4];
+	u32 reserved1[(0x60 - 0x54) / 4];
 	u32 mrrcfg0;
 	u32 mrrstat0;
 	u32 mrrstat1;
-	u32 reserved2[(0x7c-0x6c)/4];
+	u32 reserved2[(0x7c - 0x6c) / 4];
 	u32 mcfg1;
 	u32 mcfg;
 	u32 ppcfg;
@@ -39,7 +39,7 @@ struct ddr_pctl {
 	u32 dtuprd2;
 	u32 dtuprd3;
 	u32 dtuawdt;
-	u32 reserved4[(0xc0-0xb4)/4];
+	u32 reserved4[(0xc0 - 0xb4) / 4];
 	u32 togcnt1u;
 	u32 tinit;
 	u32 trsth;
@@ -75,12 +75,12 @@ struct ddr_pctl {
 	u32 tckesr;
 	u32 tdpd;
 	u32 trefi_mem_ddr3;
-	u32 reserved5[(0x180-0x14c)/4];
+	u32 reserved5[(0x180 - 0x14c) / 4];
 	u32 ecccfg;
 	u32 ecctst;
 	u32 eccclr;
 	u32 ecclog;
-	u32 reserved6[(0x200-0x190)/4];
+	u32 reserved6[(0x200 - 0x190) / 4];
 	u32 dtuwactl;
 	u32 dturactl;
 	u32 dtucfg;
@@ -107,7 +107,7 @@ struct ddr_pctl {
 	u32 reserved7;
 	u32 dfitrddataen;
 	u32 dfitphyrdlat;
-	u32 reserved8[(0x270-0x268)/4];
+	u32 reserved8[(0x270 - 0x268) / 4];
 	u32 dfitphyupdtype0;
 	u32 dfitphyupdtype1;
 	u32 dfitphyupdtype2;
@@ -119,7 +119,7 @@ struct ddr_pctl {
 	u32 dfiupdcfg;
 	u32 dfitrefmski;
 	u32 dfitctrlupdi;
-	u32 reserved10[(0x2ac-0x29c)/4];
+	u32 reserved10[(0x2ac - 0x29c) / 4];
 	u32 dfitrcfg0;
 	u32 dfitrstat0;
 	u32 dfitrwrlvlen;
@@ -134,9 +134,9 @@ struct ddr_pctl {
 	u32 dfistcfg2;
 	u32 dfistparclr;
 	u32 dfistparlog;
-	u32 reserved12[(0x2f0-0x2e4)/4];
+	u32 reserved12[(0x2f0 - 0x2e4) / 4];
 	u32 dfilpcfg0;
-	u32 reserved13[(0x300-0x2f4)/4];
+	u32 reserved13[(0x300 - 0x2f4) / 4];
 	u32 dfitrwrlvlresp0;
 	u32 dfitrwrlvlresp1;
 	u32 dfitrwrlvlresp2;
@@ -153,7 +153,7 @@ struct ddr_pctl {
 	u32 dfitrrdlvlgatedelay1;
 	u32 dfitrrdlvlgatedelay2;
 	u32 dfitrcmd;
-	u32 reserved14[(0x3f8-0x340)/4];
+	u32 reserved14[(0x3f8 - 0x340) / 4];
 	u32 ipvr;
 	u32 iptr;
 };
@@ -564,7 +564,6 @@ enum {
 	PD_IDLE_MASK				= 0xff << 8,
 	PD_IDLE_SHIFT				= 8,
 	TWO_T_SHIFT				= 3,
-
 
 	/* PCTL_MCFG1 */
 	SR_IDLE_MASK				= 0xff,

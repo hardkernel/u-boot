@@ -68,4 +68,3 @@ enum { /* SFT_CON_LO */
 };
 
 #endif
-

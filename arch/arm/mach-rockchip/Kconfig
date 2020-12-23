@@ -236,7 +236,7 @@ config TPL_TEXT_BASE
 	default 0xfff81000
 
 config TPL_MAX_SIZE
-	default 12288
+	default 10240
 
 config TPL_STACK
 	default 0xfff84000

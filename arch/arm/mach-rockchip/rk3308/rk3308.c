@@ -48,9 +48,7 @@ struct mm_region *mem_map = rk3308_mem_map;
 #define SGRF_BASE	0xff2b0000
 #define CRU_BASE	0xff500000
 
-
 enum {
-
 	GPIO1C7_SHIFT		= 8,
 	GPIO1C7_MASK		= GENMASK(11, 8),
 	GPIO1C7_GPIO		= 0,
@@ -209,17 +207,28 @@ int arch_cpu_init(void)
 	static struct rk3308_grf * const grf = (void *)GRF_BASE;
 	u32 glb_rst_st;
 
+	/*
+	 * RK3308 internally default select 1.8v for VCCIO4 on reset state,
+	 * but some boards may give a 3.3V power supply for VCCIO4, this may
+	 * bring a risk of chip damage through overvoltage. So we internally
+	 * select 3.3V for VCCIO4 as early as possiple to reduces this risk.
+	 */
 	rk_clrsetreg(&grf->soc_con0, IOVSEL4_MASK, VCCIO4_3V3 << IOVSEL4_SHIFT);
 
+	/*
+	 * write BOOT_WATCHDOG to boot mode register, if we are reset by wdt
+	 */
 	glb_rst_st = readl(&cru->glb_rst_st);
 	writel(FST_GLB_WDT_RST | SND_GLB_WDT_RST, &cru->glb_rst_st);
 	if (glb_rst_st & (FST_GLB_WDT_RST | SND_GLB_WDT_RST))
 		writel(BOOT_WATCHDOG, CONFIG_ROCKCHIP_BOOT_MODE_REG);
 
+	/* set wdt tsadc first global reset*/
 	writel(WDT_GLB_SRST_CTRL << WDT_GLB_SRST_CTRL_SHIFT |
 	       TSADC_GLB_SRST_CTRL << TSADC_GLB_SRST_CTRL_SHIFT,
 	       &cru->glb_rst_con);
 
+	/* Set qos priority level */
 	writel(QOS_PRIORITY_P1_P0(1, 1),
 	       SERVICE_CPU_ADDR + DOS_PRIORITY_OFFSET);
 	writel(QOS_PRIORITY_P1_P0(3, 3),

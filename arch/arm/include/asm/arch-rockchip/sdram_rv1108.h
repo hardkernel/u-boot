@@ -20,7 +20,6 @@
 #define SDRAM_END_ADDR		0x80000000
 #define PATTERN			(0x5aa5f00f)
 
-
 struct rv1108_service_msch {
 	u32 id_coreid;
 	u32 id_revisionid;
@@ -84,6 +83,5 @@ int rv1108_sdram_init(struct dram_info *sdram_priv,
 void set_bw_grf(struct dram_info *priv);
 void set_ds_odt(struct dram_info *priv,
 		struct sdram_params *params_priv);
-
 
 #endif

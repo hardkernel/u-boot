@@ -134,4 +134,3 @@ void set_ds_odt(struct dram_info *priv,
 		struct sdram_params *params_priv);
 
 #endif
-
