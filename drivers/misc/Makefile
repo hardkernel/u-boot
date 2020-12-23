@@ -54,6 +54,6 @@ obj-$(CONFIG_WINBOND_W83627) += winbond_w83627.o
 obj-$(CONFIG_QFW) += qfw.o
 obj-$(CONFIG_ROCKCHIP_EFUSE) += rockchip-efuse.o
 obj-$(CONFIG_ROCKCHIP_OTP) += rockchip-otp.o
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rockchip-secure-otp.o
+obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP_V1) += rockchip-secure-otp.o
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP_V2) += rockchip-secure-otp-v2.o
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_HW_DECOMPRESS) += rockchip_decompress.o
