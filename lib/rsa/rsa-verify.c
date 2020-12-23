@@ -62,12 +62,18 @@ static int rsa_verify_padding(const uint8_t *msg, const int pad_len,
 
 #if !defined(USE_HOSTCC)
 #if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
-static void rsa_convert_big_endian(uint32_t *dst, const uint32_t *src, int len)
+static void rsa_convert_big_endian(uint32_t *dst, const uint32_t *src,
+				   int total_len, int convert_len)
 {
-	int i;
+	int total_wd, convert_wd, i;
 
-	for (i = 0; i < len; i++)
-		dst[i] = fdt32_to_cpu(src[len - 1 - i]);
+	if (total_len < convert_len)
+		convert_len = total_len;
+
+	total_wd = total_len / sizeof(uint32_t);
+	convert_wd = convert_len / sizeof(uint32_t);
+	for (i = 0; i < convert_wd; i++)
+		dst[i] = fdt32_to_cpu(src[total_wd - 1 - i]);
 }
 
 static int rsa_mod_exp_hw(struct key_prop *prop, const uint8_t *sig,
@@ -91,15 +97,15 @@ static int rsa_mod_exp_hw(struct key_prop *prop, const uint8_t *sig,
 		return -ENOMEM;
 
 	rsa_convert_big_endian(rsa_key.n, (uint32_t *)prop->modulus,
-			       key_len / sizeof(uint32_t));
+			       key_len, key_len);
 	rsa_convert_big_endian(rsa_key.e, (uint32_t *)prop->public_exponent_BN,
-			       key_len / sizeof(uint32_t));
+			       key_len, key_len);
 #ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 	rsa_convert_big_endian(rsa_key.c, (uint32_t *)prop->factor_c,
-			       key_len / sizeof(uint32_t));
+			       key_len, key_len);
 #else
 	rsa_convert_big_endian(rsa_key.c, (uint32_t *)prop->factor_np,
-			       key_len / sizeof(uint32_t));
+			       key_len, key_len);
 #endif
 	for (i = 0; i < sig_len; i++)
 		sig_reverse[sig_len-1-i] = sig[i];
@@ -576,7 +582,7 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	struct udevice *dev;
 	struct key_prop prop;
 	char name[100] = {0};
-	char secure_boot_enable = 0;
+	u16 secure_boot_enable = 0;
 	const void *blob = info->fdt_blob;
 	uint8_t digest[FIT_MAX_HASH_LEN];
 	uint8_t digest_read[FIT_MAX_HASH_LEN];
@@ -622,26 +628,26 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	if (info->crypto->key_len != RSA2048_BYTES)
 		return -EINVAL;
 
-	rsa_key = malloc(key_len * 3);
+	rsa_key = calloc(key_len * 3, sizeof(char));
 	if (!rsa_key)
 		return -ENOMEM;
 
 	n = rsa_key;
-	e = rsa_key + key_len;
-	c = rsa_key + key_len * 2;
+	e = rsa_key + CONFIG_RSA_N_SIZE;
+	c = rsa_key + CONFIG_RSA_N_SIZE + CONFIG_RSA_E_SIZE;
 	rsa_convert_big_endian(n, (uint32_t *)prop.modulus,
-			       key_len / sizeof(uint32_t));
+			       key_len, CONFIG_RSA_N_SIZE);
 	rsa_convert_big_endian(e, (uint32_t *)prop.public_exponent_BN,
-			       key_len / sizeof(uint32_t));
+			       key_len, CONFIG_RSA_E_SIZE);
 #ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 	rsa_convert_big_endian(c, (uint32_t *)prop.factor_c,
-			       key_len / sizeof(uint32_t));
+			       key_len, CONFIG_RSA_C_SIZE);
 #else
 	rsa_convert_big_endian(c, (uint32_t *)prop.factor_np,
-			       key_len / sizeof(uint32_t));
+			       key_len, CONFIG_RSA_C_SIZE);
 #endif
 
-	ret = calculate_hash(rsa_key, key_len * 2 + OTP_RSA2048_C_SIZE,
+	ret = calculate_hash(rsa_key, CONFIG_RSA_N_SIZE + CONFIG_RSA_E_SIZE + CONFIG_RSA_C_SIZE,
 			     info->checksum->name, digest, &digest_len);
 	if (ret)
 		goto error;
@@ -684,7 +690,7 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	if (ret)
 		goto error;
 
-	printf("RSA：Write key hash successfully\n");
+	printf("RSA: Write key hash successfully\n");
 
 error:
 	free(rsa_key);
