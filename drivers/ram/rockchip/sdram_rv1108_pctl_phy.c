@@ -279,7 +279,7 @@ static void pctl_cfg(struct dram_info *priv,
 	       &priv->pctl->dfiupdcfg);
 
 	copy_to_reg(&priv->pctl->togcnt1u,
-		    &(params_priv->ddr_timing_t.pctl_timing.togcnt1u),
+		    &params_priv->ddr_timing_t.pctl_timing.togcnt1u,
 		    sizeof(struct pctl_timing));
 	/*
 	 * rv1108 phy is 1:2 mode, noc_timing.b.burstlen
