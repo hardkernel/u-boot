@@ -587,7 +587,8 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 		return 0;
 
 	if (desc->devnum == BLK_MTD_NAND ||
-	    desc->devnum == BLK_MTD_SPI_NAND) {
+	    desc->devnum == BLK_MTD_SPI_NAND ||
+	    desc->devnum == BLK_MTD_SPI_NOR) {
 		ret = mtd_map_erase(mtd, off, len);
 		if (ret)
 			return ret;
