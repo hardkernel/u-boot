@@ -392,7 +392,7 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 	int ret = 0;
 
 	*otp_index = 0;
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V1)
 	struct udevice *dev;
 	u32 index, i, otp_version;
 	u32 bit_count;
@@ -403,13 +403,13 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 
 	otp_version = 0;
 	for (i = 0; i < OTP_UBOOT_ROLLBACK_WORDS; i++) {
-		if (misc_otp_read(dev, 4 *
-		    (OTP_UBOOT_ROLLBACK_OFFSET + i),
+		if (misc_otp_read(dev, OTP_UBOOT_ROLLBACK_OFFSET + i * 4,
 		    &index,
 		    4)) {
 			printf("Can't read rollback index\n");
 			return -EIO;
 		}
+
 		bit_count = fls(index);
 		otp_version += bit_count;
 	}
@@ -421,7 +421,7 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 
 static int fit_write_otp_rollback_index(u32 fit_index)
 {
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V1)
 	struct udevice *dev;
 	u32 index, i, otp_index;
 
@@ -441,14 +441,20 @@ static int fit_write_otp_rollback_index(u32 fit_index)
 	if (otp_index < fit_index) {
 		/* Write new SW version to otp */
 		for (i = 0; i < OTP_UBOOT_ROLLBACK_WORDS; i++) {
+			/*
+			 * If fit_index is equal to 0, then execute 0xffffffff >> 32.
+			 * But the operand can only be 0 - 31. The "0xffffffff >> 32" is
+			 * actually be "0xffffffff >> 0".
+			 */
+			if (!fit_index)
+				break;
 			/* convert to base-1 representation */
 			index = 0xffffffff >> (OTP_ALL_ONES_NUM_BITS -
 				min(fit_index, (u32)OTP_ALL_ONES_NUM_BITS));
 			fit_index -= min(fit_index,
 					  (u32)OTP_ALL_ONES_NUM_BITS);
 			if (index) {
-				if (misc_otp_write(dev, 4 *
-				    (OTP_UBOOT_ROLLBACK_OFFSET + i),
+				if (misc_otp_write(dev, OTP_UBOOT_ROLLBACK_OFFSET + i * 4,
 				    &index,
 				    4)) {
 					printf("Can't write rollback index\n");
