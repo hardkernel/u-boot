@@ -172,7 +172,7 @@ int fit_board_verify_required_sigs(void)
 	if (!dev)
 		return 1;
 
-	if (misc_otp_read(dev, 0, &vboot, 1)) {
+	if (misc_otp_read(dev, OTP_SECURE_BOOT_ENABLE_ADDR, &vboot, 1)) {
 		printf("Can't read verified-boot flag\n");
 		return 1;
 	}
