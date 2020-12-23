@@ -34,4 +34,16 @@ config RSA_FREESCALE_EXP
 	Enables driver for RSA modular exponentiation using Freescale cryptographic
 	accelerator - CAAM.
 
+config RSA_N_SIZE
+	hex "Define the RSA N size"
+	default 0x100
+
+config RSA_E_SIZE
+	hex "Define the RSA E size"
+	default 0x100
+
+config RSA_C_SIZE
+	hex "Define the RSA C size"
+	default 0x100
+
 endif
