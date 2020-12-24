@@ -68,6 +68,17 @@ struct rk_gmac_ops {
 	void (*set_to_rgmii)(struct gmac_rockchip_platdata *pdata);
 };
 
+#ifdef CONFIG_DWC_ETH_QOS
+static const struct eqos_config eqos_rockchip_config = {
+	.reg_access_always_ok = false,
+	.mdio_wait = 10000,
+	.swr_wait = 200,
+	.config_mac = EQOS_MAC_RXQ_CTRL0_RXQ0EN_NOT_ENABLED,
+	.config_mac_mdio = EQOS_MAC_MDIO_ADDRESS_CR_100_150,
+	.ops = &eqos_rockchip_ops,
+};
+#endif
+
 void gmac_set_rgmii(struct udevice *dev, u32 tx_delay, u32 rx_delay)
 {
 	struct gmac_rockchip_platdata *pdata = dev_get_platdata(dev);
@@ -815,6 +826,7 @@ static int gmac_rockchip_probe(struct udevice *dev)
 #ifdef CONFIG_DWC_ETH_QOS
 	eth_pdata = &pdata->eth_pdata;
 	config = (struct eqos_config *)&ops->config;
+	memcpy(config, &eqos_rockchip_config, sizeof(struct eqos_config));
 	eth_pdata->phy_interface = config->ops->eqos_get_interface(dev);
 #else
 	dw_pdata = &pdata->dw_eth_pdata;
@@ -1018,15 +1030,6 @@ const struct rk_gmac_ops rv1108_gmac_ops = {
 };
 #else
 const struct rk_gmac_ops rv1126_gmac_ops = {
-	.config = {
-		.reg_access_always_ok = false,
-		.mdio_wait = 10000,
-		.swr_wait = 200,
-		.config_mac = EQOS_MAC_RXQ_CTRL0_RXQ0EN_NOT_ENABLED,
-		.config_mac_mdio = EQOS_MAC_MDIO_ADDRESS_CR_100_150,
-		.ops = &eqos_rockchip_ops
-	},
-
 	.fix_mac_speed = rv1126_set_rgmii_speed,
 	.set_to_rgmii = rv1126_set_to_rgmii,
 	.set_to_rmii = rv1126_set_to_rmii,
