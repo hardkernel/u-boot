@@ -11,7 +11,7 @@
 #define KHz		1000
 #define OSC_HZ		(24 * MHz)
 
-#define APLL_HZ		(1008 * MHz)
+#define APLL_HZ		(816 * MHz)
 #define GPLL_HZ		(1188 * MHz)
 #define CPLL_HZ		(1000 * MHz)
 #define PPLL_HZ		(100 * MHz)
