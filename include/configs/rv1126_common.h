@@ -37,7 +37,7 @@
 #define GICC_BASE			0xfeff2000
 
 /* secure boot otp rollback */
-#define OTP_UBOOT_ROLLBACK_OFFSET	0x1A	/* word address */
+#define OTP_UBOOT_ROLLBACK_OFFSET	0x68
 #define OTP_UBOOT_ROLLBACK_WORDS	2	/* 64 bits, 2 words */
 #define OTP_ALL_ONES_NUM_BITS		32
 #define OTP_SECURE_BOOT_ENABLE_ADDR	0x0
