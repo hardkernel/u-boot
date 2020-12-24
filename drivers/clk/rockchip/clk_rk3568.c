@@ -2342,100 +2342,100 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case ACLK_BUS:
 	case PCLK_BUS:
-		rate = rk3568_bus_set_clk(priv, clk->id, rate);
+		ret = rk3568_bus_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_PERIMID:
 	case HCLK_PERIMID:
-		rate = rk3568_perimid_set_clk(priv, clk->id, rate);
+		ret = rk3568_perimid_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_TOP_HIGH:
 	case ACLK_TOP_LOW:
 	case HCLK_TOP:
 	case PCLK_TOP:
-		rate = rk3568_top_set_clk(priv, clk->id, rate);
+		ret = rk3568_top_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_I2C1:
 	case CLK_I2C2:
 	case CLK_I2C3:
 	case CLK_I2C4:
 	case CLK_I2C5:
-		rate = rk3568_i2c_set_clk(priv, clk->id, rate);
+		ret = rk3568_i2c_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_SPI0:
 	case CLK_SPI1:
 	case CLK_SPI2:
 	case CLK_SPI3:
-		rate = rk3568_spi_set_clk(priv, clk->id, rate);
+		ret = rk3568_spi_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_PWM1:
 	case CLK_PWM2:
 	case CLK_PWM3:
-		rate = rk3568_pwm_set_clk(priv, clk->id, rate);
+		ret = rk3568_pwm_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_SARADC:
 	case CLK_TSADC_TSEN:
 	case CLK_TSADC:
-		rate = rk3568_adc_set_clk(priv, clk->id, rate);
+		ret = rk3568_adc_set_clk(priv, clk->id, rate);
 		break;
 	case HCLK_SDMMC0:
 	case CLK_SDMMC0:
 	case CLK_SDMMC1:
 	case CLK_SDMMC2:
-		rate = rk3568_sdmmc_set_clk(priv, clk->id, rate);
+		ret = rk3568_sdmmc_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_SFC:
-		rate = rk3568_sfc_set_clk(priv, rate);
+		ret = rk3568_sfc_set_clk(priv, rate);
 		break;
 	case NCLK_NANDC:
-		rate = rk3568_nand_set_clk(priv, rate);
+		ret = rk3568_nand_set_clk(priv, rate);
 		break;
 	case CCLK_EMMC:
-		rate = rk3568_emmc_set_clk(priv, rate);
+		ret = rk3568_emmc_set_clk(priv, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case ACLK_VOP:
-		rate = rk3568_aclk_vop_set_clk(priv, rate);
+		ret = rk3568_aclk_vop_set_clk(priv, rate);
 		break;
 	case DCLK_VOP0:
 	case DCLK_VOP1:
 	case DCLK_VOP2:
-		rate = rk3568_dclk_vop_set_clk(priv, clk->id, rate);
+		ret = rk3568_dclk_vop_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_GMAC0:
 	case CLK_MAC0_2TOP:
 	case CLK_MAC0_REFOUT:
-		rate = rk3568_gmac_src_set_clk(priv, 0, rate);
+		ret = rk3568_gmac_src_set_clk(priv, 0, rate);
 		break;
 	case CLK_MAC0_OUT:
-		rate = rk3568_gmac_out_set_clk(priv, 0, rate);
+		ret = rk3568_gmac_out_set_clk(priv, 0, rate);
 		break;
 	case SCLK_GMAC0_RX_TX:
-		rate = rk3568_gmac_tx_rx_set_clk(priv, 0, rate);
+		ret = rk3568_gmac_tx_rx_set_clk(priv, 0, rate);
 		break;
 	case CLK_GMAC0_PTP_REF:
-		rate = rk3568_gmac_ptp_ref_set_clk(priv, 0, rate);
+		ret = rk3568_gmac_ptp_ref_set_clk(priv, 0, rate);
 		break;
 	case SCLK_GMAC1:
 	case CLK_MAC1_2TOP:
 	case CLK_MAC1_REFOUT:
-		rate = rk3568_gmac_src_set_clk(priv, 1, rate);
+		ret = rk3568_gmac_src_set_clk(priv, 1, rate);
 		break;
 	case CLK_MAC1_OUT:
-		rate = rk3568_gmac_out_set_clk(priv, 1, rate);
+		ret = rk3568_gmac_out_set_clk(priv, 1, rate);
 		break;
 	case SCLK_GMAC1_RX_TX:
-		rate = rk3568_gmac_tx_rx_set_clk(priv, 1, rate);
+		ret = rk3568_gmac_tx_rx_set_clk(priv, 1, rate);
 		break;
 	case CLK_GMAC1_PTP_REF:
-		rate = rk3568_gmac_ptp_ref_set_clk(priv, 1, rate);
+		ret = rk3568_gmac_ptp_ref_set_clk(priv, 1, rate);
 		break;
 	case DCLK_EBC:
-		rate = rk3568_ebc_set_clk(priv, rate);
+		ret = rk3568_ebc_set_clk(priv, rate);
 		break;
 	case ACLK_RKVDEC_PRE:
 	case ACLK_RKVDEC:
 	case CLK_RKVDEC_CORE:
-		rate = rk3568_rkvdec_set_clk(priv, clk->id, rate);
+		ret = rk3568_rkvdec_set_clk(priv, clk->id, rate);
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
@@ -2445,7 +2445,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_CRYPTO_NS_RNG:
 	case CLK_CRYPTO_NS_CORE:
 	case CLK_CRYPTO_NS_PKA:
-		rate = rk3568_crypto_set_rate(priv, clk->id, rate);
+		ret = rk3568_crypto_set_rate(priv, clk->id, rate);
 		break;
 	case CPLL_500M:
 	case CPLL_333M:
@@ -2455,7 +2455,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case CPLL_62P5M:
 	case CPLL_50M:
 	case CPLL_25M:
-		rate = rk3568_cpll_div_set_rate(priv, clk->id, rate);
+		ret = rk3568_cpll_div_set_rate(priv, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
