@@ -110,6 +110,7 @@ static int do_test_wdt(cmd_tbl_t *cmdtp, int flag,
 {
 	struct udevice *dev;
 	int ret;
+	int i;
 
 	ret = uclass_get_device(UCLASS_WDT, 0, &dev);
 	if (ret) {
@@ -118,9 +119,20 @@ static int do_test_wdt(cmd_tbl_t *cmdtp, int flag,
 		return ret;
 	}
 
-	printf("Watchdog would reset system 10s later\n");
 	wdt_start(dev, 5000, 0);
-	wdt_stop(dev);
+
+	for (i = 0; i < 5; i++) {
+		printf("%s, Ping\n", dev->name);
+		wdt_reset(dev);
+		mdelay(1000);
+	}
+
+	printf("Watchdog would reset system 5s later\n");
+	printf("Wait reboot");
+	while(1){
+		printf(".");
+		mdelay(500);
+	}
 
 	return 0;
 }
