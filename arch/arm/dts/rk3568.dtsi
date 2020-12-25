@@ -2175,6 +2175,8 @@
 		clocks = <&cru TCLK_WDT_NS>, <&cru PCLK_WDT_NS>;
 		clock-names = "tclk", "pclk";
 		interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH>;
+		resets = <&cru SRST_T_WDT_NS>;
+		reset-names = "reset";
 		status = "okay";
 	};
 
