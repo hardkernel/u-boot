@@ -1297,6 +1297,8 @@
 		reg = <0xff680000 0x100>;
 		clocks = <&cru PCLK_WDT>;
 		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		resets = <&cru SRST_WDT_P>;
+		reset-names = "reset";
 		status = "disabled";
 	};
 
