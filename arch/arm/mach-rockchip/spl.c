@@ -381,8 +381,11 @@ void spl_hang_reset(void)
 {
 	printf("# Reset the board to bootrom #\n");
 #if defined(CONFIG_SPL_SYSRESET) && defined(CONFIG_SPL_DRIVERS_MISC_SUPPORT)
-	writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
-	do_reset(NULL, 0, 0, NULL);
+	/* reset is available after dm setup */
+	if (gd->flags & GD_FLG_SPL_EARLY_INIT) {
+		writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+		do_reset(NULL, 0, 0, NULL);
+	}
 #endif
 }
 
