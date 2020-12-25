@@ -16,7 +16,7 @@ DECLARE_GLOBAL_DATA_PTR;
 /* Here, only fixup cru phandle, pmucru is not included */
 static int phandles_fixup_cru(const void *fdt)
 {
-	const char *props[] = { "clocks", "assigned-clocks" };
+	const char *props[] = { "clocks", "assigned-clocks", "resets"};
 	struct udevice *dev;
 	struct uclass *uc;
 	const char *comp;
