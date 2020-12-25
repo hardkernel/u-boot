@@ -79,8 +79,9 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 			    (dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
 			     dev_read_bool(dev, "u-boot,dm-spl"))) {
 
-				/* Always use crypto node from U-Boot dtb */
-				if (drv->id == UCLASS_CRYPTO) {
+				/* Always use these node from U-Boot dtb */
+				if (drv->id == UCLASS_CRYPTO ||
+				    drv->id == UCLASS_WDT) {
 					debug("%s do not delete uboot dev: %s\n",
 					      __func__, dev->name);
 					return 0;
