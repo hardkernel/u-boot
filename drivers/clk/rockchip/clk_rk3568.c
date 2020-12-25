@@ -742,6 +742,7 @@ static ulong rk3568_bus_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
 			rate = OSC_HZ;
 		break;
 	case PCLK_BUS:
+	case PCLK_WDT_NS:
 		con = readl(&cru->clksel_con[50]);
 		sel = (con & PCLK_BUS_SEL_MASK) >> PCLK_BUS_SEL_SHIFT;
 		if (sel == PCLK_BUS_SEL_100M)
@@ -781,6 +782,7 @@ static ulong rk3568_bus_set_clk(struct rk3568_clk_priv *priv,
 			     src_clk << ACLK_BUS_SEL_SHIFT);
 		break;
 	case PCLK_BUS:
+	case PCLK_WDT_NS:
 		if (rate == 100 * MHz)
 			src_clk = PCLK_BUS_SEL_100M;
 		else if (rate == 75 * MHz)
@@ -2184,6 +2186,7 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 		break;
 	case ACLK_BUS:
 	case PCLK_BUS:
+	case PCLK_WDT_NS:
 		rate = rk3568_bus_get_clk(priv, clk->id);
 		break;
 	case ACLK_PERIMID:
@@ -2273,6 +2276,9 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case CLK_RKVDEC_CORE:
 		rate = rk3568_rkvdec_get_clk(priv, clk->id);
 		break;
+	case TCLK_WDT_NS:
+		rate = OSC_HZ;
+		break;
 #endif
 	case ACLK_SECURE_FLASH:
 	case ACLK_CRYPTO_NS:
@@ -2342,6 +2348,7 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case ACLK_BUS:
 	case PCLK_BUS:
+	case PCLK_WDT_NS:
 		ret = rk3568_bus_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_PERIMID:
@@ -2436,6 +2443,9 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_RKVDEC:
 	case CLK_RKVDEC_CORE:
 		ret = rk3568_rkvdec_set_clk(priv, clk->id, rate);
+		break;
+	case TCLK_WDT_NS:
+		ret = OSC_HZ;
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
