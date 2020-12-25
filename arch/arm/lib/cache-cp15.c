@@ -122,9 +122,9 @@ static inline void mmu_setup(void)
 	 * only map periph device region to save boot time.
 	 */
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT) && \
-    defined(PERIPH_DEVICE_START_ADDR)
-	i = PERIPH_DEVICE_START_ADDR >> MMU_SECTION_SHIFT;
-	end = PERIPH_DEVICE_END_ADDR >> MMU_SECTION_SHIFT;
+    defined(CONFIG_PERIPH_DEVICE_START_ADDR)
+	i = CONFIG_PERIPH_DEVICE_START_ADDR >> MMU_SECTION_SHIFT;
+	end = CONFIG_PERIPH_DEVICE_END_ADDR >> MMU_SECTION_SHIFT;
 #else
 	i = 0;
 	end = (4096ULL * 1024 * 1024) >> MMU_SECTION_SHIFT;
