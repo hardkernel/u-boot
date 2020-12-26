@@ -39,6 +39,14 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CPU_GRF_BASE		0xfdc30000
 #define GRF_CORE_PVTPLL_CON0	(0x10)
 
+#define PMU_PWR_GATE_SFTCON	(0xA0)
+#define PMU_PWR_DWN_ST		(0x98)
+#define PMU_BUS_IDLE_SFTCON0	(0x50)
+#define PMU_BUS_IDLE_ST		(0x68)
+#define PMU_BUS_IDLE_ACK	(0x60)
+
+#define EBC_PRIORITY_REG	(0xfe158008)
+
 enum {
 	/* PMU_GRF_GPIO0C_IOMUX_L */
 	GPIO0C1_SHIFT		= 4,
@@ -730,6 +738,54 @@ void board_debug_uart_init(void)
 #endif
 }
 
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
+static void qos_priority_init(void)
+{
+	u32 delay;
+
+	/* enable all pd except npu and gpu */
+	writel(0xffff0000 & ~(BIT(0 + 16) | BIT(1 + 16)),
+	       PMU_BASE_ADDR + PMU_PWR_GATE_SFTCON);
+	delay = 1000;
+	do {
+		udelay(1);
+		delay--;
+		if (delay == 0) {
+			printf("Fail to set domain.");
+			hang();
+		}
+	} while (readl(PMU_BASE_ADDR + PMU_PWR_DWN_ST) & ~(BIT(0) | BIT(1)));
+
+	/* release all idle request except npu and gpu */
+	writel(0xffff0000 & ~(BIT(1 + 16) | BIT(2 + 16)),
+	       PMU_BASE_ADDR + PMU_BUS_IDLE_SFTCON0);
+
+	delay = 1000;
+	/* wait ack status */
+	do {
+		udelay(1);
+		delay--;
+		if (delay == 0) {
+			printf("Fail to get ack on domain.\n");
+			hang();
+		}
+	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ACK) & ~(BIT(1) | BIT(2)));
+
+	delay = 1000;
+	/* wait idle status */
+	do {
+		udelay(1);
+		delay--;
+		if (delay == 0) {
+			printf("Fail to set idle on domain.\n");
+			hang();
+		}
+	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ST) & ~(BIT(1) | BIT(2)));
+
+	writel(0x303, EBC_PRIORITY_REG);
+}
+#endif
+
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
@@ -765,6 +821,10 @@ int arch_cpu_init(void)
 
 	/* Set core pvtpll ring length */
 	writel(0x00ff002b, CPU_GRF_BASE + GRF_CORE_PVTPLL_CON0);
+
+#ifndef CONFIG_TPL_BUILD
+	qos_priority_init();
+#endif
 #endif
 
 	return 0;
