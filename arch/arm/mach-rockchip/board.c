@@ -880,11 +880,11 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 		if (ret != TEE_ERROR_ITEM_NOT_FOUND)
 			return ret;
 
-		*otp_index = fit_index;
+		index = 0;
 		printf("Initial otp index as %d\n", fit_index);
-	} else {
-		*otp_index = index;
 	}
+
+	*otp_index = (uint32_t)index;
 #else
 	*otp_index = 0;
 #endif
