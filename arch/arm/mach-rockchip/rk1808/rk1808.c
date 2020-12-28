@@ -87,7 +87,7 @@ int arch_cpu_init(void)
 void board_debug_uart_init(void)
 {
 #ifdef CONFIG_TPL_BUILD
-	static struct rk1808_grf * const grf = (void *)GRF_BASE;
+	struct rk1808_grf * const grf = (void *)GRF_BASE;
 
 	/* Enable early UART2 channel m0 on the rk1808 */
 	rk_clrsetreg(&grf->iofunc_con0, UART2_IO_SEL_MASK,
@@ -235,7 +235,7 @@ int rk_board_late_init(void)
 
 void mmc_gpio_init_direct(void)
 {
-	static struct rk1808_grf * const grf = (void *)GRF_BASE;
+	struct rk1808_grf * const grf = (void *)GRF_BASE;
 
 	/*
 	 * The rk1808's pin drive strength control must set to 2ma.
