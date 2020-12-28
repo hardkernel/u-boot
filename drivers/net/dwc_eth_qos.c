@@ -1113,7 +1113,7 @@ static int eqos_read_rom_hwaddr(struct udevice *dev)
 int eqos_init(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
-	int ret, limit = 10;
+	int ret = 0, limit = 10;
 	ulong rate;
 	u32 val;
 
@@ -1127,13 +1127,16 @@ int eqos_init(struct udevice *dev)
 		}
 	}
 
-	ret = eqos->config->ops->eqos_start_resets(dev);
-	if (ret < 0) {
-		pr_err("eqos_start_resets() failed: %d", ret);
-		goto err_stop_clks;
-	}
+	if (!eqos->mii_reseted) {
+		ret = eqos->config->ops->eqos_start_resets(dev);
+		if (ret < 0) {
+			pr_err("eqos_start_resets() failed: %d", ret);
+			goto err_stop_clks;
+		}
 
-	udelay(10);
+		eqos->mii_reseted = true;
+		udelay(10);
+	}
 
 	eqos->reg_access_ok = true;
 
@@ -1220,6 +1223,7 @@ err_shutdown_phy:
 	phy_shutdown(eqos->phy);
 err_stop_resets:
 	eqos->config->ops->eqos_stop_resets(dev);
+	eqos->mii_reseted = false;
 err_stop_clks:
 	if (eqos->config->ops->eqos_stop_clks)
 		eqos->config->ops->eqos_stop_clks(dev);
@@ -1520,7 +1524,6 @@ void eqos_stop(struct udevice *dev)
 	if (eqos->phy) {
 		phy_shutdown(eqos->phy);
 	}
-	eqos->config->ops->eqos_stop_resets(dev);
 	if (eqos->config->ops->eqos_stop_clks)
 		eqos->config->ops->eqos_stop_clks(dev);
 

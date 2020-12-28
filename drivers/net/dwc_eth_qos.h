@@ -74,6 +74,7 @@ struct eqos_priv {
 	void *rx_pkt;
 	bool started;
 	bool reg_access_ok;
+	bool mii_reseted;
 };
 
 int eqos_init(struct udevice *dev);
