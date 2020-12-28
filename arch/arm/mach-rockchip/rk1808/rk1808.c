@@ -43,6 +43,7 @@ static struct mm_region rk1808_mem_map[] = {
 struct mm_region *mem_map = rk1808_mem_map;
 
 #define GRF_BASE	0xfe000000
+#define PMUGRF_BASE	0xfe020000
 
 enum {
 	GPIO4A3_SHIFT           = 12,
@@ -218,6 +219,11 @@ static int env_fixup_ramdisk_addr_r(void)
 
 int rk_board_init(void)
 {
+	struct rk1808_pmugrf * const pmugrf = (void *)PMUGRF_BASE;
+
+	/* Set GPIO0_C2 default to pull down from normal */
+	rk_clrsetreg(&pmugrf->gpio0c_p, 0x30, 0x20);
+
 #if defined(CONFIG_ROCKCHIP_SMCCC) && defined(CONFIG_ROCKCHIP_RK1806)
 	sip_smc_get_sip_version();
 #endif
