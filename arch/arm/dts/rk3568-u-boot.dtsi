@@ -210,3 +210,8 @@
 &secure_otp {
 	u-boot,dm-spl;
 };
+
+&wdt {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
