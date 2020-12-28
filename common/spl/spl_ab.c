@@ -202,6 +202,7 @@ static int spl_get_lastboot(AvbABData *ab_data)
 
 int spl_get_current_slot(struct blk_desc *dev_desc, char *partition, char *slot)
 {
+	static int last_slot_index = -1;
 	size_t slot_index_to_boot;
 	AvbABData ab_data;
 	int ret;
@@ -237,6 +238,14 @@ int spl_get_current_slot(struct blk_desc *dev_desc, char *partition, char *slot)
 		memcpy(slot, "_a", 2);
 	else if (slot_index_to_boot == 1)
 		memcpy(slot, "_b", 2);
+
+	if (last_slot_index != slot_index_to_boot) {
+		last_slot_index = slot_index_to_boot;
+		printf("SPL: A/B-slot: %s, successful: %d, tries-remain: %d\n",
+		       slot,
+		       ab_data.slots[slot_index_to_boot].successful_boot,
+		       ab_data.slots[slot_index_to_boot].tries_remaining);
+	}
 
 out:
 	return 0;
