@@ -690,6 +690,13 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	part_drv = part_driver_lookup_type(dev_desc);
 	if (!part_drv)
 		return -1;
+#if defined(CONFIG_ANDROID_AB) || defined(CONFIG_SPL_AB)
+	char *name_suffix = (char *)name + strlen(name) - 2;
+
+	/* Fix can not find partition with suffix "_a" & "_b". If with them, clear */
+	if (!memcmp(name_suffix, "_a", strlen("_a")) || !memcmp(name_suffix, "_b", strlen("_b")))
+		memset(name_suffix, 0, 2);
+#endif
 #if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_SPL_BUILD)
 	/* 1. Query partition with A/B slot suffix */
 	if (rk_avb_append_part_slot(name, name_slot))
