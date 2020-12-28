@@ -882,9 +882,9 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 
 		*otp_index = fit_index;
 		printf("Initial otp index as %d\n", fit_index);
+	} else {
+		*otp_index = index;
 	}
-
-	*otp_index = index;
 #else
 	*otp_index = 0;
 #endif
