@@ -646,6 +646,7 @@ static ulong rv1126_pdbus_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 			return -ENOENT;
 		break;
 	case PCLK_PDBUS:
+	case PCLK_WDT:
 		con = readl(&cru->clksel_con[3]);
 		div = (con & PCLK_PDBUS_DIV_MASK) >> PCLK_PDBUS_DIV_SHIFT;
 		sel = (con & PCLK_PDBUS_SEL_MASK) >> PCLK_PDBUS_SEL_SHIFT;
@@ -687,6 +688,7 @@ static ulong rv1126_pdbus_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 			     (src_clk_div - 1) << HCLK_PDBUS_DIV_SHIFT);
 		break;
 	case PCLK_PDBUS:
+	case PCLK_WDT:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
 		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[3],
@@ -1587,6 +1589,7 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 	case ACLK_PDBUS:
 	case HCLK_PDBUS:
 	case PCLK_PDBUS:
+	case PCLK_WDT:
 		rate = rv1126_pdbus_get_clk(priv, clk->id);
 		break;
 	case ACLK_PDPHP:
@@ -1698,6 +1701,7 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_PDBUS:
 	case HCLK_PDBUS:
 	case PCLK_PDBUS:
+	case PCLK_WDT:
 		ret = rv1126_pdbus_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_PDPHP:
