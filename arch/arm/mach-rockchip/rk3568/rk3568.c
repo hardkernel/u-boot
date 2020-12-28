@@ -467,7 +467,7 @@ struct mm_region *mem_map = rk3568_mem_map;
 
 void board_debug_uart_init(void)
 {
-#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfdd5000)
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfdd50000)
 	static struct rk3568_pmugrf * const pmugrf = (void *)PMUGRF_BASE;
 	/* UART0 M0 */
 	rk_clrsetreg(&pmugrf->pmu_soc_con0, UART0_IO_SEL_MASK,
@@ -540,7 +540,7 @@ void board_debug_uart_init(void)
 		     UART3_IO_SEL_M0 << UART3_IO_SEL_SHIFT);
 
 	/* Switch iomux */
-	rk_clrsetreg(&grf->pmu_gpio1a_iomux_l,
+	rk_clrsetreg(&grf->gpio1a_iomux_l,
 		     GPIO1A1_MASK | GPIO1A0_MASK,
 		     GPIO1A1_UART3_TXM0 << GPIO1A1_SHIFT |
 		     GPIO1A0_UART3_RXM0 << GPIO1A0_SHIFT);
@@ -565,7 +565,7 @@ void board_debug_uart_init(void)
 		     UART4_IO_SEL_M0 << UART4_IO_SEL_SHIFT);
 
 	/* Switch iomux */
-	rk_clrsetreg(&grf->pmu_gpio1a_iomux_h,
+	rk_clrsetreg(&grf->gpio1a_iomux_h,
 		     GPIO1A6_MASK | GPIO1A4_MASK,
 		     GPIO1A6_UART4_TXM0 << GPIO1A6_SHIFT |
 		     GPIO1A4_UART4_RXM0 << GPIO1A4_SHIFT);
@@ -590,7 +590,7 @@ void board_debug_uart_init(void)
 		     UART5_IO_SEL_M0 << UART5_IO_SEL_SHIFT);
 
 	/* Switch iomux */
-	rk_clrsetreg(&grf->pmu_gpio2a_iomux_l,
+	rk_clrsetreg(&grf->gpio2a_iomux_l,
 		     GPIO2A2_MASK | GPIO2A1_MASK,
 		     GPIO2A2_UART5_TXM0 << GPIO2A2_SHIFT |
 		     GPIO2A1_UART5_RXM0 << GPIO2A1_SHIFT);
