@@ -33,6 +33,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_NOC_AUTO_CON1	(0x74)
 #define CRU_BASE		0xfdd20000
 #define CRU_SOFTRST_CON26	0x468
+#define CRU_SOFTRST_CON28	0x470
 #define SGRF_BASE		0xFDD18000
 #define SGRF_SOC_CON4		0x10
 #define PMUGRF_SOC_CON15	0xfdc20100
@@ -821,6 +822,12 @@ int arch_cpu_init(void)
 
 	/* Set core pvtpll ring length */
 	writel(0x00ff002b, CPU_GRF_BASE + GRF_CORE_PVTPLL_CON0);
+
+	/*
+	 * Assert reset the pipephy0, pipephy1 and pipephy2,
+	 * and de-assert reset them in Kernel combphy driver.
+	 */
+	 writel(0x02a002a0, CRU_BASE + CRU_SOFTRST_CON28);
 
 #ifndef CONFIG_TPL_BUILD
 	qos_priority_init();
