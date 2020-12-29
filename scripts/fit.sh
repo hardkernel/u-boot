@@ -279,16 +279,16 @@ function fit_gen_uboot_itb()
 		if grep -q '^CONFIG_SPL_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_SPL_ROCKCHIP_CRYPTO_V1=y' .config ; then
-				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
+				fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
 				fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@np
 			else
-				fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
+				fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
 				fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@c
 			fi
 		else
-			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c
-			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np
-			fdtput -d ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
+			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
 			fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@c
 			fdtput -r ${SPL_DTB} ${SIGNATURE_KEY_NODE}/hash@np
 		fi
@@ -392,14 +392,14 @@ function fit_gen_boot_itb()
 		if grep -q '^CONFIG_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_ROCKCHIP_CRYPTO_V1=y' .config ; then
-				fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np
+				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
 			else
-				fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c
+				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
 			fi
 		else
-			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c
-			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np
-			fdtput -d ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
 		fi
 		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@c
 		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@np
