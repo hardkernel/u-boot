@@ -682,28 +682,11 @@ static ulong android_image_get_comp_addr(struct andr_img_hdr *hdr, int comp)
 	return load_addr;
 }
 
-/*
- * 'boot_android' cmd use "kernel_addr_r" as default load address !
- * We update it according to compress type and "kernel_addr_c/r".
- */
-int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
-{
-	ulong new_load_addr;
-	int comp;
-
-	comp = android_image_parse_kernel_comp(hdr);
-	env_set_ulong("os_comp", comp);
-
-	new_load_addr = android_image_get_comp_addr(hdr, comp);
-	if (new_load_addr != 0)
-		*load_addr = new_load_addr;
-
-	return comp;
-}
-
 void android_image_set_decomp(struct andr_img_hdr *hdr, int comp)
 {
 	ulong kernel_addr_r;
+
+	env_set_ulong("os_comp", comp);
 
 	/* zImage handles decompress itself */
 	if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
@@ -727,23 +710,38 @@ static int android_image_load_separate(struct andr_img_hdr *hdr,
 
 int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_addr)
 {
-	ulong comp_addr = *load_addr;
+	ulong comp_addr;
 	int comp;
 
-	comp = android_image_parse_comp(hdr, &comp_addr);
-	if (comp_addr == (ulong)hdr)
+	comp = bootm_parse_comp((void *)(ulong)hdr + hdr->page_size);
+	comp_addr = android_image_get_comp_addr(hdr, comp);
+
+	/* non-compressed image: already in-place */
+	if ((ulong)hdr == *load_addr)
 		return 0;
 
+	/* compressed image */
+	if (comp_addr) {
+		*load_addr = comp_addr;
+		if ((ulong)hdr == comp_addr)	/* already in-place */
+			return 0;
+	}
+
+	/*
+	 * The most possible reason to arrive here is:
+	 *
+	 * VBoot=1 and AVB load full partition to a temp memory buffer, now we
+	 * separate(memcpy) subimages from boot.img to where they should be.
+	 */
 	if (hdr->header_version < 3) {
-		if (android_image_separate(hdr, NULL, (void *)comp_addr, hdr))
+		if (android_image_separate(hdr, NULL, (void *)(*load_addr), hdr))
 			return -1;
 	} else {
-		if (android_image_separate_v3(hdr, NULL, (void *)comp_addr, hdr))
+		if (android_image_separate_v3(hdr, NULL, (void *)(*load_addr), hdr))
 			return -1;
 	}
 
-	*load_addr = comp_addr;
-	android_image_set_decomp((void *)comp_addr, comp);
+	android_image_set_decomp((void *)(*load_addr), comp);
 
 	return 0;
 }
@@ -753,6 +751,7 @@ long android_image_load(struct blk_desc *dev_desc,
 			unsigned long load_address,
 			unsigned long max_size) {
 	struct andr_img_hdr *hdr;
+	ulong comp_addr;
 	int comp, ret;
 	int blk_off;
 
@@ -791,11 +790,14 @@ long android_image_load(struct blk_desc *dev_desc,
 		return -1;
 	}
 
-	/* Make kernel start address at load_address */
-	load_address -= hdr->page_size;
+	/* Changed to compressed address ? */
+	comp = bootm_parse_comp((void *)(ulong)hdr + hdr->page_size);
+	comp_addr = android_image_get_comp_addr(hdr, comp);
+	if (comp_addr)
+		load_address = comp_addr;
+	else
+		load_address -= hdr->page_size;
 
-	/* Let's load kernel now ! */
-	comp = android_image_parse_comp(hdr, &load_address);
 	ret = android_image_load_separate(hdr, part_info, (void *)load_address);
 	if (ret) {
 		printf("Failed to load android image\n");
