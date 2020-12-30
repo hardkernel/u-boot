@@ -73,7 +73,7 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 				      (ulong)(*src_addr), (ulong)(*src_len),
 				      DECOM_GZIP, false, &len);
 #else
-	ret = gunzip((void *)(*load_addr), ALIGN(len, SZ_1M),
+	ret = gunzip((void *)(*load_addr), ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
 		     (void *)(*src_addr), (void *)(&len));
 #endif
 	if (ret) {
