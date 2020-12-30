@@ -948,6 +948,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_STANDALONE_PROP	"standalone"
 
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
+#define FIT_MAX_SPL_IMAGE_SZ	SZ_2M
 
 #if IMAGE_ENABLE_FIT
 

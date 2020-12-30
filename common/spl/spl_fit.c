@@ -196,9 +196,9 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		load_addr = image_info->load_addr;
 
 	if (image_comp != IH_COMP_NONE && image_comp != IH_COMP_ZIMAGE) {
-		/* Empirically, 1MB is enough for U-Boot, tee and atf */
+		/* Empirically, 2MB is enough for U-Boot, tee and atf */
 		if (fit_image_get_comp_addr(fit, node, &comp_addr))
-			comp_addr = load_addr + SZ_1M;
+			comp_addr = load_addr + FIT_MAX_SPL_IMAGE_SZ;
 	} else {
 		comp_addr = load_addr;
 	}
