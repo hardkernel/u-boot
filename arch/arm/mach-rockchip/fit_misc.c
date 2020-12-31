@@ -23,6 +23,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 
 #define FIT_UNCOMP_HASH_NODENAME	"digest"
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
 static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
 				       const void *data, size_t size)
 {
@@ -42,7 +43,6 @@ static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
 static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 			    ulong **src_addr, size_t *src_len)
 {
