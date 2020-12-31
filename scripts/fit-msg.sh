@@ -37,6 +37,9 @@ function args_process()
 	if [ ! -f ${IMG} ]; then
 		echo "ERROR: No ${IMG}"
 		exit 1
+	elif ! file ${IMG} | grep 'Device Tree Blob' ; then
+		echo "ERROR: ${IMG} is not FIT image"
+		exit 1
 	fi
 }
 

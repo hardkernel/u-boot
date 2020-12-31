@@ -41,6 +41,9 @@ function args_process()
 	if [ ! -f ${ITB} ]; then
 		echo "ERROR: No ${ITB}"
 		exit 1
+	elif ! file ${ITB} | grep 'Device Tree Blob' ; then
+		echo "ERROR: ${ITB} is not FIT image"
+		exit 1
 	fi
 
 	if [ -z ${OUT} ]; then

@@ -48,6 +48,9 @@ function fit_repack()
 	if [ ! -f ${IMAGE} ]; then
 		echo "ERROR: No ${IMAGE}"
 		exit 1
+	elif ! file ${IMAGE} | grep 'Device Tree Blob' ; then
+		echo "ERROR: ${IMAGE} is not FIT image"
+		exit 1
 	elif [ ! -d ${DATA} ]; then
 		echo "ERROR: No input directory ${DATA}"
 		exit 1
