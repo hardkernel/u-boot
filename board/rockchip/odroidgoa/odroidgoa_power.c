@@ -10,7 +10,7 @@
 #include <power/fuel_gauge.h>
 #include <odroidgoa_status.h>
 
-#define MIN_VOL_LEVEL	3500	/* 3.5V */
+#define MIN_VOL_LEVEL	3530	/* 3.53V */
 
 #define PWR_LED_GPIO	18	/* GPIO0_C2 */
 #define DC_DET_GPIO	11	/* GPIO0_B3 */
