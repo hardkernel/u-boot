@@ -79,4 +79,12 @@ config PCIE_LAYERSCAPE
 	  PCIe controllers. The PCIe may works in RC or EP mode according to
 	  RCW[HOST_AGT_PEX] setting.
 
+config PCIE_DW_ROCKCHIP
+	bool "Rockchip DesignWare PCIe controller"
+	depends on DM_PCI
+	depends on ARCH_ROCKCHIP
+	select CONFIG_DM_REGULATOR_GPIO
+	help
+	  Enables support for the DW PCIe controller in the Rockchip SoC.
+
 endif
