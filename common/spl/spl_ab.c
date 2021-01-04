@@ -273,3 +273,49 @@ int spl_ab_append_part_slot(struct blk_desc *dev_desc,
 
 	return 0;
 }
+
+static int spl_save_metadata_if_changed(struct blk_desc *dev_desc,
+					AvbABData *ab_data,
+					AvbABData *ab_data_orig)
+{
+	if (safe_memcmp(ab_data, ab_data_orig, sizeof(AvbABData)))
+		return spl_ab_data_write(dev_desc, ab_data, "misc");
+
+	return 0;
+}
+
+/* If verify fail in a/b system, then decrease 1. */
+int spl_ab_decrease_tries(struct blk_desc *dev_desc)
+{
+	AvbABData ab_data, ab_data_orig;
+	size_t slot_index = 0;
+	char slot_suffix[3] = {0};
+	int ret = -1;
+
+	ret = spl_get_current_slot(dev_desc, "misc", slot_suffix);
+	if (ret)
+		goto out;
+
+	if (!strncmp(slot_suffix, "_a", 2))
+		slot_index = 0;
+	else if (!strncmp(slot_suffix, "_b", 2))
+		slot_index = 1;
+	else
+		slot_index = 0;
+
+	ret = spl_ab_data_read(dev_desc, &ab_data, "misc");
+	if (ret)
+		goto out;
+
+	memcpy(&ab_data_orig, &ab_data, sizeof(AvbABData));
+
+	/* ... and decrement tries remaining, if applicable. */
+	if (!ab_data.slots[slot_index].successful_boot &&
+	    ab_data.slots[slot_index].tries_remaining > 0)
+		ab_data.slots[slot_index].tries_remaining -= 1;
+
+	ret = spl_save_metadata_if_changed(dev_desc, &ab_data, &ab_data_orig);
+
+out:
+	return ret;
+}

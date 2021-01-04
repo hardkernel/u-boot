@@ -36,4 +36,13 @@ int spl_ab_append_part_slot(struct blk_desc *dev_desc,
 			    const char *part_name,
 			    char *new_name);
 
+/*
+ * spl_ab_decrease_tries
+ *
+ * @dev_desc: block description
+ *
+ * return: 0 success, others fail.
+ */
+int spl_ab_decrease_tries(struct blk_desc *dev_desc);
+
  #endif
