@@ -184,7 +184,6 @@
 	};
 };
 
-
 &gmac0_clkin{
 	u-boot,dm-pre-reloc;
 };
@@ -356,6 +355,16 @@
 
 &eth1m1_clkout_pins {
 	u-boot,dm-pre-reloc;
+};
+
+&pcie30phy {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&pcie3x2 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
 };
 
 &pinctrl {
