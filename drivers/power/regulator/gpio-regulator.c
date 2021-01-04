@@ -30,7 +30,6 @@ static int gpio_regulator_ofdata_to_platdata(struct udevice *dev)
 	struct gpio_regulator_platdata *dev_pdata;
 	struct gpio_desc *gpio;
 	const void *blob = gd->fdt_blob;
-	int node = dev_of_offset(dev);
 	int ret, count, i, j;
 	u32 states_array[8];
 
@@ -54,13 +53,15 @@ static int gpio_regulator_ofdata_to_platdata(struct udevice *dev)
 	if (ret)
 		debug("regulator gpio - not found! Error: %d", ret);
 
-	count = fdtdec_get_int_array_count(blob, node, "states",
-					   states_array, 8);
-
-	if (!count)
+	blob = dev_read_prop(dev, "states", &count);
+	if (!blob)
 		return -EINVAL;
 
-	for (i = 0, j = 0; i < count; i += 2) {
+	ret = dev_read_u32_array(dev, "states", states_array, count / 4);
+	if (ret)
+		return -EINVAL;
+
+	for (i = 0, j = 0; i < count / 4; i += 2) {
 		dev_pdata->voltages[j] = states_array[i];
 		dev_pdata->states[j] = states_array[i + 1];
 		j++;
