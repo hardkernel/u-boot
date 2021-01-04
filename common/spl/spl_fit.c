@@ -9,9 +9,10 @@
 #include <boot_rkimg.h>
 #include <errno.h>
 #include <image.h>
-#include <spl.h>
 #include <malloc.h>
 #include <mtd_blk.h>
+#include <spl.h>
+#include <spl_ab.h>
 #include <linux/libfdt.h>
 
 #ifndef CONFIG_SYS_BOOTM_LEN
@@ -790,10 +791,19 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 #ifdef CONFIG_SPL_KERNEL_BOOT
 			ret = spl_load_kernel_fit(spl_image, info);
 #endif
-			return ret;
+			break;
 		}
 	}
-
+#ifdef CONFIG_SPL_AB
+	/*
+	 * If boot fail in spl, spl must decrease 1. If boot
+	 * successfully, it is no need to do that and U-boot will
+	 * always to decrease 1. If in thunderboot process,
+	 * always need to decrease 1.
+	 */
+	if (IS_ENABLED(CONFIG_SPL_KERNEL_BOOT) || ret)
+		spl_ab_decrease_tries(info->dev);
+#endif
 	return ret;
 }
 
