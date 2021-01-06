@@ -146,15 +146,18 @@ struct rockchip_sfc {
 static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
 {
 	struct rockchip_sfc_platdata *plat = dev_get_platdata(bus);
+
+	plat->base = dev_read_addr_ptr(bus);
+#if CONFIG_IS_ENABLED(CLK)
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
 	int ret;
 
-	plat->base = dev_read_addr_ptr(bus);
 	ret = clk_get_by_index(bus, 0, &sfc->clk);
 	if (ret < 0) {
 		printf("Could not get clock for %s: %d\n", bus->name, ret);
 		return ret;
 	}
+#endif
 
 	return 0;
 }
@@ -178,8 +181,9 @@ static int rockchip_sfc_probe(struct udevice *bus)
 	sfc->regbase = (struct rockchip_sfc_reg *)plat->base;
 	sfc->max_freq = SFC_MAX_RATE;
 	sfc->speed_hz = SFC_DEFAULT_RATE;
+#if CONFIG_IS_ENABLED(CLK)
 	clk_set_rate(&sfc->clk, sfc->speed_hz);
-
+#endif
 	regs = sfc->regbase;
 	if (rockchip_sfc_get_version(sfc) >= SFC_VER_4) {
 		sfc->max_iosize = SFC_MAX_TRB_VER4;
@@ -658,9 +662,10 @@ static int rockchip_sfc_set_speed(struct udevice *bus, uint speed)
 		speed = sfc->max_freq;
 
 	sfc->speed_hz = speed;
+#if CONFIG_IS_ENABLED(CLK)
 	clk_set_rate(&sfc->clk, sfc->speed_hz);
 	SFC_DBG("%s clk= %ld\n", __func__, clk_get_rate(&sfc->clk));
-
+#endif
 	return 0;
 }
 
