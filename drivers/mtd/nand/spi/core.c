@@ -815,17 +815,39 @@ static const struct nand_ops spinand_ops = {
 };
 
 static const struct spinand_manufacturer *spinand_manufacturers[] = {
+#ifdef CONFIG_SPI_NAND_GIGADEVICE
 	&gigadevice_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_MACRONIX
 	&macronix_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_MICRON
 	&micron_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_TOSHIBA
 	&toshiba_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_WINBOND
 	&winbond_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_DOSILICON
 	&dosilicon_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_ESMT
 	&esmt_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_XTX
 	&xtx_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_HYF
 	&hyf_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_FMSH
 	&fmsh_spinand_manufacturer,
+#endif
+#ifdef CONFIG_SPI_NAND_FORESEE
 	&foresee_spinand_manufacturer,
+#endif
 };
 
 static int spinand_manufacturer_detect(struct spinand_device *spinand)
