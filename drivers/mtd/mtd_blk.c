@@ -486,6 +486,7 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 	}
 }
 
+#if CONFIG_IS_ENABLED(MTD_WRITE)
 ulong mtd_dwrite(struct udevice *udev, lbaint_t start,
 		 lbaint_t blkcnt, const void *src)
 {
@@ -598,6 +599,7 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 
 	return 0;
 }
+#endif
 
 static int mtd_blk_probe(struct udevice *udev)
 {
@@ -648,8 +650,8 @@ static int mtd_blk_probe(struct udevice *udev)
 
 static const struct blk_ops mtd_blk_ops = {
 	.read	= mtd_dread,
+#if CONFIG_IS_ENABLED(MTD_WRITE)
 	.write	= mtd_dwrite,
-#ifndef CONFIG_SPL_BUILD
 	.erase	= mtd_derase,
 #endif
 };
