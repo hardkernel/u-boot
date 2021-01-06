@@ -119,9 +119,14 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 
 	pdata->low_power_voltage =
 		dev_read_u32_default(dev, "rockchip,uboot-low-power-voltage", 0);
-
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+	/* show charge animation if battery voltage is over low-power-voltage */
+	pdata->screen_on_voltage =
+		dev_read_u32_default(dev, "rockchip,uboot-low-power-voltage", 0);
+#else
 	pdata->screen_on_voltage =
 		dev_read_u32_default(dev, "rockchip,screen-on-voltage", 0);
+#endif
 	pdata->system_suspend =
 		dev_read_u32_default(dev, "rockchip,system-suspend", 0);
 
@@ -329,7 +334,9 @@ static void charge_show_bmp(int idx, struct udevice *fg)
 		ret = run_command(cmd, 0);
 		if (ret != CMD_RET_SUCCESS)
 			bmp_dev = 0xff;
-	} else {
+	}
+
+	if (bmp_dev == 0xff) {
 		ulong n, cnt, blk;
 		blk = env_get_hex(image_sf[idx], 0);
 		cnt = env_get_hex("sz_logo", 0);
@@ -435,6 +442,8 @@ static int charge_extrem_low_power(struct udevice *dev)
 	int voltage, soc, charging = 1;
 	static int timer_initialized;
 	int ret;
+	bool screen_on = true; /* screen is activated from lcd_init */
+	ulong disp_start = 0;
 
 	voltage = fuel_gauge_get_voltage(fg);
 	if (voltage < 0)
@@ -476,6 +485,21 @@ static int charge_extrem_low_power(struct udevice *dev)
 		if (ret)
 			printf("update led failed: %d\n", ret);
 
+		if (!disp_start) {
+			disp_start = get_timer(0);
+
+			/* display low voltage status */
+			charge_show_bmp(4, fg); /* battery fail */
+
+			lcd_printf(0, 15 + disp_offs, 1, "Extreme Low Battery, please wait until changed to 5%");
+			lcd_printf(0, 16 + disp_offs, 1, " LCD will be off soon.");
+		}
+
+		if ((get_timer(disp_start) > 5000) && screen_on) {
+			lcd_onoff(false);
+			screen_on = false; /* never turn on again here */
+		}
+
 		printf("Extrem low power, force charging... threshold=%dmv, now=%dmv\n",
 		       pdata->low_power_voltage, voltage);
 
@@ -493,7 +517,13 @@ static int charge_extrem_low_power(struct udevice *dev)
 			printf("Extrem low charge: exit by ctrl+c\n");
 			break;
 		}
+
+		mdelay(500);
+
 	}
+
+	if (!screen_on)
+		lcd_onoff(true);
 
 	autowakeup_timer_uninit();
 
@@ -537,6 +567,11 @@ static int charge_animation_show(struct udevice *dev)
 		printf("Exit charge: battery is not exist\n");
 		return 0;
 	}
+
+#if defined(CONFIG_PLATFORM_ODROID_GOADV)
+	/* lcd initialization */
+	lcd_init();
+#endif
 
 	/* Extrem low power charge */
 	ret = charge_extrem_low_power(dev);
@@ -586,11 +621,6 @@ static int charge_animation_show(struct udevice *dev)
 		printf("get voltage failed: %d\n", voltage);
 		return -EINVAL;
 	}
-
-#if defined(CONFIG_PLATFORM_ODROID_GOADV)
-	/* lcd initialization */
-	lcd_init();
-#endif
 
 	/* If low power, turn off screen */
 	if (voltage <= pdata->screen_on_voltage + 50) {
