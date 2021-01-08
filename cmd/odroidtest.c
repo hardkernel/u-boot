@@ -177,7 +177,7 @@ void adc_draw_key_arrays(struct key_adc *adcs, int key_idx)
 	}
 
 	mdelay(200);
-	if (key_idx > 0) {
+	if (key_idx > -1) {
 		lcd_setfg_color("green");
 		lcd_printf(adckeys[key_idx].x, adckeys[key_idx].y,
 				0, adckeys[key_idx].name);
@@ -696,7 +696,7 @@ void btn_draw_key_arrays(int numkeys, int key_idx)
 
 	mdelay(200);
 
-	if (key_idx > 0) {
+	if (key_idx > -1) {
 		lcd_setfg_color("green");
 		lcd_printf(gpiokeys[key_idx].x, gpiokeys[key_idx].y,
 				0, gpiokeys[key_idx].name);
