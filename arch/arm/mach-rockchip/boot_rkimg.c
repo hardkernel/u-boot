@@ -449,8 +449,6 @@ static int rockchip_read_distro_dtb(void *fdt_addr)
 	char devnum_part[12];
 	char fdt_hex_str[19];
 	char *fs_argv[5];
-	int size;
-	int ret;
 
 	if (!rockchip_get_bootdev() || !fdt_addr)
 		return -ENODEV;
