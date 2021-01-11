@@ -135,8 +135,9 @@ struct blk_desc *blk_get_devnum_by_typename(const char *if_typename, int devnum)
 			 * the UCLASS_MTD when find the mtd block device.
 			 * Fix it here when enable CONFIG_MTD_BLK.
 			 */
-			if ((if_type == IF_TYPE_MTD) &&
-			    (devnum == BLK_MTD_SPI_NOR)) {
+			if (device_get_uclass_id(dev->parent) == UCLASS_SPI_FLASH &&
+			    if_type == IF_TYPE_MTD &&
+			    devnum == BLK_MTD_SPI_NOR) {
 				debug("Fix the spi flash uclass different\n");
 			} else {
 				debug("%s: parent uclass %d, this dev %d\n",
