@@ -401,6 +401,10 @@
 	u-boot,dm-spl;
 };
 
+&pcfg_pull_up {
+	u-boot,dm-spl;
+};
+
 &pcfg_pull_none {
 	u-boot,dm-pre-reloc;
 };
