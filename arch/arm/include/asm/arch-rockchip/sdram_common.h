@@ -42,9 +42,9 @@
 #define STRIDE_TYPE(n)			(((n) >> 16) & 0xff)
 
 #define DDR_2T_INFO(n)			((n) & 1)
-#define SSMOD_SPREAD(n)			(((n) >> 1) & 0x1f)
-#define SSMOD_DIV(n)			(((n) >> 6) & 0xf)
-#define SSMOD_DOWNSPREAD(n)		(((n) >> 10) & 0x1)
+#define PLL_SSMOD_SPREAD(n)		(((n) >> 1) & 0x1f)
+#define PLL_SSMOD_DIV(n)		(((n) >> 6) & 0xf)
+#define PLL_SSMOD_DOWNSPREAD(n)		(((n) >> 10) & 0x1)
 
 /* sdram_head_info_v2 define */
 /* for *_drv_odten and *_drv_odtoff */

@@ -222,6 +222,14 @@
 #define POSTDIV2(n)			((0x7 << (6 + 16)) | ((n) << 6))
 #define REFDIV(n)			((0x3F << 16) | (n))
 
+/* CRU_PLL_CON3 */
+#define SSMOD_SPREAD(n)			((0x1f << (8 + 16)) | ((n) << 8))
+#define SSMOD_DIVVAL(n)			((0xf << (4 + 16)) | ((n) << 4))
+#define SSMOD_DOWNSPREAD(n)		((0x1 << (3 + 16)) | ((n) << 3))
+#define SSMOD_RESET(n)			((0x1 << (2 + 16)) | ((n) << 2))
+#define SSMOD_DIS_SSCG(n)		((0x1 << (1 + 16)) | ((n) << 1))
+#define SSMOD_BP(n)			((0x1 << (0 + 16)) | ((n) << 0))
+
 /* CRU_MODE */
 #define CLOCK_FROM_XIN_OSC		(0)
 #define CLOCK_FROM_PLL			(1)

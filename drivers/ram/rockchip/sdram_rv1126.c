@@ -303,7 +303,15 @@ static void rkclk_set_dpll(struct dram_info *dram, unsigned int hz)
 	unsigned int refdiv, postdiv1, postdiv2, fbdiv;
 	int delay = 1000;
 	u32 mhz = hz / MHz;
+	struct global_info *gbl_info;
+	struct sdram_head_info_index_v2 *index =
+		(struct sdram_head_info_index_v2 *)common_info;
+	u32 ssmod_info;
+	u32 dsmpd = 1;
 
+	gbl_info = (struct global_info *)((void *)common_info +
+		    index->global_index.offset * 4);
+	ssmod_info = gbl_info->info_2t;
 	refdiv = 1;
 	if (mhz <= 100) {
 		postdiv1 = 6;
@@ -330,7 +338,20 @@ static void rkclk_set_dpll(struct dram_info *dram, unsigned int hz)
 
 	writel(0x1f000000, &dram->cru->clksel_con[64]);
 	writel(POSTDIV1(postdiv1) | FBDIV(fbdiv), &dram->cru->pll[1].con0);
-	writel(DSMPD(1) | POSTDIV2(postdiv2) | REFDIV(refdiv),
+	/* enable ssmod */
+	if (PLL_SSMOD_SPREAD(ssmod_info)) {
+		dsmpd = 0;
+		clrsetbits_le32(&dram->cru->pll[1].con2,
+				0xffffff << 0, 0x0 << 0);
+		writel(SSMOD_SPREAD(PLL_SSMOD_SPREAD(ssmod_info)) |
+		       SSMOD_DIVVAL(PLL_SSMOD_DIV(ssmod_info)) |
+		       SSMOD_DOWNSPREAD(PLL_SSMOD_DOWNSPREAD(ssmod_info)) |
+		       SSMOD_RESET(0) |
+		       SSMOD_DIS_SSCG(0) |
+		       SSMOD_BP(0),
+		       &dram->cru->pll[1].con3);
+	}
+	writel(DSMPD(dsmpd) | POSTDIV2(postdiv2) | REFDIV(refdiv),
 	       &dram->cru->pll[1].con1);
 
 	while (delay > 0) {
