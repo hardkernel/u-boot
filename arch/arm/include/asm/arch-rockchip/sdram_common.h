@@ -231,10 +231,8 @@ struct sdram_cap_info {
 	unsigned int row_3_4;
 	unsigned int cs0_row;
 	unsigned int cs1_row;
-#ifdef CONFIG_ROCKCHIP_RK3568
 	unsigned int cs2_row;
 	unsigned int cs3_row;
-#endif
 	unsigned int cs0_high16bit_row;
 	unsigned int cs1_high16bit_row;
 	unsigned int ddrconfig;

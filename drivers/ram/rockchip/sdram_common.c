@@ -77,14 +77,12 @@ void sdram_print_ddr_info(struct sdram_cap_info *cap_info,
 			printdec(cap_info->cs1_high16bit_row);
 		}
 	}
-#ifdef CONFIG_ROCKCHIP_RK3568
 	if (cap_info->rank > 2) {
 		printascii(" CS2 Row=");
 		printdec(cap_info->cs2_row);
 		printascii(" CS3 Row=");
 		printdec(cap_info->cs3_row);
 	}
-#endif
 	printascii(" CS=");
 	printdec(cap_info->rank);
 	printascii(" Die BW=");
@@ -127,7 +125,7 @@ u64 sdram_get_cs_cap(struct sdram_cap_info *cap_info, u32 cs, u32 dram_type)
 			bg + cap_info->bk + cap_info->cs1_row);
 	else
 		cap[1] = 0;
-#ifdef CONFIG_ROCKCHIP_RK3568
+
 	if (cap_info->rank == 4) {
 		cap[2] = 1llu << (cap_info->bw + cap_info->col +
 			bg + cap_info->bk + cap_info->cs2_row);
@@ -137,10 +135,6 @@ u64 sdram_get_cs_cap(struct sdram_cap_info *cap_info, u32 cs, u32 dram_type)
 		cap[2] = 0;
 		cap[3] = 0;
 	}
-#else
-	cap[2] = 0;
-	cap[3] = 0;
-#endif
 	if (cs == 0)
 		return cap[0];
 	else if (cs == 1)
