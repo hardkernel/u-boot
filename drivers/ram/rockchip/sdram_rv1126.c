@@ -2320,11 +2320,14 @@ static int sdram_init_(struct dram_info *dram,
 	pctl_cfg(dram->pctl, &sdram_params->pctl_regs,
 		 dram->sr_idle, dram->pd_idle);
 
-	if (sdram_params->ch.cap_info.bw == 2)
+	if (sdram_params->ch.cap_info.bw == 2) {
 		/* 32bit interface use pageclose */
 		setbits_le32(pctl_base + DDR_PCTL2_SCHED, 1 << 2);
-	else
+		/* pageclose = 1, pageclose_timer = 0 will err in lp4 328MHz */
+		clrsetbits_le32(pctl_base + DDR_PCTL2_SCHED1, 0xff, 0x1 << 0);
+	} else {
 		clrbits_le32(pctl_base + DDR_PCTL2_SCHED, 1 << 2);
+	}
 
 #ifdef CONFIG_ROCKCHIP_DRAM_EXTENDED_TEMP_SUPPORT
 	u32 tmp, trefi;
