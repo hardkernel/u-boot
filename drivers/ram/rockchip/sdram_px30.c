@@ -627,7 +627,7 @@ static int sdram_init_detect(struct dram_info *dram,
 		writel(sys_reg3, &dram->pmugrf->os_reg[3]);
 	}
 
-	ret = sdram_detect_high_row(cap_info);
+	ret = sdram_detect_high_row(cap_info, sdram_params->base.dramtype);
 
 out:
 	return ret;

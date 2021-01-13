@@ -235,6 +235,8 @@ struct sdram_cap_info {
 	unsigned int cs3_row;
 	unsigned int cs0_high16bit_row;
 	unsigned int cs1_high16bit_row;
+	unsigned int cs2_high16bit_row;
+	unsigned int cs3_high16bit_row;
 	unsigned int ddrconfig;
 };
 
@@ -433,7 +435,7 @@ int sdram_detect_row(struct sdram_cap_info *cap_info,
 		     u32 coltmp, u32 bktmp, u32 rowtmp);
 int sdram_detect_row_3_4(struct sdram_cap_info *cap_info,
 			 u32 coltmp, u32 bktmp);
-int sdram_detect_high_row(struct sdram_cap_info *cap_info);
+int sdram_detect_high_row(struct sdram_cap_info *cap_info, u32 dramtype);
 int sdram_detect_cs1_row(struct sdram_cap_info *cap_info, u32 dram_type);
 
 void sdram_print_dram_type(unsigned char dramtype);

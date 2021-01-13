@@ -62,6 +62,7 @@ struct dram_info {
 #define DDR_PHY_BASE_ADDR		0xff4a0000
 #define UPCTL2_BASE_ADDR		0xffa50000
 
+#define SGRF_SOC_CON2			0x8
 #define SGRF_SOC_CON12			0x30
 #define SGRF_SOC_CON13			0x34
 
@@ -2183,6 +2184,66 @@ static void update_noc_timing(struct dram_info *dram,
 	       &dram->msch->ddr4timing);
 }
 
+static int split_setup(struct dram_info *dram,
+		       struct rv1126_sdram_params *sdram_params)
+{
+	struct sdram_cap_info *cap_info = &sdram_params->ch.cap_info;
+	u32 dramtype = sdram_params->base.dramtype;
+	u32 split_size, split_mode;
+	u64 cs_cap[2], cap;
+
+	cs_cap[0] = sdram_get_cs_cap(cap_info, 0, dramtype);
+	cs_cap[1] = sdram_get_cs_cap(cap_info, 1, dramtype);
+	/* only support the larger cap is in low 16bit */
+	if (cap_info->cs0_high16bit_row < cap_info->cs0_row) {
+		cap = cs_cap[0] / (1 << (cap_info->cs0_row -
+		cap_info->cs0_high16bit_row));
+	} else if ((cap_info->cs1_high16bit_row < cap_info->cs1_row) &&
+		   (cap_info->rank == 2)) {
+		if (!cap_info->cs1_high16bit_row)
+			cap = cs_cap[0];
+		else
+			cap = cs_cap[0] + cs_cap[1] / (1 << (cap_info->cs1_row -
+				cap_info->cs1_high16bit_row));
+	} else {
+		goto out;
+	}
+	split_size = (u32)(cap >> 24) & SPLIT_SIZE_MASK;
+	if (cap_info->bw == 2)
+		split_mode = SPLIT_MODE_32_L16_VALID;
+	else
+		split_mode = SPLIT_MODE_16_L8_VALID;
+
+	rk_clrsetreg(&dram->ddrgrf->grf_ddrsplit_con,
+		     (SPLIT_MODE_MASK << SPLIT_MODE_OFFSET) |
+		     (SPLIT_BYPASS_MASK << SPLIT_BYPASS_OFFSET) |
+		     (SPLIT_SIZE_MASK << SPLIT_SIZE_OFFSET),
+		     (split_mode << SPLIT_MODE_OFFSET) |
+		     (0x0 << SPLIT_BYPASS_OFFSET) |
+		     (split_size << SPLIT_SIZE_OFFSET));
+
+	rk_clrsetreg(BUS_SGRF_BASE_ADDR + SGRF_SOC_CON2,
+		     MSCH_AXI_BYPASS_ALL_MASK << MSCH_AXI_BYPASS_ALL_SHIFT,
+		     0x0 << MSCH_AXI_BYPASS_ALL_SHIFT);
+
+out:
+	return 0;
+}
+
+static void split_bypass(struct dram_info *dram)
+{
+	if ((readl(&dram->ddrgrf->grf_ddrsplit_con) &
+	     (1 << SPLIT_BYPASS_OFFSET)) != 0)
+		return;
+
+	/* bypass split */
+	rk_clrsetreg(&dram->ddrgrf->grf_ddrsplit_con,
+		     (SPLIT_BYPASS_MASK << SPLIT_BYPASS_OFFSET) |
+		     (SPLIT_SIZE_MASK << SPLIT_SIZE_OFFSET),
+		     (0x1 << SPLIT_BYPASS_OFFSET) |
+		     (0x0 << SPLIT_SIZE_OFFSET));
+}
+
 static void dram_all_config(struct dram_info *dram,
 			    struct rv1126_sdram_params *sdram_params)
 {
@@ -2258,6 +2319,8 @@ static void ddr_set_atags(struct dram_info *dram,
 	struct tag_soc_info t_socinfo;
 	u64 cs_cap[2];
 	u32 cs_pst = 0;
+	u32 split, split_size;
+	u64 reduce_cap = 0;
 
 	cs_cap[0] = sdram_get_cs_cap(cap_info, 0, dram_type);
 	cs_cap[1] = sdram_get_cs_cap(cap_info, 1, dram_type);
@@ -2274,10 +2337,14 @@ static void ddr_set_atags(struct dram_info *dram,
 	atags_destroy();
 	atags_set_tag(ATAG_SERIAL,  &t_serial);
 
+	split = readl(&dram->ddrgrf->grf_ddrsplit_con);
 	memset(&t_ddrmem, 0, sizeof(struct tag_ddr_mem));
 	if (cap_info->row_3_4) {
 		cs_cap[0] =  cs_cap[0] * 3 / 4;
 		cs_cap[1] =  cs_cap[1] * 3 / 4;
+	} else if (!(split & (1 << SPLIT_BYPASS_OFFSET))) {
+		split_size = (split >> SPLIT_SIZE_OFFSET) & SPLIT_SIZE_MASK;
+		reduce_cap = (cs_cap[0] + cs_cap[1] - (split_size << 24)) / 2;
 	}
 	t_ddrmem.version = 0;
 	t_ddrmem.bank[0] = CONFIG_SYS_SDRAM_BASE;
@@ -2290,10 +2357,10 @@ static void ddr_set_atags(struct dram_info *dram,
 		t_ddrmem.count = 2;
 		t_ddrmem.bank[1] = 1 << cs_pst;
 		t_ddrmem.bank[2] = cs_cap[0];
-		t_ddrmem.bank[3] = cs_cap[1];
+		t_ddrmem.bank[3] = cs_cap[1] - reduce_cap;
 	} else {
 		t_ddrmem.count = 1;
-		t_ddrmem.bank[1] = (u64)cs_cap[0] + (u64)cs_cap[1];
+		t_ddrmem.bank[1] = (u64)cs_cap[0] + (u64)cs_cap[1] - reduce_cap;
 	}
 
 	atags_set_tag(ATAG_DDR_MEM,  &t_ddrmem);
@@ -2637,6 +2704,7 @@ static int sdram_init_detect(struct dram_info *dram,
 			return -1;
 	}
 
+	split_bypass(dram);
 	if (dram_detect_cap(dram, sdram_params, 0) != 0)
 		return -1;
 
@@ -2657,8 +2725,8 @@ static int sdram_init_detect(struct dram_info *dram,
 		writel(sys_reg3, &dram->pmugrf->os_reg[3]);
 	}
 
-	sdram_detect_high_row(cap_info);
-
+	sdram_detect_high_row(cap_info, sdram_params->base.dramtype);
+	split_setup(dram, sdram_params);
 out:
 	return ret;
 }
