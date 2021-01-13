@@ -220,13 +220,13 @@ static int mtd_vendor_storage_init(struct blk_desc *dev_desc)
 					1,
 					(u8 *)buf);
 
-			/* the page is not programed */
+			/* the page is not programmed */
 			if (ret == 1 && vendor_info.hdr->tag == 0xFFFFFFFF)
 				continue;
 
-			/* point to the last programed page */
+			/* point to the next free page */
 			if (s_flash_info.page_offset < offset)
-				s_flash_info.page_offset = offset;
+				s_flash_info.page_offset = offset + s_flash_info.ops_size;
 
 			if (ret != 1 || vendor_info.hdr->tag != VENDOR_TAG)
 				continue;
