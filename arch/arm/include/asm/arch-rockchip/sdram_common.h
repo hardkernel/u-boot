@@ -273,6 +273,7 @@ struct sdram_base_params {
 #define SYS_REG_ENC_ROW_3_4(n, ch)	((n) << (30 + (ch)))
 #define SYS_REG_DEC_ROW_3_4(n, ch)	(((n) >> (30 + (ch))) & 0x1)
 #define SYS_REG_ENC_CHINFO(ch)		(1 << (28 + (ch)))
+#define SYS_REG_DEC_CHINFO(n, ch)	(((n) >> (28 + (ch))) & 0x1)
 #define SYS_REG_ENC_DDRTYPE(n)		((n) << 13)
 #define SYS_REG_DEC_DDRTYPE(n)		(((n) >> 13) & 0x7)
 #define SYS_REG_ENC_NUM_CH(n)		(((n) - 1) << 12)
@@ -292,6 +293,8 @@ struct sdram_base_params {
 #define SYS_REG_ENC_VERSION(n)		((n) << 28)
 #define SYS_REG_DEC_VERSION(n)		(((n) >> 28) & 0xf)
 #define SYS_REG_ENC_CS0_ROW(n, os_reg2, os_reg3, ch) do { \
+			(os_reg2) &= (~(0x3 << (6 + 16 * (ch)))); \
+			(os_reg3) &= (~(0x1 << (5 + 2 * (ch)))); \
 			(os_reg2) |= (((n) - 13) & 0x3) << (6 + 16 * (ch)); \
 			(os_reg3) |= ((((n) - 13) & 0x4) >> 2) << \
 				     (5 + 2 * (ch)); \
@@ -316,10 +319,66 @@ struct sdram_base_params {
 #define SYS_REG_ENC_CS1_COL(n, ch)	(((n) - 9) << (0 + 2 * (ch)))
 #define SYS_REG_DEC_CS1_COL(n, ch)	(9 + (((n) >> (0 + 2 * (ch))) & 0x3))
 
+/* DDR SYS REG Version 3 */
+#define DDR_SYS_REG_VERSION_3		(0x3)
+#define SYS_REG_ENC_ROW_3_4_V3(row3_4, ch)	SYS_REG_ENC_ROW_3_4(row3_4, ch)
+#define SYS_REG_DEC_ROW_3_4_V3(reg2, ch)	SYS_REG_DEC_ROW_3_4(reg2, ch)
+#define SYS_REG_ENC_CHINFO_V3(ch)	SYS_REG_ENC_CHINFO(ch)
+#define SYS_REG_DEC_CHINFO_V3(reg2, ch)	SYS_REG_DEC_CHINFO(reg2, ch)
+#define SYS_REG_ENC_DDRTYPE_V3(n, reg2, reg3)	do { \
+		(reg2) &= (~(0x7 << 13)); \
+		(reg3) &= (~(0x3 << 12)); \
+		(reg2) |= (((n) & 0x7) << 13); \
+		(reg3) |= (((n) >> 3) & 0x3) << 12; \
+	} while (0)
+#define SYS_REG_DEC_DDRTYPE_V3(reg2, reg3) \
+	((((reg2) >> 13) & 0x7) | \
+	 ((((reg3) >> 12) & 0x3) << 3))
+
+#define SYS_REG_ENC_NUM_CH_V3(n)		SYS_REG_ENC_NUM_CH(n)
+#define SYS_REG_DEC_NUM_CH_V3(reg2)		SYS_REG_DEC_NUM_CH(reg2)
+#define SYS_REG_ENC_CH1_3_RANK(cs)		SYS_REG_ENC_RANK(cs, 1)
+#define SYS_REG_DEC_CH1_3_RANK(reg2)		SYS_REG_DEC_RANK(reg2, 1)
+#define SYS_REG_ENC_CH0_2_RANK_V3(n, reg2, reg3)	do { \
+		(reg2) &= (~(1 << 11)); \
+		(reg3) &= (~(1 << 14)); \
+		(reg2) |= (((n) == 2) ? 1 : 0) << 11; \
+		(reg3) |= (((n) == 4) ? 1 : 0) << 14; \
+	} while (0)
+#define SYS_REG_DEC_CH0_2_RANK_V3(reg2, reg3) \
+		(1 << ((((reg2) >> 11) & 1) | ((((reg3) >> 14) & 1) << 1)))
+#define SYS_REG_ENC_COL_V3(col, ch)		SYS_REG_ENC_COL(col, ch)
+#define SYS_REG_DEC_COL_V3(reg2, ch)		SYS_REG_DEC_COL(reg2, ch)
+#define SYS_REG_ENC_BK_V3(bk, ch)		SYS_REG_ENC_BK(bk, ch)
+#define SYS_REG_DEC_BK_V3(reg2, ch)		SYS_REG_DEC_BK(reg2, ch)
+#define SYS_REG_ENC_BW_V3(bw, ch)		SYS_REG_ENC_BW(bw, ch)
+#define SYS_REG_DEC_BW_V3(reg2, ch)		SYS_REG_DEC_BW(reg2, ch)
+#define SYS_REG_ENC_DBW_V3(dbw, ch)		SYS_REG_ENC_DBW(dbw, ch)
+#define SYS_REG_DEC_DBW_V3(reg2, ch)		SYS_REG_DEC_DBW(reg2, ch)
+#define SYS_REG_ENC_VERSION_V3(n)		SYS_REG_ENC_VERSION(n)
+#define SYS_REG_DEC_VERSION_V3(reg3)		SYS_REG_DEC_VERSION(reg3)
+#define SYS_REG_ENC_CS0_ROW_V3(row, reg2, reg3, ch) \
+		SYS_REG_ENC_CS0_ROW(row, reg2, reg3, ch)
+#define SYS_REG_DEC_CS0_ROW_V3(reg2, reg3, ch) \
+		SYS_REG_DEC_CS0_ROW(reg2, reg3, ch)
+#define SYS_REG_ENC_CS1_ROW_V3(row, reg2, reg3, ch) \
+		SYS_REG_ENC_CS1_ROW(row, reg2, reg3, ch)
+#define SYS_REG_DEC_CS1_ROW_V3(reg2, reg3, ch) \
+		SYS_REG_DEC_CS1_ROW(reg2, reg3, ch)
+#define SYS_REG_ENC_CS2_DELTA_ROW_V3(row_del)	((row_del) << 15)
+#define SYS_REG_DEC_CS2_DELTA_ROW_V3(reg3)	(((reg3) >> 15) & 1)
+#define SYS_REG_ENC_CS3_DELTA_ROW_V3(row_del)	((row_del) << 16)
+#define SYS_REG_DEC_CS3_DELTA_ROW_V3(reg3)	(((reg3) >> 16) & 1)
+
+#define SYS_REG_ENC_CS1_COL_V3(col, ch)		SYS_REG_ENC_CS1_COL(col, ch)
+#define SYS_REG_DEC_CS1_COL_V3(reg3, ch)	SYS_REG_DEC_CS1_COL(reg3, ch)
+
 void sdram_org_config(struct sdram_cap_info *cap_info,
 		      struct sdram_base_params *base,
 		      u32 *p_os_reg2, u32 *p_os_reg3, u32 channel);
-
+void sdram_org_config_v3(struct sdram_cap_info *cap_info,
+			 struct sdram_base_params *base,
+			 u32 *p_os_reg2, u32 *p_os_reg3, u32 channel);
 int sdram_detect_bw(struct sdram_cap_info *cap_info);
 int sdram_detect_cs(struct sdram_cap_info *cap_info);
 int sdram_detect_col(struct sdram_cap_info *cap_info,

@@ -178,6 +178,48 @@ void sdram_org_config(struct sdram_cap_info *cap_info,
 	*p_os_reg3 |= SYS_REG_ENC_VERSION(DDR_SYS_REG_VERSION);
 }
 
+void sdram_org_config_v3(struct sdram_cap_info *cap_info,
+			 struct sdram_base_params *base,
+			 u32 *p_os_reg2, u32 *p_os_reg3, u32 channel)
+{
+	SYS_REG_ENC_DDRTYPE_V3(base->dramtype, *p_os_reg2, *p_os_reg3);
+
+	*p_os_reg2 |= SYS_REG_ENC_NUM_CH_V3((base->num_channels > 2) ?
+					    2 : base->num_channels);
+
+	*p_os_reg2 |= SYS_REG_ENC_ROW_3_4_V3(cap_info->row_3_4, channel);
+	*p_os_reg2 |= SYS_REG_ENC_CHINFO_V3((channel >= 2) ? channel - 2 : channel);
+	if (channel == 0 || channel == 2)
+		SYS_REG_ENC_CH0_2_RANK_V3(cap_info->rank,
+					  *p_os_reg2, *p_os_reg3);
+	else
+		*p_os_reg2 |= SYS_REG_ENC_CH1_3_RANK(cap_info->rank);
+
+	*p_os_reg2 |= SYS_REG_ENC_COL_V3(cap_info->col, channel);
+	*p_os_reg2 |= SYS_REG_ENC_BK_V3(cap_info->bk, channel);
+	*p_os_reg2 |= SYS_REG_ENC_BW_V3(cap_info->bw, channel);
+	*p_os_reg2 |= SYS_REG_ENC_DBW_V3(cap_info->dbw, channel);
+
+	SYS_REG_ENC_CS0_ROW_V3(cap_info->cs0_row, *p_os_reg2, *p_os_reg3, channel);
+	if (cap_info->cs1_row)
+		SYS_REG_ENC_CS1_ROW_V3(cap_info->cs1_row, *p_os_reg2,
+				       *p_os_reg3, channel);
+	if ((channel == 0 || channel == 2) && cap_info->rank > 2) {
+		if (cap_info->cs2_row == cap_info->cs0_row)
+			*p_os_reg3 |= SYS_REG_ENC_CS2_DELTA_ROW_V3(0);
+		else
+			*p_os_reg3 |= SYS_REG_ENC_CS2_DELTA_ROW_V3(1);
+
+		if (cap_info->cs3_row == cap_info->cs0_row)
+			*p_os_reg3 |= SYS_REG_ENC_CS3_DELTA_ROW_V3(0);
+		else
+			*p_os_reg3 |= SYS_REG_ENC_CS3_DELTA_ROW_V3(1);
+	}
+
+	*p_os_reg3 |= SYS_REG_ENC_CS1_COL_V3(cap_info->col, channel);
+	*p_os_reg3 |= SYS_REG_ENC_VERSION(DDR_SYS_REG_VERSION_3);
+}
+
 int sdram_detect_bw(struct sdram_cap_info *cap_info)
 {
 	return 0;
