@@ -402,7 +402,8 @@ char *mtd_part_parse(void)
 			 (int)(size_t)info.start << 9,
 			 info.name);
 		strcat(mtd_part_info, ",");
-		if (part_get_info(dev_desc, p + 1, &info)) {
+		if (part_get_info(dev_desc, p + 1, &info) &&
+		    (info.size + info.start + 33) == dev_desc->lba) {
 			if (dev_desc->devnum == BLK_MTD_SPI_NOR) {
 				/* Nor is 64KB erase block(kernel) and gpt table just
 				* resserve 33 sectors for the last partition. This
