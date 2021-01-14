@@ -460,7 +460,7 @@ int uclass_get_device_by_ofnode(enum uclass_id id, ofnode node,
 }
 
 #if CONFIG_IS_ENABLED(OF_CONTROL)
-int uclass_get_device_by_phandle_id(enum uclass_id id, int phandle_id,
+int uclass_get_device_by_phandle_id(enum uclass_id id, uint phandle_id,
 				    struct udevice **devp)
 {
 	struct udevice *dev;

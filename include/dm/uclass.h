@@ -223,7 +223,7 @@ int uclass_get_device_by_ofnode(enum uclass_id id, ofnode node,
  * @return 0 if OK, -ENODEV if there is no device match the phandle, other
  *	-ve on error
  */
-int uclass_get_device_by_phandle_id(enum uclass_id id, int phandle_id,
+int uclass_get_device_by_phandle_id(enum uclass_id id, uint phandle_id,
 				    struct udevice **devp);
 
 /**
