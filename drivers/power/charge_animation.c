@@ -210,14 +210,16 @@ static int system_suspend_enter(struct udevice *dev)
 	if (pdata->system_suspend && IS_ENABLED(CONFIG_ARM_SMCCC)) {
 		printf("\nSystem suspend: ");
 		putc('0');
-		regulators_enable_state_mem(false);
-		putc('1');
 		local_irq_disable();
+		putc('1');
+		regulators_enable_state_mem(false);
 		putc('2');
-		irqs_suspend();
+		pmic_suspend(priv->pmic);
 		putc('3');
-		device_suspend();
+		irqs_suspend();
 		putc('4');
+		device_suspend();
+		putc('5');
 		putc('\n');
 
 		/* Trap into ATF for low power mode */
@@ -229,8 +231,10 @@ static int system_suspend_enter(struct udevice *dev)
 		putc('3');
 		irqs_resume();
 		putc('2');
-		local_irq_enable();
+		pmic_resume(priv->pmic);
 		putc('1');
+		local_irq_enable();
+		putc('0');
 		putc('\n');
 	} else {
 		irqs_suspend();
