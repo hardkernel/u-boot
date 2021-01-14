@@ -233,6 +233,48 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 	return 0;
 }
 
+static int rk8xx_suspend(struct udevice *dev)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev);
+	int ret = 0;
+	u8 val;
+
+	switch (priv->variant) {
+	case RK809_ID:
+	case RK817_ID:
+		/* pmic_sleep active high */
+		ret = rk8xx_read(dev, RK817_PMIC_SYS_CFG3, &val, 1);
+		if (ret)
+			return ret;
+		priv->sleep_pin = val;
+		val &= ~0x38;
+		val |= 0x28;
+		ret = rk8xx_write(dev, RK817_PMIC_SYS_CFG3, &val, 1);
+		break;
+	default:
+		return 0;
+	}
+
+	return ret;
+}
+
+static int rk8xx_resume(struct udevice *dev)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev);
+	int ret = 0;
+
+	switch (priv->variant) {
+	case RK809_ID:
+	case RK817_ID:
+		ret = rk8xx_write(dev, RK817_PMIC_SYS_CFG3, &priv->sleep_pin, 1);
+		break;
+	default:
+		return 0;
+	}
+
+	return ret;
+}
+
 static int rk8xx_shutdown(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
@@ -568,6 +610,8 @@ static struct dm_pmic_ops rk8xx_ops = {
 	.reg_count = rk8xx_reg_count,
 	.read = rk8xx_read,
 	.write = rk8xx_write,
+	.suspend = rk8xx_suspend,
+	.resume = rk8xx_resume,
 	.shutdown = rk8xx_shutdown,
 };
 

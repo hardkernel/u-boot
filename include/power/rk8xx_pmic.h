@@ -277,11 +277,12 @@ struct rk8xx_reg_table {
 };
 
 struct rk8xx_priv {
+	struct virq_chip *irq_chip;
 	int variant;
 	int irq;
-	struct virq_chip *irq_chip;
 	int lp_off_time;
 	int lp_action;
+	uint8_t sleep_pin;
 };
 
 int rk8xx_spl_configure_buck(struct udevice *pmic, int buck, int uvolt);
