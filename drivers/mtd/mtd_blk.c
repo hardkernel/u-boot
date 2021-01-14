@@ -403,18 +403,33 @@ char *mtd_part_parse(void)
 			 info.name);
 		strcat(mtd_part_info, ",");
 		if (part_get_info(dev_desc, p + 1, &info)) {
-			/* Nand flash is erased by block and gpt table just
-			 * resserve 33 sectors for the last partition. This
-			 * will erase the backup gpt table by user program,
-			 * so reserve one block.
-			 */
-			snprintf(mtd_part_info_p, data_len - 1, "0x%x@0x%x(%s)",
-				 (int)(size_t)(info.size -
-				 (info.size - 1) %
-				 (mtd->erasesize >> 9) - 1) << 9,
-				 (int)(size_t)info.start << 9,
-				 info.name);
-			break;
+			if (dev_desc->devnum == BLK_MTD_SPI_NOR) {
+				/* Nor is 64KB erase block(kernel) and gpt table just
+				* resserve 33 sectors for the last partition. This
+				* will erase the backup gpt table by user program,
+				* so reserve one block.
+				*/
+				snprintf(mtd_part_info_p, data_len - 1, "0x%x@0x%x(%s)",
+					(int)(size_t)(info.size -
+					(info.size - 1) %
+					(0x10000 >> 9) - 1) << 9,
+					(int)(size_t)info.start << 9,
+					info.name);
+				break;
+			} else {
+				/* Nand flash is erased by block and gpt table just
+				* resserve 33 sectors for the last partition. This
+				* will erase the backup gpt table by user program,
+				* so reserve one block.
+				*/
+				snprintf(mtd_part_info_p, data_len - 1, "0x%x@0x%x(%s)",
+					(int)(size_t)(info.size -
+					(info.size - 1) %
+					(mtd->erasesize >> 9) - 1) << 9,
+					(int)(size_t)info.start << 9,
+					info.name);
+				break;
+			}
 		}
 		length = strlen(mtd_part_info_temp);
 		data_len -= length;
