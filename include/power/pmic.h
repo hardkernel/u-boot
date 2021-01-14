@@ -165,6 +165,8 @@ struct dm_pmic_ops {
 	int (*read)(struct udevice *dev, uint reg, uint8_t *buffer, int len);
 	int (*write)(struct udevice *dev, uint reg, const uint8_t *buffer,
 		     int len);
+	int (*suspend)(struct udevice *dev);
+	int (*resume)(struct udevice *dev);
 	int (*shutdown)(struct udevice *dev);
 };
 
@@ -299,6 +301,22 @@ int pmic_reg_write(struct udevice *dev, uint reg, uint value);
  * @return 0 on success or negative value of errno.
  */
 int pmic_clrsetbits(struct udevice *dev, uint reg, uint clr, uint set);
+
+/**
+ * pmic_suspend() - suspend of PMIC
+ *
+ * @dev:	PMIC device
+ * @return 0 on success or negative value of errno.
+ */
+int pmic_suspend(struct udevice *dev);
+
+/**
+ * pmic_resume() - resume of PMIC
+ *
+ * @dev:	PMIC device
+ * @return 0 on success or negative value of errno.
+ */
+int pmic_resume(struct udevice *dev);
 
 /**
  * pmic_shutdown() - power off supplies of PMIC

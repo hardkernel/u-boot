@@ -189,6 +189,25 @@ int pmic_clrsetbits(struct udevice *dev, uint reg, uint clr, uint set)
 	return pmic_reg_write(dev, reg, byte);
 }
 
+int pmic_suspend(struct udevice *dev)
+{
+	const struct dm_pmic_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->suspend)
+		return -ENOSYS;
+
+	return ops->suspend(dev);
+}
+
+int pmic_resume(struct udevice *dev)
+{
+	const struct dm_pmic_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->resume)
+		return -ENOSYS;
+
+	return ops->resume(dev);
+}
 
 int pmic_shutdown(struct udevice *dev)
 {
