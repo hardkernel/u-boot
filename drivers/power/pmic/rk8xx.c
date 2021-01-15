@@ -149,12 +149,11 @@ static struct reg_data rk817_init_reg[] = {
  * the under-voltage protection will shutdown the LDO3 and reset the PMIC
  */
 	{ RK817_BUCK4_CMIN, 0x60, 0x60},
-/*
- * Only when system suspend while U-Boot charge needs this config support
- */
+
+	/* Set pmic_sleep as none function */
+	{ RK817_PMIC_SYS_CFG3, 0x00, 0x18 },
+
 #ifdef CONFIG_DM_CHARGE_DISPLAY
-	/* Set pmic_sleep as sleep function */
-	{ RK817_PMIC_SYS_CFG3, 0x08, 0x18 },
 	/* Set pmic_int active low */
 	{ RK817_GPIO_INT_CFG,  0x00, 0x02 },
 #endif
