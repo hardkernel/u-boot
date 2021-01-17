@@ -189,7 +189,10 @@ function fit_raw_compile()
 
 function fit_gen_uboot_itb()
 {
+	# generate u-boot.its file
 	./make.sh itb ${ARG_INI_TRUST}
+
+	# check existance of file in its
 	check_its ${ITS_UBOOT}
 
 	if [ "${ARG_SIGN}" != "y" ]; then
@@ -228,7 +231,8 @@ function fit_gen_uboot_itb()
 			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_UBOOT}>;/g" ${ITS_UBOOT}
 		fi
 
-		# u-boot.dtb must contains rsa key
+		# Generally, boot.img is signed before uboot.img, so the ras key can be found
+		# in u-boot.dtb. If not found, let's insert rsa key anyway.
 		if ! fdtget -l ${UBOOT_DTB} /signature >/dev/null 2>&1 ; then
 			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 			echo "## Adding RSA public key into ${UBOOT_DTB}"
@@ -242,6 +246,7 @@ function fit_gen_uboot_itb()
 		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
 			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} burn-key-hash 0x1
 		fi
+
 		# rollback-index read back check
 		if [ "${ARG_SPL_ROLLBACK_PROTECT}" == "y" ]; then
 			VERSION=`fdtget -ti ${ITB_UBOOT} /configurations/conf rollback-index`
@@ -275,7 +280,7 @@ function fit_gen_uboot_itb()
 			fi
 		fi
 
-		# minimize u-boot-spl.dtb
+		# minimize u-boot-spl.dtb: clear as 0 but not remove property.
 		if grep -q '^CONFIG_SPL_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_SPL_ROCKCHIP_CRYPTO_V1=y' .config ; then
@@ -384,11 +389,12 @@ function fit_gen_boot_itb()
 			fi
 		fi
 
+		# host check signature
 		if [ "${ARG_NO_CHECK}" != "y" ]; then
 			 ${CHECK_SIGN} -f ${ITB_BOOT} -k ${UBOOT_DTB}
 		fi
 
-		# minimize u-boot.dtb
+		# minimize u-boot.dtb: clearn as 0 but not remove property.
 		if grep -q '^CONFIG_FIT_HW_CRYPTO=y' .config ; then
 			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
 			if grep -q '^CONFIG_ROCKCHIP_CRYPTO_V1=y' .config ; then
