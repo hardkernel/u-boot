@@ -9,16 +9,21 @@ set -e
 FIT_DIR="fit"
 IMG_UBOOT="uboot.img"
 IMG_BOOT="boot.img"
+IMG_RECOVERY="recovery.img"
 ITB_UBOOT="${FIT_DIR}/uboot.itb"
 ITB_BOOT="${FIT_DIR}/boot.itb"
+ITB_RECOVERY="${FIT_DIR}/recovery.itb"
 SIG_BIN="data2sign.bin"
 SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
+SIG_RECOVERY="${FIT_DIR}/recovery.data2sign"
 # offs
 OFFS_NS_UBOOT="0xc00"
 OFFS_S_UBOOT="0xc00"
 OFFS_NS_BOOT="0x800"
 OFFS_S_BOOT="0xc00"
+OFFS_NS_RECOVERY="0x800"
+OFFS_S_RECOVERY="0xc00"
 # file
 CHIP_FILE="arch/arm/lib/.asm-offsets.s.cmd"
 # placeholder address
@@ -39,8 +44,10 @@ UBOOT_DTB="u-boot.dtb"
 # its
 ITS_UBOOT="u-boot.its"
 ITS_BOOT="boot.its"
+ITS_RECOVERY="recovery.its"
 ARG_VER_UBOOT="0"
 ARG_VER_BOOT="0"
+ARG_VER_RECOVERY="0"
 
 function help()
 {
@@ -49,16 +56,19 @@ function help()
 	echo "    $0 [args]"
 	echo
 	echo "args:"
-	echo "    --rollback-index-boot   <decimal integer>"
-	echo "    --rollback-index-uboot  <decimal integer>"
-	echo "    --version-uboot         <decimal integer>"
-	echo "    --version-boot          <decimal integer>"
-	echo "    --ini-trust"
-	echo "    --ini-loader"
+	echo "    --rollback-index-recovery  <decimal integer>"
+	echo "    --rollback-index-boot      <decimal integer>"
+	echo "    --rollback-index-uboot     <decimal integer>"
+	echo "    --version-recovery         <decimal integer>"
+	echo "    --version-boot             <decimal integer>"
+	echo "    --version-uboot            <decimal integer>"
+	echo "    --boot_img                 <boot image>"
+	echo "    --recovery_img             <recovery image>"
+	echo "    --args                     <arg>"
+	echo "    --ini-loader               <loader ini file>"
+	echo "    --ini-trust                <trust ini file>"
 	echo "    --no-check"
 	echo "    --spl-new"
-	echo "    --boot_img"
-	echo "    --args"
 	echo
 }
 
@@ -95,7 +105,7 @@ function validate_arg()
 		--no-check|--spl-new|--burn-key-hash)
 			shift=1
 			;;
-		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-uboot|--boot_img|--version-uboot|--version-boot)
+		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-recovery|--rollback-index-uboot|--boot_img|--recovery_img|--version-uboot|--version-boot|--version-recovery)
 			shift=2
 			;;
 		*)
@@ -120,6 +130,10 @@ function fit_process_args()
 				;;
 			--boot_img)     # boot.img
 				ARG_BOOT_IMG=$2
+				shift 2
+				;;
+			--recovery_img) # recovery.img
+				ARG_RECOVERY_IMG=$2
 				shift 2
 				;;
 			--boot_img_dir) # boot.img components directory
@@ -147,6 +161,11 @@ function fit_process_args()
 				arg_check_decimal $2
 				shift 2
 				;;
+			--rollback-index-recovery)
+				ARG_ROLLBACK_IDX_RECOVERY=$2
+				arg_check_decimal $2
+				shift 2
+				;;
 			--rollback-index-uboot)
 				ARG_ROLLBACK_IDX_UBOOT=$2
 				arg_check_decimal $2
@@ -159,6 +178,11 @@ function fit_process_args()
 				;;
 			--version-boot)
 				ARG_VER_BOOT=$2
+				arg_check_decimal $2
+				shift 2
+				;;
+			--version-recovery)
+				ARG_VER_RECOVERY=$2
 				arg_check_decimal $2
 				shift 2
 				;;
@@ -414,6 +438,94 @@ function fit_gen_boot_itb()
 	mv ${ITS_BOOT} ${FIT_DIR}
 }
 
+function fit_gen_recovery_itb()
+{
+	if [ ! -z ${ARG_RECOVERY_IMG} ]; then
+		${FIT_UNPACK} -f ${ARG_RECOVERY_IMG} -o ${FIT_DIR}/unpack
+		ITS_RECOVERY="${FIT_DIR}/unpack/image.its"
+	else
+		echo "ERROR: No recovery.img"
+		exit 1
+	fi
+
+	if [ "${ARG_SIGN}" != "y" ]; then
+		${MKIMAGE} -f ${ITS_RECOVERY} -E -p ${OFFS_NS_RECOVERY} ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
+	else
+		if [ ! -f ${RSA_PRI_KEY}  ]; then
+			echo "ERROR: No ${RSA_PRI_KEY}"
+			exit 1
+		elif [ ! -f ${RSA_PUB_KEY}  ]; then
+			echo "ERROR: No ${RSA_PUB_KEY}"
+			exit 1
+		fi
+
+		if ! grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
+			echo "ERROR: CONFIG_FIT_SIGNATURE is disabled"
+			exit 1
+		fi
+
+		if grep -q '^CONFIG_FIT_ROLLBACK_PROTECT=y' .config ; then
+			ARG_ROLLBACK_PROTECT="y"
+			if [ -z ${ARG_ROLLBACK_IDX_RECOVERY} ]; then
+				echo "ERROR: No arg \"--rollback-index-recovery <n>\""
+				exit 1
+			fi
+		fi
+
+		# fixup
+		COMMON_FILE=`sed -n "/_common.h/p" ${CHIP_FILE} | awk '{ print $1 }'`
+		FDT_ADDR_R=`awk /fdt_addr_r/         ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
+		KERNEL_ADDR_R=`awk /kernel_addr_r/   ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
+		RMADISK_ADDR_R=`awk /ramdisk_addr_r/ ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
+		sed -i "s/${FDT_ADDR_PLACEHOLDER}/${FDT_ADDR_R}/g"         ${ITS_RECOVERY}
+		sed -i "s/${KERNEL_ADDR_PLACEHOLDER}/${KERNEL_ADDR_R}/g"   ${ITS_RECOVERY}
+		sed -i "s/${RAMDISK_ADDR_PLACEHOLDER}/${RMADISK_ADDR_R}/g" ${ITS_RECOVERY}
+		if grep -q '^CONFIG_ARM64=y' .config ; then
+			sed -i 's/arch = "arm";/arch = "arm64";/g' ${ITS_RECOVERY}
+		fi
+
+		if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
+			VERSION=`grep 'rollback-index' ${ITS_RECOVERY} | awk -F '=' '{ printf $2 }' | tr -d ' '`
+			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_RECOVERY}>;/g" ${ITS_RECOVERY}
+		fi
+
+		${MKIMAGE} -f ${ITS_RECOVERY} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_RECOVERY} -r ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
+		mv ${SIG_BIN} ${SIG_RECOVERY}
+
+		# rollback-index read back check
+		if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
+			VERSION=`fdtget -ti ${ITB_RECOVERY} /configurations/conf rollback-index`
+			if [ "${VERSION}" != "${ARG_ROLLBACK_IDX_RECOVERY}" ]; then
+				echo "ERROR: Failed to set rollback-index for ${ITB_RECOVERY}";
+				exit 1
+			fi
+		fi
+
+		# host check signature
+		if [ "${ARG_NO_CHECK}" != "y" ]; then
+			 ${CHECK_SIGN} -f ${ITB_RECOVERY} -k ${UBOOT_DTB}
+		fi
+
+		# minimize u-boot.dtb: clearn as 0 but not remove property.
+		if grep -q '^CONFIG_FIT_HW_CRYPTO=y' .config ; then
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,r-squared 0x0
+			if grep -q '^CONFIG_ROCKCHIP_CRYPTO_V1=y' .config ; then
+				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+			else
+				fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+			fi
+		else
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,c 0x0
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,np 0x0
+			fdtput -tx ${UBOOT_DTB} ${SIGNATURE_KEY_NODE} rsa,exponent-BN 0x0
+		fi
+		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@c
+		fdtput -r ${UBOOT_DTB} ${SIGNATURE_KEY_NODE}/hash@np
+	fi
+
+	mv ${ITS_RECOVERY} ${FIT_DIR}
+}
+
 function fit_gen_uboot_img()
 {
 	ITB=$1
@@ -453,6 +565,19 @@ function fit_gen_boot_img()
 	fi
 }
 
+function fit_gen_recovery_img()
+{
+	ITB=$1
+
+	if [ -z ${ITB} ]; then
+		ITB=${ITB_RECOVERY}
+	fi
+
+	if [ "${ITB}" != "${IMG_RECOVERY}" ]; then
+		cp ${ITB} ${IMG_RECOVERY} -f
+	fi
+}
+
 function fit_msg_uboot()
 {
 	if [ "${ARG_SIGN}" != "y" ]; then
@@ -475,6 +600,10 @@ function fit_msg_uboot()
 
 function fit_msg_boot()
 {
+	if [ -z "${ARG_BOOT_IMG}" ]; then
+		return;
+	fi
+
 	if [ "${ARG_SIGN}" != "y" ]; then
 		MSG_SIGN="no-signed"
 	else
@@ -493,42 +622,57 @@ function fit_msg_boot()
 	fi
 }
 
+function fit_msg_recovery()
+{
+	if [ -z "${ARG_RECOVERY_IMG}" ]; then
+		return;
+	fi
+
+	if [ "${ARG_SIGN}" != "y" ]; then
+		MSG_SIGN="no-signed"
+	else
+		MSG_SIGN="signed"
+	fi
+
+	VERSION=`fdtget -ti ${ITB_RECOVERY} / version`
+	if [ "${VERSION}" != "" ]; then
+		MSG_VER=", version=${VERSION}"
+	fi
+
+	if [ "${ARG_ROLLBACK_PROTECT}" == "y" ]; then
+		echo "Image(${MSG_SIGN}${MSG_VER}, rollback-index=${ARG_ROLLBACK_IDX_RECOVERY}):  ${IMG_RECOVERY} is ready"
+	else
+		echo "Image(${MSG_SIGN}${MSG_VER}):  ${IMG_RECOVERY} (FIT with kernel, fdt, resource...) is ready"
+	fi
+}
+
 function fit_msg_loader()
 {
 	LOADER=`ls *loader*.bin`
 	echo "Image(no-signed):  ${LOADER} (with spl, ddr, usbplug) is ready"
 }
 
-function fit_generate_uboot()
-{
-	fit_raw_compile
-	fit_gen_uboot_itb
-	fit_gen_uboot_img
-	echo
-	fit_msg_uboot
-}
-
-function fit_generate_uboot_boot()
-{
-	fit_raw_compile
-	fit_gen_boot_itb
-	fit_gen_boot_img
-	fit_gen_uboot_itb
-	fit_gen_uboot_img
-	echo
-
-	fit_msg_uboot
-	fit_msg_boot
-	fit_msg_loader
-	echo
-}
-
 fit_process_args $*
+
 if [ ! -z "${ARG_VALIDATE}" ]; then
 	validate_arg ${ARG_VALIDATE}
-elif [ ! -z "${ARG_BOOT_IMG}" -o ! -z "${ARG_BOOT_IMG_DIR}" ]; then
-	fit_generate_uboot_boot
 else
-	fit_generate_uboot
-fi
+	fit_raw_compile
+	if [ ! -z "${ARG_RECOVERY_IMG}" ]; then
+		fit_gen_recovery_itb
+		fit_gen_recovery_img
+	fi
+	# "--boot_img_dir" is for U-Boot debug only
+	if [ ! -z "${ARG_BOOT_IMG}" -o ! -z "${ARG_BOOT_IMG_DIR}" ]; then
+		fit_gen_boot_itb
+		fit_gen_boot_img
+	fi
+	fit_gen_uboot_itb
+	fit_gen_uboot_img
 
+	echo
+	fit_msg_uboot
+	fit_msg_recovery
+	fit_msg_boot
+	fit_msg_loader
+fi
