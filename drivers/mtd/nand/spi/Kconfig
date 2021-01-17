@@ -77,4 +77,10 @@ config SPI_NAND_FORESEE
 	help
 	  Add support for various FORESEE SPI Nand flash chips
 
+config SPI_NAND_BIWIN
+	default y
+	bool "BIWIN SPI flash support"
+	help
+	  Add support for various BIWIN SPI Nand flash chips
+
 endif
