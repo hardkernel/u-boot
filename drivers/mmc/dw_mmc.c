@@ -158,25 +158,41 @@ static void dwmci_prepare_data(struct dwmci_host *host,
 	dwmci_writel(host, DWMCI_BYTCNT, data->blocksize * data->blocks);
 }
 
+static unsigned int dwmci_get_timeout(struct mmc *mmc, const unsigned int size)
+{
+	unsigned int timeout;
+
+	timeout = size * 8;	/* counting in bits */
+	timeout *= 10;		/* wait 10 times as long */
+	timeout /= mmc->clock;
+	timeout /= mmc->bus_width;
+	timeout *= 1000;	/* counting in msec */
+	timeout = (timeout < 10000) ? 10000 : timeout;
+
+	return timeout;
+}
+
 static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 {
 	int ret = 0;
 	int reset_timeout = 100;
-	u32 timeout = 240000;
-	u32 status, ctrl, mask, size, i, len = 0;
+	u32 timeout, status, ctrl, mask, size, i, len = 0;
 	u32 *buf = NULL;
 	ulong start = get_timer(0);
 	u32 fifo_depth = (((host->fifoth_val & RX_WMARK_MASK) >>
 			    RX_WMARK_SHIFT) + 1) * 2;
 	bool stride;
 
-	size = data->blocksize * data->blocks / 4;
+	size = data->blocksize * data->blocks;
 	/* Still use legacy PIO mode if size < 512(128 * 4) Bytes */
 	stride = host->stride_pio && size > 128;
 	if (data->flags == MMC_DATA_READ)
 		buf = (unsigned int *)data->dest;
 	else
 		buf = (unsigned int *)data->src;
+
+	timeout = dwmci_get_timeout(host->mmc, size);
+	size /= 4;
 
 	for (;;) {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
