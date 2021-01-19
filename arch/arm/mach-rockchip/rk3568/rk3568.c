@@ -35,6 +35,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_SOFTRST_CON26	0x468
 #define CRU_SOFTRST_CON28	0x470
 #define SGRF_BASE		0xFDD18000
+#define SGRF_SOC_CON3		0xC
 #define SGRF_SOC_CON4		0x10
 #define PMUGRF_SOC_CON15	0xfdc20100
 #define CPU_GRF_BASE		0xfdc30000
@@ -813,6 +814,11 @@ int arch_cpu_init(void)
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_1);
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_2);
 	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_3);
+
+#if defined(CONFIG_ROCKCHIP_SFC)
+	/* Set the fspi to secure */
+	writel(((0x1 << 14) << 16) | (0x0 << 14), SGRF_BASE + SGRF_SOC_CON3);
+#endif
 
 #ifndef CONFIG_TPL_BUILD
 	/* set the fspi d0 cs0 to level 1 */
