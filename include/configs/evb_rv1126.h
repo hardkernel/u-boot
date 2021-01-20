@@ -37,6 +37,23 @@
 #else
 #define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 #endif
-#endif /* !CONFIG_SPL_BUILD */
 
+#define CONFIG_SET_DFU_ALT_INFO
+#define DFU_ALT_BOOT_EMMC \
+	"gpt raw 0x0 0x20000;" \
+	"loader raw 0x20000 0xE0000;"\
+	"uboot part uboot;" \
+	"boot part boot;" \
+	"rootfs partubi rootfs;" \
+	"userdata partubi userdata\0"
+
+#define DFU_ALT_BOOT_MTD \
+	"gpt raw 0x0 0x20000;" \
+	"loader raw 0x20000 0xE0000;"\
+	"vnvm part vnvm;" \
+	"uboot part uboot;" \
+	"boot part boot;" \
+	"rootfs partubi rootfs;" \
+	"userdata partubi userdata\0"
+#endif /* !CONFIG_SPL_BUILD */
 #endif
