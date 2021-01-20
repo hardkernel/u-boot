@@ -77,3 +77,4 @@ obj-$(CONFIG_SPL_BUILD) += $(obj-spl-y)
 obj-$(CONFIG_TPL_BUILD) += $(obj-tpl-y)
 
 obj-$(CONFIG_ROCKCHIP_PRELOADER_ATAGS) += rk_atags.o
+obj-$(CONFIG_SET_DFU_ALT_INFO) += dfu_alt_info.o
