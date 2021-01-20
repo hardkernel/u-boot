@@ -23,6 +23,12 @@ config DFU_NAND
 	  This option enables using DFU to read and write to NAND based
 	  storage.
 
+config DFU_MTD
+	bool "MTD back end for DFU"
+	help
+	  This option enables using DFU to read and write to MTD based
+	  storage.
+
 config DFU_RAM
 	bool "RAM back end for DFU"
 	help
