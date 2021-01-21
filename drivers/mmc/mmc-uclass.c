@@ -29,6 +29,9 @@ int dm_mmc_send_cmd(struct udevice *dev, struct mmc_cmd *cmd,
 		ret = -ENOSYS;
 	mmmc_trace_after_send(mmc, cmd, ret);
 
+	if (ret)
+		printf("MMC error: The cmd index is %d, ret is %d\n", cmd->cmdidx, ret);
+
 	return ret;
 }
 
@@ -46,6 +49,8 @@ int dm_mmc_send_cmd_prepare(struct udevice *dev, struct mmc_cmd *cmd,
 	else
 		ret = -ENOSYS;
 	mmmc_trace_after_send(mmc, cmd, ret);
+	if (ret)
+		printf("MMC error: The cmd index is %d, ret is %d\n", cmd->cmdidx, ret);
 
 	return ret;
 }
