@@ -652,6 +652,10 @@ function pack_uboot_itb_image()
 		MCU=`awk -F"," '/MCU=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 5-`
 		cp ${RKBIN}/${MCU} mcu.bin
 		MCU_OFFSET=`awk -F"," '/MCU=/ { printf $2 }' ${INI} | tr -d ' '`
+		if [ -z ${MCU_OFFSET} ]; then
+			echo "ERROR: No mcu address in ${INI}"
+			exit 1
+		fi
 		MCU_ARG="-m ${MCU_OFFSET}"
 	fi
 
@@ -670,6 +674,7 @@ function pack_uboot_itb_image()
 		cp ${SPL_FIT_SOURCE} u-boot.its
 	else
 		SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
+		# *.py is the legacy one.
 		if [[ ${SPL_FIT_GENERATOR} == *.py ]]; then
 			${SPL_FIT_GENERATOR} u-boot.dtb > u-boot.its
 		else
@@ -746,6 +751,19 @@ function pack_trust_image()
 
 function pack_fit_image()
 {
+	# check host tools
+	if ! which dtc >/dev/null 2>&1 ; then
+		echo "ERROR: No 'dtc', please: apt-get install device-tree-compiler"
+		exit 1
+	fi
+
+	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
+		if ! python -c "import elftools" ; then
+			echo "ERROR: No python 'pyelftools', please: pip install pyelftools"
+			exit 1
+		fi
+	fi
+
 	# If we don't plan to have uboot in uboot.img in case of: SPL => Trust => Kernel, creating empty files.
 	if [ "${ARG_NO_UBOOT}" == "y" ]; then
 		rm u-boot-nodtb.bin u-boot.dtb -f
