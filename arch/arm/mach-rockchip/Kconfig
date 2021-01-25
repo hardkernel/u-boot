@@ -777,6 +777,12 @@ config ROCKCHIP_UART_MUX_SEL_M
 	help
 	  This select uart multiplexer for debug uart iomux in board_debug_uart_init.
 
+config ROCKCHIP_REBOOT_TEST
+	bool "Rockchip reboot stress test before kernel"
+	default n
+	help
+	  It's a reboot stress test before kernel stages.
+
 config BASE_DEFCONFIG
 	string "Base defconfig of config fragment"
 	default ""

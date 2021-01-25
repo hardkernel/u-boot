@@ -912,6 +912,10 @@ void board_quiesce_devices(void *images)
 	atags_destroy();
 #endif
 
+#ifdef CONFIG_ROCKCHIP_REBOOT_TEST
+	do_reset(NULL, 0, 0, NULL);
+#endif
+
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
 	int ret;
 
