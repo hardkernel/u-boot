@@ -458,6 +458,9 @@ enum {
 	UART5_IO_SEL_M1,
 };
 
+#ifdef CONFIG_ARM64
+#include <asm/armv8/mmu.h>
+
 static struct mm_region rk3568_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -486,6 +489,7 @@ static struct mm_region rk3568_mem_map[] = {
 };
 
 struct mm_region *mem_map = rk3568_mem_map;
+#endif
 
 void board_debug_uart_init(void)
 {
