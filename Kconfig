@@ -317,43 +317,11 @@ config SPL_FIT_IMAGE_POST_PROCESS
 	  injected into the FIT creation (i.e. the blobs would have been pre-
 	  processed before being added to the FIT image).
 
-config SPL_FIT_SOURCE
-	string ".its source file for U-Boot FIT image"
-	depends on SPL_FIT
-	help
-	  Specifies a (platform specific) FIT source file to generate the
-	  U-Boot FIT image. This could specify further image to load and/or
-	  execute.
-
-config SPL_FIT_GENERATOR
-	string ".its file generator script for U-Boot FIT image"
-	depends on SPL_FIT
-	default "board/sunxi/mksunxi_fit_atf.sh" if SPL_LOAD_FIT && ARCH_SUNXI
-	help
-	  Specifies a (platform specific) script file to generate the FIT
-	  source file used to build the U-Boot FIT image file. This gets
-	  passed a list of supported device tree file stub names to
-	  include in the generated image.
-
 config SPL_FIT_HW_CRYPTO
 	bool "Enable SPL hardware crypto for FIT image checksum and rsa verify"
 	depends on SPL_DM_CRYPTO
 	help
 	  Enable SPL hardware crypto for FIT image checksum and rsa verify.
-
-config SPL_FIT_IMAGE_KB
-	int "SPL FIT image size in KiB"
-	depends on SPL_FIT
-	default 2048
-	help
-	  SPL FIT image size in KiB, default 2048KB = 1024KB(u-boot) + 1024KB(tee/atf + others).
-
-config SPL_FIT_IMAGE_MULTIPLE
-	int "SPL FIT image multiple number"
-	depends on SPL_FIT
-	default 2
-	help
-	  SPL FIT image multiple number.
 
 config SPL_SYS_DCACHE_OFF
 	bool "Disable SPL dcache"
@@ -363,6 +331,38 @@ config SPL_SYS_DCACHE_OFF
 	  is large enough to malloc TLB and bd_t buffer while enabling dcache.
 
 endif # SPL
+
+config SPL_FIT_SOURCE
+	string ".its source file for U-Boot FIT image"
+	depends on SPL_FIT || FIT
+	help
+	  Specifies a (platform specific) FIT source file to generate the
+	  U-Boot FIT image. This could specify further image to load and/or
+	  execute.
+
+config SPL_FIT_GENERATOR
+	string ".its file generator script for U-Boot FIT image"
+	depends on SPL_FIT || FIT
+	default "board/sunxi/mksunxi_fit_atf.sh" if SPL_LOAD_FIT && ARCH_SUNXI
+	help
+	  Specifies a (platform specific) script file to generate the FIT
+	  source file used to build the U-Boot FIT image file. This gets
+	  passed a list of supported device tree file stub names to
+	  include in the generated image.
+
+config SPL_FIT_IMAGE_KB
+	int "SPL FIT image size in KiB"
+	depends on SPL_FIT || FIT
+	default 2048
+	help
+	  SPL FIT image size in KiB, default 2048KB = 1024KB(u-boot) + 1024KB(tee/atf + others).
+
+config SPL_FIT_IMAGE_MULTIPLE
+	int "SPL FIT image multiple number"
+	depends on SPL_FIT || FIT
+	default 2
+	help
+	  SPL FIT image multiple number.
 
 endif # FIT
 
