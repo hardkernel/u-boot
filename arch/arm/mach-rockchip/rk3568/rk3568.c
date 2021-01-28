@@ -16,6 +16,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PMUGRF_BASE		0xfdc20000
 #define GRF_BASE		0xfdc60000
+#define GRF_GPIO1B_IOMUX_H	0x0C
+#define GRF_GPIO1C_IOMUX_L	0x10
+#define GRF_GPIO1C_IOMUX_H	0x14
+#define GRF_GPIO1D_IOMUX_L	0x18
+#define GRF_GPIO1D_IOMUX_H	0x1C
 #define GRF_GPIO1B_DS_2		0x218
 #define GRF_GPIO1B_DS_3		0x21c
 #define GRF_GPIO1C_DS_0		0x220
@@ -863,6 +868,35 @@ int arch_cpu_init(void)
 #ifndef CONFIG_TPL_BUILD
 	qos_priority_init();
 #endif
+#elif defined(CONFIG_SUPPORT_USBPLUG)
+	/*
+	 * When perform idle operation, corresponding clock can
+	 * be opened or gated automatically.
+	 */
+	writel(0xffffffff, PMU_BASE_ADDR + PMU_NOC_AUTO_CON0);
+	writel(0x000f000f, PMU_BASE_ADDR + PMU_NOC_AUTO_CON1);
+
+	writel(0x00030000, SGRF_BASE + SGRF_SOC_CON4); /* usb3otg0 master secure setting */
+
+	/* Set the emmc sdmmc0 to secure */
+	writel(((0x3 << 11 | 0x1 << 4) << 16), SGRF_BASE + SGRF_SOC_CON4);
+	/* set the emmc ds to level 2 */
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_2);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1B_DS_3);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_0);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_1);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_2);
+	writel(0x3f3f0707, GRF_BASE + GRF_GPIO1C_DS_3);
+
+	/* emmc and sfc iomux */
+	writel((0x7777UL << 16) | (0x1111), GRF_BASE + GRF_GPIO1B_IOMUX_H);
+	writel((0x7777UL << 16) | (0x1111), GRF_BASE + GRF_GPIO1C_IOMUX_L);
+	writel((0x7777UL << 16) | (0x2111), GRF_BASE + GRF_GPIO1C_IOMUX_H);
+	writel((0x7777UL << 16) | (0x1111), GRF_BASE + GRF_GPIO1D_IOMUX_L);
+	writel(((7 << 0) << 16) | (1 << 0), GRF_BASE + GRF_GPIO1D_IOMUX_H);
+
+	/* Set the fspi to secure */
+	writel(((0x1 << 14) << 16) | (0x0 << 14), SGRF_BASE + SGRF_SOC_CON3);
 #endif
 
 	return 0;
