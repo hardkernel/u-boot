@@ -91,6 +91,11 @@
 	status = "okay";
 };
 
+&rng {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &sfc {
 	u-boot,dm-spl;
 	/delete-property/ pinctrl-names;

@@ -1883,6 +1883,12 @@
 		status = "disabled";
 	};
 
+	rng: rng@fe388000 {
+		compatible = "rockchip,cryptov2-rng";
+		reg = <0x0 0xfe388000 0x0 0x2000>;
+		status = "disabled";
+	};
+
 	secure_otp: secure_otp@fe3a0000 {
 		compatible = "rockchip,rk3568-secure-otp";
 		reg = <0x0 0xfe3a0000 0x0 0x4000>;
