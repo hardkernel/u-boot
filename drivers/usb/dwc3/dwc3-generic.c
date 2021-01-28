@@ -120,6 +120,10 @@ static int dwc3_generic_ofdata_to_platdata(struct udevice *dev)
 	if (plat->dr_mode == USB_DR_MODE_UNKNOWN) {
 		pr_err("Invalid usb mode setup\n");
 		return -ENODEV;
+	} else if (plat->dr_mode != USB_DR_MODE_HOST &&
+		   !strcmp(dev->driver->name, "dwc3-generic-host")) {
+		pr_info("Set dr_mode to HOST\n");
+		plat->dr_mode = USB_DR_MODE_HOST;
 	}
 
 	return 0;
@@ -310,8 +314,13 @@ static int dwc3_glue_bind(struct udevice *parent)
 		dr_mode = usb_get_dr_mode(node);
 
 		switch (dr_mode) {
-		case USB_DR_MODE_PERIPHERAL:
 		case USB_DR_MODE_OTG:
+#if defined(CONFIG_ARCH_ROCKCHIP) && defined(CONFIG_USB_XHCI_HCD)
+			debug("%s: dr_mode: force to HOST\n", __func__);
+			driver = "dwc3-generic-host";
+			break;
+#endif
+		case USB_DR_MODE_PERIPHERAL:
 #if CONFIG_IS_ENABLED(DM_USB_GADGET)
 			debug("%s: dr_mode: OTG or Peripheral\n", __func__);
 			driver = "dwc3-generic-peripheral";
