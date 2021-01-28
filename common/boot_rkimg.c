@@ -381,10 +381,13 @@ int rockchip_get_boot_mode(void)
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	uint32_t reg_boot_mode;
+#ifndef CONFIG_PLATFORM_ODROID_GOADV
 	char *env_reboot_mode;
+#endif
 	int clear_boot_reg = 0;
 	int ret, cnt;
 
+#ifndef CONFIG_PLATFORM_ODROID_GOADV
 	/*
 	 * Here, we mainly check for:
 	 * In rockchip_dnl_mode_check(), that recovery key is pressed without
@@ -403,6 +406,7 @@ int rockchip_get_boot_mode(void)
 
 	if (boot_mode != -1)
 		return boot_mode;
+#endif
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {

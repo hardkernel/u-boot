@@ -589,12 +589,20 @@ static int charge_animation_show(struct udevice *dev)
 	/* Not valid charge mode, exit */
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();
+#ifdef CONFIG_PLATFORM_ODROID_GOADV
+	/* reboot flag is normal. */
+	if (boot_mode == BOOT_MODE_NORMAL) {
+		printf("Exit charge: due to boot mode=%d\n", boot_mode);
+		return 0;
+	}
+#else
 	if ((boot_mode != BOOT_MODE_CHARGING) &&
 	    (boot_mode != BOOT_MODE_UNDEFINE)) {
 		printf("Exit charge: due to boot mode=%d\n", boot_mode);
 		/* FIXME : check this scenario in case of cold boot */
 		/* return 0; */
 	}
+#endif
 #endif
 
 	/* Not charger online, exit */
