@@ -40,6 +40,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMUGRF_SOC_CON15	0xfdc20100
 #define CPU_GRF_BASE		0xfdc30000
 #define GRF_CORE_PVTPLL_CON0	(0x10)
+#define USBPHY_U3_GRF		0xfdca0000
+#define USBPHY_U3_GRF_CON1	(USBPHY_U3_GRF + 0x04)
+#define USBPHY_U2_GRF		0xfdca8000
+#define USBPHY_U2_GRF_CON0	(USBPHY_U2_GRF + 0x00)
+#define USBPHY_U2_GRF_CON1	(USBPHY_U2_GRF + 0x04)
 
 #define PMU_PWR_GATE_SFTCON	(0xA0)
 #define PMU_PWR_DWN_ST		(0x98)
@@ -841,6 +846,15 @@ int arch_cpu_init(void)
 	 * and de-assert reset them in Kernel combphy driver.
 	 */
 	 writel(0x02a002a0, CRU_BASE + CRU_SOFTRST_CON28);
+
+	 /*
+	  * Set USB 2.0 PHY0 port1 and PHY1 port0 and port1
+	  * enter suspend mode to to save power. And USB 2.0
+	  * PHY0 port0 for OTG interface still in normal mode.
+	  */
+	 writel(0x01ff01d1, USBPHY_U3_GRF_CON1);
+	 writel(0x01ff01d1, USBPHY_U2_GRF_CON0);
+	 writel(0x01ff01d1, USBPHY_U2_GRF_CON1);
 
 #ifndef CONFIG_TPL_BUILD
 	qos_priority_init();
