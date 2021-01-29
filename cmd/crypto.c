@@ -218,19 +218,6 @@ static void dump_hash(const char *title, void *hard_d, void *soft_d, u32 nbits)
 	printf("\n\n");
 }
 
-static void dump_hex(const char *name, const u8 *array, u32 len)
-{
-	int i;
-
-	printf("[%s]: %uByte", name, len);
-	for (i = 0; i < len; i++) {
-		if (i % 32 == 0)
-			printf("\n");
-		printf("%02x ", array[i]);
-	}
-	printf("\n");
-}
-
 static int hash_perf_eval(struct udevice *dev, u32 algo, char *algo_name)
 {
 	sha_context ctx;
@@ -385,16 +372,6 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			  soft_out, crypto_algo_nbits(csha_ctx.algo));
 	}
 #endif
-
-	dev = crypto_get_device(CRYPTO_TRNG);
-	if (dev) {
-		memset(hard_out, 0x00, sizeof(hard_out));
-		crypto_get_trng(dev, hard_out, sizeof(hard_out));
-		dump_hex("TRNG", hard_out, sizeof(hard_out));
-
-	} else {
-		printf("Can't find crypto device for CRYPTO_TRNG\n");
-	}
 
 	return 0;
 }
