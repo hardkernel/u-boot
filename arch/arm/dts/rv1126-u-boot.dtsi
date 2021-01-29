@@ -15,14 +15,6 @@
 		u-boot,spl-boot-order = &sdmmc, &spi_nand, &spi_nor, &nandc, &emmc;
 	};
 
-	crypto: crypto@ff500000 {
-		compatible = "rockchip,rv1126-crypto";
-		reg = <0xff500000 0x10000>;
-		clock-names = "sclk_crypto", "sclk_crypto_apk";
-		clocks = <&cru CLK_CRYPTO_CORE>, <&cru CLK_CRYPTO_PKA>;
-		clock-frequency = <200000000>, <300000000>;
-	};
-
 	secure_otp: secure_otp@0xff5d0000 {
 		compatible = "rockchip,rv1126-secure-otp";
 		reg = <0xff5d0000 0x4000>;
@@ -272,6 +264,11 @@
 
 &rgmiim1_pins {
 	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&rng {
+	u-boot,dm-spl;
 	status = "okay";
 };
 
