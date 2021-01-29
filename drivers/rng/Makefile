@@ -5,3 +5,8 @@
 
 obj-$(CONFIG_DM_RNG) += rng-uclass.o
 obj-$(CONFIG_RNG_ROCKCHIP) += rockchip_rng.o
+
+ifdef CONFIG_LIB_HW_RAND
+obj-$(CONFIG_RNG_ROCKCHIP) += rockchip_rand.o
+endif
+
