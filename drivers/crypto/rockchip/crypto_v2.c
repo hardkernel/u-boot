@@ -87,19 +87,6 @@ typedef u32 paddr_t;
 
 fdt_addr_t crypto_base;
 
-static int hw_check_trng_exist(void)
-{
-	u32 tmp = 0, val = 0;
-
-	tmp = crypto_read(CRYPTO_RNG_SAMPLE_CNT);
-	crypto_write(50, CRYPTO_RNG_SAMPLE_CNT);
-
-	val = crypto_read(CRYPTO_RNG_SAMPLE_CNT);
-	crypto_write(tmp, CRYPTO_RNG_SAMPLE_CNT);
-
-	return val;
-}
-
 static void word2byte(u32 word, u8 *ch, u32 endian)
 {
 	/* 0: Big-Endian 1: Little-Endian */
@@ -361,42 +348,6 @@ exit:
 	return ret;
 }
 
-static int rk_trng(u8 *trng, u32 len)
-{
-	u32 i, reg_ctrl = 0;
-	int ret = -EINVAL;
-	u32 buf[8];
-
-	if (len > CRYPTO_TRNG_MAX)
-		return -EINVAL;
-
-	memset(buf, 0, sizeof(buf));
-
-	/* enable osc_ring to get entropy, sample period is set as 50 */
-	crypto_write(50, CRYPTO_RNG_SAMPLE_CNT);
-
-	reg_ctrl |= CRYPTO_RNG_256_bit_len;
-	reg_ctrl |= CRYPTO_RNG_SLOWER_SOC_RING_1;
-	reg_ctrl |= CRYPTO_RNG_ENABLE;
-	reg_ctrl |= CRYPTO_RNG_START;
-	reg_ctrl |= CRYPTO_WRITE_MASK_ALL;
-
-	crypto_write(reg_ctrl | CRYPTO_WRITE_MASK_ALL, CRYPTO_RNG_CTL);
-	RK_WHILE_TIME_OUT(crypto_read(CRYPTO_RNG_CTL) & CRYPTO_RNG_START,
-			  RK_CRYPTO_TIME_OUT, ret);
-
-	if (ret == 0) {
-		for (i = 0; i < ARRAY_SIZE(buf); i++)
-			buf[i] = crypto_read(CRYPTO_RNG_DOUT_0 + i * 4);
-		memcpy(trng, buf, len);
-	}
-
-	/* close TRNG */
-	crypto_write(0 | CRYPTO_WRITE_MASK_ALL, CRYPTO_RNG_CTL);
-
-	return ret;
-}
-
 static u32 rockchip_crypto_capability(struct udevice *dev)
 {
 	u32 val = 0;
@@ -412,9 +363,6 @@ static u32 rockchip_crypto_capability(struct udevice *dev)
 	       CRYPTO_RSA2048 |
 	       CRYPTO_RSA3072 |
 	       CRYPTO_RSA4096;
-
-	if (hw_check_trng_exist())
-		val |= CRYPTO_TRNG;
 
 	return val;
 }
@@ -560,33 +508,12 @@ static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 }
 #endif
 
-static int rockchip_crypto_get_trng(struct udevice *dev, u8 *output, u32 len)
-{
-	int ret;
-	u32 i;
-
-	if (!dev || !output || !len)
-		return -EINVAL;
-
-	for (i = 0; i < len / CRYPTO_TRNG_MAX; i++) {
-		ret = rk_trng(output + i * CRYPTO_TRNG_MAX, CRYPTO_TRNG_MAX);
-		if (ret)
-			goto fail;
-	}
-
-	ret = rk_trng(output + i * CRYPTO_TRNG_MAX, len % CRYPTO_TRNG_MAX);
-
-fail:
-	return ret;
-}
-
 static const struct dm_crypto_ops rockchip_crypto_ops = {
 	.capability = rockchip_crypto_capability,
 	.sha_init   = rockchip_crypto_sha_init,
 	.sha_update = rockchip_crypto_sha_update,
 	.sha_final  = rockchip_crypto_sha_final,
 	.rsa_verify = rockchip_crypto_rsa_verify,
-	.get_trng = rockchip_crypto_get_trng,
 };
 
 /*
