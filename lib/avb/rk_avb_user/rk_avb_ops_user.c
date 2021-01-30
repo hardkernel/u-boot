@@ -309,7 +309,6 @@ int rk_avb_read_all_rollback_index(char *buffer)
 	uint64_t stored_rollback_index = 0;
 	AvbIOResult io_ret;
 	char temp[ROLLBACK_MAX_SIZE] = {0};
-	int n;
 
 	ops = avb_ops_user_new();
 	if (ops == NULL) {
@@ -317,19 +316,17 @@ int rk_avb_read_all_rollback_index(char *buffer)
 		return -1;
 	}
 
-	for (n = 0; n < AVB_MAX_NUMBER_OF_ROLLBACK_INDEX_LOCATIONS; n++) {
-		io_ret = ops->read_rollback_index(
-			ops, n, &stored_rollback_index);
-		if (io_ret != AVB_IO_RESULT_OK)
-			goto out;
-		snprintf(temp, sizeof(int) + 1, "%d", n);
-		strncat(buffer, temp, ROLLBACK_MAX_SIZE);
-		strncat(buffer, ":", 1);
-		snprintf(temp, sizeof(uint64_t) + 1, "%lld",
-			 stored_rollback_index);
-		strncat(buffer, temp, ROLLBACK_MAX_SIZE);
-		strncat(buffer, ",", 1);
-	}
+	/* Actually the rollback_index_location 0 is used. */
+	io_ret = ops->read_rollback_index(ops, 0, &stored_rollback_index);
+	if (io_ret != AVB_IO_RESULT_OK)
+		goto out;
+	snprintf(temp, sizeof(int) + 1, "%d", 0);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+	strncat(buffer, ":", 1);
+	snprintf(temp, sizeof(uint64_t) + 1, "%lld",
+		 stored_rollback_index);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+	strncat(buffer, ",", 1);
 
 	io_ret =
 		ops->read_rollback_index(ops,
