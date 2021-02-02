@@ -18,12 +18,7 @@ SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
 SIG_RECOVERY="${FIT_DIR}/recovery.data2sign"
 # offs
-OFFS_NS_UBOOT="0xc00"
-OFFS_S_UBOOT="0xc00"
-OFFS_NS_BOOT="0x800"
-OFFS_S_BOOT="0xc00"
-OFFS_NS_RECOVERY="0x800"
-OFFS_S_RECOVERY="0xc00"
+OFFS_DATA="0xE00"
 # file
 CHIP_FILE="arch/arm/lib/.asm-offsets.s.cmd"
 # placeholder address
@@ -220,7 +215,7 @@ function fit_gen_uboot_itb()
 	check_its ${ITS_UBOOT}
 
 	if [ "${ARG_SIGN}" != "y" ]; then
-		${MKIMAGE} -f ${ITS_UBOOT} -E -p ${OFFS_NS_UBOOT} ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
+		${MKIMAGE} -f ${ITS_UBOOT} -E -p ${OFFS_DATA} ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		if [ "${ARG_SPL_NEW}" == "y" ]; then
 			./make.sh --spl ${ARG_INI_LOADER}
 			echo "pack loader with new: spl/u-boot-spl.bin"
@@ -258,12 +253,12 @@ function fit_gen_uboot_itb()
 		# Generally, boot.img is signed before uboot.img, so the ras key can be found
 		# in u-boot.dtb. If not found, let's insert rsa key anyway.
 		if ! fdtget -l ${UBOOT_DTB} /signature >/dev/null 2>&1 ; then
-			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
+			${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_DATA} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 			echo "## Adding RSA public key into ${UBOOT_DTB}"
 		fi
 
 		# Pack
-		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_S_UBOOT} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
+		${MKIMAGE} -f ${ITS_UBOOT} -k ${KEY_DIR} -K ${SPL_DTB} -E -p ${OFFS_DATA} -r ${ITB_UBOOT} -v ${ARG_VER_UBOOT}
 		mv ${SIG_BIN} ${SIG_UBOOT}
 
 		# burn-key-hash
@@ -361,7 +356,7 @@ function fit_gen_boot_itb()
 	fi
 
 	if [ "${ARG_SIGN}" != "y" ]; then
-		${MKIMAGE} -f ${ITS_BOOT} -E -p ${OFFS_NS_BOOT} ${ITB_BOOT} -v ${ARG_VER_BOOT}
+		${MKIMAGE} -f ${ITS_BOOT} -E -p ${OFFS_DATA} ${ITB_BOOT} -v ${ARG_VER_BOOT}
 	else
 		if [ ! -f ${RSA_PRI_KEY}  ]; then
 			echo "ERROR: No ${RSA_PRI_KEY}"
@@ -401,7 +396,7 @@ function fit_gen_boot_itb()
 			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_BOOT}>;/g" ${ITS_BOOT}
 		fi
 
-		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_BOOT} -r ${ITB_BOOT} -v ${ARG_VER_BOOT}
+		${MKIMAGE} -f ${ITS_BOOT} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_DATA} -r ${ITB_BOOT} -v ${ARG_VER_BOOT}
 		mv ${SIG_BIN} ${SIG_BOOT}
 
 		# rollback-index read back check
@@ -449,7 +444,7 @@ function fit_gen_recovery_itb()
 	fi
 
 	if [ "${ARG_SIGN}" != "y" ]; then
-		${MKIMAGE} -f ${ITS_RECOVERY} -E -p ${OFFS_NS_RECOVERY} ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
+		${MKIMAGE} -f ${ITS_RECOVERY} -E -p ${OFFS_DATA} ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
 	else
 		if [ ! -f ${RSA_PRI_KEY}  ]; then
 			echo "ERROR: No ${RSA_PRI_KEY}"
@@ -489,7 +484,7 @@ function fit_gen_recovery_itb()
 			sed -i "s/rollback-index = ${VERSION}/rollback-index = <${ARG_ROLLBACK_IDX_RECOVERY}>;/g" ${ITS_RECOVERY}
 		fi
 
-		${MKIMAGE} -f ${ITS_RECOVERY} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_S_RECOVERY} -r ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
+		${MKIMAGE} -f ${ITS_RECOVERY} -k ${KEY_DIR} -K ${UBOOT_DTB} -E -p ${OFFS_DATA} -r ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
 		mv ${SIG_BIN} ${SIG_RECOVERY}
 
 		# rollback-index read back check
