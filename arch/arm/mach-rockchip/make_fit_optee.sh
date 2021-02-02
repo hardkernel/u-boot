@@ -67,10 +67,15 @@ else
 	SIGN_IMAGES="			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
 fi
 
-if [ -f ${srctree}/dts/kern.dtb ]; then
-	KFDT_NODE="		kernel-fdt {
+KERN_DTB=`sed -n "/CONFIG_EMBEDED_KERNEL_DTB_PATH=/s/CONFIG_EMBEDED_KERNEL_DTB_PATH=//p" .config | tr -d '"'`
+if [ -z "${KERN_DTB}" ]; then
+	return;
+fi
+if [ -f ${srctree}/${KERN_DTB} ]; then
+	PROP_KERN_DTB=', "kern-fdt"';
+	KFDT_NODE="		kern-fdt {
 			description = \"Kernel dtb\";
-			data = /incbin/(\"./dts/kern.dtb\");
+			data = /incbin/(\"${KERN_DTB}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
 			compression = \"none\";
@@ -150,7 +155,7 @@ cat  << EOF
 			rollback-index = <0x0>;
 			firmware = "optee";
 			loadables = "uboot";
-			fdt = "fdt";
+			fdt = "fdt"${PROP_KERN_DTB};
 EOF
 echo "${MCU_STANDALONE}"
 cat  << EOF

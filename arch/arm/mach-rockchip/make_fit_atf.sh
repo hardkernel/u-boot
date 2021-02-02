@@ -49,10 +49,16 @@ function generate_uboot_node()
 
 function generate_kfdt_node()
 {
-	if [ -f ${srctree}/dts/kern.dtb ]; then
-	echo "		kernel-fdt {
+	KERN_DTB=`sed -n "/CONFIG_EMBEDED_KERNEL_DTB_PATH=/s/CONFIG_EMBEDED_KERNEL_DTB_PATH=//p" .config | tr -d '"'`
+	if [ -z "${KERN_DTB}" ]; then
+		return;
+	fi
+
+	if [ -f ${srctree}/${KERN_DTB} ]; then
+	PROP_KERN_DTB=', "kern-fdt"';
+	echo "		kern-fdt {
 			description = \"Kernel dtb\";
-			data = /incbin/(\"./dts/kern.dtb\");
+			data = /incbin/(\"${KERN_DTB}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
 			compression = \"none\";
@@ -218,7 +224,7 @@ cat << EOF
 			firmware = "atf-1";
 			loadables = "uboot"${LOADABLE_ATF}${LOADABLE_OPTEE};
 			${STANDALONE_MCU}
-			fdt = "fdt";
+			fdt = "fdt"${PROP_KERN_DTB};
 			signature {
 				algo = "sha256,rsa2048";
 				padding = "pss";
