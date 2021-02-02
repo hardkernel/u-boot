@@ -332,9 +332,11 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 	 * kernel FDT is for U-Boot if there is not valid one
 	 * from images, ie: resource.img, boot.img or recovery.img.
 	 */
-	node = fdt_subnode_offset(fit, images, FIT_KERNEL_FDT_PROP);
-	if (node < 0)
+	node = spl_fit_get_image_node(fit, images, FIT_FDT_PROP, 1);
+	if (node < 0) {
+		debug("%s: cannot find FDT node\n", __func__);
 		return ret;
+	}
 
 	image_info.load_addr =
 		(ulong)spl_image->fdt_addr + fdt_totalsize(spl_image->fdt_addr);
