@@ -93,6 +93,10 @@ err:
  *		description  = "mcu-os1";
  *		partition    = "mcu1";
  *		cpu          = <0x1>;		// this is mpidr!
+ *		aarch64	     = <1>;	     	// 0: aarch32, 1: aarch64
+ *		thumb	     = <0>;		// 0: arm, 1: thumb
+ *		hyp	     = <1>;	 	// 0: el1/svc, 1: el2/hyp
+ *		secure	     = <0>;		// 0: non-secure, 1: secure
  *		load         = <0x800000>;
  *		entry        = <0x800000>;
  *		memory       = <0x800000 0x400000>;
@@ -105,8 +109,10 @@ err:
  *	......
  * };
  *
- * U-Boot loads "mcu-os1" firmware to "0x800000" address from partiton
- * "mcu1" for cpu[1], the cpu[1] entry address is 0x800000. And
+ * U-Boot load "mcu-os1" firmware to "0x800000" address from partiton
+ * "mcu1" for cpu[1] with ARM, aarch64, hyp(el2) and non-secure state,
+ * running on 0x800000.
+ *
  * U-Boot reserve memory from 0x800000 with 0x400000 size in order
  * to make it invisible for kernel.
  *
@@ -120,6 +126,7 @@ static int rockchip_amp_cpu_on(struct udevice *dev)
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	int ret, size;
+	u32 pe_state;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
 	if (!uc_pdata)
@@ -136,14 +143,17 @@ static int rockchip_amp_cpu_on(struct udevice *dev)
 		return ret;
 	}
 
-	ret = bidram_reserve_by_name(uc_pdata->partition,
-				     uc_pdata->reserved_mem[0],
-				     uc_pdata->reserved_mem[1]);
-	if (ret) {
-		AMP_E("Reserve \"%s\" region at 0x%08x - 0x%08x failed, ret=%d\n",
-		      uc_pdata->desc, uc_pdata->reserved_mem[0],
-		      uc_pdata->reserved_mem[0] + uc_pdata->reserved_mem[1], ret);
-		return -ENOMEM;
+	if (uc_pdata->reserved_mem[1]) {
+		ret = bidram_reserve_by_name(uc_pdata->partition,
+					     uc_pdata->reserved_mem[0],
+					     uc_pdata->reserved_mem[1]);
+		if (ret) {
+			AMP_E("Reserve \"%s\" region at 0x%08x - 0x%08x failed, ret=%d\n",
+			      uc_pdata->desc, uc_pdata->reserved_mem[0],
+			      uc_pdata->reserved_mem[0] +
+			      uc_pdata->reserved_mem[1], ret);
+			return -ENOMEM;
+		}
 	}
 
 	size = read_rockchip_image(dev_desc, &part_info,
@@ -157,9 +167,13 @@ static int rockchip_amp_cpu_on(struct udevice *dev)
 	flush_dcache_range(uc_pdata->load,
 			   uc_pdata->load + ALIGN(size, ARCH_DMA_MINALIGN));
 
-	AMP_I("Brought up cpu[%x] on \"%s\" entry 0x%08x ...",
-	      uc_pdata->cpu, uc_pdata->desc, uc_pdata->entry);
+	pe_state = PE_STATE(uc_pdata->aarch64, uc_pdata->hyp,
+			    uc_pdata->thumb, uc_pdata->secure);
 
+	AMP_I("Brought up cpu[%x] with state(%x) from \"%s\" entry 0x%08x ...",
+	      uc_pdata->cpu, pe_state, uc_pdata->desc, uc_pdata->entry);
+
+	sip_smc_amp_cfg(AMP_PE_STATE, uc_pdata->cpu, pe_state);
 	ret = psci_cpu_on(uc_pdata->cpu, uc_pdata->entry);
 	if (ret) {
 		printf("failed\n");

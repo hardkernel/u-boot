@@ -102,10 +102,13 @@ static int amp_pre_probe(struct udevice *dev)
 	uc_pdata->partition = dev_read_string(dev, "partition");
 	uc_pdata->cpu = dev_read_u32_default(dev, "cpu", -ENODATA);
 #ifdef CONFIG_ARM64
-	uc_pdata->aarch = dev_read_u32_default(dev, "aarch", 64);
+	uc_pdata->aarch64 = dev_read_u32_default(dev, "aarch64", 1);
 #else
-	uc_pdata->aarch = dev_read_u32_default(dev, "aarch", 32);
+	uc_pdata->aarch64 = 0;
 #endif
+	uc_pdata->hyp = dev_read_u32_default(dev, "hyp", 0);
+	uc_pdata->thumb = dev_read_u32_default(dev, "thumb", 0);
+	uc_pdata->secure = dev_read_u32_default(dev, "secure", 0);
 	uc_pdata->load = dev_read_u32_default(dev, "load", -ENODATA);
 	uc_pdata->entry = dev_read_u32_default(dev, "entry", -ENODATA);
 
@@ -115,9 +118,7 @@ static int amp_pre_probe(struct udevice *dev)
 
 	if (!uc_pdata->desc || !uc_pdata->partition ||
 	    uc_pdata->cpu == -ENODATA || uc_pdata->load == -ENODATA ||
-	    uc_pdata->entry == -ENODATA || !uc_pdata->reserved_mem[0] ||
-	    !uc_pdata->reserved_mem[1] ||
-	    (uc_pdata->aarch != 64 && uc_pdata->aarch != 32)) {
+	    uc_pdata->entry == -ENODATA) {
 		printf("AMP: \"%s\" is not complete\n", dev->name);
 		return -EINVAL;
 	}
@@ -127,7 +128,10 @@ static int amp_pre_probe(struct udevice *dev)
 	printf("    descrption: %s\n", uc_pdata->desc);
 	printf("     partition: %s\n", uc_pdata->partition);
 	printf("           cpu: 0x%x\n", uc_pdata->cpu);
-	printf("         aarch: %d\n", uc_pdata->aarch);
+	printf("       aarch64: %d\n", uc_pdata->aarch64);
+	printf("           hyp: %d\n", uc_pdata->hyp);
+	printf("         thumb: %d\n", uc_pdata->thumb);
+	printf("        secure: %d\n", uc_pdata->secure);
 	printf("          load: 0x%08x\n", uc_pdata->load);
 	printf("         entry: 0x%08x\n", uc_pdata->entry);
 	printf("  reserved_mem: 0x%08x - 0x%08x\n\n",
