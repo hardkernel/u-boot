@@ -27,6 +27,7 @@ ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 
 obj-y += chip_info.o
 ifndef CONFIG_SUPPORT_USBPLUG
+obj-y += lowlevel_init.o
 obj-y += boot_mode.o
 obj-y += boot_rkimg.o
 obj-y += board.o
