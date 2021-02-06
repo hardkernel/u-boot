@@ -683,6 +683,28 @@ int arch_cpu_init(void)
 
 	/* hold pmugrf's io reset */
 	writel(0x1 << 7 | 1 << 23, PMUGRF_SOC_CON1);
+#else
+	/* uboot: config iomux for sd boot upgrade firmware */
+#if defined(CONFIG_ROCKCHIP_SFC_IOMUX)
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
+
+	writel(0x0F0F0303, &grf->gpio0d_iomux_h);
+	writel(0xFFFF3333, &grf->gpio1a_iomux_l);
+#elif defined(CONFIG_ROCKCHIP_EMMC_IOMUX)
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
+
+	writel(0xFFFF2222, &grf->gpio0c_iomux_h);
+	writel(0xFFFF2222, &grf->gpio0d_iomux_l);
+	writel(0xF0F02020, &grf->gpio0d_iomux_h);
+#elif defined(CONFIG_ROCKCHIP_NAND_IOMUX)
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
+
+	writel(0xFFFF1111, &grf->gpio0c_iomux_h);
+	writel(0xFFFF1111, &grf->gpio0d_iomux_l);
+	writel(0xF0FF1011, &grf->gpio0d_iomux_h);
+	writel(0xFFFF1111, &grf->gpio1a_iomux_l);
+#endif
+
 #endif
 
 #if defined(CONFIG_ROCKCHIP_SFC) && (defined(CONFIG_SPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG))

@@ -806,6 +806,24 @@ config GICV2
 config GICV3
 	bool "ARM GICv3"
 
+config ROCKCHIP_EMMC_IOMUX
+	bool "ROCKCHIP EMMC IOMUX"
+	default n
+	help
+	  This enable U-Boot to config EMMC iomux.
+
+config ROCKCHIP_NAND_IOMUX
+	bool "ROCKCHIP NAND IOMUX"
+	default n
+	help
+	  This enable U-Boot to config NAND iomux.
+
+config ROCKCHIP_SFC_IOMUX
+	bool "ROCKCHIP SFC IOMUX"
+	default n
+	help
+	  This enable U-Boot to config SFC iomux.
+
 source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3066/Kconfig"
