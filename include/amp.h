@@ -25,7 +25,7 @@
 		((MAP_SECURE(secure) & 0x1) << MODE_SECURE_SHIFT))
 
 struct dm_amp_ops {
-	int (*cpu_on)(struct udevice *dev);
+	int (*cpu_on)(struct udevice *dev, bool this_cpu);
 };
 
 struct dm_amp_uclass_platdata {
@@ -39,6 +39,7 @@ struct dm_amp_uclass_platdata {
 	u32 load;
 	u32 entry;
 	u32 reserved_mem[2];	/* [0]: start, [1]: size */
+	bool linux_os;
 };
 
 int amp_bind_children(struct udevice *dev, const char *drv_name);

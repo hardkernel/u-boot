@@ -14,6 +14,7 @@ int amp_cpu_on(u32 cpu)
 	const struct dm_amp_ops *ops;
 	struct udevice *dev;
 	struct uclass *uc;
+	bool this_cpu;
 	int ret;
 
 	ret = uclass_get(UCLASS_AMP, &uc);
@@ -31,7 +32,8 @@ int amp_cpu_on(u32 cpu)
 		if (!ops || !ops->cpu_on)
 			return -ENOSYS;
 
-		return ops->cpu_on(dev);
+		this_cpu = (read_mpidr() & 0x0fff) == uc_pdata->cpu;
+		return ops->cpu_on(dev, this_cpu);
 	}
 
 	return -ENODEV;
@@ -39,9 +41,12 @@ int amp_cpu_on(u32 cpu)
 
 int amp_cpus_on(void)
 {
+	struct dm_amp_uclass_platdata *uc_pdata;
+	struct udevice *this_cpu_dev = NULL;
 	const struct dm_amp_ops *ops;
 	struct udevice *dev;
 	struct uclass *uc;
+	ulong mpidr = read_mpidr() & 0x0fff;
 	int ret;
 
 	ret = uclass_get(UCLASS_AMP, &uc);
@@ -54,7 +59,19 @@ int amp_cpus_on(void)
 		ops = dev_get_driver_ops(dev);
 		if (!ops || !ops->cpu_on)
 			continue;
-		ret = ops->cpu_on(dev);
+
+		uc_pdata = dev_get_uclass_platdata(dev);
+		if ((mpidr == uc_pdata->cpu) && !uc_pdata->linux_os) {
+			this_cpu_dev = dev;
+			continue;
+		}
+
+		ret = ops->cpu_on(dev, false);
+	}
+
+	if (this_cpu_dev) {
+		ops = dev_get_driver_ops(this_cpu_dev);
+		ret = ops->cpu_on(this_cpu_dev, true);
 	}
 
 	return ret;
@@ -101,26 +118,28 @@ static int amp_pre_probe(struct udevice *dev)
 	uc_pdata->desc = dev_read_string(dev, "description");
 	uc_pdata->partition = dev_read_string(dev, "partition");
 	uc_pdata->cpu = dev_read_u32_default(dev, "cpu", -ENODATA);
-#ifdef CONFIG_ARM64
-	uc_pdata->aarch64 = dev_read_u32_default(dev, "aarch64", 1);
-#else
-	uc_pdata->aarch64 = 0;
-#endif
+	uc_pdata->aarch64 = IS_ENABLED(CONFIG_ARM64) ?
+			dev_read_u32_default(dev, "aarch64", 1) : 0;
 	uc_pdata->hyp = dev_read_u32_default(dev, "hyp", 0);
 	uc_pdata->thumb = dev_read_u32_default(dev, "thumb", 0);
 	uc_pdata->secure = dev_read_u32_default(dev, "secure", 0);
 	uc_pdata->load = dev_read_u32_default(dev, "load", -ENODATA);
 	uc_pdata->entry = dev_read_u32_default(dev, "entry", -ENODATA);
-
-	dev_read_u32_array(dev, "memory",
-			   uc_pdata->reserved_mem,
+	/* optional */
+	dev_read_u32_array(dev, "memory", uc_pdata->reserved_mem,
 			   ARRAY_SIZE(uc_pdata->reserved_mem));
+	if ((read_mpidr() & 0x0fff) == uc_pdata->cpu)
+		uc_pdata->linux_os = dev_read_bool(dev, "linux-os");
 
-	if (!uc_pdata->desc || !uc_pdata->partition ||
-	    uc_pdata->cpu == -ENODATA || uc_pdata->load == -ENODATA ||
-	    uc_pdata->entry == -ENODATA) {
-		printf("AMP: \"%s\" is not complete\n", dev->name);
-		return -EINVAL;
+	/* Must assign property if not run linux os */
+	if (!uc_pdata->linux_os) {
+		if (!uc_pdata->desc || !uc_pdata->partition ||
+		    uc_pdata->cpu == -ENODATA ||
+		    uc_pdata->load == -ENODATA ||
+		    uc_pdata->entry == -ENODATA) {
+			printf("AMP: \"%s\" there is property missing\n", dev->name);
+			return -EINVAL;
+		}
 	}
 
 #ifdef DEBUG
@@ -134,6 +153,7 @@ static int amp_pre_probe(struct udevice *dev)
 	printf("        secure: %d\n", uc_pdata->secure);
 	printf("          load: 0x%08x\n", uc_pdata->load);
 	printf("         entry: 0x%08x\n", uc_pdata->entry);
+	printf("      linux-os: %d\n", uc_pdata->linux_os);
 	printf("  reserved_mem: 0x%08x - 0x%08x\n\n",
 	       uc_pdata->reserved_mem[0],
 	       uc_pdata->reserved_mem[0] + uc_pdata->reserved_mem[1]);

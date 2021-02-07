@@ -9,6 +9,7 @@
 #include <dm.h>
 #include <sysmem.h>
 #include <asm/arch/rockchip_smccc.h>
+#include <asm/u-boot-arm.h>
 
 #define AMP_I(fmt, args...)	printf("AMP: "fmt, ##args)
 #define AMP_E(fmt, args...)	printf("AMP Error: "fmt, ##args)
@@ -120,13 +121,14 @@ err:
  * ./scripts/mkkrnlimg mcu-os1.bin mcu-os1.img
  */
 
-static int rockchip_amp_cpu_on(struct udevice *dev)
+static int rockchip_amp_cpu_on(struct udevice *dev, bool this_cpu)
 {
 	struct dm_amp_uclass_platdata *uc_pdata;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	int ret, size;
 	u32 pe_state;
+	u32 es_to_aarch;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
 	if (!uc_pdata)
@@ -170,16 +172,30 @@ static int rockchip_amp_cpu_on(struct udevice *dev)
 	pe_state = PE_STATE(uc_pdata->aarch64, uc_pdata->hyp,
 			    uc_pdata->thumb, uc_pdata->secure);
 
-	AMP_I("Brought up cpu[%x] with state(%x) from \"%s\" entry 0x%08x ...",
-	      uc_pdata->cpu, pe_state, uc_pdata->desc, uc_pdata->entry);
+	if (this_cpu) {
+		AMP_I("Brought up cpu[%x] from \"%s\" with state 0x%x, entry 0x%08x ...",
+		      uc_pdata->cpu, uc_pdata->desc, pe_state, uc_pdata->entry);
 
-	sip_smc_amp_cfg(AMP_PE_STATE, uc_pdata->cpu, pe_state);
-	ret = psci_cpu_on(uc_pdata->cpu, uc_pdata->entry);
-	if (ret) {
-		printf("failed\n");
-		return ret;
+		cleanup_before_linux();
+		es_to_aarch = uc_pdata->aarch64 ? ES_TO_AARCH64 : ES_TO_AARCH32;
+		printf("OK\n");
+		armv8_switch_to_el2(0, 0, 0, pe_state, (u64)uc_pdata->entry, es_to_aarch);
+	} else {
+		AMP_I("Brought up cpu[%x] from \"%s\" with state 0x%x, entry 0x%08x ...",
+		      uc_pdata->cpu, uc_pdata->desc, pe_state, uc_pdata->entry);
+
+		ret = sip_smc_amp_cfg(AMP_PE_STATE, uc_pdata->cpu, pe_state);
+		if (ret) {
+			printf("amp cfg failed, ret=%d\n", ret);
+			return ret;
+		}
+		ret = psci_cpu_on(uc_pdata->cpu, uc_pdata->entry);
+		if (ret) {
+			printf("cpu up failed, ret=%d\n", ret);
+			return ret;
+		}
+		printf("OK\n");
 	}
-	printf("OK\n");
 
 	return 0;
 }
