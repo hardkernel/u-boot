@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <adc.h>
+#include <android_ab.h>
 #include <android_bootloader.h>
 #include <android_image.h>
 #include <boot_rkimg.h>
@@ -416,13 +417,18 @@ static int get_resource_base_sector(struct blk_desc *dev_desc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	struct andr_img_hdr *hdr;
 	u32 os_ver = 0, os_lvl;
+	const char *part_boot = PART_BOOT;
 
 	/*
-	 * Anyway, we must read android hdr firstly from boot partition to get
-	 * the 'os_version' for android_bcb_msg_sector_offset(), in order to
-	 * confirm BCB message offset of *MISC* partition.
+	 * Anyway, we must read android hdr firstly from boot/recovery partition
+	 * to get the 'os_version' for android_bcb_msg_sector_offset(), in order
+	 * to confirm BCB message offset of *MISC* partition.
 	 */
-	if (part_get_info_by_name(dev_desc, PART_BOOT, &part) < 0)
+#ifdef CONFIG_ANDROID_AB
+	part_boot = ab_can_find_recovery_part() ? PART_RECOVERY : PART_BOOT;
+#endif
+
+	if (part_get_info_by_name(dev_desc, part_boot, &part) < 0)
 		goto resource_part;
 
 	hdr = populate_andr_img_hdr(dev_desc, &part);

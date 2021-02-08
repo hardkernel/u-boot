@@ -795,23 +795,27 @@ int android_fdt_overlay_apply(void *fdt_addr)
 {
 	struct andr_img_hdr *hdr;
 	struct blk_desc *dev_desc;
-	const char *part_boot;
+	const char *part_boot = PART_BOOT;
 	disk_partition_t part_info;
 	char *fdt_backup;
-	char *part_dtbo;
+	char *part_dtbo = PART_DTBO;
 	char buf[32] = {0};
 	ulong fdt_dtbo = -1;
 	u32 totalsize;
 	int index = -1;
 	int ret;
 
-	if (IS_ENABLED(CONFIG_ANDROID_AB) ||
-	    (rockchip_get_boot_mode() != BOOT_MODE_RECOVERY)) {
-		part_boot = PART_BOOT;
-		part_dtbo = PART_DTBO;
-	} else {
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY) {
+#ifdef CONFIG_ANDROID_AB
+		bool can_find_recovery;
+
+		can_find_recovery = ab_can_find_recovery_part();
+		part_boot = can_find_recovery ? PART_RECOVERY : PART_BOOT;
+		part_dtbo = can_find_recovery ? PART_RECOVERY : PART_DTBO;
+#else
 		part_boot = PART_RECOVERY;
 		part_dtbo = PART_RECOVERY;
+#endif
 	}
 
 	dev_desc = rockchip_get_bootdev();
@@ -978,10 +982,15 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 #endif
 		break;
 	case ANDROID_BOOT_MODE_RECOVERY:
-		/* In recovery mode we still boot the kernel from "boot" but
-		 * don't skip the initramfs so it boots to recovery.
+		/*
+		 * In recovery mode, if have recovery partition, we still boot the
+		 * kernel from "recovery". If not, don't skip the initramfs so it
+		 * boots to recovery from image in partition "boot".
 		 */
-#ifndef CONFIG_ANDROID_AB
+#ifdef CONFIG_ANDROID_AB
+		boot_partname = ab_can_find_recovery_part() ?
+			ANDROID_PARTITION_RECOVERY : ANDROID_PARTITION_BOOT;
+#else
 		boot_partname = ANDROID_PARTITION_RECOVERY;
 #endif
 		break;
