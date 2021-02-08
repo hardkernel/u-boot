@@ -51,5 +51,6 @@ void ab_update_root_uuid(void);
 int ab_get_slot_suffix(char *slot_suffix);
 int ab_is_support_dynamic_partition(struct blk_desc *dev_desc);
 int ab_decrease_tries(void);
+bool ab_can_find_recovery_part(void);
 
 #endif

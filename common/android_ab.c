@@ -505,3 +505,29 @@ int ab_decrease_tries(void)
 
 	return 0;
 }
+
+/*
+ * In android A/B system, there is no recovery partition,
+ * but in the linux system, we need the recovery to update system.
+ * This function is used to find firmware in recovery partition
+ * when enable CONFIG_ANDROID_AB.
+ */
+bool ab_can_find_recovery_part(void)
+{
+	disk_partition_t part_info;
+	struct blk_desc *dev_desc;
+	int part_num;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: Could not find device\n", __func__);
+		return false;
+	}
+
+	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_RECOVERY,
+					 &part_info);
+	if (part_num < 0)
+		return false;
+	else
+		return true;
+}
