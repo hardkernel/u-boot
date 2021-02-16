@@ -69,6 +69,8 @@ static unsigned int get_hw_revision(void)
 	else if (IS_RANGE(adc, 410, 430)) {	/* avg : 419 */
 		/* ODROID-N2plus */
 		hwrev = BOARD_REVISION(2019, 11, 20);
+	} else if (IS_RANGE(adc, 500, 520)) {
+		hwrev = BOARD_REVISION(2021,  1, 21);
 	}
 #elif defined(CONFIG_ODROID_C4)
 	if (IS_RANGE(adc, 80, 100))	/* avg : 90 */
