@@ -125,7 +125,7 @@ int board_is_odroidc4(void)
 {
 	int hwrev = board_revision();
 
-	return (hwrev == BOARD_REVISION(2019, 11, 29)
+	return (hwrev == BOARD_REVISION(2019, 11, 29))
 		|| (hwrev == BOARD_REVISION(2020, 1, 29));
 }
 
@@ -133,7 +133,7 @@ int board_is_odroidhc4(void)
 {
 	int hwrev = board_revision();
 
-	return (hwrev == BOARD_REVISION(2019, 12, 10)
+	return (hwrev == BOARD_REVISION(2019, 12, 10))
 		|| (hwrev == BOARD_REVISION(2020, 8, 7));
 }
 #endif
