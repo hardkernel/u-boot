@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
-#include <asm/armv8/mmu.h>
 #include <asm/io.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rk3568.h>
 #include <asm/arch/rk_atags.h>
@@ -932,7 +932,7 @@ int rk_board_fdt_fixup(const void *blob)
 	u32 *pp;
 
 	/* Don't go further if new variant */
-	if (readl(PMUGRF_SOC_CON15) & GENMASK(15, 14))
+	if (rockchip_get_cpu_version() > 0)
 		return 0;
 
 	node = fdt_path_offset(blob, CRU_NODE_FDT_PATH);
