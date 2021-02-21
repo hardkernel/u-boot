@@ -283,6 +283,7 @@ struct rk8xx_priv {
 	int lp_off_time;
 	int lp_action;
 	uint8_t sleep_pin;
+	int not_save_power_en;
 };
 
 int rk8xx_spl_configure_buck(struct udevice *pmic, int buck, int uvolt);

@@ -411,6 +411,9 @@ static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 	else
 		rk8xx->lp_action = RK8XX_LP_OFF;
 
+	val = dev_read_u32_default(dev, "not-save-power-en", 0);
+	rk8xx->not_save_power_en = val;
+
 	return 0;
 }
 
@@ -539,6 +542,9 @@ static int rk8xx_probe(struct udevice *dev)
 		lp_act_msk = RK8XX_LP_ACTION_MSK;
 		init_data = rk817_init_reg;
 		init_data_num = ARRAY_SIZE(rk817_init_reg);
+		/* judge whether save the PMIC_POWER_EN register */
+		if (priv->not_save_power_en)
+			break;
 		power_en0 = pmic_reg_read(dev, RK817_POWER_EN0);
 		power_en1 = pmic_reg_read(dev, RK817_POWER_EN1);
 		power_en2 = pmic_reg_read(dev, RK817_POWER_EN2);
