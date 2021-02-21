@@ -8,6 +8,7 @@
 #define __ASM_ARCH_CPU_H
 
 #include <asm/io.h>
+#include <dm/device.h>
 
 #define ROCKCHIP_CPU_MASK       0xffff0000
 #define ROCKCHIP_CPU_RK312X     0x31260000
