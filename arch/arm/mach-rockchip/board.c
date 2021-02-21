@@ -341,6 +341,9 @@ int board_late_init(void)
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif
+#ifdef CONFIG_AMP
+	amp_cpus_on();
+#endif
 #ifdef CONFIG_ROCKCHIP_USB_BOOT
 	boot_from_udisk();
 #endif
@@ -591,13 +594,6 @@ int board_bidram_reserve(struct bidram *bidram)
 parse_fn_t board_bidram_parse_fn(void)
 {
 	return param_parse_ddr_mem;
-}
-#endif
-
-#ifdef CONFIG_ROCKCHIP_AMP
-void cpu_secondary_init_r(void)
-{
-	amp_cpus_on();
 }
 #endif
 
