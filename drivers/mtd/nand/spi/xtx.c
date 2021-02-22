@@ -231,6 +231,15 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
 				     xt26g01c_ecc_get_status)),
+	SPINAND_INFO("XT26G04C", 0x13,
+		     NAND_MEMORG(1, 4096, 128, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
+				     xt26g01c_ecc_get_status)),
 };
 
 static int xtx_spinand_detect(struct spinand_device *spinand)
