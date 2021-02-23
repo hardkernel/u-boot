@@ -198,7 +198,6 @@ enum {
 	RK817_POWER_EN2,
 	RK817_POWER_EN3,
 };
-
 #define RK817_POWER_EN_SAVE0	0x99
 #define RK817_POWER_EN_SAVE1	0xa4
 
@@ -206,6 +205,7 @@ enum {
 #define RK817_ID_LSB	0xee
 #define RK8XX_ID_MSK	0xfff0
 
+#define RK817_PMIC_SYS_CFG1	0xf1
 #define RK817_PMIC_SYS_CFG3	0xf4
 #define RK817_GPIO_INT_CFG	0xfe
 
