@@ -1,229 +1,203 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
+ * Copyright (c) 2021 Rockchip Electronics Co., Ltd
  */
+
 #include <common.h>
 #include <amp.h>
-#include <boot_rkimg.h>
 #include <bidram.h>
-#include <dm.h>
+#include <boot_rkimg.h>
 #include <sysmem.h>
 #include <asm/arch/rockchip_smccc.h>
-#include <asm/u-boot-arm.h>
 
-#define AMP_I(fmt, args...)	printf("AMP: "fmt, ##args)
-#define AMP_E(fmt, args...)	printf("AMP Error: "fmt, ##args)
+#define AMP_PART	"amp"
 
-/*
- * non-OTA packaged kernel.img & boot.img return the image size on success,
- * and a negative value on error.
- */
-static int read_rockchip_image(struct blk_desc *dev_desc,
-			       disk_partition_t *part, void *dst)
+static u32 primary_pe_arch;
+static u32 primary_pe_state;
+
+static u32 fit_get_u32_default(const void *fit, int noffset,
+			       const char *prop, u32 def)
 {
-	struct rockchip_image *img;
-	int header_len = 8;
-	int cnt, ret;
-#ifdef CONFIG_ROCKCHIP_CRC
-	u32 crc32;
-#endif
+	const fdt32_t *val;
 
-	img = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
-	if (!img)
-		return -ENOMEM;
+	val = fdt_getprop(fit, noffset, prop, NULL);
+	if (!val)
+		return def;
 
-	/* read first block with header imformation */
-	ret = blk_dread(dev_desc, part->start, 1, img);
-	if (ret != 1) {
-		ret = -EIO;
-		goto err;
-	}
-
-	if (img->tag != TAG_KERNEL) {
-		printf("Invalid %s image tag(0x%x)\n", part->name, img->tag);
-		ret = -EINVAL;
-		goto err;
-	}
-
-	/*
-	 * read the rest blks
-	 * total size = image size + 8 bytes header + 4 bytes crc32
-	 */
-	cnt = DIV_ROUND_UP(img->size + 8 + 4, RK_BLK_SIZE);
-	if (!sysmem_alloc_base_by_name((const char *)part->name,
-				       (phys_addr_t)dst,
-				       cnt * dev_desc->blksz)) {
-		ret = -ENXIO;
-		goto err;
-	}
-
-	memcpy(dst, img->image, RK_BLK_SIZE - header_len);
-	ret = blk_dread(dev_desc, part->start + 1, cnt - 1,
-			dst + RK_BLK_SIZE - header_len);
-	if (ret != (cnt - 1)) {
-		printf("Failed to read %s part, ret=%d\n", part->name, ret);
-		ret = -EIO;
-	} else {
-		ret = img->size;
-	}
-
-#ifdef CONFIG_ROCKCHIP_CRC
-	printf("%s image rk crc32 verify... ", part->name);
-	crc32 = crc32_verify((uchar *)(ulong)dst, img->size + 4);
-	if (!crc32) {
-		printf("fail!\n");
-		ret = -EINVAL;
-	} else {
-		printf("okay.\n");
-	}
-#endif
-
-err:
-	free(img);
-	return ret;
+	return fdt32_to_cpu(*val);
 }
 
-/*
- * An example for amps dts node configure:
- *
- * amps {
- *	compatible = "uboot,rockchip-amp";
- *	status = "okay";
- *
- *	amp@0 {
- *		description  = "mcu-os1";
- *		partition    = "mcu1";
- *		cpu          = <0x1>;		// this is mpidr!
- *		aarch64	     = <1>;	     	// 0: aarch32, 1: aarch64
- *		thumb	     = <0>;		// 0: arm, 1: thumb
- *		hyp	     = <1>;	 	// 0: el1/svc, 1: el2/hyp
- *		secure	     = <0>;		// 0: non-secure, 1: secure
- *		load         = <0x800000>;
- *		entry        = <0x800000>;
- *		memory       = <0x800000 0x400000>;
- *	};
- *
- *	amp@1 {
- *		......
- *	};
- *
- *	......
- * };
- *
- * U-Boot load "mcu-os1" firmware to "0x800000" address from partiton
- * "mcu1" for cpu[1] with ARM, aarch64, hyp(el2) and non-secure state,
- * running on 0x800000.
- *
- * U-Boot reserve memory from 0x800000 with 0x400000 size in order
- * to make it invisible for kernel.
- *
- * Please use rockchip tool "mkkrnlimg" to pack firmware binary, example:
- * ./scripts/mkkrnlimg mcu-os1.bin mcu-os1.img
- */
-
-static int rockchip_amp_cpu_on(struct udevice *dev, bool this_cpu)
+static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 {
-	struct dm_amp_uclass_platdata *uc_pdata;
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
-	int ret, size;
-	u32 pe_state;
-	u32 es_to_aarch;
+	const char *uname, *desc;
+	u32 cpu, aarch64, hyp;
+	u32 thumb, us, secure = 0;
+	u32 pe_state, entry, load;
+	u32 reserved_mem[2] = { 0, 0, };
+	u32 primary_pe_entry = 0;
+	int primary_on_linux = 0;
+	int conf_noffset, noffset;
+	int loadables_index;
+	int data_size = -ENODATA;
+	u8 arch = -ENODATA;
+	int ret;
 
-	uc_pdata = dev_get_uclass_platdata(dev);
-	if (!uc_pdata)
-		return -ENXIO;
+	aarch64 = IS_ENABLED(CONFIG_ARM64) ? 1 : 0;
+	conf_noffset = fit_conf_get_node(fit, fit_uname_cfg);
+	for (loadables_index = 0;
+	     uname = fdt_stringlist_get(fit, conf_noffset,
+			FIT_LOADABLE_PROP, loadables_index, NULL), uname;
+	     loadables_index++) {
+		noffset = fit_image_get_node(fit, uname);
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc)
-		return -EEXIST;
+		desc = fdt_getprop(fit, noffset, "description", NULL);
+		cpu = fit_get_u32_default(fit, noffset, "cpu", -ENODATA);
+		hyp = fit_get_u32_default(fit, noffset, "hyp", 0);
+		thumb = fit_get_u32_default(fit, noffset, "thumb", 0);
+		load = fit_get_u32_default(fit, noffset, "load", -ENODATA);
+		us = fit_get_u32_default(fit, noffset, "udelay", 0);
+		fit_image_get_arch(fit, noffset, &arch);
+		fit_image_get_data_size(fit, noffset, &data_size);
+		fdtdec_get_int_array(fit, noffset, "memory", reserved_mem, 2);
 
-	ret = part_get_info_by_name(dev_desc, uc_pdata->partition, &part_info);
-	if (ret < 0) {
-		AMP_E("\"%s\" find partition \"%s\" failed\n",
-		      uc_pdata->desc, uc_pdata->partition);
-		return ret;
-	}
-
-	if (uc_pdata->reserved_mem[1]) {
-		ret = bidram_reserve_by_name(uc_pdata->partition,
-					     uc_pdata->reserved_mem[0],
-					     uc_pdata->reserved_mem[1]);
-		if (ret) {
-			AMP_E("Reserve \"%s\" region at 0x%08x - 0x%08x failed, ret=%d\n",
-			      uc_pdata->desc, uc_pdata->reserved_mem[0],
-			      uc_pdata->reserved_mem[0] +
-			      uc_pdata->reserved_mem[1], ret);
-			return -ENOMEM;
+		if (!desc || cpu == -ENODATA || data_size == -ENODATA ||
+		    load == -ENODATA || arch == -ENODATA) {
+			AMP_I("property missing!\n");
+			return -EINVAL;
 		}
-	}
 
-	size = read_rockchip_image(dev_desc, &part_info,
-				   (void *)(ulong)uc_pdata->load);
-	if (size < 0) {
-		AMP_E("\"%s\" load at 0x%08x failed\n",
-		      uc_pdata->desc, uc_pdata->load);
-		return size;
-	}
+		entry = load;
+		aarch64 = (arch == IH_ARCH_ARM) ? 0 : 1;
+		pe_state = PE_STATE(aarch64, hyp, thumb, secure);
 
-	flush_dcache_range(uc_pdata->load,
-			   uc_pdata->load + ALIGN(size, ARCH_DMA_MINALIGN));
+#ifdef DEBUG
+		AMP_I("   pe_state: 0x%08x\n", pe_state);
+		AMP_I("        cpu: 0x%x\n", cpu);
+		AMP_I("    aarch64: %d\n", aarch64);
+		AMP_I("        hyp: %d\n", hyp);
+		AMP_I("      thumb: %d\n", thumb);
+		AMP_I("     secure: %d\n", secure);
+		AMP_I("      entry: 0x%08x\n", entry);
+		AMP_I("        mem: 0x%08x - 0x%08x\n\n",
+		      reserved_mem[0], reserved_mem[0] + reserved_mem[1]);
+#endif
+		if (!data_size)
+			continue;
 
-	pe_state = PE_STATE(uc_pdata->aarch64, uc_pdata->hyp,
-			    uc_pdata->thumb, uc_pdata->secure);
+		if (reserved_mem[1]) {
+			ret = bidram_reserve_by_name(desc, reserved_mem[0],
+						     reserved_mem[1]);
+			if (ret) {
+				AMP_E("Reserve \"%s\" region at 0x%08x - 0x%08x failed, ret=%d\n",
+				      desc, reserved_mem[0],
+				      reserved_mem[0] + reserved_mem[1], ret);
+				return -ENOMEM;
+			}
+		} else if (!sysmem_alloc_base_by_name(desc,
+					(phys_addr_t)load, data_size)) {
+			return -ENXIO;
+		}
 
-	if (this_cpu) {
-		AMP_I("Brought up cpu[%x] from \"%s\" with state 0x%x, entry 0x%08x ...",
-		      uc_pdata->cpu, uc_pdata->desc, pe_state, uc_pdata->entry);
+		if ((read_mpidr() & 0x0fff) == cpu) {
+			primary_pe_arch = arch;
+			primary_pe_state = pe_state;
+			primary_pe_entry = entry;
+			primary_on_linux =
+				!!fdt_getprop(fit, noffset, "linux-os", NULL);
+			continue;
+		}
 
-		cleanup_before_linux();
-		es_to_aarch = uc_pdata->aarch64 ? ES_TO_AARCH64 : ES_TO_AARCH32;
-		printf("OK\n");
-		armv8_switch_to_el2(0, 0, 0, pe_state, (u64)uc_pdata->entry, es_to_aarch);
-	} else {
-		AMP_I("Brought up cpu[%x] from \"%s\" with state 0x%x, entry 0x%08x ...",
-		      uc_pdata->cpu, uc_pdata->desc, pe_state, uc_pdata->entry);
+		AMP_I("Brought up cpu[%x] with state 0x%x, entry 0x%08x ...",
+		      cpu, pe_state, entry);
 
-		ret = sip_smc_amp_cfg(AMP_PE_STATE, uc_pdata->cpu, pe_state);
+		ret = sip_smc_amp_cfg(AMP_PE_STATE, cpu, pe_state);
 		if (ret) {
 			printf("amp cfg failed, ret=%d\n", ret);
 			return ret;
 		}
-		ret = psci_cpu_on(uc_pdata->cpu, uc_pdata->entry);
+
+		ret = psci_cpu_on(cpu, entry);
 		if (ret) {
 			printf("cpu up failed, ret=%d\n", ret);
 			return ret;
 		}
 		printf("OK\n");
+		if (us)
+			udelay(us);
 	}
 
-	return 0;
+	if (!primary_on_linux && primary_pe_entry) {
+		flush_dcache_all();
+		AMP_I("Brought up cpu[%x, self] with state 0x%x, entry 0x%08x ...",
+		      (u32)read_mpidr() & 0x0fff, primary_pe_state, primary_pe_entry);
+		cleanup_before_linux();
+		printf("OK\n");
+		armv8_switch_to_el2(0, 0, 0, primary_pe_state,
+				    (u64)primary_pe_entry,
+				    aarch64 ? ES_TO_AARCH64 : ES_TO_AARCH32);
+	}
+
+	return ret;
 }
 
-static const struct dm_amp_ops rockchip_amp_ops = {
-	.cpu_on = rockchip_amp_cpu_on,
-};
-
-U_BOOT_DRIVER(rockchip_amp) = {
-	.name	   = "rockchip_amp",
-	.id	   = UCLASS_AMP,
-	.ops	   = &rockchip_amp_ops,
-};
-
-/* AMP bus driver as all amp parent */
-static int rockchip_amp_bus_bind(struct udevice *dev)
+int amp_cpus_on(void)
 {
-	return amp_bind_children(dev, "rockchip_amp");
+	struct blk_desc *dev_desc;
+	bootm_headers_t images;
+	disk_partition_t part;
+	void *fit;
+	int ret = 0;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return -EIO;
+
+	if (part_get_info_by_name(dev_desc, AMP_PART, &part) < 0)
+		return -ENODEV;
+
+	fit = sysmem_alloc(MEM_FIT, part.size * part.blksz);
+	if (!fit)
+		return -ENOMEM;
+
+	if (blk_dread(dev_desc, part.start, part.size, fit) != part.size) {
+		ret = -EIO;
+		goto out;
+	}
+
+	if (fdt_check_header(fit)) {
+		printf("No fdt header\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	memset(&images, 0, sizeof(images));
+	images.fit_uname_cfg = "conf";
+	images.fit_hdr_os = fit;
+	images.verify = 1;
+	ret = boot_get_loadable(0, NULL, &images,
+				IH_ARCH_DEFAULT, NULL, NULL);
+	if (ret) {
+		AMP_E("Failed to load image, ret=%d\n", ret);
+		return ret;
+	}
+
+	/* flush */
+	flush_dcache_all();
+
+	ret = brought_up_all_amp(images.fit_hdr_os, images.fit_uname_cfg);
+out:
+	sysmem_free((phys_addr_t)fit);
+
+	return ret;
 }
 
-static const struct udevice_id rockchip_amp_bus_match[] = {
-	{ .compatible = "uboot,rockchip-amp", },
-	{},
-};
+int amp_flags(void)
+{
+	return primary_pe_state;
+}
 
-U_BOOT_DRIVER(rockchip_amp_bus) = {
-	.name	   = "rockchip_amp_bus",
-	.id	   = UCLASS_SIMPLE_BUS,
-	.of_match  = rockchip_amp_bus_match,
-	.bind	   = rockchip_amp_bus_bind,
-};
+int amp_os_arch(void)
+{
+	return primary_pe_arch;
+}
+

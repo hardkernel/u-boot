@@ -8,6 +8,9 @@
 
 #include <dm.h>
 
+#define AMP_I(fmt, args...)	printf("AMP: "fmt, ##args)
+#define AMP_E(fmt, args...)	printf("AMP Error: "fmt, ##args)
+
 #define MAP_AARCH(aarch64)	((aarch64) ? 1 : 0)
 #define MAP_HYP(hyp)		((hyp) ? 1 : 0)
 #define MAP_THUMB(thumb)	((thumb) ? 1 : 0)
@@ -24,27 +27,9 @@
 		((MAP_THUMB(thumb) & 0x1) << MODE_THUMB_SHIFT) |	\
 		((MAP_SECURE(secure) & 0x1) << MODE_SECURE_SHIFT))
 
-struct dm_amp_ops {
-	int (*cpu_on)(struct udevice *dev, bool this_cpu);
-};
-
-struct dm_amp_uclass_platdata {
-	const char *desc;
-	const char *partition;
-	u32 cpu;		/* cpu mpidr */
-	u32 aarch64;
-	u32 hyp;
-	u32 thumb;
-	u32 secure;
-	u32 load;
-	u32 entry;
-	u32 reserved_mem[2];	/* [0]: start, [1]: size */
-	bool linux_os;
-};
-
-int amp_bind_children(struct udevice *dev, const char *drv_name);
 int amp_cpus_on(void);
-int amp_cpu_on(u32 cpu);
+int amp_flags(void);
+int amp_os_arch(void);
 
 #endif	/* _AMP_H_ */
 
