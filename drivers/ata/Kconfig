@@ -20,6 +20,17 @@ config SATA
 
 	  See also CMD_SATA which provides command-line support.
 
+config LIBATA
+	bool
+	help
+	  Select this to build and link the libata helper functions.
+
+config SCSI_AHCI
+	bool "Enable SCSI interface to SATA devices"
+	select LIBATA
+	help
+	  Enable this to allow interfacing SATA devices via the SCSI layer.
+
 menu "SATA/SCSI device support"
 
 config AHCI_PCI
