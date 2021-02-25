@@ -55,7 +55,7 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 		/* For mmc/nand/spiflash, just update from kernel dtb instead bind again*/
 		if (drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND ||
 		    drv->id == UCLASS_SPI_FLASH || drv->id == UCLASS_MTD ||
-		    drv->id == UCLASS_PCI) {
+		    drv->id == UCLASS_PCI || drv->id == UCLASS_AHCI) {
 			/*
 			 * Reject all mmc device from kernel.
 			 *
