@@ -914,6 +914,14 @@ int arch_cpu_init(void)
 	writel(((0x1 << 14) << 16) | (0x0 << 14), SGRF_BASE + SGRF_SOC_CON3);
 #endif
 
+#if defined(CONFIG_SCSI) && defined(CONFIG_CMD_SCSI) && defined(CONFIG_AHCI)
+	/*
+	 * De-assert reset and config ref clock to default 24Mhz.
+	 */
+	 writel(0x02a00000, CRU_BASE + CRU_SOFTRST_CON28);
+	 writel(0x0FFF0000, 0xFDD00124);
+#endif
+
 	return 0;
 }
 

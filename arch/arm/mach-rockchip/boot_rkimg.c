@@ -47,6 +47,20 @@ static void boot_devtype_init(void)
 	if (done)
 		return;
 
+#if defined(CONFIG_SCSI) && defined(CONFIG_CMD_SCSI) && defined(CONFIG_AHCI)
+	ret = run_command("scsi scan", 0);
+	if (!ret) {
+		ret = run_command("scsi dev 0", 0);
+		if (!ret) {
+			devtype = "scsi";
+			devnum = "0";
+			env_set("devtype", devtype);
+			env_set("devnum", devnum);
+			goto finish;
+		}
+	}
+#endif
+
 	/* High priority: get bootdev from atags */
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	ret = param_parse_bootdev(&devtype, &devnum);
@@ -130,6 +144,9 @@ static int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "mtd")) {
 		type = IF_TYPE_MTD;
 		boot_media = "mtd";
+	} else if (!strcmp(devtype, "scsi")) {
+		type = IF_TYPE_SCSI;
+		boot_media = "scsi";
 	} else {
 		/* Add new to support */
 	}
