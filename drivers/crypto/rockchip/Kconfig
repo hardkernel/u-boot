@@ -14,6 +14,38 @@ config SPL_ROCKCHIP_RSA
 	  This enable RSA512/RSA1024/RSA2048 algorithm support for
 	  rockchip crypto module.
 
+config ROCKCHIP_CIPHER
+	bool "Enable rockchip cipher support"
+	depends on ROCKCHIP_CRYPTO_V1 || ROCKCHIP_CRYPTO_V2
+	default n
+	help
+	  This enable DES/AES/SM4 algorithm support for
+	  rockchip crypto module.
+
+config SPL_ROCKCHIP_CIPHER
+	bool "Enable rockchip cipher support in spl"
+	depends on SPL_ROCKCHIP_CRYPTO_V1 || SPL_ROCKCHIP_CRYPTO_V2
+	default n
+	help
+	  This enable DES/AES/SM4 algorithm support for
+	  rockchip crypto module.
+
+config ROCKCHIP_HMAC
+	bool "Enable rockchip hmac support"
+	depends on ROCKCHIP_CRYPTO_V1 || ROCKCHIP_CRYPTO_V2
+	default n
+	help
+	  This enable HMAC algorithm support for
+	  rockchip crypto module.
+
+config SPL_ROCKCHIP_HMAC
+	bool "Enable rockchip hmac support in spl"
+	depends on SPL_ROCKCHIP_CRYPTO_V1 || SPL_ROCKCHIP_CRYPTO_V2
+	default n
+	help
+	  This enable HMAC algorithm support for
+	  rockchip crypto module.
+
 config ROCKCHIP_CRYPTO_V1
 	bool "Enable rockchip crypto v1 support"
 	depends on DM_CRYPTO

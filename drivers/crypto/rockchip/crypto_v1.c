@@ -18,9 +18,9 @@
 #define HASH_UPDATE_LIMIT	(32 * 1024 * 1024)
 #define RK_CRYPTO_TIME_OUT	500000
 
-#define LLI_ADDR_ALIGIN_SIZE	8
-#define DATA_ADDR_ALIGIN_SIZE	8
-#define DATA_LEN_ALIGIN_SIZE	64
+#define LLI_ADDR_ALIGN_SIZE	8
+#define DATA_ADDR_ALIGN_SIZE	8
+#define DATA_LEN_ALIGN_SIZE	64
 
 struct rockchip_crypto_priv {
 	struct crypto_hash_cache	*hash_cache;
@@ -89,8 +89,8 @@ static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 
 	priv->hash_cache = crypto_hash_cache_alloc(rk_hash_direct_calc,
 						   priv, ctx->length,
-						   DATA_ADDR_ALIGIN_SIZE,
-						   DATA_LEN_ALIGIN_SIZE);
+						   DATA_ADDR_ALIGN_SIZE,
+						   DATA_LEN_ALIGN_SIZE);
 	if (!priv->hash_cache)
 		return -EFAULT;
 

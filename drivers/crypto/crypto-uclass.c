@@ -34,17 +34,31 @@ static const u8 null_hash_sha512_value[] = {
 	0xa5, 0x38, 0x32, 0x7a, 0xf9, 0x27, 0xda, 0x3e
 };
 
+const static u8 null_hash_sm3_value[] = {
+	0x1a, 0xb2, 0x1d, 0x83, 0x55, 0xcf, 0xa1, 0x7f,
+	0x8e, 0x61, 0x19, 0x48, 0x31, 0xe8, 0x1a, 0x8f,
+	0x22, 0xbe, 0xc8, 0xc7, 0x28, 0xfe, 0xfb, 0x74,
+	0x7e, 0xd0, 0x35, 0xeb, 0x50, 0x82, 0xaa, 0x2b
+};
+
 u32 crypto_algo_nbits(u32 algo)
 {
 	switch (algo) {
 	case CRYPTO_MD5:
+	case CRYPTO_HMAC_MD5:
 		return 128;
 	case CRYPTO_SHA1:
+	case CRYPTO_HMAC_SHA1:
 		return 160;
 	case CRYPTO_SHA256:
+	case CRYPTO_HMAC_SHA256:
 		return 256;
 	case CRYPTO_SHA512:
+	case CRYPTO_HMAC_SHA512:
 		return 512;
+	case CRYPTO_SM3:
+	case CRYPTO_HMAC_SM3:
+		return 256;
 	case CRYPTO_RSA512:
 		return 512;
 	case CRYPTO_RSA1024:
@@ -139,6 +153,10 @@ int crypto_sha_final(struct udevice *dev, sha_context *ctx, u8 *output)
 			null_hash = null_hash_sha512_value;
 			hash_size = sizeof(null_hash_sha512_value);
 			break;
+		case CRYPTO_SM3:
+			null_hash = null_hash_sm3_value;
+			hash_size = sizeof(null_hash_sm3_value);
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -152,6 +170,43 @@ int crypto_sha_final(struct udevice *dev, sha_context *ctx, u8 *output)
 		return -ENOSYS;
 
 	return ops->sha_final(dev, ctx, output);
+}
+
+int crypto_hmac_init(struct udevice *dev, sha_context *ctx,
+		     u8 *key, u32 key_len)
+{
+	const struct dm_crypto_ops *ops = device_get_ops(dev);
+
+	if (ctx && !ctx->length)
+		return -EINVAL;
+
+	if (!ops || !ops->hmac_init)
+		return -ENOSYS;
+
+	return ops->hmac_init(dev, ctx, key, key_len);
+}
+
+int crypto_hmac_update(struct udevice *dev, u32 *input, u32 len)
+{
+	const struct dm_crypto_ops *ops = device_get_ops(dev);
+
+	if (!len)
+		return 0;
+
+	if (!ops || !ops->hmac_update)
+		return -ENOSYS;
+
+	return ops->hmac_update(dev, input, len);
+}
+
+int crypto_hmac_final(struct udevice *dev, sha_context *ctx, u8 *output)
+{
+	const struct dm_crypto_ops *ops = device_get_ops(dev);
+
+	if (!ops || !ops->hmac_final)
+		return -ENOSYS;
+
+	return ops->hmac_final(dev, ctx, output);
 }
 
 int crypto_sha_csum(struct udevice *dev, sha_context *ctx,
@@ -204,6 +259,17 @@ int crypto_rsa_verify(struct udevice *dev, rsa_key *ctx, u8 *sign, u8 *output)
 		return -ENOSYS;
 
 	return ops->rsa_verify(dev, ctx, sign, output);
+}
+
+int crypto_cipher(struct udevice *dev, cipher_context *ctx,
+		  const u8 *in, u8 *out, u32 len, bool enc)
+{
+	const struct dm_crypto_ops *ops = device_get_ops(dev);
+
+	if (!ops || !ops->cipher_crypt)
+		return -ENOSYS;
+
+	return ops->cipher_crypt(dev, ctx, in, out, len, enc);
 }
 
 UCLASS_DRIVER(crypto) = {

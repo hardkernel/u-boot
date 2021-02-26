@@ -8,27 +8,12 @@
 
 #include <asm/io.h>
 
-#define	RK_CRYPTO_KEY_ROOT		   0x00010000
-#define	RK_CRYPTO_KEY_PRIVATE		   0x00020000
-#define	RK_CRYPTO_MODE_MASK		   0x0000ffff
-#define	RK_GET_CRYPTO_MODE(mode)	   (mode & RK_CRYPTO_MODE_MASK)
-#define	RK_IS_CRYPTO_USE_ROOT_KEY(mode)    (!!(mode & RK_CRYPTO_KEY_ROOT))
-#define	RK_IS_CRYPTO_USE_PRIVATE_KEY(mode) (!!(mode & RK_CRYPTO_KEY_PRIVATE)
+#define	RK_MODE_MASK		   0x0000ffff
+#define	RK_GET_RK_MODE(mode)	   ((mode) & RK_MODE_MASK)
 
 #define	RK_AES_HASH_RX	0
 #define	RK_AES_HASH_TX	1
 
-enum rk_hash_algo {
-	TEE_ALG_SHA1 = 1,
-	TEE_ALG_MD5,
-	TEE_ALG_SHA256,
-	TEE_ALG_SHA224,
-	TEE_ALG_SHA512,
-	TEE_ALG_SHA384,
-	TEE_ALG_SHA512_224,
-	TEE_ALG_SHA512_256,
-};
-
 #define	_SBF(s,	v)			((v) <<	(s))
 #define	_BIT(b)				_SBF(b,	1)
 
@@ -37,27 +22,11 @@ enum rk_hash_algo {
 #define	AES_KEYSIZE_128			16
 #define	AES_KEYSIZE_192			24
 #define	AES_KEYSIZE_256			32
+#define	SM4_KEYSIZE			16
 
 #define	DES_BLOCK_SIZE			8
 #define	AES_BLOCK_SIZE			16
-
-#define	RK_MODE_ENCRYPT			0
-#define	RK_MODE_DECRYPT			1
-
-#define	_SBF(s,	v)			((v) <<	(s))
-#define	_BIT(b)				_SBF(b,	1)
-
-#define	DES_KEYSIZE			8
-#define	TDES_EDE_KEYSIZE		24
-#define	AES_KEYSIZE_128			16
-#define	AES_KEYSIZE_192			24
-#define	AES_KEYSIZE_256			32
-
-#define	DES_BLOCK_SIZE			8
-#define	AES_BLOCK_SIZE			16
-
-#define	RK_MODE_ENCRYPT			0
-#define	RK_MODE_DECRYPT			1
+#define	SM4_BLOCK_SIZE			16
 
 #define	CRYPTO_WRITE_MASK_SHIFT		(16)
 #define	CRYPTO_WRITE_MASK_ALL		((0xffffu << CRYPTO_WRITE_MASK_SHIFT))
@@ -140,6 +109,7 @@ enum rk_hash_algo {
 /* Block Cipher	Control	Register */
 #define	CRYPTO_BC_CTL			0x0044
 #define	CRYPTO_BC_AES			_SBF(8,	0x00)
+#define CRYPTO_BC_SM4			_SBF(8, 0x01)
 #define	CRYPTO_BC_DES			_SBF(8,	0x02)
 #define	CRYPTO_BC_TDES			_SBF(8,	0x03)
 #define	CRYPTO_BC_ECB			_SBF(4,	0x00)
@@ -165,6 +135,7 @@ enum rk_hash_algo {
 #define	CRYPTO_MODE_MD5			_SBF(4,	0x01)
 #define	CRYPTO_MODE_SHA256		_SBF(4,	0x02)
 #define	CRYPTO_MODE_SHA224		_SBF(4,	0x03)
+#define	CRYPTO_MODE_SM3			_SBF(4,	0x06)
 #define	CRYPTO_MODE_SHA512		_SBF(4,	0x08)
 #define	CRYPTO_MODE_SHA384		_SBF(4,	0x09)
 #define	CRYPTO_MODE_SHA512_224		_SBF(4,	0x0A)
@@ -269,7 +240,7 @@ enum rk_hash_algo {
 #define	CRYPTO_CH7_KEY_1		0x01f4
 #define	CRYPTO_CH7_KEY_2		0x01f8
 #define	CRYPTO_CH7_KEY_3		0x01fc
-#define	CRYPTO_KEY_CHANNLE_NUM		8
+#define	CRYPTO_KEY_CHANNEL_NUM		8
 
 #define	CRYPTO_CH0_PKEY_0		0x0200
 #define	CRYPTO_CH0_PKEY_1		0x0204
@@ -303,7 +274,7 @@ enum rk_hash_algo {
 #define	CRYPTO_CH7_PKEY_1		0x0274
 #define	CRYPTO_CH7_PKEY_2		0x0278
 #define	CRYPTO_CH7_PKEY_3		0x027c
-#define	CRYPTO_PKEY_CHANNLE_NUM		8
+#define	CRYPTO_PKEY_CHANNEL_NUM		8
 
 #define	CRYPTO_CH0_PC_LEN_0		0x0280
 #define	CRYPTO_CH0_PC_LEN_1		0x0284

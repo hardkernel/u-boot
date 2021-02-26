@@ -80,6 +80,9 @@ void crypto_flush_cacheline(ulong addr, ulong size)
 	ulong alignment = CONFIG_SYS_CACHELINE_SIZE;
 	ulong aligned_input, aligned_len;
 
+	if (!addr || !size)
+		return;
+
 	/* Must flush dcache before crypto DMA fetch data region */
 	aligned_input = round_down(addr, alignment);
 	aligned_len = round_up(size + (addr - aligned_input), alignment);
