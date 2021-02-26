@@ -27,6 +27,7 @@ enum test_id {
 	TEST_ID_POWER,
 	TEST_ID_STORAGE,
 	TEST_ID_USB,
+	TEST_ID_SCSI,
 	TEST_ID_MAX,
 };
 

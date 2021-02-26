@@ -49,6 +49,10 @@ static enum if_type blk_get_type_by_name_and_num(char *devtype, int devnum)
 	else if (!strcmp(devtype, "mtd"))
 		type = IF_TYPE_MTD;
 #endif
+#ifdef CONFIG_SCSI
+	else if (!strcmp(devtype, "scsi"))
+		type = IF_TYPE_SCSI;
+#endif
 	else if (!strcmp(devtype, "usb"))
 		type = IF_TYPE_USB;
 
@@ -298,6 +302,15 @@ static int do_test_blk(cmd_tbl_t *cmdtp, int flag,
 	return do_test_storage(cmdtp, flag, argc, argv, NULL, NULL, "BLK");
 }
 #endif
+
+#ifdef CONFIG_SCSI
+static int do_test_scsi(cmd_tbl_t *cmdtp, int flag,
+			int argc, char *const argv[])
+{
+	return do_test_storage(cmdtp, flag, argc, argv, "scsi", "0", "BLK");
+}
+#endif
+
 #endif/* defined(CONFIG_MMC) ||\
        * defined(CONFIG_RKNAND) ||\
        * defined(CONFIG_DM_RAMDISK) ||\
@@ -453,6 +466,9 @@ static cmd_tbl_t sub_cmd[] = {
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 	UNIT_CMD_DEFINE(vendor, 0),
 #endif
+#ifdef CONFIG_SCSI
+	UNIT_CMD_DEFINE(scsi, 0),
+#endif
 };
 
 static char sub_cmd_help[] =
@@ -493,6 +509,9 @@ static char sub_cmd_help[] =
 #endif
 #ifdef CONFIG_USB_HOST
 "    [.] rktest usb                         - test usb disk\n"
+#endif
+#ifdef CONFIG_SCSI
+"    [.] rktest scsi                        - test sata disk\n"
 #endif
 ;
 
