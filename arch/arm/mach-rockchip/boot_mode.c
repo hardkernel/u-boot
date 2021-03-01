@@ -136,6 +136,10 @@ int rockchip_get_boot_mode(void)
 		printf("boot mode: loader\n");
 		boot_mode[PH] = BOOT_MODE_LOADER;
 		clear_boot_reg = 1;
+	} else if (reg_boot_mode == BOOT_DFU) {
+		printf("boot mode: dfu\n");
+		boot_mode[PH] = BOOT_MODE_DFU;
+		clear_boot_reg = 1;
 	} else if (reg_boot_mode == BOOT_FASTBOOT) {
 		printf("boot mode: bootloader\n");
 		boot_mode[PH] = BOOT_MODE_BOOTLOADER;
@@ -215,6 +219,12 @@ int setup_boot_mode(void)
 		printf("enter UMS!\n");
 		env_set("preboot", "setenv preboot; ums mmc 0");
 		break;
+#if defined(CONFIG_CMD_DFU)
+	case BOOT_MODE_DFU:
+		printf("enter DFU!\n");
+		env_set("preboot", "setenv preboot; dfu 0 ${devtype} ${devnum}; rbrom");
+		break;
+#endif
 	case BOOT_MODE_LOADER:
 		printf("enter Rockusb!\n");
 		env_set("preboot", "setenv preboot; rockusb 0 ${devtype} ${devnum}; rbrom");
