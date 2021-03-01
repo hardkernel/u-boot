@@ -303,7 +303,8 @@ void setup_download_mode(void)
 	 * At the most time, USB is enabled and this feature is not applied.
 	 */
 	if (rockchip_dnl_key_pressed() || is_hotkey(HK_ROCKUSB_DNL)) {
-		printf("download key pressed... ");
+		printf("download %skey pressed... ",
+		       is_hotkey(HK_ROCKUSB_DNL) ? "hot" : "");
 #ifdef CONFIG_CMD_ROCKUSB
 		vbus = rockchip_u2phy_vbus_detect();
 #endif
