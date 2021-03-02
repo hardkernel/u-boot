@@ -10,6 +10,7 @@
 
 #include <generic-phy-dp.h>
 #include <generic-phy-mipi-dphy.h>
+#include <generic-phy-pcie.h>
 
 enum phy_mode {
 	PHY_MODE_INVALID,
@@ -27,6 +28,7 @@ enum phy_mode {
 union phy_configure_opts {
 	struct phy_configure_opts_mipi_dphy     mipi_dphy;
 	struct phy_configure_opts_dp		dp;
+	struct phy_configure_opts_pcie		pcie;
 };
 
 /**

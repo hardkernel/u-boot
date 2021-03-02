@@ -35,6 +35,7 @@ struct rk_pcie {
 	struct gpio_desc	rst_gpio;
 	struct pci_region	io;
 	struct pci_region	mem;
+	bool		is_bifurcation;
 };
 
 enum {
@@ -553,6 +554,7 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 	int ret;
 	u32 val;
 	struct rk_pcie *priv = dev_get_priv(dev);
+	union phy_configure_opts phy_cfg;
 
 	/* Set power and maybe external ref clk input */
 	if (priv->vpcie3v3) {
@@ -565,6 +567,13 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 	}
 
 	msleep(1000);
+
+	if (priv->is_bifurcation) {
+		phy_cfg.pcie.is_bifurcation = true;
+		ret = generic_phy_configure(&priv->phy, &phy_cfg);
+		if (ret)
+			dev_err(dev, "failed to set bifurcation for phy (ret=%d)\n", ret);
+	}
 
 	ret = generic_phy_init(&priv->phy);
 	if (ret) {
@@ -663,6 +672,9 @@ static int rockchip_pcie_parse_dt(struct udevice *dev)
 		dev_err(dev, "failed to get pcie phy (ret=%d)\n", ret);
 		return ret;
 	}
+
+	if (dev_read_bool(dev, "rockchip,bifurcation"))
+		priv->is_bifurcation = true;
 
 	return 0;
 }

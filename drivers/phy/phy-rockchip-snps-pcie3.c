@@ -28,6 +28,7 @@ struct rockchip_p3phy_priv {
 	struct clk ref_clk_m;
 	struct clk ref_clk_n;
 	struct clk pclk;
+	bool is_bifurcation;
 };
 
 static int rochchip_p3phy_init(struct phy *phy)
@@ -53,6 +54,14 @@ static int rochchip_p3phy_init(struct phy *phy)
 	/* Deassert PCIe PMA output clamp mode */
 	regmap_write(priv->phy_grf, GRF_PCIE30PHY_CON9,
 		     (0x1 << 15) | (0x1 << 31));
+
+	/* Set bifurcation if needed */
+	if (priv->is_bifurcation) {
+		regmap_write(priv->phy_grf, GRF_PCIE30PHY_CON6,
+			     0x1 | (0xf << 16));
+		regmap_write(priv->phy_grf, GRF_PCIE30PHY_CON1,
+			     (0x1 << 15) | (0x1 << 31));
+	}
 
 	reset_deassert(&priv->p30phy);
 	udelay(1);
@@ -128,9 +137,19 @@ static int rockchip_p3phy_probe(struct udevice *dev)
 	return 0;
 }
 
+static int rockchip_p3phy_configure(struct phy *phy, union phy_configure_opts *opts)
+{
+	struct rockchip_p3phy_priv *priv = dev_get_priv(phy->dev);
+
+	priv->pcie.is_bifurcation = opts->pcie.is_bifurcation;
+
+	return 0;
+}
+
 static struct phy_ops rochchip_p3phy_ops = {
 	.init = rochchip_p3phy_init,
 	.exit = rochchip_p3phy_exit,
+	.configure = rockchip_p3phy_configure,
 };
 
 static const struct udevice_id rockchip_p3phy_of_match[] = {
