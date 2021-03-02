@@ -308,6 +308,7 @@ dtb_okay:
 	phandles_fixup_cru((void *)gd->fdt_blob);
 	phandles_fixup_gpio((void *)gd->fdt_blob, (void *)ufdt_blob);
 
+	gd->flags |= GD_FLG_KDTB_READY;
 	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
 	dm_scan_fdt((void *)gd->fdt_blob, false);
 
