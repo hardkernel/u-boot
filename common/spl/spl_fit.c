@@ -637,15 +637,15 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 		/* Load the image and set up the spl_image structure */
 		ret = spl_load_fit_image(info, sector, fit, base_offset, node,
 					 &image_info);
-		if (!ret) {
-			if (image_info.entry_point == FDT_ERROR)
-				image_info.entry_point = image_info.load_addr;
+		if (ret)
+			return ret;
 
-			ret = spl_fit_standalone_release(image_info.entry_point);
-			if (ret)
-				printf("Start standalone fail, ret = %d\n",
-				       ret);
-		}
+		if (image_info.entry_point == FDT_ERROR)
+			image_info.entry_point = image_info.load_addr;
+
+		ret = spl_fit_standalone_release(image_info.entry_point);
+		if (ret)
+			printf("Start standalone fail, ret = %d\n", ret);
 
 		/* standalone is special one, continue to find others */
 		node = -1;
@@ -723,7 +723,7 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 		ret = spl_load_fit_image(info, sector, fit, base_offset, node,
 					 &image_info);
 		if (ret < 0)
-			continue;
+			return ret;
 
 		if (os_type == IH_OS_U_BOOT) {
 #if CONFIG_IS_ENABLED(ATF)
