@@ -13,6 +13,11 @@
 #include <u-boot/sha512.h>
 #include <rockchip/crypto_fix_test_data.h>
 
+#define PERF_TOTAL_SIZE			(128 * 1024 * 1024)
+#define PERF_BUFF_SIZE			(4 * 1024 * 1024)
+
+#define CALC_RATE_MPBS(bytes, ms)	(((bytes) / 1024) / (ms))
+
 struct hash_test_data {
 	const char	*algo_name;
 	const char	*mode_name;
@@ -176,8 +181,15 @@ const struct cipher_test_data cipher_data_set[] = {
 
 const struct rsa_test_data rsa_data_set[] = {
 #if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
+
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 	RSA_TEST(2048, rsa2048_n, rsa2048_e, rsa2048_c, rsa2048_d,
 		 rsa2048_sign_in, rsa2048_sign_out),
+#else
+	RSA_TEST(4096, rsa4096_n, rsa4096_e, NULL, rsa4096_d,
+		 rsa4096_sign_in, rsa4096_sign_out),
+#endif
+
 #else
 	EMPTY_TEST(),
 #endif
@@ -196,19 +208,143 @@ static void dump_hex(const char *name, const u8 *array, u32 len)
 	printf("\n");
 }
 
-static inline void check_result(const char *algo_name, const char *mode_name,
-				const char *crypt,
-				const u8 *expect, const u8 *actual, u32 len)
+static inline void print_result_MBps(const char *algo_name,
+				     const char *mode_name,
+				     const char *crypt, ulong MBps,
+				     const u8 *expect, const u8 *actual,
+				     u32 len)
 {
 	if (memcmp(expect, actual, len) == 0) {
-		printf("[%s] %-8s%-8s PASS\n",
-		       algo_name, mode_name, crypt);
+		printf("[%s] %-8s%-8s PASS    (%luMBps)\n",
+		       algo_name, mode_name, crypt, MBps);
 	} else {
 		printf("[%s] %-8s%-8s FAIL\n",
 		       algo_name, mode_name, crypt);
 		dump_hex("expect", expect, len);
 		dump_hex("actual", actual, len);
 	}
+}
+
+static inline void print_result_ms(const char *algo_name, const char *mode_name,
+				   const char *crypt, ulong time_cost,
+				   const u8 *expect, const u8 *actual, u32 len)
+{
+	if (memcmp(expect, actual, len) == 0) {
+		printf("[%s] %-8s%-8s PASS    (%lums)\n",
+		       algo_name, mode_name, crypt, time_cost);
+	} else {
+		printf("[%s] %-8s%-8s FAIL\n",
+		       algo_name, mode_name, crypt);
+		dump_hex("expect", expect, len);
+		dump_hex("actual", actual, len);
+	}
+}
+
+int test_hash_perf(struct udevice *dev, u32 algo,
+		   const u8 *key, u32 key_len, ulong *MBps)
+{
+	u32 total_size = PERF_TOTAL_SIZE;
+	u32 data_size = PERF_BUFF_SIZE;
+	sha_context ctx;
+	u8 *data = NULL;
+	u8 hash_out[64];
+	int ret, i;
+
+	*MBps = 0;
+
+	ctx.algo = algo;
+	ctx.length = total_size;
+
+	data = (u8 *)memalign(CONFIG_SYS_CACHELINE_SIZE, data_size);
+	if (!data) {
+		printf("%s, %d: memalign %u error!\n",
+		       __func__, __LINE__, data_size);
+		return -EINVAL;
+	}
+
+	memset(data, 0xab, data_size);
+
+	ulong start = get_timer(0);
+
+	if (key)
+		ret = crypto_hmac_init(dev, &ctx, (u8 *)key, key_len);
+	else
+		ret = crypto_sha_init(dev, &ctx);
+
+	if (ret) {
+		printf("crypto_sha_init error ret = %d!\n", ret);
+		goto exit;
+	}
+
+	for (i = 0; i < total_size / data_size; i++) {
+		ret = crypto_sha_update(dev, (u32 *)data, data_size);
+		if (ret) {
+			printf("crypto_sha_update error!\n");
+			goto exit;
+		}
+	}
+
+	ret = crypto_sha_final(dev, &ctx, hash_out);
+	if (ret) {
+		printf("crypto_sha_final error ret = %d!\n", ret);
+		goto exit;
+	}
+
+	ulong time_cost = get_timer(start);
+
+	*MBps = CALC_RATE_MPBS(total_size, time_cost);
+
+exit:
+	free(data);
+
+	return ret;
+}
+
+int test_cipher_perf(struct udevice *dev, cipher_context *ctx,
+		     ulong *MBps, bool enc)
+{
+	u32 total_size = PERF_TOTAL_SIZE;
+	u32 data_size = PERF_BUFF_SIZE;
+	u8 *plain = NULL, *cipher = NULL;
+	int ret, i;
+
+	*MBps = 0;
+
+	plain = (u8 *)memalign(CONFIG_SYS_CACHELINE_SIZE, data_size);
+	if (!plain) {
+		printf("%s, %d: memalign %u error!\n",
+		       __func__, __LINE__, data_size);
+		return -EINVAL;
+	}
+
+	cipher = (u8 *)memalign(CONFIG_SYS_CACHELINE_SIZE, data_size);
+	if (!cipher) {
+		printf("%s, %d: memalign %u error!\n",
+		       __func__, __LINE__, data_size);
+		free(plain);
+		return -EINVAL;
+	}
+
+	memset(plain, 0xab, data_size);
+
+	ulong start = get_timer(0);
+
+	for (i = 0; i < total_size / data_size; i++) {
+		ret = crypto_cipher(dev, ctx, plain, cipher, data_size, enc);
+		if (ret) {
+			printf("crypto_aes error!\n");
+			goto exit;
+		}
+	}
+
+	ulong time_cost = get_timer(start);
+
+	*MBps = CALC_RATE_MPBS(total_size, time_cost);
+exit:
+	free(plain);
+	free(cipher);
+
+	return ret;
 }
 
 int test_hash_result(void)
@@ -263,8 +399,13 @@ int test_hash_result(void)
 			}
 		}
 
-		check_result(test_data->algo_name, test_data->mode_name,
-			     "", test_data->hash, out, test_data->hash_len);
+		ulong MBps = 0;
+
+		test_hash_perf(dev, test_data->algo,
+			       test_data->key, test_data->key_len, &MBps);
+		print_result_MBps(test_data->algo_name, test_data->mode_name,
+				  "", MBps, test_data->hash, out,
+				  test_data->hash_len);
 		printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	}
 
@@ -310,23 +451,29 @@ int test_cipher_result(void)
 		ctx.iv      = test_data->iv;
 		ctx.iv_len  = test_data->iv_len;
 
+		ulong MBps = 0;
+
+		test_cipher_perf(dev, &ctx, &MBps, true);
+
 		ret = crypto_cipher(dev, &ctx, test_data->plain,
 				    out, test_data->plain_len, true);
 		if (ret)
 			goto error;
 
-		check_result(test_data->algo_name, test_data->mode_name,
-			     "encrypt", test_data->cipher, out,
-			     test_data->cipher_len);
+		print_result_MBps(test_data->algo_name, test_data->mode_name,
+				  "encrypt", MBps, test_data->cipher, out,
+				  test_data->cipher_len);
+
+		test_cipher_perf(dev, &ctx, &MBps, false);
 
 		ret = crypto_cipher(dev, &ctx, test_data->cipher,
 				    out, test_data->cipher_len, false);
 		if (ret)
 			goto error;
 
-		check_result(test_data->algo_name, test_data->mode_name,
-			     "decrypt", test_data->plain, out,
-			     test_data->plain_len);
+		print_result_MBps(test_data->algo_name, test_data->mode_name,
+				  "decrypt", MBps, test_data->plain, out,
+				  test_data->plain_len);
 		printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	}
 	return 0;
@@ -341,6 +488,7 @@ int test_rsa_result(void)
 	const struct rsa_test_data *test_data = NULL;
 	u8 *hard_out = NULL, *e_tmp;
 	u32 data_size = 4096 / 8;
+	ulong start, time_cost;
 	struct udevice *dev;
 	rsa_key rsa_key;
 	int ret, i;
@@ -383,16 +531,17 @@ int test_rsa_result(void)
 		rsa_key.c = (u32 *)test_data->c;
 #endif
 
+		start = get_timer(0);
 		ret = crypto_rsa_verify(dev, &rsa_key,
 					(u8 *)test_data->sign_in, hard_out);
 		if (ret) {
 			printf("sign test error, ret = %d\n", ret);
 			goto error;
 		}
-
-		check_result(test_data->algo_name, test_data->mode_name,
-			     "sign", test_data->sign_out,
-			     hard_out, test_data->n_len);
+		time_cost = get_timer(start);
+		print_result_ms(test_data->algo_name, test_data->mode_name,
+				"sign", time_cost, test_data->sign_out,
+				hard_out, test_data->n_len);
 
 		/* verify test */
 		memset(&rsa_key, 0x00, sizeof(rsa_key));
@@ -405,16 +554,18 @@ int test_rsa_result(void)
 		rsa_key.c = (u32 *)test_data->c;
 #endif
 
+		start = get_timer(0);
 		ret = crypto_rsa_verify(dev, &rsa_key,
 					(u8 *)test_data->sign_out, hard_out);
 		if (ret) {
 			printf("verify test error, ret = %d\n", ret);
 			goto error;
 		}
+		time_cost = get_timer(start);
 
-		check_result(test_data->algo_name, test_data->mode_name,
-			     "verify", test_data->sign_in,
-			     hard_out, test_data->n_len);
+		print_result_ms(test_data->algo_name, test_data->mode_name,
+				"verify", time_cost, test_data->sign_in,
+				hard_out, test_data->n_len);
 
 		printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	}
