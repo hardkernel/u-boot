@@ -393,7 +393,6 @@ static int rockchip_nandc_probe(struct udevice *dev)
 		mtd->dev = rknand->dev;
 		mtd->priv = rknand;
 		add_mtd_device(mtd);
-		mtd->name = "rk-nand";
 		rknand->mtd = mtd;
 		ret = 0;
 	}
