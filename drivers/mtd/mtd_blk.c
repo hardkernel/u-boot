@@ -320,15 +320,20 @@ static __maybe_unused int mtd_map_erase(struct mtd_info *mtd, loff_t offset,
 	}
 
 	while (len) {
-		if (mtd_block_isbad(mtd, pos) || mtd_block_isreserved(mtd, pos)) {
-			pr_debug("attempt to erase a bad/reserved block @%llx\n",
-				 pos);
-			pos += mtd->erasesize;
-			continue;
+		loff_t mapped_offset;
+
+		mapped_offset = pos;
+		if (!get_mtd_blk_map_address(mtd, &mapped_offset)) {
+			if (mtd_block_isbad(mtd, pos) || mtd_block_isreserved(mtd, pos)) {
+				pr_debug("attempt to erase a bad/reserved block @%llx\n",
+					 pos);
+				pos += mtd->erasesize;
+				continue;
+			}
 		}
 
 		memset(&ei, 0, sizeof(struct erase_info));
-		ei.addr = pos;
+		ei.addr = mapped_offset;
 		ei.len  = mtd->erasesize;
 		ret = mtd_erase(mtd, &ei);
 		if (ret) {
