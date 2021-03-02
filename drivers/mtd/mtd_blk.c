@@ -632,7 +632,10 @@ static int mtd_blk_probe(struct udevice *udev)
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
-	memcpy(desc->product, mtd->name, strlen(mtd->name));
+	if (strncmp(mtd->name, "nand", 4) == 0)
+		memcpy(desc->product, "rk-nand", strlen("rk-nand"));
+	else
+		memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
 #ifdef CONFIG_NAND
