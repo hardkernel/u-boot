@@ -1706,13 +1706,19 @@ static ulong rk3568_aclk_vop_get_clk(struct rk3568_clk_priv *priv)
 static ulong rk3568_aclk_vop_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 {
 	struct rk3568_cru *cru = priv->cru;
-	int src_clk_div;
+	int src_clk_div, src_clk_mux;
 
-	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	if ((priv->cpll_hz % rate) == 0) {
+		src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+		src_clk_mux = ACLK_VOP_PRE_SEL_CPLL;
+	} else {
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+		src_clk_mux = ACLK_VOP_PRE_SEL_GPLL;
+	}
 	assert(src_clk_div - 1 <= 31);
 	rk_clrsetreg(&cru->clksel_con[38],
 		     ACLK_VOP_PRE_SEL_MASK | ACLK_VOP_PRE_DIV_MASK,
-		     ACLK_VOP_PRE_SEL_GPLL << ACLK_VOP_PRE_SEL_SHIFT |
+		     src_clk_mux << ACLK_VOP_PRE_SEL_SHIFT |
 		     (src_clk_div - 1) << ACLK_VOP_PRE_DIV_SHIFT);
 
 	return rk3568_aclk_vop_get_clk(priv);
