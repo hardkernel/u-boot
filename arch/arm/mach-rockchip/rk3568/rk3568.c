@@ -971,7 +971,7 @@ static int rk3568_board_fdt_fixup_ethernet(const void *blob, int id)
 
 	/* only fixes the RGMII clock input mode for gmac node */
 	if (fdt_stringlist_search(fdt, gmac_node,
-				  "status", "disabled") >= 0) {
+				  "status", "disabled") < 0) {
 		if (fdt_stringlist_search(fdt, gmac_node,
 					  "phy-mode", "rgmii") >= 0) {
 			if (fdt_stringlist_search(fdt, gmac_node,
