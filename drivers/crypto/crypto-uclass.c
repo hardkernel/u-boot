@@ -272,6 +272,17 @@ int crypto_cipher(struct udevice *dev, cipher_context *ctx,
 	return ops->cipher_crypt(dev, ctx, in, out, len, enc);
 }
 
+int crypto_mac(struct udevice *dev, cipher_context *ctx,
+	       const u8 *in, u32 len, u8 *tag)
+{
+	const struct dm_crypto_ops *ops = device_get_ops(dev);
+
+	if (!ops || !ops->cipher_mac)
+		return -ENOSYS;
+
+	return ops->cipher_mac(dev, ctx, in, len, tag);
+}
+
 UCLASS_DRIVER(crypto) = {
 	.id	= UCLASS_CRYPTO,
 	.name	= "crypto",
