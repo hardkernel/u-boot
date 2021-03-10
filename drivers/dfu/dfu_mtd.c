@@ -126,11 +126,13 @@ int dfu_fill_entity_mtd(struct dfu_entity *dfu, char *devstr, char *s)
 	dfu->dev_type = DFU_DEV_MTD;
 	st = strsep(&s, " ");
 
-	if (!strcmp(st, "raw")) {
+	if (!strcmp(st, "raw") || !strcmp(st, "rawubi")) {
 		dfu->layout = DFU_RAW_ADDR;
 		dfu->data.mtd.start = simple_strtoul(s, &s, 16);
 		s++;
 		dfu->data.mtd.size = simple_strtoul(s, &s, 16);
+		if (!strcmp(st, "rawubi"))
+			dfu->data.mtd.ubi = 1;
 	} else if ((!strcmp(st, "part")) || (!strcmp(st, "partubi"))) {
 		dev_desc = rockchip_get_bootdev();
 		if (!dev_desc) {
