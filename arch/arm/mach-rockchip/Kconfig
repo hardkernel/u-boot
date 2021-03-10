@@ -721,10 +721,21 @@ config USING_KERNEL_DTB
 	  the uart and emmc will still using U-Boot dtb, but other devices like
 	  regulator/pmic, display, usb will use dts node from kernel.
 
-config EMBEDED_KERNEL_DTB_PATH
+config EMBED_KERNEL_DTB_PATH
 	string "Embeded kernel dtb file path"
 	depends on USING_KERNEL_DTB
 	default "dts/kern.dtb"
+	help
+	  This file will auto be appended to the u-boot.bin.
+
+config EMBED_KERNEL_DTB_ALWAYS
+	bool "Always using embed kernel dtb"
+	depends on USING_KERNEL_DTB
+	default n
+	help
+	  Allow fallback to always use a prepared kernel dtb even USING_KERNEL_DTB
+	  is set. This makes U-Boot stage more stable but not flexible any more to
+	  compatible different boards.
 
 config ROCKCHIP_CRC
 	bool "Rockchip CRC verify images"

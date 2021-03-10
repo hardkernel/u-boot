@@ -67,14 +67,14 @@ else
 	SIGN_IMAGES="			        sign-images = \"fdt\", \"firmware\", \"loadables\";"
 fi
 
-KERN_DTB=`sed -n "/CONFIG_EMBEDED_KERNEL_DTB_PATH=/s/CONFIG_EMBEDED_KERNEL_DTB_PATH=//p" .config | tr -d '"'`
+KERN_DTB=`sed -n "/CONFIG_EMBED_KERNEL_DTB_PATH=/s/CONFIG_EMBED_KERNEL_DTB_PATH=//p" .config | tr -d '"'`
 if [ -z "${KERN_DTB}" ]; then
 	return;
 fi
 if [ -f ${srctree}/${KERN_DTB} ]; then
 	PROP_KERN_DTB=', "kern-fdt"';
 	KFDT_NODE="		kern-fdt {
-			description = \"Kernel dtb\";
+			description = \"${KERN_DTB}\";
 			data = /incbin/(\"${KERN_DTB}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";

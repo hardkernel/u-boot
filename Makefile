@@ -906,12 +906,12 @@ else ifeq ($(CONFIG_OF_SEPARATE),y)
 u-boot-dtb.bin: u-boot-nodtb.bin dts/dt.dtb FORCE
 	$(call if_changed,cat)
 
-EMBEDED_KERN_DTB := $(CONFIG_EMBEDED_KERNEL_DTB_PATH:"%"=%)
-ifneq ($(wildcard $(EMBEDED_KERN_DTB)),)
+EMBED_KERN_DTB := $(CONFIG_EMBED_KERNEL_DTB_PATH:"%"=%)
+ifneq ($(wildcard $(EMBED_KERN_DTB)),)
 u-boot-dtb-kern.bin: u-boot-dtb.bin FORCE
 	$(call if_changed,copy)
 	$(call if_changed,truncate)
-u-boot.bin: u-boot-dtb-kern.bin $(EMBEDED_KERN_DTB) FORCE
+u-boot.bin: u-boot-dtb-kern.bin $(EMBED_KERN_DTB) FORCE
 	$(call if_changed,cat)
 else
 u-boot.bin: u-boot-dtb.bin FORCE

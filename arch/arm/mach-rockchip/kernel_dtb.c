@@ -255,12 +255,17 @@ int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
 	void *ufdt_blob;
-	int ret;
+	int ret = -ENODEV;
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
 		printf("No Found FDT Load Address.\n");
 		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_EMBED_KERNEL_DTB_ALWAYS)) {
+		printf("Always embed kernel dtb\n");
+		goto dtb_embed;
 	}
 
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
@@ -273,6 +278,7 @@ int init_kernel_dtb(void)
 		}
 	}
 
+dtb_embed:
 	if (!fdt_check_header(gd->fdt_blob_kern)) {
 		if (!dtb_check_ok((void *)gd->fdt_blob_kern, (void *)gd->fdt_blob)) {
 			printf("Embedded kernel dtb mismatch this platform!\n");
@@ -284,10 +290,16 @@ int init_kernel_dtb(void)
 		if (!fdt_addr)
 			return -ENOMEM;
 
+		/*
+		 * Alloc another space for this embed kernel dtb.
+		 * Because "fdt_addr_r" *MUST* be the fdt passed to kernel.
+		 */
 		memcpy((void *)fdt_addr, gd->fdt_blob_kern,
 		       fdt_totalsize(gd->fdt_blob_kern));
-		printf("DTB: embedded kern.dtb\n");
-	} else {
+		printf("DTB: %s\n", CONFIG_EMBED_KERNEL_DTB_PATH);
+	}
+
+	if (fdt_check_header((void *)fdt_addr)) {
 		printf("Failed to get kernel dtb, ret=%d\n", ret);
 		return ret;
 	}
