@@ -64,6 +64,9 @@ struct rsa_test_data {
 	u32		sign_out_len;
 };
 
+#define IS_MAC_MODE(mode)	((mode) == RK_MODE_CBC_MAC || \
+				 (mode) == RK_MODE_CMAC)
+
 #define HASH_TEST(algo_type, data_in, hash_val) {\
 	.algo_name = "HASH", \
 	.mode_name = #algo_type, \
@@ -164,6 +167,8 @@ const struct cipher_test_data cipher_data_set[] = {
 	CIPHER_TEST(AES, CTR, aes_key, aes_iv, foo_data, aes_ctr_cipher),
 	CIPHER_XTS_TEST(AES, XTS, aes_key, aes_twk_key,
 			aes_iv, foo_data, aes_xts_cipher),
+	CIPHER_TEST(AES, CBC_MAC, aes_key, aes_iv, foo_data, aes_cbc_mac),
+	CIPHER_TEST(AES, CMAC, aes_key, aes_iv, foo_data, aes_cmac),
 
 	EMPTY_TEST(),
 	CIPHER_TEST(SM4, ECB, sm4_key, sm4_iv, foo_data, sm4_ecb_cipher),
@@ -174,6 +179,8 @@ const struct cipher_test_data cipher_data_set[] = {
 	CIPHER_TEST(SM4, CTR, sm4_key, sm4_iv, foo_data, sm4_ctr_cipher),
 	CIPHER_XTS_TEST(SM4, XTS, sm4_key, sm4_twk_key,
 			sm4_iv, foo_data, sm4_xts_cipher),
+	CIPHER_TEST(SM4, CBC_MAC, sm4_key, sm4_iv, foo_data, sm4_cbc_mac),
+	CIPHER_TEST(SM4, CMAC, sm4_key, sm4_iv, foo_data, sm4_cmac),
 #else
 	EMPTY_TEST(),
 #endif
@@ -306,7 +313,7 @@ int test_cipher_perf(struct udevice *dev, cipher_context *ctx,
 	u32 total_size = PERF_TOTAL_SIZE;
 	u32 data_size = PERF_BUFF_SIZE;
 	u8 *plain = NULL, *cipher = NULL;
-	int ret, i;
+	int ret = 0, i;
 
 	*MBps = 0;
 
@@ -330,9 +337,14 @@ int test_cipher_perf(struct udevice *dev, cipher_context *ctx,
 	ulong start = get_timer(0);
 
 	for (i = 0; i < total_size / data_size; i++) {
-		ret = crypto_cipher(dev, ctx, plain, cipher, data_size, enc);
+		if (IS_MAC_MODE(ctx->mode))
+			ret = crypto_mac(dev, ctx, plain, data_size, cipher);
+		else
+			ret = crypto_cipher(dev, ctx, plain, cipher,
+					    data_size, enc);
 		if (ret) {
-			printf("crypto_aes error!\n");
+			printf("%s, %d:crypto_aes error! ret = %d\n",
+			       __func__, __LINE__, ret);
 			goto exit;
 		}
 	}
@@ -455,8 +467,13 @@ int test_cipher_result(void)
 
 		test_cipher_perf(dev, &ctx, &MBps, true);
 
-		ret = crypto_cipher(dev, &ctx, test_data->plain,
-				    out, test_data->plain_len, true);
+		/* AES/SM4 mac */
+		if (IS_MAC_MODE(ctx.mode))
+			ret = crypto_mac(dev, &ctx, test_data->plain,
+					 test_data->plain_len, out);
+		else
+			ret = crypto_cipher(dev, &ctx, test_data->plain,
+					    out, test_data->plain_len, true);
 		if (ret)
 			goto error;
 
@@ -464,22 +481,25 @@ int test_cipher_result(void)
 				  "encrypt", MBps, test_data->cipher, out,
 				  test_data->cipher_len);
 
-		test_cipher_perf(dev, &ctx, &MBps, false);
+		if (!IS_MAC_MODE(ctx.mode)) {
+			test_cipher_perf(dev, &ctx, &MBps, false);
+			ret = crypto_cipher(dev, &ctx, test_data->cipher,
+					    out, test_data->cipher_len, false);
+			if (ret)
+				goto error;
 
-		ret = crypto_cipher(dev, &ctx, test_data->cipher,
-				    out, test_data->cipher_len, false);
-		if (ret)
-			goto error;
-
-		print_result_MBps(test_data->algo_name, test_data->mode_name,
-				  "decrypt", MBps, test_data->plain, out,
-				  test_data->plain_len);
+			print_result_MBps(test_data->algo_name,
+					  test_data->mode_name,
+					  "decrypt", MBps,
+					  test_data->plain, out,
+					  test_data->plain_len);
+		}
 		printf("+++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	}
 	return 0;
 error:
-	printf("%s %s test error!\n",
-	       test_data->algo_name, test_data->mode_name);
+	printf("%s %s test error, ret = %d!\n",
+	       test_data->algo_name, test_data->mode_name, ret);
 	return ret;
 }
 
