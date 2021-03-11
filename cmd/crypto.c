@@ -44,6 +44,10 @@ struct cipher_test_data {
 	u32		plain_len;
 	const u8	*cipher;
 	u32		cipher_len;
+	const u8	*aad;
+	u32		aad_len;
+	const u8	*tag;
+	u32		tag_len;
 };
 
 struct rsa_test_data {
@@ -67,6 +71,8 @@ struct rsa_test_data {
 #define IS_MAC_MODE(mode)	((mode) == RK_MODE_CBC_MAC || \
 				 (mode) == RK_MODE_CMAC)
 
+#define IS_AE_MODE(mode)	((mode) == RK_MODE_CCM || \
+				 (mode) == RK_MODE_GCM)
 #define HASH_TEST(algo_type, data_in, hash_val) {\
 	.algo_name = "HASH", \
 	.mode_name = #algo_type, \
@@ -107,6 +113,26 @@ struct rsa_test_data {
 
 #define CIPHER_TEST(algo, mode, key, iv, plain, cipher) \
 		CIPHER_XTS_TEST(algo, mode, key, NULL, iv, plain, cipher)
+
+#define CIPHER_AE_TEST(algo_type, mode_type, key_val, iv_val, \
+		       in, out, aad_val, tag_val) { \
+	.algo_name  = #algo_type, \
+	.mode_name  = #mode_type, \
+	.algo       = CRYPTO_##algo_type,\
+	.mode       = RK_MODE_##mode_type, \
+	.key        = (key_val), \
+	.key_len    = sizeof(key_val), \
+	.iv         = (iv_val), \
+	.iv_len     = sizeof(iv_val), \
+	.plain      = (in), \
+	.plain_len  = sizeof(in), \
+	.cipher     = (out), \
+	.cipher_len = sizeof(out), \
+	.aad        = (aad_val), \
+	.aad_len    = sizeof(aad_val), \
+	.tag        = (tag_val), \
+	.tag_len    = sizeof(tag_val), \
+}
 
 #define RSA_TEST(nbits, bn, be, bc, bd, in, out) { \
 	.algo_name    = "RSA", \
@@ -169,6 +195,10 @@ const struct cipher_test_data cipher_data_set[] = {
 			aes_iv, foo_data, aes_xts_cipher),
 	CIPHER_TEST(AES, CBC_MAC, aes_key, aes_iv, foo_data, aes_cbc_mac),
 	CIPHER_TEST(AES, CMAC, aes_key, aes_iv, foo_data, aes_cmac),
+	CIPHER_AE_TEST(AES, CCM, aes_key, aes_ccm_iv, foo_data, aes_ccm_cipher,
+		       ad_data, aes_ccm_tag),
+	CIPHER_AE_TEST(AES, GCM, aes_key, aes_iv, foo_data, aes_gcm_cipher,
+		       ad_data, aes_gcm_tag),
 
 	EMPTY_TEST(),
 	CIPHER_TEST(SM4, ECB, sm4_key, sm4_iv, foo_data, sm4_ecb_cipher),
@@ -181,6 +211,10 @@ const struct cipher_test_data cipher_data_set[] = {
 			sm4_iv, foo_data, sm4_xts_cipher),
 	CIPHER_TEST(SM4, CBC_MAC, sm4_key, sm4_iv, foo_data, sm4_cbc_mac),
 	CIPHER_TEST(SM4, CMAC, sm4_key, sm4_iv, foo_data, sm4_cmac),
+	CIPHER_AE_TEST(SM4, CCM, sm4_key, sm4_ccm_iv, foo_data, sm4_ccm_cipher,
+		       ad_data, sm4_ccm_tag),
+	CIPHER_AE_TEST(SM4, GCM, sm4_key, sm4_iv, foo_data, sm4_gcm_cipher,
+		       ad_data, sm4_gcm_tag),
 #else
 	EMPTY_TEST(),
 #endif
@@ -313,6 +347,7 @@ int test_cipher_perf(struct udevice *dev, cipher_context *ctx,
 	u32 total_size = PERF_TOTAL_SIZE;
 	u32 data_size = PERF_BUFF_SIZE;
 	u8 *plain = NULL, *cipher = NULL;
+	u8 aad[128], tag[16];
 	int ret = 0, i;
 
 	*MBps = 0;
@@ -333,17 +368,21 @@ int test_cipher_perf(struct udevice *dev, cipher_context *ctx,
 	}
 
 	memset(plain, 0xab, data_size);
+	memset(aad, 0xcb, sizeof(aad));
 
 	ulong start = get_timer(0);
 
 	for (i = 0; i < total_size / data_size; i++) {
 		if (IS_MAC_MODE(ctx->mode))
 			ret = crypto_mac(dev, ctx, plain, data_size, cipher);
+		else if (IS_AE_MODE(ctx->mode))
+			ret = crypto_ae(dev, ctx, plain, data_size,
+					aad, sizeof(aad), cipher, tag);
 		else
 			ret = crypto_cipher(dev, ctx, plain, cipher,
 					    data_size, enc);
 		if (ret) {
-			printf("%s, %d:crypto_aes error! ret = %d\n",
+			printf("%s, %d:crypto calc error! ret = %d\n",
 			       __func__, __LINE__, ret);
 			goto exit;
 		}
@@ -433,7 +472,7 @@ int test_cipher_result(void)
 	const struct cipher_test_data *test_data = NULL;
 	struct udevice *dev;
 	cipher_context ctx;
-	u8 out[256];
+	u8 out[256], tag[16];
 	int ret;
 	u32 i;
 
@@ -471,17 +510,30 @@ int test_cipher_result(void)
 		if (IS_MAC_MODE(ctx.mode))
 			ret = crypto_mac(dev, &ctx, test_data->plain,
 					 test_data->plain_len, out);
+		else if (IS_AE_MODE(ctx.mode))
+			ret = crypto_ae(dev, &ctx,
+					test_data->plain, test_data->plain_len,
+					test_data->aad, test_data->aad_len,
+					out, tag);
 		else
 			ret = crypto_cipher(dev, &ctx, test_data->plain,
 					    out, test_data->plain_len, true);
 		if (ret)
 			goto error;
 
+		if (test_data->tag &&
+		    memcmp(test_data->tag, tag, test_data->tag_len) != 0) {
+			printf("tag mismatch!!!\n");
+			dump_hex("expect", test_data->tag, test_data->tag_len);
+			dump_hex("actual", tag, test_data->tag_len);
+			goto error;
+		}
+
 		print_result_MBps(test_data->algo_name, test_data->mode_name,
 				  "encrypt", MBps, test_data->cipher, out,
 				  test_data->cipher_len);
 
-		if (!IS_MAC_MODE(ctx.mode)) {
+		if (!IS_MAC_MODE(ctx.mode) && !IS_AE_MODE(ctx.mode)) {
 			test_cipher_perf(dev, &ctx, &MBps, false);
 			ret = crypto_cipher(dev, &ctx, test_data->cipher,
 					    out, test_data->cipher_len, false);
