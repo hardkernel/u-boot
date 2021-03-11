@@ -105,10 +105,15 @@ struct rockchip_crypto_priv {
 			     (rk_mode) != RK_MODE_CBC_MAC)
 
 #define IS_NEED_TAG(rk_mode) ((rk_mode) == RK_MODE_CMAC || \
-			      (rk_mode) == RK_MODE_CBC_MAC)
+			      (rk_mode) == RK_MODE_CBC_MAC || \
+			      (rk_mode) == RK_MODE_CCM || \
+			      (rk_mode) == RK_MODE_GCM)
 
 #define IS_MAC_MODE(rk_mode) ((rk_mode) == RK_MODE_CMAC || \
 			      (rk_mode) == RK_MODE_CBC_MAC)
+
+#define IS_AE_MODE(rk_mode) ((rk_mode) == RK_MODE_CCM || \
+			     (rk_mode) == RK_MODE_GCM)
 
 fdt_addr_t crypto_base;
 
@@ -142,6 +147,21 @@ static inline void clear_hash_out_reg(void)
 static inline void clear_key_regs(void)
 {
 	clear_regs(CRYPTO_CH0_KEY_0, CRYPTO_KEY_CHANNEL_NUM * 4);
+}
+
+static inline void read_regs(u32 base, u8 *data, u32 data_len)
+{
+	u8 tmp_buf[4];
+	u32 i;
+
+	for (i = 0; i < data_len / 4; i++)
+		word2byte_be(crypto_read(base + i * 4),
+			     data + i * 4);
+
+	if (data_len % 4) {
+		word2byte_be(crypto_read(base + i * 4), tmp_buf);
+		memcpy(data + i * 4, tmp_buf, data_len % 4);
+	}
 }
 
 static inline void write_regs(u32 base, const u8 *data, u32 data_len)
@@ -179,6 +199,15 @@ static inline void set_iv_reg(u32 chn, const u8 *iv, u32 iv_len)
 	write_regs(base_iv, iv, iv_len);
 
 	crypto_write(iv_len, CRYPTO_CH0_IV_LEN_0 + 4 * chn);
+}
+
+static inline void get_iv_reg(u32 chn, u8 *iv, u32 iv_len)
+{
+	u32 base_iv;
+
+	base_iv = CRYPTO_CH0_IV_0 + chn * 0x10;
+
+	read_regs(base_iv, iv, iv_len);
 }
 
 static inline void get_tag_from_reg(u32 chn, u8 *tag, u32 tag_len)
@@ -392,7 +421,6 @@ int rk_hash_final(void *ctx, u8 *digest, size_t len)
 {
 	struct rk_hash_ctx *tmp_ctx = (struct rk_hash_ctx *)ctx;
 	int ret = -EINVAL;
-	u32 i;
 
 	if (!digest)
 		goto exit;
@@ -408,16 +436,7 @@ int rk_hash_final(void *ctx, u8 *digest, size_t len)
 	ret = RK_POLL_TIMEOUT(!crypto_read(CRYPTO_HASH_VALID),
 			      RK_CRYPTO_TIMEOUT);
 
-	for (i = 0; i < len / 4; i++)
-		word2byte_be(crypto_read(CRYPTO_HASH_DOUT_0 + i * 4),
-			     digest + i * 4);
-
-	if (len % 4) {
-		u8 tmp_buf[4];
-
-		word2byte_be(crypto_read(CRYPTO_HASH_DOUT_0 + i * 4), tmp_buf);
-		memcpy(digest + i * 4, tmp_buf, len % 4);
-	}
+	read_regs(CRYPTO_HASH_DOUT_0, digest, len);
 
 	/* clear hash status */
 	crypto_write(CRYPTO_HASH_IS_VALID, CRYPTO_HASH_VALID);
@@ -593,9 +612,27 @@ static const u32 rk_mode2bc_mode[RK_MODE_MAX] = {
 	[RK_MODE_CFB] = CRYPTO_BC_CFB,
 	[RK_MODE_OFB] = CRYPTO_BC_OFB,
 	[RK_MODE_XTS] = CRYPTO_BC_XTS,
+	[RK_MODE_CCM] = CRYPTO_BC_CCM,
+	[RK_MODE_GCM] = CRYPTO_BC_GCM,
 	[RK_MODE_CMAC] = CRYPTO_BC_CMAC,
 	[RK_MODE_CBC_MAC] = CRYPTO_BC_CBC_MAC,
 };
+
+static inline void set_pc_len_reg(u32 chn, u64 pc_len)
+{
+	u32 chn_base = CRYPTO_CH0_PC_LEN_0 + chn * 0x08;
+
+	crypto_write(pc_len & 0xffffffff, chn_base);
+	crypto_write(pc_len >> 32, chn_base + 4);
+}
+
+static inline void set_aad_len_reg(u32 chn, u64 pc_len)
+{
+	u32 chn_base = CRYPTO_CH0_AAD_LEN_0 + chn * 0x08;
+
+	crypto_write(pc_len & 0xffffffff, chn_base);
+	crypto_write(pc_len >> 32, chn_base + 4);
+}
 
 static inline bool is_des_mode(u32 rk_mode)
 {
@@ -646,6 +683,66 @@ static void dump_crypto_state(struct crypto_lli_desc *desc, int ret)
 	IMSG("dst %dbyte not transferred\n",
 	     desc->dst_addr + desc->dst_len -
 	     crypto_read(CRYPTO_DMA_DST_RADDR));
+}
+
+static int ccm128_set_iv_reg(u32 chn, const u8 *nonce, u32 nlen)
+{
+	u8 iv_buf[AES_BLOCK_SIZE];
+	u32 L;
+
+	memset(iv_buf, 0x00, sizeof(iv_buf));
+
+	L = 15 - nlen;
+	iv_buf[0] = ((u8)(L - 1) & 7);
+
+	/* the L parameter */
+	L = iv_buf[0] & 7;
+
+	/* nonce is too short */
+	if (nlen < (14 - L))
+		return -EINVAL;
+
+	/* clear aad flag */
+	iv_buf[0] &= ~0x40;
+	memcpy(&iv_buf[1], nonce, 14 - L);
+
+	set_iv_reg(chn, iv_buf, AES_BLOCK_SIZE);
+
+	return 0;
+}
+
+static void ccm_aad_padding(u32 aad_len, u8 *padding, u32 *padding_size)
+{
+	u32 i;
+
+	i = aad_len < (0x10000 - 0x100) ? 2 : 6;
+
+	if (i == 2) {
+		padding[0] = (u8)(aad_len >> 8);
+		padding[1] = (u8)aad_len;
+	} else {
+		padding[0] = 0xFF;
+		padding[1] = 0xFE;
+		padding[2] = (u8)(aad_len >> 24);
+		padding[3] = (u8)(aad_len >> 16);
+		padding[4] = (u8)(aad_len >> 8);
+	}
+
+	*padding_size = i;
+}
+
+static int ccm_compose_aad_iv(u8 *aad_iv, u32 data_len, u32 tag_size)
+{
+	aad_iv[0] |= ((u8)(((tag_size - 2) / 2) & 7) << 3);
+
+	aad_iv[12] = (u8)(data_len >> 24);
+	aad_iv[13] = (u8)(data_len >> 16);
+	aad_iv[14] = (u8)(data_len >> 8);
+	aad_iv[15] = (u8)data_len;
+
+	aad_iv[0] |= 0x40;	//set aad flag
+
+	return 0;
 }
 
 static int hw_cipher_init(u32 chn, const u8 *key, const u8 *twk_key,
@@ -706,7 +803,10 @@ static int hw_cipher_init(u32 chn, const u8 *key, const u8 *twk_key,
 		write_key_reg(key_chn_sel + 4, twk_key, key_len);
 
 	/* set iv reg */
-	set_iv_reg(chn, iv, iv_len);
+	if (rk_mode == RK_MODE_CCM)
+		ccm128_set_iv_reg(chn, iv, iv_len);
+	else
+		set_iv_reg(chn, iv, iv_len);
 
 	/* din_swap set 1, dout_swap set 1, default 1. */
 	crypto_write(0x00030003, CRYPTO_FIFO_CTL);
@@ -719,11 +819,11 @@ static int hw_cipher_init(u32 chn, const u8 *key, const u8 *twk_key,
 }
 
 static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
-			   const u8 *aad, u64 aad_len, u8 *tag, u32 tag_len,
-			   u32 mode)
+			   const u8 *aad, u32 aad_len,
+			   u8 *tag, u32 tag_len, u32 mode)
 {
-	struct crypto_lli_desc *data_desc = NULL;
-	u8 *dma_in = NULL, *dma_out = NULL;
+	struct crypto_lli_desc *data_desc = NULL, *aad_desc = NULL;
+	u8 *dma_in = NULL, *dma_out = NULL, *aad_tmp = NULL;
 	u32 rk_mode = RK_GET_RK_MODE(mode);
 	u32 reg_ctrl = 0, tmp_len = 0;
 	u32 expt_int = 0, mask = 0;
@@ -769,10 +869,6 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 	data_desc->dst_addr    = (u32)virt_to_phys(dma_out);
 	data_desc->dst_len     = dst_len;
 	data_desc->dma_ctrl    = LLI_DMA_CTRL_LAST;
-	data_desc->user_define = LLI_USER_CPIHER_START |
-				 LLI_USER_STRING_START |
-				 LLI_USER_STRING_LAST |
-				 (key_chn << 4);
 
 	if (IS_MAC_MODE(rk_mode)) {
 		expt_int = CRYPTO_LIST_DONE_INT_ST;
@@ -782,10 +878,73 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 		data_desc->dma_ctrl |= LLI_DMA_CTRL_DST_DONE;
 	}
 
-	crypto_write((u32)virt_to_phys(data_desc), CRYPTO_DMA_LLI_ADDR);
+	if (rk_mode == RK_MODE_CCM || rk_mode == RK_MODE_GCM) {
+		u32 aad_tmp_len = 0;
+
+		data_desc->user_define = LLI_USER_STRING_START |
+					 LLI_USER_STRING_LAST |
+					 (key_chn << 4);
+
+		aad_desc = align_malloc(sizeof(*aad_desc), LLI_ADDR_ALIGN_SIZE);
+		if (!aad_desc)
+			goto exit;
+
+		memset(aad_desc, 0x00, sizeof(*aad_desc));
+		aad_desc->next_addr = (u32)virt_to_phys(data_desc);
+		aad_desc->user_define = LLI_USER_CPIHER_START |
+					 LLI_USER_STRING_START |
+					 LLI_USER_STRING_LAST |
+					 LLI_USER_STRING_AAD |
+					 (key_chn << 4);
+
+		if (rk_mode == RK_MODE_CCM) {
+			u8 padding[AES_BLOCK_SIZE];
+			u32 padding_size = 0;
+
+			memset(padding, 0x00, sizeof(padding));
+			ccm_aad_padding(aad_len, padding, &padding_size);
+
+			aad_tmp_len = aad_len + AES_BLOCK_SIZE + padding_size;
+			aad_tmp_len = ROUNDUP(aad_tmp_len, AES_BLOCK_SIZE);
+			aad_tmp = align_malloc(aad_tmp_len,
+					       DATA_ADDR_ALIGN_SIZE);
+			if (!aad_tmp)
+				goto exit;
+
+			/* read iv data from reg */
+			get_iv_reg(key_chn, aad_tmp, AES_BLOCK_SIZE);
+			ccm_compose_aad_iv(aad_tmp, tmp_len, tag_len);
+			memcpy(aad_tmp + AES_BLOCK_SIZE, padding, padding_size);
+			memset(aad_tmp + aad_tmp_len - AES_BLOCK_SIZE,
+			       0x00, AES_BLOCK_SIZE);
+			memcpy(aad_tmp + AES_BLOCK_SIZE + padding_size,
+			       aad, aad_len);
+		} else {
+			aad_tmp_len = aad_len;
+			aad_tmp = align_malloc(aad_tmp_len,
+					       DATA_ADDR_ALIGN_SIZE);
+			if (!aad_tmp)
+				goto exit;
+
+			memcpy(aad_tmp, aad, aad_tmp_len);
+			set_aad_len_reg(key_chn, aad_tmp_len);
+			set_pc_len_reg(key_chn, tmp_len);
+		}
+
+		aad_desc->src_addr = (u32)virt_to_phys(aad_tmp);
+		aad_desc->src_len  = aad_tmp_len;
+		crypto_write((u32)virt_to_phys(aad_desc), CRYPTO_DMA_LLI_ADDR);
+		cache_op_inner(DCACHE_AREA_CLEAN, aad_tmp, aad_tmp_len);
+		cache_op_inner(DCACHE_AREA_CLEAN, aad_desc, sizeof(*aad_desc));
+	} else {
+		data_desc->user_define = LLI_USER_CPIHER_START |
+					 LLI_USER_STRING_START |
+					 LLI_USER_STRING_LAST |
+					 (key_chn << 4);
+		crypto_write((u32)virt_to_phys(data_desc), CRYPTO_DMA_LLI_ADDR);
+	}
 
 	cache_op_inner(DCACHE_AREA_CLEAN, data_desc, sizeof(*data_desc));
-	cache_op_inner(DCACHE_AREA_CLEAN, (void *)aad, aad_len);
 	cache_op_inner(DCACHE_AREA_CLEAN, dma_in, tmp_len);
 	cache_op_inner(DCACHE_AREA_INVALIDATE, dma_out, tmp_len);
 
@@ -822,6 +981,7 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 exit:
 	crypto_write(0xffff0000, CRYPTO_BC_CTL);//bc_ctl disable
 	align_free(data_desc);
+	align_free(aad_desc);
 	if (dma_in && dma_in != in)
 		align_free(dma_in);
 	if (dma_out && dma_out != out)
@@ -1014,6 +1174,45 @@ int rockchip_crypto_mac(struct udevice *dev, cipher_context *ctx,
 			     ctx->key, ctx->key_len, in, len, tag);
 }
 
+int rk_crypto_ae(struct udevice *dev, u32 algo, u32 mode,
+		 const u8 *key, u32 key_len, const u8 *nonce, u32 nonce_len,
+		 const u8 *in, u32 len, const u8 *aad, u32 aad_len,
+		 u8 *out, u8 *tag)
+{
+	u32 rk_mode = RK_GET_RK_MODE(mode);
+	int ret;
+
+	if (!IS_AE_MODE(rk_mode))
+		return -EINVAL;
+
+	if (algo != CRYPTO_AES && algo != CRYPTO_SM4)
+		return -EINVAL;
+
+	/* RV1126/RV1109 do not support aes-192 */
+#if defined(CONFIG_ROCKCHIP_RV1126)
+	if (algo == CRYPTO_AES && key_len == AES_KEYSIZE_192)
+		return -EINVAL;
+#endif
+
+	ret = hw_cipher_init(g_key_chn, key, NULL, key_len, nonce, nonce_len,
+			     algo, mode, true);
+	if (ret)
+		return ret;
+
+	return hw_cipher_crypt(in, out, len, aad, aad_len,
+			       tag, AES_BLOCK_SIZE, mode);
+}
+
+int rockchip_crypto_ae(struct udevice *dev, cipher_context *ctx,
+		       const u8 *in, u32 len, const u8 *aad, u32 aad_len,
+		       u8 *out, u8 *tag)
+
+{
+	return rk_crypto_ae(dev, ctx->algo, ctx->mode, ctx->key, ctx->key_len,
+			    ctx->iv, ctx->iv_len, in, len,
+			    aad, aad_len, out, tag);
+}
+
 #endif
 
 #if CONFIG_IS_ENABLED(ROCKCHIP_RSA)
@@ -1097,6 +1296,7 @@ static const struct dm_crypto_ops rockchip_crypto_ops = {
 #if CONFIG_IS_ENABLED(ROCKCHIP_CIPHER)
 	.cipher_crypt = rockchip_crypto_cipher,
 	.cipher_mac = rockchip_crypto_mac,
+	.cipher_ae  = rockchip_crypto_ae,
 #endif
 };
 

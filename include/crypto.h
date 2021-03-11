@@ -46,6 +46,8 @@ enum RK_CRYPTO_MODE {
 	RK_MODE_CFB,
 	RK_MODE_OFB,
 	RK_MODE_XTS,
+	RK_MODE_CCM,
+	RK_MODE_GCM,
 	RK_MODE_CMAC,
 	RK_MODE_CBC_MAC,
 	RK_MODE_MAX
@@ -99,6 +101,12 @@ struct dm_crypto_ops {
 	/* cipher mac cmac&cbc_mac */
 	int (*cipher_mac)(struct udevice *dev, cipher_context *ctx,
 			  const u8 *in, u32 len, u8 *tag);
+
+	/* cipher aes ccm&gcm */
+	int (*cipher_ae)(struct udevice *dev, cipher_context *ctx,
+			 const u8 *in, u32 len, const u8 *aad, u32 aad_len,
+			 u8 *out, u8 *tag);
+
 };
 
 /**
@@ -249,5 +257,22 @@ int crypto_cipher(struct udevice *dev, cipher_context *ctx,
  */
 int crypto_mac(struct udevice *dev, cipher_context *ctx,
 	       const u8 *in, u32 len, u8 *tag);
+
+/**
+ * crypto_ae() - Crypto cipher authorization and encryption
+ *
+ * @dev: crypto device
+ * @ctx: cipher context
+ * @in: input data buffer
+ * @len: input data length
+ * @aad: associated data buffer
+ * @aad_len: associated data length
+ * @out: output data buffer
+ * @tag: tag buffer
+ * @return 0 on success, otherwise failed
+ */
+int crypto_ae(struct udevice *dev, cipher_context *ctx,
+	      const u8 *in, u32 len, const u8 *aad, u32 aad_len,
+	      u8 *out, u8 *tag);
 
 #endif
