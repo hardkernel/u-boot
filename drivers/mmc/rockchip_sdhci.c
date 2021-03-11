@@ -350,6 +350,7 @@ static int rk3568_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clo
 		udelay(1);
 	} else {
 		/* reset the clock phase when the frequency is lower than 52MHz */
+		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_CTRL);
 		extra = DLL_RXCLK_NO_INVERTER << DWCMSHC_EMMC_DLL_RXCLK_SRCSEL;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_TXCLK);
