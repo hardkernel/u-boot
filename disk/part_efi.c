@@ -367,8 +367,8 @@ static void gpt_entry_modify(struct blk_desc *dev_desc,
 
 	if (gpt_pte[i - 1].ending_lba <= (dev_desc->lba - 0x22))
 		return;
-
-	gpt_pte[i - 1].ending_lba = dev_desc->lba - 0x22;
+	/* The last partition size need align to 4KB, here align to 32KB. */
+	gpt_pte[i - 1].ending_lba = dev_desc->lba - 0x40;
 	calc_crc32 = efi_crc32((const unsigned char *)gpt_pte,
 			       le32_to_cpu(gpt_head->num_partition_entries) *
 			       le32_to_cpu(gpt_head->sizeof_partition_entry));
