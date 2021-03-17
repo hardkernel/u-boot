@@ -688,6 +688,7 @@ static ulong rk322x_clk_set_rate(struct clk *clk, ulong rate)
 		ret = rk322x_peri_set_clk(priv, clk->id, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
+	case SCLK_MAC_SRC:
 	case SCLK_MAC:
 		ret = rk322x_mac_set_clk(priv, rate);
 		break;
