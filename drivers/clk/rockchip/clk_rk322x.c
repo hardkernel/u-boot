@@ -194,7 +194,7 @@ static ulong rk322x_mac_set_clk(struct rk322x_clk_priv *priv, uint freq)
 		ulong pll_rate;
 		u8 div;
 
-		if ((con >> MAC_PLL_SEL_SHIFT) & MAC_PLL_SEL_MASK)
+		if (con & MAC_PLL_SEL_MASK)
 			pll_rate = priv->gpll_hz;
 		else
 			/* CPLL is not set */
