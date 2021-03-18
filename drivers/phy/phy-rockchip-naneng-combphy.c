@@ -254,7 +254,7 @@ static int rockchip_combphy_parse_dt(struct udevice *dev,
 		return PTR_ERR(&priv->ref_clk);
 	}
 
-	ret = reset_get_by_index(dev, 0, &priv->phy_rst);
+	ret = reset_get_by_name(dev, "combphy", &priv->phy_rst);
 	if (ret) {
 		dev_err(dev, "no phy reset control specified\n");
 		return ret;
@@ -355,19 +355,8 @@ static int rk3568_combphy_cfg(struct rockchip_combphy_priv *priv)
 		return -EINVAL;
 	}
 
-	/* The default ref clock is 24Mhz */
-	if (priv->mode == PHY_TYPE_USB3 || priv->mode == PHY_TYPE_SATA) {
-		/* Set ssc_cnt[9:0]=0101111101 & 31.5KHz */
-		val = readl(priv->mmio + (0x0e << 2));
-		val &= ~GENMASK(7, 6);
-		val |= 0x01 << 6;
-		writel(val, priv->mmio + (0x0e << 2));
-
-		val = readl(priv->mmio + (0x0f << 2));
-		val &= ~GENMASK(7, 0);
-		val |= 0x5f;
-		writel(val, priv->mmio + (0x0f << 2));
-	}
+	/* The default ref clock is 25Mhz */
+	param_write(priv->phy_grf, &cfg->pipe_clk_25m, true);
 
 	if (dev_read_bool(priv->dev, "rockchip,enable-ssc")) {
 		val = readl(priv->mmio + (0x7 << 2));
