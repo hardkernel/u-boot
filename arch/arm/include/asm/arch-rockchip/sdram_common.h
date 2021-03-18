@@ -246,6 +246,36 @@ struct sdram_base_params {
 	unsigned int odt;
 };
 
+/* store result of read and write training, for ddr_dq_eye tool in u-boot */
+#define FSP_NUM		4
+#define CS_NUM		4
+#define BYTE_NUM	5
+
+struct dqs_rw_trn_result {
+	u16 dq_deskew[8];
+	u16 dqs_deskew;
+	u16 dq_min[8];
+	u16 dq_max[8];
+};
+
+struct cs_rw_trn_result {
+	struct dqs_rw_trn_result dqs[BYTE_NUM];
+};
+
+struct fsp_rw_trn_result {
+	u16 min_val;
+	struct cs_rw_trn_result cs[CS_NUM];
+};
+
+struct rw_trn_result {
+	u32 flag;
+	u8 cs_num;
+	u8 byte_en;
+	u16 fsp_mhz[FSP_NUM];
+	struct fsp_rw_trn_result rd_fsp[FSP_NUM];
+	struct fsp_rw_trn_result wr_fsp[FSP_NUM];
+};
+
 /*
  * sys_reg bitfield struct
  * [31]		row_3_4_ch1

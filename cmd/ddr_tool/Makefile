@@ -21,3 +21,5 @@ ifndef CONFIG_CMD_MEMTESTER
 obj-$(CONFIG_CMD_DDR_TEST_TOOL) += ../memtester/ddr_tester_common.o
 obj-$(CONFIG_CMD_DDR_TEST_TOOL) += ../memtester/io_map.o
 endif
+obj-$(CONFIG_CMD_DDR_TEST_TOOL) += ddr_dq_eye.o
+
