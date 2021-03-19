@@ -20,7 +20,7 @@
 			thumb        = <0>;      // 0: arm or thumb2; 1: thumb
 			hyp          = <0>;      // 0: el1/svc; 1: el2/hyp
 			load         = <0xa00000>;
-			udelay       = <500000>;
+			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
 			};
@@ -36,7 +36,7 @@
 			thumb        = <0>;
 			hyp          = <0>;
 			load         = <0xb00000>;
-			udelay       = <500000>;
+			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
 			};
@@ -51,8 +51,8 @@
 			cpu          = <0x200>;
 			thumb        = <0>;
 			hyp          = <0>;
-			load         = <0xc00000>;
-			udelay       = <500000>;
+			load         = <0xd00000>;
+			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
 			};
@@ -67,8 +67,8 @@
 			cpu          = <0x300>;
 			thumb        = <0>;
 			hyp          = <0>;
-			load         = <0xd00000>;
-			udelay       = <500000>;
+			load         = <0xe00000>;
+			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
 			};
