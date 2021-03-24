@@ -554,13 +554,14 @@ static struct rockchip_pin_ctrl *rockchip_pinctrl_get_soc_data(struct udevice *d
 
 			/* preset iomux offset value, set new start value */
 			if (iom->offset >= 0) {
-				if (iom->type & IOMUX_SOURCE_PMU)
+				if ((iom->type & IOMUX_SOURCE_PMU) || (iom->type & IOMUX_L_SOURCE_PMU))
 					pmu_offs = iom->offset;
 				else
 					grf_offs = iom->offset;
 			} else { /* set current iomux offset */
-				iom->offset = (iom->type & IOMUX_SOURCE_PMU) ?
-							pmu_offs : grf_offs;
+				iom->offset = ((iom->type & IOMUX_SOURCE_PMU) ||
+						(iom->type & IOMUX_L_SOURCE_PMU)) ?
+						pmu_offs : grf_offs;
 			}
 
 			/* preset drv offset value, set new start value */
