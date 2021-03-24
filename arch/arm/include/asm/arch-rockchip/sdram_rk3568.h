@@ -9,8 +9,6 @@
 #include <asm/arch-rockchip/sdram.h>
 #include <asm/arch-rockchip/sdram_common.h>
 
-#define FSP_FLAG		0xfead0001
-
 /* store result of read and write training, for ddr_dq_eye tool in u-boot */
 #define RW_TRN_RESULT_ADDR	(0x2000000 + 0x8000)	/* 32M + 32k */
 

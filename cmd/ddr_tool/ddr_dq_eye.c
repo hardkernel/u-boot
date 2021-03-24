@@ -137,7 +137,7 @@ static int do_ddr_dq_eye(cmd_tbl_t *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 #endif
 
-	if (readl(RW_TRN_RESULT_ADDR) == FSP_FLAG) {
+	if (readl(RW_TRN_RESULT_ADDR) == DDR_DQ_EYE_FLAG) {
 		memcpy(&result, (void *)(RW_TRN_RESULT_ADDR), sizeof(result));
 	} else {
 		printf("Fail to get data of DDR DQ eye.\n");

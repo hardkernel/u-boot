@@ -1992,7 +1992,7 @@ static void save_rw_trn_deskew(void __iomem *phy_base,
 
 static void save_rw_trn_result_to_ddr(struct rw_trn_result *result)
 {
-	result->flag = FSP_FLAG;
+	result->flag = DDR_DQ_EYE_FLAG;
 	memcpy((void *)(RW_TRN_RESULT_ADDR), result, sizeof(*result));
 }
 #endif

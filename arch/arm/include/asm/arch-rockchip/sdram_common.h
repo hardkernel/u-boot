@@ -247,6 +247,8 @@ struct sdram_base_params {
 };
 
 /* store result of read and write training, for ddr_dq_eye tool in u-boot */
+#define DDR_DQ_EYE_FLAG	0xdddeefa0
+
 #define FSP_NUM		4
 #define CS_NUM		4
 #define BYTE_NUM	5
