@@ -137,6 +137,7 @@ static struct rockchip_mux_route_data rv1126_mux_route_data[] = {
 
 	MR_PMUGRF(RK_GPIO0, RK_PB6, RK_FUNC_2, 0x0118, RK_GENMASK_VAL(2, 2, 0)), /* UART1_TX_M0 */
 	MR_PMUGRF(RK_GPIO1, RK_PD0, RK_FUNC_5, 0x0118, RK_GENMASK_VAL(2, 2, 1)), /* UART1_TX_M1 */
+	MR_PMUGRF(RK_GPIO0, RK_PC3, RK_FUNC_1, 0x0118, RK_GENMASK_VAL(4, 4, 1)), /* I2C2 */
 };
 
 static int rv1126_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
