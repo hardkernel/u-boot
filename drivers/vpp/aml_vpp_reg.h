@@ -383,6 +383,21 @@
 #define VIU2_OSD1_MATRIX_EN_CTRL                   0x1e7d
 #endif
 
+#define VPP_OSD2_MATRIX_COEF00_01           0x3920
+#define VPP_OSD2_MATRIX_COEF02_10           0x3921
+#define VPP_OSD2_MATRIX_COEF11_12           0x3922
+#define VPP_OSD2_MATRIX_COEF20_21           0x3923
+#define VPP_OSD2_MATRIX_COEF22              0x3924
+#define VPP_OSD2_MATRIX_COEF13_14           0x3925
+#define VPP_OSD2_MATRIX_COEF23_24           0x3926
+#define VPP_OSD2_MATRIX_COEF15_25           0x3927
+#define VPP_OSD2_MATRIX_CLIP                0x3928
+#define VPP_OSD2_MATRIX_OFFSET0_1           0x3929
+#define VPP_OSD2_MATRIX_OFFSET2             0x392a
+#define VPP_OSD2_MATRIX_PRE_OFFSET0_1       0x392b
+#define VPP_OSD2_MATRIX_PRE_OFFSET2         0x392c
+#define VPP_OSD2_MATRIX_EN_CTRL             0x392d
+
 /*hdr2 register end*/
 
 //#define GAMMA_CNTL_PORT                            0x1400
