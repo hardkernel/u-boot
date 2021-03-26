@@ -362,8 +362,7 @@ out:
 	return ret;
 }
 
-void *init_grayscale_logo_buf(int logo_count, uint32_t screen_w,
-			      uint32_t screen_h)
+void *init_grayscale_logo_buf(int logo_count, uint32_t size_one_image)
 {
 	int size;
 	void *out_buf;
@@ -375,7 +374,7 @@ void *init_grayscale_logo_buf(int logo_count, uint32_t screen_w,
 	size = size_of_header();
 	fprintf(stderr, "size of header in logo.img is %d\n", size);
 	//every pixel of the grayscale image is 4 bits
-	size += logo_count * screen_w * screen_h / 2;
+	size += logo_count * size_one_image;
 	out_buf = calloc(1, size);
 
 	return out_buf;
@@ -504,16 +503,16 @@ int main(int argc, char *argv[])
 		usage();
 		return -1;
 	}
+	hdr_size = size_of_header();
+	one_img_size = size_of_one_image();
 
-	out_buf = init_grayscale_logo_buf(logo_count, screen_w, screen_h);
+	out_buf = init_grayscale_logo_buf(logo_count, one_img_size);
 	if (!out_buf) {
 		fprintf(stderr, "Can't malloc buffer for grayscale image.\n");
 		fclose(file);
 		return -1;
 	}
 
-	hdr_size = size_of_header();
-	one_img_size = size_of_one_image();
 	logo_hdr = (struct logo_info *)out_buf;
 	fprintf(stderr, "logo count is %d,one_img_size=%d,size=%d.\n",
 		logo_count, one_img_size, screen_w * screen_h / 2);
