@@ -1004,8 +1004,7 @@ void hdr_func(enum hdr_module_sel module_sel,
 		hdr_mtx_param.mtx_only = HDR_ONLY;
 		/*for g12a/g12b osd blend shift rtl bug*/
 		if (((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-			(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B &&
-			 get_cpu_id().chip_rev == MESON_CPU_CHIP_REVISION_A)) &&
+			(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)) &&
 			(hdr_process_select & HDR_BYPASS) &&
 			(module_sel & OSD1_HDR)) {
 			for (i = 0; i < 15; i++) {
