@@ -48,7 +48,10 @@ static void print_ddr_dq_eye(struct fsp_rw_trn_result *fsp_result, u8 cs,
 	u16 deskew_step;
 	struct cs_rw_trn_result *result = &fsp_result->cs[cs];
 
-	for (dqs = 0; (byte_en & BIT(dqs)) != 0 && dqs < BYTE_NUM; dqs++) {
+	for (dqs = 0; dqs < BYTE_NUM; dqs++) {
+		if ((byte_en & BIT(dqs)) == 0)
+			continue;
+
 		for (dq = 0; dq < 8; dq++) {
 			sample = fsp_result->min_val +
 				 result->dqs[dqs].dq_deskew[dq];
@@ -95,7 +98,10 @@ static u16 cs_eye_width_min(struct cs_rw_trn_result *result, u8 byte_en,
 	u8 dqs;
 	u8 dq;
 
-	for (dqs = 0; (byte_en & BIT(dqs)) != 0 && dqs < BYTE_NUM; dqs++) {
+	for (dqs = 0; dqs < BYTE_NUM; dqs++) {
+		if ((byte_en & BIT(dqs)) == 0)
+			continue;
+
 		for (dq = 0; dq < 8; dq++) {
 			min = result->dqs[dqs].dq_min[dq];
 			max = result->dqs[dqs].dq_max[dq];

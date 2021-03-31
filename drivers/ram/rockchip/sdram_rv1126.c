@@ -1937,7 +1937,10 @@ static void save_rw_trn_min_max(void __iomem *phy_base,
 	u8 dqs;
 	u8 dq;
 
-	for (dqs = 0; (byte_en & BIT(dqs)) != 0 && dqs < BYTE_NUM; dqs++) {
+	for (dqs = 0; dqs < BYTE_NUM; dqs++) {
+		if ((byte_en & BIT(dqs)) == 0)
+			continue;
+
 		/* Channel A or B (low or high 16 bit) */
 		phy_ofs = dqs < 2 ? 0x230 : 0x2b0;
 		/* low or high 8 bit */
