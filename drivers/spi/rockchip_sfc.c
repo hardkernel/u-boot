@@ -718,7 +718,7 @@ static int rockchip_sfc_set_speed(struct udevice *bus, uint speed)
 		clk_set_rate(&sfc->clk, sfc->speed_hz);
 		sfc->speed_hz = clk_get_rate(&sfc->clk);
 		if (sfc->speed_hz > SFC_DLL_THRESHOLD_RATE) {
-			for (right = 0; right <= sfc->max_dll_cells; right++) {
+			for (right = 10; right <= sfc->max_dll_cells; right += 10) {
 				rockchip_sfc_set_delay_lines(sfc, right);
 				rockchip_sfc_read(sfc, 0, (void *)&id_temp, 3);
 				SFC_DBG("sfc dll %d id= %x %x %x\n", right,
@@ -729,7 +729,7 @@ static int rockchip_sfc_set_speed(struct udevice *bus, uint speed)
 					break;
 			}
 
-			if (left >= 0 && (right - left > 10)) {
+			if (left >= 0 && (right - left > 50)) {
 				rockchip_sfc_set_delay_lines(sfc, (u32)((right + left) / 2));
 			} else {
 				rockchip_sfc_disable_delay_lines(sfc);
