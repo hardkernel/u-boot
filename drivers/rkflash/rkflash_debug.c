@@ -6,7 +6,6 @@
 
 #include <blk.h>
 #include <common.h>
-#include <hexdump.h>
 
 #include "rkflash_debug.h"
 #include "rkflash_blk.h"
@@ -84,10 +83,6 @@ __printf(1, 2) int rkflash_print_error(const char *fmt, ...)
 
 void rkflash_print_hex(const char *s, const void *buf, int w, size_t len)
 {
-#if PRINT_SWI_ERROR
-	print_hex_dump(s, DUMP_PREFIX_OFFSET, 4, w,
-		       buf, (len) * w, 0);
-#endif
 }
 
 #if (BLK_STRESS_TEST_EN)
