@@ -31,7 +31,6 @@
 
 /* MMC/SD IP block */
 #define CONFIG_BOUNCE_BUFFER
-#define CONFIG_SUPPORT_EMMC_RPMB
 
 /* Nand */
 #define CONFIG_SYS_MAX_NAND_DEVICE	1

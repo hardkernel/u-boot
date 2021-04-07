@@ -33,8 +33,6 @@
 
 #define CONFIG_ROCKUSB_G_DNL_PID	0x320A
 
-#define CONFIG_SUPPORT_EMMC_RPMB
-
 /* MMC/SD IP block */
 #define CONFIG_BOUNCE_BUFFER
 

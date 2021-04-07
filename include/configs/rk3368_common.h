@@ -42,8 +42,6 @@
 #define COUNTER_FREQUENCY              24000000
 #define CONFIG_PREBOOT
 
-#define CONFIG_SUPPORT_EMMC_RPMB
-
 #ifndef CONFIG_SPL_BUILD
 
 /* usb mass storage */
