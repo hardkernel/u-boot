@@ -11,6 +11,7 @@
 
 /* store result of read and write training, for ddr_dq_eye tool in u-boot */
 #define RW_TRN_RESULT_ADDR	(0x2000000 + 0x8000)	/* 32M + 32k */
+#define PRINT_STEP		2
 
 #undef FSP_NUM
 #undef CS_NUM

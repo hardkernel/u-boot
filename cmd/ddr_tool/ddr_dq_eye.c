@@ -15,28 +15,81 @@
 #include <asm/arch/sdram_rk3568.h>
 #endif
 
-#define __version__	"0.0.5"
+#define __version__	"0.0.6"
 
-#define PRINT_RANGE_MAX	64
+#define PRINT_LENGTH	64
+#ifndef PRINT_STEP
+#define PRINT_STEP	1
+#endif
+#define PRINT_RANGE	((PRINT_LENGTH) * (PRINT_STEP))
+
+struct print_border {
+	u16 far_left;
+	u16 far_right;
+};
 
 struct rw_trn_result result;
 
-static void print_title_bar(u16 deskew_num)
+static void calc_print_border(struct cs_rw_trn_result *result, u8 byte_en,
+			      u16 deskew_num, struct print_border *print_border)
+{
+	u16 far_left = deskew_num;
+	u16 far_right = 0;
+	u16 mid;
+	u8 dqs;
+	u8 dq;
+
+	if (deskew_num <= PRINT_RANGE) {
+		print_border->far_left = 0;
+		print_border->far_right = deskew_num - 1;
+
+		return;
+	}
+
+	for (dqs = 0; dqs < BYTE_NUM; dqs++) {
+		if ((byte_en & BIT(dqs)) == 0)
+			continue;
+
+		for (dq = 0; dq < 8; dq++) {
+			if (result->dqs[dqs].dq_min[dq] < far_left)
+				far_left = result->dqs[dqs].dq_min[dq];
+			if (result->dqs[dqs].dq_max[dq] > far_right)
+				far_right = result->dqs[dqs].dq_max[dq];
+		}
+	}
+
+	if (far_right - far_left + 1 > PRINT_RANGE) {
+		print_border->far_left = far_left & ~((u16)(PRINT_STEP * 4 - 1));
+		print_border->far_right = far_right | (PRINT_STEP * 4 - 1);
+	} else {
+		mid = (far_left + far_right) / 2;
+		if (mid < PRINT_RANGE / 2) {
+			print_border->far_left = 0;
+			print_border->far_right = PRINT_RANGE - 1;
+		} else if (mid > deskew_num - PRINT_RANGE / 2) {
+			print_border->far_left = deskew_num - PRINT_RANGE;
+			print_border->far_right = deskew_num - 1;
+		} else {
+			print_border->far_left = mid - PRINT_RANGE / 2;
+			print_border->far_right = mid + PRINT_RANGE / 2 - 1;
+		}
+	}
+}
+
+static void print_title_bar(struct print_border *print_border)
 {
 	int i;
-	u16 deskew_step;
-
-	deskew_step = deskew_num <= PRINT_RANGE_MAX ?
-		      1 : deskew_num / PRINT_RANGE_MAX;
 
 	printf("     ");
-	for (i = 0; i < deskew_num; i += deskew_step * 4)
+	for (i = print_border->far_left; i < print_border->far_right;
+	     i += PRINT_STEP * 4)
 		printf("%-4d", i);
 	printf("	Margin_L Sample Margin_R Width    DQS\n");
 }
 
 static void print_ddr_dq_eye(struct fsp_rw_trn_result *fsp_result, u8 cs,
-			     u8 byte_en, u16 width_ref, u16 deskew_num)
+			     u8 byte_en, u16 width_ref,
+			     struct print_border *print_border)
 {
 	u16 sample;
 	u16 min;
@@ -45,7 +98,6 @@ static void print_ddr_dq_eye(struct fsp_rw_trn_result *fsp_result, u8 cs,
 	u8 dqs;
 	u8 dq;
 	int i;
-	u16 deskew_step;
 	struct cs_rw_trn_result *result = &fsp_result->cs[cs];
 
 	for (dqs = 0; dqs < BYTE_NUM; dqs++) {
@@ -58,15 +110,14 @@ static void print_ddr_dq_eye(struct fsp_rw_trn_result *fsp_result, u8 cs,
 			min = result->dqs[dqs].dq_min[dq];
 			max = result->dqs[dqs].dq_max[dq];
 			dq_eye_width = max >= min ? max - min + 1 : 0;
-			deskew_step = deskew_num <= PRINT_RANGE_MAX ?
-				      1 : deskew_num / PRINT_RANGE_MAX;
 
 			printf("DQ%-2d ", dqs * 8 + dq);
-			for (i = 0; i < deskew_num / deskew_step; i++) {
-				if (i == sample / deskew_step)
+			for (i = print_border->far_left;
+			     i < print_border->far_right; i += PRINT_STEP) {
+				if (i / PRINT_STEP == sample / PRINT_STEP)
 					printf("|");
-				else if (i >= min / deskew_step &&
-					 i <= max / deskew_step)
+				else if (i / PRINT_STEP >= min / PRINT_STEP &&
+					 i / PRINT_STEP <= max / PRINT_STEP)
 					printf("*");
 				else
 					printf("-");
@@ -129,7 +180,7 @@ static int do_ddr_dq_eye(cmd_tbl_t *cmdtp, int flag, int argc,
 	u8 fsp = 0;
 	u8 cs;
 	int i;
-	//struct print_range print_range;
+	struct print_border print_border;
 
 	printf("Rockchip DDR DQ Eye Tool v" __version__ "\n");
 
@@ -249,19 +300,23 @@ static int do_ddr_dq_eye(cmd_tbl_t *cmdtp, int flag, int argc,
 	printf("\n");
 
 	for (cs = 0; cs < result.cs_num; cs++) {
+		calc_print_border(&result.rd_fsp[fsp].cs[cs], result.byte_en,
+				  RD_DESKEW_NUM, &print_border);
 		printf("CS%d %dMHz read DQ eye:\n", cs, result.fsp_mhz[fsp]);
-		print_title_bar(RD_DESKEW_NUM);
+		print_title_bar(&print_border);
 		print_ddr_dq_eye(&result.rd_fsp[fsp], cs, result.byte_en,
-				 rd_width_ref, RD_DESKEW_NUM);
+				 rd_width_ref, &print_border);
 		cs_eye_width = cs_eye_width_min(&result.rd_fsp[fsp].cs[cs],
 						result.byte_en, RD_DESKEW_NUM);
 		if (rd_width > cs_eye_width)
 			rd_width = cs_eye_width;
 
 		printf("CS%d %dMHz write DQ eye:\n", cs, result.fsp_mhz[fsp]);
-		print_title_bar(WR_DESKEW_NUM);
+		calc_print_border(&result.wr_fsp[fsp].cs[cs], result.byte_en,
+				  WR_DESKEW_NUM, &print_border);
+		print_title_bar(&print_border);
 		print_ddr_dq_eye(&result.wr_fsp[fsp], cs, result.byte_en,
-				 wr_width_ref, WR_DESKEW_NUM);
+				 wr_width_ref, &print_border);
 		cs_eye_width = cs_eye_width_min(&result.wr_fsp[fsp].cs[cs],
 						result.byte_en, WR_DESKEW_NUM);
 		if (wr_width > cs_eye_width)
