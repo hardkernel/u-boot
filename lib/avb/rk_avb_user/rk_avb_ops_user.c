@@ -502,11 +502,11 @@ void rk_avb_get_at_vboot_state(char *buf)
 	memset(rollback_indices, 0, VBOOT_STATE_SIZE);
 	if (rk_avb_read_all_rollback_index(rollback_indices))
 		avb_error("Can not read avb_min_ver!");
-
+#ifdef CONFIG_SUPPORT_EMMC_RPMB
 	/* bootloader-min-versions */
 	if (rk_avb_get_bootloader_min_version(min_versions))
 		avb_error("Call rk_avb_get_bootloader_min_version error!");
-
+#endif
 	n = snprintf(buf, VBOOT_STATE_SIZE - 1,
 		     "avb-perm-attr-set=%s\n"
 		     "avb-locked=%s\n"
