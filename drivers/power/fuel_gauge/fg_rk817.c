@@ -132,6 +132,7 @@ static int dbg_enable = 0;
 #define CUR_ADC_K2		0x00ae
 #define CUR_ADC_K1		0x00af
 #define CUR_ADC_K0		0x00b0
+#define PMIC_CHRG_STS		0x00eb
 #define BAT_DISCHRG		0x00ec
 #define BAT_CON			BIT(4)
 
@@ -1217,7 +1218,26 @@ static int rk817_bat_update_get_soc(struct udevice *dev)
 		return VIRTUAL_POWER_SOC;
 }
 
+static int rk817_is_bat_exist(struct rk817_battery_device *battery)
+{
+	struct rk8xx_priv *rk8xx = dev_get_priv(battery->dev->parent);
+
+	if (rk8xx->variant == RK817_ID)
+		return (rk817_bat_read(battery, PMIC_CHRG_STS) & 0x80) ? 1 : 0;
+
+	return 1;
+}
+
+static int rk817_bat_bat_is_exist(struct udevice *dev)
+{
+        struct rk817_battery_device *battery = dev_get_priv(dev);
+
+        return rk817_is_bat_exist(battery);
+}
+
+
 static struct dm_fuel_gauge_ops fg_ops = {
+	.bat_is_exist = rk817_bat_bat_is_exist,
 	.get_soc = rk817_bat_update_get_soc,
 	.get_voltage = rk817_bat_update_get_voltage,
 	.get_current = rk817_bat_update_get_current,
@@ -1273,6 +1293,10 @@ static int rk817_fg_ofdata_to_platdata(struct udevice *dev)
 		printf("can't read design_qmax\n");
 		return -EINVAL;
 	}
+
+	battery->virtual_power = dev_read_u32_default(dev, "virtual_power", 0);
+	if (!rk817_is_bat_exist(battery))
+		battery->virtual_power = 1;
 
 	if (rk8xx->variant == RK809_ID) {
 		battery->bat_res_up  = dev_read_u32_default(dev, "bat_res_up", -1);
