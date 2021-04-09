@@ -2154,6 +2154,141 @@ static ulong rk3568_rkvdec_set_clk(struct rk3568_clk_priv *priv,
 
 	return rk3568_rkvdec_get_clk(priv, clk_id);
 }
+
+static ulong rk3568_uart_get_rate(struct rk3568_clk_priv *priv, ulong clk_id)
+{
+	struct rk3568_cru *cru = priv->cru;
+	u32 reg, con, fracdiv, div, src, p_src, p_rate;
+	unsigned long m, n;
+
+	switch (clk_id) {
+	case SCLK_UART1:
+		reg = 52;
+		break;
+	case SCLK_UART2:
+		reg = 54;
+		break;
+	case SCLK_UART3:
+		reg = 56;
+		break;
+	case SCLK_UART4:
+		reg = 58;
+		break;
+	case SCLK_UART5:
+		reg = 60;
+		break;
+	case SCLK_UART6:
+		reg = 62;
+		break;
+	case SCLK_UART7:
+		reg = 64;
+		break;
+	case SCLK_UART8:
+		reg = 66;
+		break;
+	case SCLK_UART9:
+		reg = 68;
+		break;
+	default:
+		return -ENOENT;
+	}
+	con = readl(&cru->clksel_con[reg]);
+	src = (con & CLK_UART_SEL_MASK) >> CLK_UART_SEL_SHIFT;
+	div = (con & CLK_UART_SRC_DIV_MASK) >> CLK_UART_SRC_DIV_SHIFT;
+	p_src = (con & CLK_UART_SRC_SEL_MASK) >> CLK_UART_SRC_SEL_SHIFT;
+	if (p_src == CLK_UART_SRC_SEL_GPLL)
+		p_rate = priv->gpll_hz;
+	else if (p_src == CLK_UART_SRC_SEL_CPLL)
+		p_rate = priv->cpll_hz;
+	else
+		p_rate = 480000000;
+	if (src == CLK_UART_SEL_SRC) {
+		return DIV_TO_RATE(p_rate, div);
+	} else if (src == CLK_UART_SEL_FRAC) {
+		fracdiv = readl(&cru->clksel_con[reg + 1]);
+		n = fracdiv & CLK_UART_FRAC_NUMERATOR_MASK;
+		n >>= CLK_UART_FRAC_NUMERATOR_SHIFT;
+		m = fracdiv & CLK_UART_FRAC_DENOMINATOR_MASK;
+		m >>= CLK_UART_FRAC_DENOMINATOR_SHIFT;
+		return DIV_TO_RATE(p_rate, div) * n / m;
+	} else {
+		return OSC_HZ;
+	}
+}
+
+static ulong rk3568_uart_set_rate(struct rk3568_clk_priv *priv,
+				  ulong clk_id, ulong rate)
+{
+	struct rk3568_cru *cru = priv->cru;
+	u32 reg, clk_src, uart_src, div;
+	unsigned long m = 0, n = 0, val;
+
+	if (priv->gpll_hz % rate == 0) {
+		clk_src = CLK_UART_SRC_SEL_GPLL;
+		uart_src = CLK_UART_SEL_SRC;
+		div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	} else if (priv->cpll_hz % rate == 0) {
+		clk_src = CLK_UART_SRC_SEL_CPLL;
+		uart_src = CLK_UART_SEL_SRC;
+		div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	} else if (rate == OSC_HZ) {
+		clk_src = CLK_UART_SRC_SEL_GPLL;
+		uart_src = CLK_UART_SEL_XIN24M;
+		div = 2;
+	} else {
+		clk_src = CLK_UART_SRC_SEL_GPLL;
+		uart_src = CLK_UART_SEL_FRAC;
+		div = 2;
+		rational_best_approximation(rate, priv->gpll_hz / div,
+					    GENMASK(16 - 1, 0),
+					    GENMASK(16 - 1, 0),
+					    &m, &n);
+	}
+
+	switch (clk_id) {
+	case SCLK_UART1:
+		reg = 52;
+		break;
+	case SCLK_UART2:
+		reg = 54;
+		break;
+	case SCLK_UART3:
+		reg = 56;
+		break;
+	case SCLK_UART4:
+		reg = 58;
+		break;
+	case SCLK_UART5:
+		reg = 60;
+		break;
+	case SCLK_UART6:
+		reg = 62;
+		break;
+	case SCLK_UART7:
+		reg = 64;
+		break;
+	case SCLK_UART8:
+		reg = 66;
+		break;
+	case SCLK_UART9:
+		reg = 68;
+		break;
+	default:
+		return -ENOENT;
+	}
+	rk_clrsetreg(&cru->clksel_con[reg],
+		     CLK_UART_SEL_MASK | CLK_UART_SRC_SEL_MASK |
+		     CLK_UART_SRC_DIV_MASK,
+		     (clk_src << CLK_UART_SRC_SEL_SHIFT) |
+		     (uart_src << CLK_UART_SEL_SHIFT) |
+		     ((div - 1) << CLK_UART_SRC_DIV_SHIFT));
+	if (m && n) {
+		val = m << CLK_UART_FRAC_NUMERATOR_SHIFT | n;
+		writel(val, &cru->clksel_con[reg + 1]);
+	}
+
+	return rk3568_uart_get_rate(priv, clk_id);
+}
 #endif
 
 static ulong rk3568_clk_get_rate(struct clk *clk)
@@ -2286,6 +2421,17 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 		break;
 	case TCLK_WDT_NS:
 		rate = OSC_HZ;
+		break;
+	case SCLK_UART1:
+	case SCLK_UART2:
+	case SCLK_UART3:
+	case SCLK_UART4:
+	case SCLK_UART5:
+	case SCLK_UART6:
+	case SCLK_UART7:
+	case SCLK_UART8:
+	case SCLK_UART9:
+		rate = rk3568_uart_get_rate(priv, clk->id);
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
@@ -2454,6 +2600,17 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case TCLK_WDT_NS:
 		ret = OSC_HZ;
+		break;
+	case SCLK_UART1:
+	case SCLK_UART2:
+	case SCLK_UART3:
+	case SCLK_UART4:
+	case SCLK_UART5:
+	case SCLK_UART6:
+	case SCLK_UART7:
+	case SCLK_UART8:
+	case SCLK_UART9:
+		ret = rk3568_uart_set_rate(priv, clk->id, rate);
 		break;
 #endif
 	case ACLK_SECURE_FLASH:
