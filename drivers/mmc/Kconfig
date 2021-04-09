@@ -55,6 +55,14 @@ config SPL_MMC_TINY
 	  operations too, which can remove the need for malloc support in SPL
 	  and thus further reduce footprint.
 
+config SUPPORT_EMMC_RPMB
+	bool "Support eMMC replay protected memory block (RPMB)"
+	depends on MMC && CMD_MMC
+	default y
+	help
+	  Enable support for reading, writing and programming the
+	  key for the Replay Protection Memory Block partition in eMMC.
+
 config MMC_DAVINCI
 	bool "TI DAVINCI Multimedia Card Interface support"
 	depends on ARCH_DAVINCI
