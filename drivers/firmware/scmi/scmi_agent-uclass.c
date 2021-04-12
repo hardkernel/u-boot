@@ -5,7 +5,7 @@
 
 #include <common.h>
 #include <dm.h>
-#include <dm/device_compat.h>
+#include <dm/device.h>
 #include <errno.h>
 #include <scmi_agent-uclass.h>
 #include <scmi_protocols.h>
@@ -89,11 +89,12 @@ static int scmi_bind_protocols(struct udevice *dev)
 			continue;
 		}
 
-		ret = device_bind_ofnode(dev, drv, ofnode_get_name(node),
-					 NULL, node, NULL);
+		ret = device_bind(dev, drv, ofnode_get_name(node), NULL,
+				  ofnode_to_offset(node), NULL);
 		if (ret)
 			break;
 	}
+
 
 	return ret;
 }

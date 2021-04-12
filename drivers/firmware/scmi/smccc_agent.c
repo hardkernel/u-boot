@@ -8,8 +8,8 @@
 #include <errno.h>
 #include <scmi_agent.h>
 #include <scmi_agent-uclass.h>
-#include <dm/devres.h>
 #include <dm/device-internal.h>
+#include <dm/read.h>
 #include <linux/arm-smccc.h>
 #include <linux/compat.h>
 
@@ -54,7 +54,8 @@ static int scmi_smccc_probe(struct udevice *dev)
 	u32 func_id;
 	int ret;
 
-	if (dev_read_u32(dev, "arm,smc-id", &func_id)) {
+	func_id = dev_read_u32_default(dev, "arm,smc-id", -ENODATA);
+	if (func_id == -ENODATA) {
 		dev_err(dev, "Missing property func-id\n");
 		return -EINVAL;
 	}
