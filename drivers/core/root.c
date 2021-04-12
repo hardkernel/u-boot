@@ -240,6 +240,10 @@ static int dm_scan_fdt_live(struct udevice *parent,
 			ret = err;
 			debug("%s: ret=%d\n", np->name, ret);
 		}
+
+		if (!pre_reloc_only && !strcmp(np->name, "firmware"))
+			ret = device_bind_driver_to_node(gd->dm_root,
+				"firmware", np->name, np_to_ofnode(np), NULL);
 	}
 
 	if (ret)
