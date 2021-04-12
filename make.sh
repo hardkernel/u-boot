@@ -771,7 +771,7 @@ function pack_fit_image()
 	fi
 
 	rm uboot.img trust*.img -rf
-	${SCRIPT_FIT} ${ARG_LIST_FIT}
+	${SCRIPT_FIT} ${ARG_LIST_FIT} --chip ${RKCHIP_LABEL}
 
 	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
 		if ! fdtget -l uboot.img /images/atf-1 >/dev/null 2>&1 ; then

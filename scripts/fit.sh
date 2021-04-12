@@ -27,6 +27,7 @@ KERNEL_ADDR_PLACEHOLDER="0xffffff01"
 RAMDISK_ADDR_PLACEHOLDER="0xffffff02"
 # tools
 MKIMAGE="./tools/mkimage"
+RK_SIGN_TOOL="../rkbin/tools/rk_sign_tool"
 FIT_UNPACK="./scripts/fit-unpack.sh"
 CHECK_SIGN="./tools/fit_check_sign"
 # key
@@ -100,7 +101,7 @@ function validate_arg()
 		--no-check|--spl-new|--burn-key-hash)
 			shift=1
 			;;
-		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-recovery|--rollback-index-uboot|--boot_img|--recovery_img|--version-uboot|--version-boot|--version-recovery)
+		--ini-trust|--ini-loader|--rollback-index-boot|--rollback-index-recovery|--rollback-index-uboot|--boot_img|--recovery_img|--version-uboot|--version-boot|--version-recovery|--chip)
 			shift=2
 			;;
 		*)
@@ -125,6 +126,10 @@ function fit_process_args()
 				;;
 			--boot_img)     # boot.img
 				ARG_BOOT_IMG=$2
+				shift 2
+				;;
+			--chip)
+				ARG_CHIP=$2
 				shift 2
 				;;
 			--recovery_img) # recovery.img
@@ -573,6 +578,14 @@ function fit_gen_recovery_img()
 	fi
 }
 
+function fit_gen_loader()
+{
+	if grep -Eq '^CONFIG_FIT_SIGNATURE=y' .config ; then
+		${RK_SIGN_TOOL} cc --chip ${ARG_CHIP: 2: 6}
+		${RK_SIGN_TOOL} sl --key ./keys/dev.key --pubkey ./keys/dev.pubkey --loader *_loader_*.bin
+	fi
+}
+
 function fit_msg_uboot()
 {
 	if [ "${ARG_SIGN}" != "y" ]; then
@@ -644,7 +657,12 @@ function fit_msg_recovery()
 function fit_msg_loader()
 {
 	LOADER=`ls *loader*.bin`
-	echo "Image(no-signed):  ${LOADER} (with spl, ddr, usbplug) is ready"
+
+	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
+		echo "Image(signed):  ${LOADER} (with spl, ddr, usbplug) is ready"
+	else
+		echo "Image(no-signed):  ${LOADER} (with spl, ddr, usbplug) is ready"
+	fi
 }
 
 fit_process_args $*
@@ -664,6 +682,7 @@ else
 	fi
 	fit_gen_uboot_itb
 	fit_gen_uboot_img
+	fit_gen_loader
 
 	echo
 	fit_msg_uboot
