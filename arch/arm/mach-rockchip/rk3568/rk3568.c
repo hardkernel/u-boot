@@ -30,6 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GRF_GPIO1C_DS_3		0x22c
 #define GRF_GPIO1D_DS_0		0x230
 #define GRF_GPIO1D_DS_1		0x234
+#define GRF_GPIO1D_DS_2		0x238
 #define GRF_SOC_CON4		0x510
 #define EDP_PHY_GRF_BASE	0xfdcb0000
 #define EDP_PHY_GRF_CON0	(EDP_PHY_GRF_BASE + 0x00)
@@ -850,11 +851,13 @@ int arch_cpu_init(void)
 #endif
 
 #ifndef CONFIG_TPL_BUILD
-	/* set the fspi d0 cs0 to level 1 */
+	/* set the fspi d0~3 cs0 to level 2 */
 	if (get_bootdev_by_brom_bootsource() == BOOT_TYPE_SPI_NOR ||
 	    get_bootdev_by_brom_bootsource() == BOOT_TYPE_SPI_NAND) {
-		writel(0x3f000300, GRF_BASE + GRF_GPIO1D_DS_0);
-		writel(0x3f000300, GRF_BASE + GRF_GPIO1D_DS_1);
+		writel(0x3f000700, GRF_BASE + GRF_GPIO1C_DS_3);
+		writel(0x3f000700, GRF_BASE + GRF_GPIO1D_DS_0);
+		writel(0x3f3f0707, GRF_BASE + GRF_GPIO1D_DS_1);
+		writel(0x003f0007, GRF_BASE + GRF_GPIO1D_DS_2);
 	}
 #endif
 
