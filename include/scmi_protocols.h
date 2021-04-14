@@ -102,8 +102,8 @@ struct scmi_clk_rate_get_out {
  * @rate_msb:	32bit MSB of the clock rate in Hertz
  */
 struct scmi_clk_rate_set_in {
-	u32 clock_id;
 	u32 flags;
+	u32 clock_id;
 	u32 rate_lsb;
 	u32 rate_msb;
 };
