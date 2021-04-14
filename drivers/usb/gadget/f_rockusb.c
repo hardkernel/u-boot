@@ -242,6 +242,15 @@ static int rkusb_do_read_flash_info(struct fsg_common *common,
 		}
 	}
 
+	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) {
+		/* RV1126/RK3308 mtd spinor keep the former upgrade mode */
+#if !defined(CONFIG_ROCKCHIP_RV1126) && !defined(CONFIG_ROCKCHIP_RK3308)
+		finfo.block_size = 0x100; /* Aligned to 128KB */
+#else
+		finfo.block_size = ROCKCHIP_FLASH_BLOCK_SIZE;
+#endif
+	}
+
 	debug("Flash info: block_size= %x page_size= %x\n", finfo.block_size,
 	      finfo.page_size);
 
@@ -567,6 +576,11 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	    (devnum == BLK_MTD_NAND ||
 	    devnum == BLK_MTD_SPI_NAND))
 		buf[0] |= (1 << 6);
+
+#if !defined(CONFIG_ROCKCHIP_RV1126) && !defined(CONFIG_ROCKCHIP_RK3308)
+	if (type == IF_TYPE_MTD && devnum == BLK_MTD_SPI_NOR)
+		buf[0] |= (1 << 6);
+#endif
 
 #if defined(CONFIG_ROCKCHIP_RK3568)
 	buf[1] = BIT(0);
