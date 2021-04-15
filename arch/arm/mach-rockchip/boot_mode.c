@@ -38,10 +38,20 @@ static int misc_require_recovery(u32 bcb_offset)
 
 	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
 	bmsg = memalign(ARCH_DMA_MINALIGN, cnt * dev_desc->blksz);
-	if (blk_dread(dev_desc, part.start + bcb_offset, cnt, bmsg) != cnt)
+	if (blk_dread(dev_desc, part.start + bcb_offset, cnt, bmsg) != cnt) {
 		recovery = 0;
-	else
+	} else {
 		recovery = !strcmp(bmsg->command, "boot-recovery");
+		if ((dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1) ||
+		    (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)) {
+			if (!strcmp(bmsg->recovery, "recovery\n--rk_fwupdate\n")) {
+				if (dev_desc->if_type == IF_TYPE_MMC)
+					env_update("bootargs", "sdfwupdate");
+				else if (dev_desc->if_type == IF_TYPE_USB)
+					env_update("bootargs", "usbfwupdate");
+			}
+		}
+	}
 
 	free(bmsg);
 out:
