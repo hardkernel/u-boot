@@ -16,6 +16,14 @@ int rockchip_get_clk(struct udevice **devp)
 			DM_GET_DRIVER(rockchip_rk3568_cru), devp);
 }
 
+#ifdef CONFIG_CLK_SCMI
+int rockchip_get_scmi_clk(struct udevice **devp)
+{
+	return uclass_get_device_by_driver(UCLASS_CLK,
+			DM_GET_DRIVER(scmi_clock), devp);
+}
+#endif
+
 void *rockchip_get_cru(void)
 {
 	struct rk3568_clk_priv *priv;

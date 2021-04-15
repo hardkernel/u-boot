@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <clk.h>
 #include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
@@ -11,6 +12,7 @@
 #include <asm/arch/rk_atags.h>
 #include <linux/libfdt.h>
 #include <fdt_support.h>
+#include <asm/arch/clock.h>
 #include <dt-bindings/clock/rk3568-cru.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -932,6 +934,57 @@ int spl_fit_standalone_release(uintptr_t entry_point)
 	/* release the scr1 */
 	writel(0x04000000, CRU_BASE + CRU_SOFTRST_CON26);
 
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_CLK_SCMI
+#include <dm.h>
+/*
+ * armclk: 1104M:
+ *	rockchip,clk-init = <1104000000>,
+ *	vdd_cpu : regulator-init-microvolt = <825000>;
+ * armclk: 1416M(by default):
+ *	rockchip,clk-init = <1416000000>,
+ *	vdd_cpu : regulator-init-microvolt = <900000>;
+ * armclk: 1608M:
+ *	rockchip,clk-init = <1608000000>,
+ *	vdd_cpu : regulator-init-microvolt = <975000>;
+ */
+
+int set_armclk_rate(void)
+{
+	struct clk clk;
+	u32 *rates = NULL;
+	int ret, size, num_rates;
+
+	ret = rockchip_get_scmi_clk(&clk.dev);
+	if (ret) {
+		printf("Failed to get scmi clk dev\n");
+		return ret;
+	}
+
+	size = dev_read_size(clk.dev, "rockchip,clk-init");
+	if (size < 0)
+		return 0;
+
+	num_rates = size / sizeof(u32);
+	rates = calloc(num_rates, sizeof(u32));
+	if (!rates)
+		return -ENOMEM;
+
+	ret = dev_read_u32_array(clk.dev, "rockchip,clk-init",
+				 rates, num_rates);
+	if (ret) {
+		printf("Cannot get rockchip,clk-init reg\n");
+		return -EINVAL;
+	}
+	clk.id = 0;
+	ret = clk_set_rate(&clk, rates[clk.id]);
+	if (ret < 0) {
+		printf("Failed to set armclk\n");
+		return ret;
+	}
 	return 0;
 }
 #endif
