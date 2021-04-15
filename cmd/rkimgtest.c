@@ -47,6 +47,9 @@ static int do_rkimg_test(cmd_tbl_t *cmdtp, int flag,
 			else
 				env_update("bootargs", "usbfwupdate");
 		}
+	} else if (buffer[0] == 0x534e4b52 || buffer[0] == 0x534e5252) {
+		/* The 0x534e4b52 & 0x534e5252 are the new idb block header tag */
+		ret = CMD_RET_SUCCESS;
 	} else {
 		ret = CMD_RET_FAILURE;
 	}
