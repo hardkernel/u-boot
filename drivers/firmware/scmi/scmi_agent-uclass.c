@@ -89,8 +89,8 @@ static int scmi_bind_protocols(struct udevice *dev)
 			continue;
 		}
 
-		ret = device_bind(dev, drv, ofnode_get_name(node), NULL,
-				  ofnode_to_offset(node), NULL);
+		ret = device_bind_with_driver_data(dev, drv,
+				ofnode_get_name(node), 0, node, NULL);
 		if (ret)
 			break;
 	}
