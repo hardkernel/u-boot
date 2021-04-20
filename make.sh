@@ -757,13 +757,6 @@ function pack_fit_image()
 		exit 1
 	fi
 
-	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
-		if ! python -c "import elftools" ; then
-			echo "ERROR: No python 'pyelftools', please: pip install pyelftools"
-			exit 1
-		fi
-	fi
-
 	# If we don't plan to have uboot in uboot.img in case of: SPL => Trust => Kernel, creating empty files.
 	if [ "${ARG_NO_UBOOT}" == "y" ]; then
 		rm u-boot-nodtb.bin u-boot.dtb -f
@@ -772,14 +765,6 @@ function pack_fit_image()
 
 	rm uboot.img trust*.img -rf
 	${SCRIPT_FIT} ${ARG_LIST_FIT} --chip ${RKCHIP_LABEL}
-
-	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
-		if ! fdtget -l uboot.img /images/atf-1 >/dev/null 2>&1 ; then
-			echo -e "\nERROR: Invalid uboot.img, please install: \"pip install pyelftools\""
-			echo
-			exit 1
-		fi
-	fi
 
 	rm ${REP_DIR} -rf
 	echo "pack uboot.img okay! Input: ${INI_TRUST}"
