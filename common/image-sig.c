@@ -500,7 +500,12 @@ int fit_config_verify_required_sigs(const void *fit, int conf_noffset,
 		if (ret) {
 			printf("Failed to verify required signature '%s'\n",
 			       fit_get_name(sig_blob, noffset, NULL));
+#ifndef USE_HOSTCC
+			if (fit_board_verify_required_sigs())
+				return ret;
+#else
 			return ret;
+#endif
 		}
 	}
 
