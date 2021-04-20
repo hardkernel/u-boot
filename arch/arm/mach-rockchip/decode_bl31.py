@@ -8,23 +8,37 @@
 A script to decode bl31.elf to binary
 """
 
-# pip install pyelftools
-from elftools.elf.elffile import ELFFile
+import os
+import sys
+import getopt
+import logging
+import struct
 
-ELF_SEG_P_TYPE='p_type'
-ELF_SEG_P_PADDR='p_paddr'
+def unpack_elf(filename):
+    with open(filename, 'rb') as file:
+        elf = file.read()
+    if elf[0:7] != b'\x7fELF\x02\x01\x01' or elf[18:20] != b'\xb7\x00':
+        raise ValueError("Invalid arm64 ELF file '%s'" % filename)
+
+    e_entry, e_phoff = struct.unpack_from('<2Q', elf, 0x18)
+    e_phentsize, e_phnum = struct.unpack_from('<2H', elf, 0x36)
+    segments = []
+
+    for index in range(e_phnum):
+        offset = e_phoff + e_phentsize * index
+        p_type, p_flags, p_offset = struct.unpack_from('<LLQ', elf, offset)
+        if p_type == 1: # PT_LOAD
+            p_paddr, p_filesz = struct.unpack_from('<2Q', elf, offset + 0x18)
+            if p_filesz > 0:
+                p_data = elf[p_offset:p_offset + p_filesz]
+                segments.append((index, e_entry, p_paddr, p_data))
+    return segments
 
 def generate_atf_binary(bl31_file_name):
-    with open(bl31_file_name) as bl31_file:
-        bl31 = ELFFile(bl31_file)
-        num = bl31.num_segments()
-        for i in range(num):
-            seg = bl31.get_segment(i)
-            if ('PT_LOAD' == seg.__getitem__(ELF_SEG_P_TYPE)):
-                paddr = seg.__getitem__(ELF_SEG_P_PADDR)
-                file_name = 'bl31_0x%08x.bin' % paddr
-                with open(file_name, "wb") as atf:
-                    atf.write(seg.data());
+    for index, entry, paddr, data in unpack_elf(bl31_file_name):
+        file_name = 'bl31_0x%08x.bin' % paddr
+        with open(file_name, "wb") as atf:
+            atf.write(data)
 
 def main():
     bl31_elf="./bl31.elf"
