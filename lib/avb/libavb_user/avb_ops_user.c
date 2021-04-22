@@ -440,19 +440,19 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 	printf("get image from preloaded partition...\n");
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc)
-	    return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+	    return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 
 	load_addr = env_get_ulong("kernel_addr_r", 16, 0);
 	if (!load_addr)
-		return AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_ARGUMENT;
+		return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
 
 	ret = android_image_load_by_partname(dev_desc, partition, &load_addr);
 	if (!ret) {
 		*out_pointer = (u8 *)load_addr;
 		*out_num_bytes_preloaded = num_bytes; /* return what it expects */
-		ret = AVB_SLOT_VERIFY_RESULT_OK;
+		ret = AVB_IO_RESULT_OK;
 	} else {
-		ret = AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
+		ret = AVB_IO_RESULT_ERROR_IO;
 	}
 
 	return ret;

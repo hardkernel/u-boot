@@ -388,7 +388,10 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
       allow_verification_error);
   if (ret != AVB_SLOT_VERIFY_RESULT_OK) {
     goto out;
+  } else if (image_preloaded) {
+    goto out;
   }
+
   // Although only one of the type might be used, we have to defined the
   // structure here so that they would live outside the 'if/else' scope to be
   // used later.
