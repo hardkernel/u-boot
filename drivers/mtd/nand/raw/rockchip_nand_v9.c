@@ -696,7 +696,7 @@ static int rockchip_nandc_bind(struct udevice *udev)
 	struct udevice *bdev;
 
 	ret = blk_create_devicef(udev, "mtd_blk", "blk", IF_TYPE_MTD,
-				 0, 512, 0, &bdev);
+				 BLK_MTD_NAND, 512, 0, &bdev);
 	if (ret)
 		printf("Cannot create block device\n");
 #endif
