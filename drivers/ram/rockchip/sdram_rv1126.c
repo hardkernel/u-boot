@@ -2009,14 +2009,19 @@ static int high_freq_training(struct dram_info *dram,
 	u32 dramtype = sdram_params->base.dramtype;
 	int min_val;
 	int dqs_skew, clk_skew, ca_skew;
+	u8 byte_en;
 	int ret;
 
+	byte_en = readl(PHY_REG(phy_base, 0xf)) & PHY_DQ_WIDTH_MASK;
 	dqs_skew = 0;
-	for (j = 0; j < sdram_params->ch.cap_info.rank; j++)
-		for (i = 0; i < ARRAY_SIZE(wrlvl_result[0]); i++)
-			dqs_skew += wrlvl_result[j][i];
+	for (j = 0; j < sdram_params->ch.cap_info.rank; j++) {
+		for (i = 0; i < ARRAY_SIZE(wrlvl_result[0]); i++) {
+			if ((byte_en & BIT(i)) != 0)
+				dqs_skew += wrlvl_result[j][i];
+		}
+	}
 	dqs_skew = dqs_skew / (sdram_params->ch.cap_info.rank *
-			       ARRAY_SIZE(wrlvl_result[0]));
+			       (1 << sdram_params->ch.cap_info.bw));
 
 	clk_skew = 0x20 - dqs_skew;
 	dqs_skew = 0x20;
