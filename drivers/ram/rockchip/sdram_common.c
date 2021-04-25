@@ -307,7 +307,12 @@ int sdram_detect_dbw(struct sdram_cap_info *cap_info, u32 dram_type)
 	u32 row, col, bk, bw, cs_cap, cs;
 	u32 die_bw_0 = 0, die_bw_1 = 0;
 
-	if (dram_type == DDR3 || dram_type == LPDDR4) {
+	if (dram_type == DDR3) {
+		if (cap_info->bw == 0)
+			cap_info->dbw = 0;
+		else
+			cap_info->dbw = 1;
+	} else if (dram_type == LPDDR4) {
 		cap_info->dbw = 1;
 	} else if (dram_type == LPDDR3 || dram_type == LPDDR2) {
 		row = cap_info->cs0_row;

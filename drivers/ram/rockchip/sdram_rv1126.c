@@ -420,6 +420,17 @@ static unsigned int
 				ddrconf = i;
 				goto out;
 			}
+
+		for (i = 0; i < 7; i++)
+			if (((tmp & 0x1f) == (ddr_cfg_2_rbc_p2[i] & 0x1f)) &&
+			    ((tmp & (7 << 5)) <=
+			     (ddr_cfg_2_rbc_p2[i] & (7 << 5))) &&
+			    ((tmp & (1 << 8)) <=
+			     (ddr_cfg_2_rbc_p2[i] & (1 << 8)))) {
+				ddrconf = i + 22;
+				goto out;
+			}
+
 		if (cs == 1 && bank == 3 && row <= 17 &&
 		    (col + bw) == 12)
 			ddrconf = 23;
@@ -2119,7 +2130,7 @@ static void update_noc_timing(struct dram_info *dram,
 	bl = ((readl(pctl_base + DDR_PCTL2_MSTR) >> 16) & 0xf) * 2;
 
 	/* update the noc timing related to data bus width */
-	if ((bw / 8 * bl) == 16)
+	if ((bw / 8 * bl) <= 16)
 		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 0;
 	else if ((bw / 8 * bl) == 32)
 		sdram_params->ch.noc_timings.ddrmode.b.burstsize = 1;
@@ -2403,11 +2414,12 @@ static u64 dram_detect_cap(struct dram_info *dram,
 	u32 coltmp;
 	u32 rowtmp;
 	u32 cs;
-	u32 bw = 1;
 	u32 dram_type = sdram_params->base.dramtype;
 	u32 pwrctl;
+	u32 i, dq_map;
+	u32 byte1 = 0, byte0 = 0;
 
-	cap_info->bw = bw;
+	cap_info->bw = dram_type == DDR3 ? 0 : 1;
 	if (dram_type != LPDDR4) {
 		if (dram_type != DDR4) {
 			coltmp = 12;
@@ -2462,10 +2474,24 @@ static u64 dram_detect_cap(struct dram_info *dram,
 		setbits_le32(PHY_REG(phy_base, 0xf), 0xf);
 
 		if (data_training(dram, 0, sdram_params, 0,
-				  READ_GATE_TRAINING) == 0)
+				  READ_GATE_TRAINING) == 0) {
 			cap_info->bw = 2;
-		else
-			cap_info->bw = 1;
+		} else {
+			dq_map = readl(PHY_REG(phy_base, 0x4f));
+			for (i = 0; i < 4; i++) {
+				if (((dq_map >> (i * 2)) & 0x3) == 0)
+					byte0 = i;
+				if (((dq_map >> (i * 2)) & 0x3) == 1)
+					byte1 = i;
+			}
+			clrsetbits_le32(PHY_REG(phy_base, 0xf), PHY_DQ_WIDTH_MASK,
+					BIT(byte0) | BIT(byte1));
+			if (data_training(dram, 0, sdram_params, 0,
+					  READ_GATE_TRAINING) == 0)
+				cap_info->bw = 1;
+			else
+				cap_info->bw = 0;
+		}
 	}
 
 	writel(pwrctl, pctl_base + DDR_PCTL2_PWRCTL);
