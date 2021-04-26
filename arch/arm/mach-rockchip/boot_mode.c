@@ -42,15 +42,8 @@ static int misc_require_recovery(u32 bcb_offset)
 		recovery = 0;
 	} else {
 		recovery = !strcmp(bmsg->command, "boot-recovery");
-		if ((dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1) ||
-		    (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)) {
-			if (!strcmp(bmsg->recovery, "recovery\n--rk_fwupdate\n")) {
-				if (dev_desc->if_type == IF_TYPE_MMC)
-					env_update("bootargs", "sdfwupdate");
-				else if (dev_desc->if_type == IF_TYPE_USB)
-					env_update("bootargs", "usbfwupdate");
-			}
-		}
+		if (!strcmp(bmsg->recovery, "recovery\n--rk_fwupdate\n"))
+			env_set("rk_fwupdate", "y"); /* set for late use */
 	}
 
 	free(bmsg);

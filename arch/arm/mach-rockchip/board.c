@@ -319,6 +319,8 @@ static void env_fixup(void)
 
 static void cmdline_handle(void)
 {
+	struct blk_desc *dev_desc;
+
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	struct tag *t;
 
@@ -331,6 +333,16 @@ static void cmdline_handle(void)
 			env_update("bootargs", "fuse.programmed=0");
 	}
 #endif
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return;
+
+	if (env_get_yesno("rk_fwupdate")) {
+		if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1)
+			env_update("bootargs", "sdfwupdate");
+		else if (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)
+			env_update("bootargs", "usbfwupdate");
+	}
 }
 
 int board_late_init(void)
