@@ -10,51 +10,6 @@ JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 CMD_ARGS=$1
 
-# @LOADER: map to $RKCHIP_LOADER for loader ini
-# @TRUST:  map to $RKCHIP_TRUST for trust ini
-# @LABEL:  map to $RKCHIP_LEBEL for verbose message
-# @-:      default state/value
-CHIP_TYPE_FIXUP_TABLE=(
-	# CONFIG_XXX                         RKCHIP         LOADER       TRUST         LABEL
-	"CONFIG_ROCKCHIP_RK3368              RK3368H         -            -             -"
-	"CONFIG_ROCKCHIP_RV1108              RV110X          -            -             -"
-	"CONFIG_ROCKCHIP_PX3SE               PX3SE           -            -             -"
-	"CONFIG_ROCKCHIP_RK3126              RK3126          -            -             -"
-	"CONFIG_ROCKCHIP_RK3326              RK3326          -            -             -"
-	"CONFIG_ROCKCHIP_RK3128X             RK3128X         -            -             -"
-	"CONFIG_ROCKCHIP_PX5                 PX5             -            -             -"
-	"CONFIG_ROCKCHIP_RK3399PRO           RK3399PRO       -            -             -"
-	"CONFIG_ROCKCHIP_RK1806              RK1806          -            -             -"
-	"CONFIG_TARGET_GVA_RK3229            RK322X          RK322XAT     -             -"
-	"CONFIG_COPROCESSOR_RK1808           RKNPU-LION      RKNPULION    RKNPULION     -"
-)
-
-# <*> Fixup rsa/sha pack mode for platforms
-#     RSA: RK3308/PX30/RK3326/RK1808 use RSA-PKCS1 V2.1, it's pack magic is "3", and others use default configure.
-#     SHA: RK3368 use rk big endian SHA256, it's pack magic is "2", and others use default configure.
-# <*> Fixup images size pack for platforms
-# <*> Fixup verbose message about AARCH32
-#
-# @RSA:     rsa mode
-# @SHA:     sha mode
-# @A64-KB:  arm64 platform image size: [uboot,trust]
-# @A64-NUM: arm64 platform image number of total: [uboot,trust]
-# @A32-KB:  arm32 platform image size: [uboot,trust]
-# @A32-NUM: arm32 platform image number of total: [uboot,trust]
-# @LOADER:  map to $RKCHIP_LOADER for loader ini
-# @TRUST:   map to $RKCHIP_TRUST for trust ini
-# @-:       default state/value
-CHIP_CFG_FIXUP_TABLE=(
-	# CONFIG_XXX              RSA     SHA     A64-KB      A64-NUM     A32-KB       A32-NUM      LOAER        TRUST
-	"CONFIG_ROCKCHIP_RK3368    -       2       -,-          -,-        -,-          -,-           -           -"
-	"CONFIG_ROCKCHIP_RK3036    -       -       512,512      1,1        -,-          -,-           -           -"
-	"CONFIG_ROCKCHIP_PX30      3       -       -,-          -,-        -,-          -,-           -           -"
-	"CONFIG_ROCKCHIP_RK3326    3       -       -,-          -,-        -,-          -,-           AARCH32     -"
-	"CONFIG_ROCKCHIP_RK3308    3       -       1024,1024    2,2        512,512      2,2           -           AARCH32"
-	"CONFIG_ROCKCHIP_RK1808    3       -       1024,1024    2,2        -,-          -,-           -           -"
-	"CONFIG_ROCKCHIP_RV1126    3       -       -,-          -,-        -,-          -,-           -           -"
-)
-
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
 RKBIN_TOOLS=../rkbin/tools
@@ -73,11 +28,10 @@ TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_
 
 ########################################### User not touch #############################################
 # Declare global INI file searching index name for every chip, update in select_chip_info()
-RKCHIP="-"
-RKCHIP_LABEL="-"
-RKCHIP_LOADER="-"
-RKCHIP_TRUST="-"
-
+RKCHIP=
+RKCHIP_LABEL=
+RKCHIP_LOADER=
+RKCHIP_TRUST=
 INI_TRUST=
 INI_LOADER=
 
@@ -341,25 +295,10 @@ function select_chip_info()
 
 	# default
 	RKCHIP=${RKCHIP##*_}
-	# fixup ?
-	for item in "${CHIP_TYPE_FIXUP_TABLE[@]}"
-	do
-		CONFIG_ROCKCHIP_XXX=`echo ${item} | awk '{ print $1 }'`
-		if grep  -q "^${CONFIG_ROCKCHIP_XXX}=y" .config ; then
-			RKCHIP=`echo ${item} | awk '{ print $2 }'`
-			RKCHIP_LOADER=`echo ${item} | awk '{ print $3 }'`
-			RKCHIP_TRUST=`echo  ${item} | awk '{ print $4 }'`
-			RKCHIP_LABEL=`echo  ${item} | awk '{ print $5 }'`
-		fi
-	done
-
-	if [ "${RKCHIP_LOADER}" == "-" ]; then
-		RKCHIP_LOADER=${RKCHIP}
-	fi
-	if [ "${RKCHIP_TRUST}" == "-" ]; then
-		RKCHIP_TRUST=${RKCHIP}
-	fi
-	if [ "${RKCHIP_LABEL}" == "-" ]; then
+	RKCHIP_LOADER=${RKCHIP}
+	RKCHIP_TRUST=${RKCHIP}
+	RKCHIP_LABEL=`sed -n "/CONFIG_CHIP_NAME=/s/CONFIG_CHIP_NAME=//p" .config |tr -d '\r' | tr -d '"'`
+	if [ -z "${RKCHIP_LABEL}" ]; then
 		RKCHIP_LABEL=${RKCHIP}
 	fi
 }
@@ -367,67 +306,28 @@ function select_chip_info()
 # Priority: default < CHIP_CFG_FIXUP_TABLE() < make.sh args
 function fixup_platform_configure()
 {
-	U_KB="-" U_NUM="-" T_KB="-" T_NUM="-"  SHA="-" RSA="-"
+	U_KB=`sed -n "/CONFIG_UBOOT_SIZE_KB=/s/CONFIG_UBOOT_SIZE_KB=//p" .config |tr -d '\r' | tr -d '"'`
+	U_NUM=`sed -n "/CONFIG_UBOOT_NUM=/s/CONFIG_UBOOT_NUM=//p" .config |tr -d '\r' | tr -d '"'`
+	T_KB=`sed -n "/CONFIG_TRUST_SIZE_KB=/s/CONFIG_TRUST_SIZE_KB=//p" .config |tr -d '\r' | tr -d '"'`
+	T_NUM=`sed -n "/CONFIG_TRUST_NUM=/s/CONFIG_TRUST_NUM=//p" .config |tr -d '\r' | tr -d '"'`
+	SHA=`sed -n "/CONFIG_TRUST_SHA_MODE=/s/CONFIG_TRUST_SHA_MODE=//p" .config |tr -d '\r' | tr -d '"'`
+	RSA=`sed -n "/CONFIG_TRUST_RSA_MODE=/s/CONFIG_TRUST_RSA_MODE=//p" .config |tr -d '\r' | tr -d '"'`
 
-	for item in "${CHIP_CFG_FIXUP_TABLE[@]}"
-	do
-		config_xxx=`echo ${item} | awk '{ print $1 }'`
-		if grep  -q "^${config_xxx}=y" .config ; then
-			# <*> Fixup rsa/sha pack mode for platforms
-			RSA=`echo ${item} | awk '{ print $2 }'`
-			SHA=`echo ${item} | awk '{ print $3 }'`
+	# .config
+	PLAT_UBOOT_SIZE="--size ${U_KB} ${U_NUM}"
+	PLAT_TRUST_SIZE="--size ${T_KB} ${T_NUM}"
+	PLAT_SHA="--sha ${SHA}"
+	PLAT_RSA="--rsa ${RSA}"
 
-			# <*> Fixup images size pack for platforms, and ini file
-			if grep -q '^CONFIG_ARM64=y' .config ; then
-				U_KB=`echo  ${item} | awk '{ print $4 }' | awk -F "," '{ print $1 }'`
-				T_KB=`echo  ${item} | awk '{ print $4 }' | awk -F "," '{ print $2 }'`
-				U_NUM=`echo ${item} | awk '{ print $5 }' | awk -F "," '{ print $1 }'`
-				T_NUM=`echo ${item} | awk '{ print $5 }' | awk -F "," '{ print $2 }'`
-			else
-				U_KB=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $1 }'`
-				T_KB=`echo  ${item} | awk '{ print $6 }' | awk -F "," '{ print $2 }'`
-				U_NUM=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $1 }'`
-				T_NUM=`echo ${item} | awk '{ print $7 }' | awk -F "," '{ print $2 }'`
-				# AArch32
-				if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
-					PADDING=`echo ${item} | awk '{ print $8 }'`
-					if [ "${PADDING}" != "-" ]; then
-						RKCHIP_LOADER=${RKCHIP_LOADER}${PADDING}
-					fi
-					PADDING=`echo  ${item} | awk '{ print $9 }'`
-					if [ "${PADDING}" != "-" ]; then
-						RKCHIP_TRUST=${RKCHIP_TRUST}${PADDING}
-					fi
-					RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
-				fi
-			fi
-		fi
-	done
-
-	if [ "${SHA}" != "-" ]; then
-		PLAT_SHA="--sha ${SHA}"
-	fi
-	if [ "${RSA}" != "-" ]; then
-		PLAT_RSA="--rsa ${RSA}"
-	fi
-	if [ "${U_KB}" != "-" ]; then
-		PLAT_UBOOT_SIZE="--size ${U_KB} ${U_NUM}"
-	fi
-	if [ "${T_KB}" != "-" ]; then
-		PLAT_TRUST_SIZE="--size ${T_KB} ${T_NUM}"
-	fi
-
-	# args
+	# ./make.sh args
 	if [ ! -z "${ARG_UBOOT_SIZE}" ]; then
 		PLAT_UBOOT_SIZE=${ARG_UBOOT_SIZE}
 	fi
-
 	if [ ! -z "${ARG_TRUST_SIZE}" ]; then
 		PLAT_TRUST_SIZE=${ARG_TRUST_SIZE}
 	fi
 }
 
-# Priority: default < CHIP_TYPE_FIXUP_TABLE() < defconfig < make.sh args
 function select_ini_file()
 {
 	# default
