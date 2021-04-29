@@ -14,6 +14,7 @@
 
 #include <lzma/LzmaTypes.h>
 
+extern int lzma_is_valid(const unsigned char *buf);
 extern int lzmaBuffToBuffDecompress (unsigned char *outStream, SizeT *uncompressedSize,
 			      unsigned char *inStream,  SizeT  length);
 #endif
