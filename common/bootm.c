@@ -396,6 +396,11 @@ int bootm_parse_comp(const unsigned char *hdr)
 	if ((hdr[0] == 'B') && (hdr[1] == 'Z') && (hdr[2] == 'h'))
 		return IH_COMP_BZIP2;
 #endif
+#if defined(CONFIG_LZMA)
+	if (lzma_is_valid(hdr))
+		return IH_COMP_LZMA;
+#endif
+
 	return IH_COMP_NONE;
 }
 
