@@ -1103,6 +1103,12 @@ config CMD_TFTP_FLASH
 	help
 	  TFTP flash command, download and flash the Image to partition.
 
+config CMD_TFTP_UPDATE
+	bool "tftp update"
+	help
+	  Update a set of images organized with FIT via network using TFTP protocol
+
+
 config CMD_TFTPSRV
 	bool "tftpsrv"
 	help
