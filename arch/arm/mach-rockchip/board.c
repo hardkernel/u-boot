@@ -337,7 +337,7 @@ static void cmdline_handle(void)
 	if (!dev_desc)
 		return;
 
-	if (env_get_yesno("rk_fwupdate")) {
+	if (get_bcb_recovery_msg() == BCB_MSG_RECOVERY_RK_FWUPDATE) {
 		if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1)
 			env_update("bootargs", "sdfwupdate");
 		else if (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)

@@ -18,6 +18,8 @@ enum {
 	PL,
 };
 
+static u32 bcb_recovery_msg;
+
 static int misc_require_recovery(u32 bcb_offset)
 {
 	struct bootloader_message *bmsg;
@@ -43,12 +45,17 @@ static int misc_require_recovery(u32 bcb_offset)
 	} else {
 		recovery = !strcmp(bmsg->command, "boot-recovery");
 		if (!strcmp(bmsg->recovery, "recovery\n--rk_fwupdate\n"))
-			env_set("rk_fwupdate", "y"); /* set for late use */
+			bcb_recovery_msg = BCB_MSG_RECOVERY_RK_FWUPDATE;
 	}
 
 	free(bmsg);
 out:
 	return recovery;
+}
+
+int get_bcb_recovery_msg(void)
+{
+	return bcb_recovery_msg;
 }
 
 /*

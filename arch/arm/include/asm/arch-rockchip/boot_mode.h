@@ -30,4 +30,10 @@
 int setup_boot_mode(void);
 #endif
 
+enum {
+	BCB_MSG_RECOVERY_NONE,
+	BCB_MSG_RECOVERY_RK_FWUPDATE,
+	BCB_MSG_RECOVERY_PCBA,
+};
+
 #endif
