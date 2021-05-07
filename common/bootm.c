@@ -374,7 +374,7 @@ static int handle_decomp_error(int comp_type, size_t uncomp_size,
 
 int bootm_parse_comp(const unsigned char *hdr)
 {
-#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+#if defined(CONFIG_CMD_BOOTZ)
 	ulong start, end;
 
 	if (!bootz_setup((ulong)hdr, &start, &end))
