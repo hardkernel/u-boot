@@ -2492,6 +2492,8 @@ static u64 dram_detect_cap(struct dram_info *dram,
 			else
 				cap_info->bw = 0;
 		}
+		if (cap_info->bw > 0)
+			cap_info->dbw = 1;
 	}
 
 	writel(pwrctl, pctl_base + DDR_PCTL2_PWRCTL);
