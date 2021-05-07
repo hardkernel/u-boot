@@ -515,11 +515,18 @@ config TPL_ROCKCHIP_BACK_TO_BROM
           binary to keep going on.
 
 config ARM64_BOOT_AARCH32
-	bool "Support Boot an ARM64 on AArch32 execution state"
+	bool "Support Boot an ARM64 on AArch32 execution state, ie. U-Boot is in AArch32"
 	select CPU_V7
 	default n
 	help
 	  If you want to boot an ARM64 processor on 32-bit mode, say y here.
+
+config ARM64_SWITCH_TO_AARCH32
+	bool "Support AArch64 U-Boot boot AArch32 kernel"
+	default n
+	help
+	  If you want AArch64 U-Boot to boot AArch32 kernel, say y here.
+	  This feature needs ATF to help switch the PE state.
 
 config ROCKCHIP_BOOT_MODE_REG
 	hex "Rockchip boot mode flag register address"
