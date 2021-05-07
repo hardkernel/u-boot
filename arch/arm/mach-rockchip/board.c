@@ -767,6 +767,10 @@ int bootm_board_start(void)
 	/* disable bootm relcation to save boot time */
 	bootm_no_reloc();
 
+	/* PCBA test needs more permission */
+	if (get_bcb_recovery_msg() == BCB_MSG_RECOVERY_PCBA)
+		env_update("bootargs", "androidboot.selinux=permissive");
+
 	/* sysmem */
 	hotkey_run(HK_SYSMEM);
 	sysmem_overflow_check();

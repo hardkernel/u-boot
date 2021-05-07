@@ -46,6 +46,9 @@ static int misc_require_recovery(u32 bcb_offset)
 		recovery = !strcmp(bmsg->command, "boot-recovery");
 		if (!strcmp(bmsg->recovery, "recovery\n--rk_fwupdate\n"))
 			bcb_recovery_msg = BCB_MSG_RECOVERY_RK_FWUPDATE;
+		else if (!strcmp(bmsg->recovery, "recovery\n--factory_mode=whole") ||
+			 !strcmp(bmsg->recovery, "recovery\n--factory_mode=small"))
+			bcb_recovery_msg = BCB_MSG_RECOVERY_PCBA;
 	}
 
 	free(bmsg);
