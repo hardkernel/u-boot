@@ -16,6 +16,11 @@
 	};
 };
 
+&psci {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &dmc {
 	u-boot,dm-pre-reloc;
 };

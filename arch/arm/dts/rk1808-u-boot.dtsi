@@ -26,6 +26,11 @@
 
 };
 
+&psci {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &crypto {
 	u-boot,dm-spl;
 };

@@ -89,6 +89,11 @@
 		#clock-cells = <0>;
 	};
 
+	psci: psci {
+		compatible      = "arm,psci-1.0";
+		method          = "smc";
+	};
+
 	timer {
 		compatible = "arm,armv7-timer";
 		arm,cpu-registers-not-fw-configured;

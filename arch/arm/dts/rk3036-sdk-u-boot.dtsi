@@ -31,3 +31,9 @@
 &uart2 {
 	u-boot,dm-pre-reloc;
 };
+
+&psci {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+

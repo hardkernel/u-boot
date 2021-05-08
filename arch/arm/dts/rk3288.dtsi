@@ -149,6 +149,11 @@
 		#clock-cells = <0>;
 	};
 
+	psci: psci {
+		compatible      = "arm,psci-1.0";
+		method          = "smc";
+	};
+
 	timer {
 	        arm,use-physical-timer;
 		compatible = "arm,armv7-timer";

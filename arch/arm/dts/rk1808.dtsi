@@ -201,6 +201,11 @@
 		};
 	};
 
+	psci: psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
 	qos_npu: qos@fe850000 {
 		compatible = "syscon";
 		reg = <0x0 0xfe850000 0x0 0x20>;

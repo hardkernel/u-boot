@@ -15,6 +15,11 @@
 	};
 };
 
+&psci {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &uart2 {
 	clock-frequency = <24000000>;
 	u-boot,dm-pre-reloc;
