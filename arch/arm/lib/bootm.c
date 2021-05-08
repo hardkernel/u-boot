@@ -324,13 +324,11 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 	void (*kernel_entry)(void *fdt_addr, void *res0, void *res1,
 			void *res2);
 	int fake = (flag & BOOTM_STATE_OS_FAKE_GO);
-#ifdef CONFIG_AMP
-	int flags = amp_flags();
-	images->os.arch = amp_os_arch();
-#else
-	int flags = 0;
-#endif
+	int es_flag = 0;
 
+#if defined(CONFIG_AMP)
+	es_flag = arm64_switch_amp_pe(images);
+#endif
 	kernel_entry = (void (*)(void *fdt_addr, void *res0, void *res1,
 				void *res2))images->ep;
 
@@ -355,11 +353,11 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 		if ((IH_ARCH_DEFAULT == IH_ARCH_ARM64) &&
 		    (images->os.arch == IH_ARCH_ARM))
 			armv8_switch_to_el2(0, (u64)gd->bd->bi_arch_number,
-					    (u64)images->ft_addr, flags,
+					    (u64)images->ft_addr, es_flag,
 					    (u64)images->ep,
 					    ES_TO_AARCH32);
 		else
-			armv8_switch_to_el2((u64)images->ft_addr, 0, 0, flags,
+			armv8_switch_to_el2((u64)images->ft_addr, 0, 0, es_flag,
 					    images->ep,
 					    ES_TO_AARCH64);
 #endif
