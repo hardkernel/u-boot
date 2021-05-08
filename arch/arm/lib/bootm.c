@@ -33,6 +33,7 @@
 #include <asm/armv7.h>
 #endif
 #include <asm/setup.h>
+#include <asm/arch/rockchip_smccc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -317,6 +318,28 @@ static void switch_to_el1(void)
 #endif
 #endif
 
+#ifdef CONFIG_ARM64_SWITCH_TO_AARCH32
+int arm64_switch_aarch32(bootm_headers_t *images)
+{
+	int es_flag;
+	int ret = 0;
+
+	images->os.arch = IH_ARCH_ARM;
+
+	/* arm aarch32 SVC */
+	es_flag = PE_STATE(0, 0, 0, 0);
+	ret |= sip_smc_amp_cfg(AMP_PE_STATE, 0x100, es_flag);
+	ret |= sip_smc_amp_cfg(AMP_PE_STATE, 0x200, es_flag);
+	ret |= sip_smc_amp_cfg(AMP_PE_STATE, 0x300, es_flag);
+	if (ret) {
+		printf("ARM64 switch aarch32 SiP call failed, ret=%d\n", ret);
+		return 0;
+	}
+
+	return es_flag;
+}
+#endif
+
 /* Subcommand: GO */
 static void boot_jump_linux(bootm_headers_t *images, int flag)
 {
@@ -328,6 +351,8 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 
 #if defined(CONFIG_AMP)
 	es_flag = arm64_switch_amp_pe(images);
+#elif defined(CONFIG_ARM64_SWITCH_TO_AARCH32)
+	es_flag = arm64_switch_aarch32(images);
 #endif
 	kernel_entry = (void (*)(void *fdt_addr, void *res0, void *res1,
 				void *res2))images->ep;
