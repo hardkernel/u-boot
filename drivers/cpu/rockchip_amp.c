@@ -191,13 +191,9 @@ out:
 	return ret;
 }
 
-int amp_flags(void)
+int arm64_switch_amp_pe(bootm_headers_t *images)
 {
+	images->os.arch = primary_pe_arch;
 	return primary_pe_state;
-}
-
-int amp_os_arch(void)
-{
-	return primary_pe_arch;
 }
 
