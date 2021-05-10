@@ -679,8 +679,10 @@ cleanup:
  * this takes over the responsibility of slot suffix appending from
  * developer to framework.
  */
-int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
-			  disk_partition_t *info)
+static int part_get_info_by_name_option(struct blk_desc *dev_desc,
+					const char *name,
+					disk_partition_t *info,
+					bool strict)
 {
 	struct part_driver *part_drv;
 	char name_slot[32] = {0};
@@ -690,11 +692,19 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	part_drv = part_driver_lookup_type(dev_desc);
 	if (!part_drv)
 		return -1;
+
+	if (strict) {
+		none_slot_try = 0;
+		strcpy(name_slot, name);
+		goto lookup;
+	}
+
 #if defined(CONFIG_ANDROID_AB) || defined(CONFIG_SPL_AB)
 	char *name_suffix = (char *)name + strlen(name) - 2;
 
 	/* Fix can not find partition with suffix "_a" & "_b". If with them, clear */
-	if (!memcmp(name_suffix, "_a", strlen("_a")) || !memcmp(name_suffix, "_b", strlen("_b")))
+	if (!memcmp(name_suffix, "_a", strlen("_a")) ||
+	    !memcmp(name_suffix, "_b", strlen("_b")))
 		memset(name_suffix, 0, 2);
 #endif
 #if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_SPL_BUILD)
@@ -707,7 +717,7 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 #else
 	strcpy(name_slot, name);
 #endif
-retry:
+lookup:
 	debug("## Query partition(%d): %s\n", none_slot_try, name_slot);
 	for (i = 1; i < part_drv->max_entries; i++) {
 		ret = part_drv->get_info(dev_desc, i, info);
@@ -725,10 +735,22 @@ retry:
 	if (none_slot_try) {
 		none_slot_try = 0;
 		strcpy(name_slot, name);
-		goto retry;
+		goto lookup;
 	}
 
 	return -1;
+}
+
+int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
+			  disk_partition_t *info)
+{
+	return part_get_info_by_name_option(dev_desc, name, info, false);
+}
+
+int part_get_info_by_name_strict(struct blk_desc *dev_desc, const char *name,
+				 disk_partition_t *info)
+{
+	return part_get_info_by_name_option(dev_desc, name, info, true);
 }
 
 void part_set_generic_name(const struct blk_desc *dev_desc,

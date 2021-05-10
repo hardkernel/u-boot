@@ -193,6 +193,20 @@ int part_get_info_by_name(struct blk_desc *dev_desc,
 			      const char *name, disk_partition_t *info);
 
 /**
+ * part_get_info_by_name_strict() - Search for a partition by name
+ *                                  among all available registered partitions
+ *				    with strict name match
+ *
+ * @param dev_desc - block device descriptor
+ * @param gpt_name - the specified table entry name to be match strictly
+ * @param info - returns the disk partition info
+ *
+ * @return - the partition number on match (starting on 1), -1 on no match,
+ * otherwise error
+ */
+int part_get_info_by_name_strict(struct blk_desc *dev_desc, const char *name,
+				 disk_partition_t *info);
+/**
  * part_set_generic_name() - create generic partition like hda1 or sdb2
  *
  * Helper function for partition tables, which don't hold partition names
