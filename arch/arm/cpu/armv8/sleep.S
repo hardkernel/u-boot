@@ -189,7 +189,7 @@ ENTRY(cpu_do_resume)
 	b	suspend_return
 ENDPROC(cpu_do_resume)
 
-.data
 .align 3
 _suspend_gd:
 	.long	0x0
+
