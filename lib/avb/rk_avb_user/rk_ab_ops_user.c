@@ -10,10 +10,8 @@
 #include <command.h>
 #include <blk.h>
 #include <part.h>
-#include <android_avb/avb_ops_user.h>
-#include <android_avb/libavb_ab.h>
-#include <android_avb/rk_avb_ops_user.h>
 #include <boot_rkimg.h>
+#include <android_avb/rk_avb_ops_user.h>
 
 static int safe_memcmp(const void *s1, const void *s2, size_t n)
 {
@@ -469,6 +467,16 @@ int rk_avb_get_current_slot(char *select_slot)
 
 	avb_ops_user_free(ops);
 	return ret;
+}
+
+bool rk_avb_ab_have_bootable_slot(void)
+{
+	char slot[3] = {0};
+
+	if (rk_avb_get_current_slot(slot))
+		return false;
+	else
+		return true;
 }
 
 int rk_avb_append_part_slot(const char *part_name, char *new_name)

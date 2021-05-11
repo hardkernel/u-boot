@@ -7,6 +7,9 @@
 #ifndef RK_AVB_OPS_USER_H_
 #define RK_AVB_OPS_USER_H_
 
+#include <android_avb/avb_ops_user.h>
+#include <android_avb/libavb_ab.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -324,10 +327,14 @@ int rk_avb_init_ab_metadata(void);
 
 /**
  * rockchip avb commands
- *
  */
 int rk_avb_write_perm_attr(uint16_t id, void *pbuf, uint16_t size);
 int rk_avb_read_perm_attr(uint16_t id, void *pbuf, uint16_t size);
+
+/**
+ * Do the device have boot slot
+ */
+bool rk_avb_ab_have_bootable_slot(void);
 
 #ifdef __cplusplus
 }
