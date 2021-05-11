@@ -679,9 +679,9 @@ int arch_cpu_init(void)
 	 * Init the i2c0 iomux and use it to control electronic voltmeter
 	 * to detect voltage.
 	 */
-#if defined(CONFIG_SPL_KERNEL_BOOT) && defined(CONFIG_SPL_DM_FUEL_GAUGE)
+  #if defined(CONFIG_SPL_KERNEL_BOOT) && defined(CONFIG_SPL_DM_FUEL_GAUGE)
 	writel(0x00770011, PMU_GRF_BASE + PMUGRF_GPIO0B_IOMUX_H);
-#endif
+  #endif
 
 #elif defined(CONFIG_SUPPORT_USBPLUG)
 	/* Just set region 0 to unsecure */
