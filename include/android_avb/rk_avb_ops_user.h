@@ -322,6 +322,13 @@ int rk_avb_get_pub_key(struct rk_pub_key *pub_key);
  */
 int rk_avb_init_ab_metadata(void);
 
+/**
+ * rockchip avb commands
+ *
+ */
+int rk_avb_write_perm_attr(uint16_t id, void *pbuf, uint16_t size);
+int rk_avb_read_perm_attr(uint16_t id, void *pbuf, uint16_t size);
+
 #ifdef __cplusplus
 }
 #endif
