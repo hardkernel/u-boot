@@ -278,6 +278,15 @@ struct rw_trn_result {
 	struct fsp_rw_trn_result wr_fsp[FSP_NUM];
 };
 
+/* for modify tRFC and related timing */
+#define DIE_CAP_512MBIT	64
+#define DIE_CAP_1GBIT	128
+#define DIE_CAP_2GBIT	256
+#define DIE_CAP_4GBIT	512
+#define DIE_CAP_8GBIT	1024
+#define DIE_CAP_16GBIT	2048
+#define DIE_CAP_32GBIT	4096
+
 /*
  * sys_reg bitfield struct
  * [31]		row_3_4_ch1
