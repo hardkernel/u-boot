@@ -113,7 +113,7 @@ static void print_ddr_dq_eye(struct fsp_rw_trn_result *fsp_result, u8 cs,
 
 			printf("DQ%-2d ", dqs * 8 + dq);
 			for (i = print_border->far_left;
-			     i < print_border->far_right; i += PRINT_STEP) {
+			     i <= print_border->far_right; i += PRINT_STEP) {
 				if (i / PRINT_STEP == sample / PRINT_STEP)
 					printf("|");
 				else if (i / PRINT_STEP >= min / PRINT_STEP &&
