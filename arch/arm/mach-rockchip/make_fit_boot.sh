@@ -23,6 +23,10 @@ else
 	SUFFIX=
 fi
 
+if grep  -q '^CONFIG_FIT_ENABLE_RSASSA_PSS_SUPPORT=y' .config ; then
+	ALGO_PADDING="				padding = \"pss\";"
+fi
+
 cat << EOF
 /*
  * Copyright (C) 2020 Fuzhou Rockchip Electronics Co., Ltd
@@ -96,7 +100,7 @@ cat << EOF
 			multi = "resource";
 			signature {
 				algo = "sha256,rsa2048";
-				padding = "pss";
+				${ALGO_PADDING}
 				key-name-hint = "dev";
 				sign-images = "fdt", "kernel", "ramdisk", "multi";
 			};

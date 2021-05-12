@@ -18,6 +18,10 @@ else
 	SUFFIX=
 fi
 
+if grep  -q '^CONFIG_FIT_ENABLE_RSASSA_PSS_SUPPORT=y' .config ; then
+	ALGO_PADDING="				padding = \"pss\";"
+fi
+
 function generate_uboot_node()
 {
 	echo "		uboot {
@@ -227,7 +231,7 @@ cat << EOF
 			fdt = "fdt"${PROP_KERN_DTB};
 			signature {
 				algo = "sha256,rsa2048";
-				padding = "pss";
+				${ALGO_PADDING}
 				key-name-hint = "dev";
 				sign-images = "fdt", "firmware", "loadables"${STANDALONE_SIGN};
 			};

@@ -17,6 +17,10 @@ else
 	SUFFIX=
 fi
 
+if grep  -q '^CONFIG_FIT_ENABLE_RSASSA_PSS_SUPPORT=y' .config ; then
+	ALGO_PADDING="				padding = \"pss\";"
+fi
+
 # digest
 if [ "${COMPRESSION}" == "gzip" ]; then
 	openssl dgst -sha256 -binary -out ${srctree}/u-boot-nodtb.digest ${srctree}/u-boot-nodtb.bin
@@ -161,7 +165,7 @@ echo "${MCU_STANDALONE}"
 cat  << EOF
 			signature {
 				algo = "sha256,rsa2048";
-				padding = "pss";
+				${ALGO_PADDING}
 				key-name-hint = "dev";
 EOF
 echo "${SIGN_IMAGES}"
