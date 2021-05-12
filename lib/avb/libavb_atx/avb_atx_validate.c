@@ -58,6 +58,8 @@ static void sha512(const uint8_t* data,
                    uint32_t length,
                    uint8_t hash[AVB_SHA512_DIGEST_SIZE]) {
   AvbSHA512Ctx context;
+
+  context.tot_len = length;
   avb_sha512_init(&context);
   avb_sha512_update(&context, data, length);
   uint8_t* tmp = avb_sha512_final(&context);
