@@ -477,6 +477,8 @@ static int part_test_efi(struct blk_desc *dev_desc)
 		if (part_efi_repair(dev_desc, h_gpt_pte, h_gpt_head,
 				    0, 1))
 			printf("Primary GPT repair fail!\n");
+		/* Force repair backup GPT for factory or ota upgrade. */
+		backup_gpt_valid = 0;
 	}
 
 	if (head_gpt_valid == 1 && backup_gpt_valid == 0) {
