@@ -33,6 +33,7 @@ uint32_t trusty_notify_optee_uboot_end(void);
 uint32_t trusty_read_vbootkey_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_write_vbootkey_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_read_vbootkey_enable_flag(uint8_t *flag);
+uint32_t trusty_write_ta_encryption_key(uint32_t *buf, uint32_t length);
 uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes);
 uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
