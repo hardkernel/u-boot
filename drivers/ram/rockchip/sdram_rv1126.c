@@ -2186,7 +2186,7 @@ static void dram_all_config(struct dram_info *dram,
 		cs_pst = (readl(pctl_base + DDR_PCTL2_ADDRMAP0) & 0x1f) +
 			6 + 2;
 		if (cs_pst > 28)
-			cs_cap[0] = 1 << cs_pst;
+			cs_cap[0] = 1llu << cs_pst;
 	}
 
 	writel(((((cs_cap[1] >> 20) / 64) & 0xff) << 8) |
