@@ -61,6 +61,15 @@ enum rk_clk_id {
 	.frac = _frac,						\
 }
 
+#define RK3588_PLL_RATE(_rate, _p, _m, _s, _k)			\
+{								\
+	.rate	= _rate##U,					\
+	.p = _p,						\
+	.m = _m,						\
+	.s = _s,						\
+	.k = _k,						\
+}
+
 struct rockchip_pll_rate_table {
 	unsigned long rate;
 	unsigned int nr;
@@ -74,6 +83,11 @@ struct rockchip_pll_rate_table {
 	unsigned int postdiv2;
 	unsigned int dsmpd;
 	unsigned int frac;
+	/* for RK3588 */
+	unsigned int m;
+	unsigned int p;
+	unsigned int s;
+	unsigned int k;
 };
 
 enum rockchip_pll_type {
@@ -82,6 +96,7 @@ enum rockchip_pll_type {
 	pll_rk3328,
 	pll_rk3366,
 	pll_rk3399,
+	pll_rk3588,
 };
 
 struct rockchip_pll_clock {
