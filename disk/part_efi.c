@@ -1074,9 +1074,6 @@ static int is_pmbr_valid(legacy_mbr * mbr)
 {
 	int i = 0;
 
-	if (!mbr || le16_to_cpu(mbr->signature) != MSDOS_MBR_SIGNATURE)
-		return 0;
-
 #ifdef CONFIG_ARCH_ROCKCHIP
 	/*
 	 * In sd-update card, we use RKPARM partition in bootloader to load
@@ -1088,6 +1085,10 @@ static int is_pmbr_valid(legacy_mbr * mbr)
 	 */
 	return 1;
 #endif
+
+	if (!mbr || le16_to_cpu(mbr->signature) != MSDOS_MBR_SIGNATURE)
+		return 0;
+
 	for (i = 0; i < 4; i++) {
 		if (pmbr_part_valid(&mbr->partition_record[i])) {
 			return 1;
