@@ -941,9 +941,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	/* Get current slot_suffix */
 	if (ab_get_slot_suffix(slot_suffix))
 		return -1;
-
-	if (ab_decrease_tries())
-		printf("Decrease ab tries count fail!\n");
 #endif
 	switch (mode) {
 	case ANDROID_BOOT_MODE_NORMAL:

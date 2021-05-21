@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <amp.h>
+#include <android_ab.h>
 #include <android_bootloader.h>
 #include <android_image.h>
 #include <bidram.h>
@@ -472,6 +473,11 @@ int board_init(void)
 
 #ifdef CONFIG_DM_DVFS
 	dvfs_init(true);
+#endif
+
+#ifdef CONFIG_ANDROID_AB
+	if (ab_decrease_tries())
+		printf("Decrease ab tries count fail!\n");
 #endif
 
 	return rk_board_init();
