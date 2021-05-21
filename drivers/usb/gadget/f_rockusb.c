@@ -12,6 +12,7 @@
 #include <asm/arch/chip_info.h>
 #include <write_keybox.h>
 #include <linux/mtd/mtd.h>
+#include <optee_include/OpteeClientInterface.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -477,6 +478,28 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 				}
 #else
 				printf("Please enable CONFIG_RK_AVB_LIBAVB_USER\n");
+#endif
+			} else if (type == 3) {
+				/* efuse or otp*/
+#ifdef CONFIG_OPTEE_CLIENT
+				if (memcmp(data, "TAEK", 4) == 0) {
+					if (vhead->size - 8 != 32) {
+						printf("check ta encryption key size fail!\n");
+						curlun->sense_data = SS_WRITE_ERROR;
+						return -EIO;
+					}
+					if (trusty_write_ta_encryption_key((uint32_t *)(data + 8), 8) != 0) {
+						printf("trusty_write_ta_encryption_key error!");
+						curlun->sense_data = SS_WRITE_ERROR;
+						return -EIO;
+					}
+				} else {
+					printf("Unknown tag\n");
+					curlun->sense_data = SS_WRITE_ERROR;
+					return -EIO;
+				}
+#else
+				printf("Please enable CONFIG_OPTEE_CLIENT\n");
 #endif
 			} else {
 				return -EINVAL;
