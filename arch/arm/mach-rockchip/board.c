@@ -30,6 +30,7 @@
 #include <video_rockchip.h>
 #include <asm/io.h>
 #include <asm/gpio.h>
+#include <android_avb/rk_avb_ops_user.h>
 #include <dm/uclass-internal.h>
 #include <dm/root.h>
 #include <power/charge_display.h>
@@ -883,14 +884,18 @@ int board_do_bootm(int argc, char * const argv[])
 
 void autoboot_command_fail_handle(void)
 {
-#ifdef CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE
 #ifdef CONFIG_ANDROID_AB
-	run_command("fastboot usb 0;", 0);  /* use fastboot to ative slot */
-#else
+	if (rk_avb_ab_have_bootable_slot() == true)
+		run_command("reset;", 0);
+	else
+		run_command("fastboot usb 0;", 0);
+#endif
+
+#ifdef CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE
 	run_command("rockusb 0 ${devtype} ${devnum}", 0);
 	run_command("fastboot usb 0;", 0);
 #endif
-#endif
+
 }
 
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
