@@ -17,7 +17,8 @@ static void show_devices(struct udevice *dev, int depth, int last_flag)
 	int pre_reloc, remained;
 
 	/* print the first 11 characters to not break the tree-format. */
-	printf(" %-10.10s [ %c ]   %-25.25s  ", dev->uclass->uc_drv->name,
+	printf(" %08lx    %-10.10s [ %c ]   %-25.25s  ",
+	       (ulong)dev, dev->uclass->uc_drv->name,
 	       dev->flags & DM_FLAG_ACTIVATED ? '+' : ' ', dev->driver->name);
 
 	for (i = depth; i >= 0; i--) {
@@ -56,8 +57,8 @@ void dm_dump_all(void)
 
 	root = dm_root();
 	if (root) {
-		printf(" Class      Probed        Driver               Name\n");
-		printf("----------------------------------------------------------\n");
+		printf(" Addr        Class      Probed    Driver                   Name\n");
+		printf("-------------------------------------------------------------------------\n");
 		show_devices(root, -1, 0);
 	}
 }
