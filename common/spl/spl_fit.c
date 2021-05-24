@@ -8,6 +8,7 @@
 #include <common.h>
 #include <boot_rkimg.h>
 #include <errno.h>
+#include <fdt_support.h>
 #include <image.h>
 #include <malloc.h>
 #include <mtd_blk.h>
@@ -534,15 +535,22 @@ static int spl_load_kernel_fit(struct spl_image_info *spl_image,
 			return ret;
 
 		/* initial addr or entry point */
-		if (!strcmp(images[i], FIT_FDT_PROP))
+		if (!strcmp(images[i], FIT_FDT_PROP)) {
 			spl_image->fdt_addr = (void *)image_info.load_addr;
-		else if (!strcmp(images[i], FIT_KERNEL_PROP))
+#ifdef CONFIG_SPL_AB
+			char slot_suffix[3] = {0};
+
+			if (!spl_get_current_slot(info->dev, "misc", slot_suffix))
+				fdt_bootargs_append_ab((void *)image_info.load_addr, slot_suffix);
+#endif
+		} else if (!strcmp(images[i], FIT_KERNEL_PROP)) {
 #if CONFIG_IS_ENABLED(OPTEE)
 			spl_image->entry_point_os = image_info.load_addr;
 #endif
 #if CONFIG_IS_ENABLED(ATF)
 			spl_image->entry_point_bl33 = image_info.load_addr;
 #endif
+		}
 	}
 
 	debug("fdt_addr=0x%08lx, entry_point=0x%08lx, entry_point_os=0x%08lx\n",
