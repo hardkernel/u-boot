@@ -8,10 +8,12 @@
  */
 
 #include <common.h>
+#include <android_image.h>
 #include <exports.h>
 #include <fdt_support.h>
 #include <fdtdec.h>
 #include <inttypes.h>
+#include <malloc.h>
 #ifdef CONFIG_MTD_BLK
 #include <mtd_blk.h>
 #endif
@@ -276,6 +278,69 @@ int fdt_initrd(void *fdt, ulong initrd_start, ulong initrd_end)
 	}
 
 	return 0;
+}
+
+static int fdt_bootargs_append(void *fdt, char *data)
+{
+	const char *arr_bootargs[] = { "bootargs", "bootargs_ext" };
+	int nodeoffset, len;
+	const char *bootargs;
+	char *str;
+	int i, ret = 0;
+
+	if (!data)
+		return 0;
+
+	/* find or create "/chosen" node. */
+	nodeoffset = fdt_find_or_add_subnode(fdt, 0, "chosen");
+	if (nodeoffset < 0)
+		return nodeoffset;
+
+	for (i = 0; i < ARRAY_SIZE(arr_bootargs); i++) {
+		bootargs = fdt_getprop(fdt, nodeoffset,
+				       arr_bootargs[i], NULL);
+		if (bootargs) {
+			len = strlen(bootargs) + strlen(data) + 2;
+			str = malloc(len);
+			if (!str)
+				return -ENOMEM;
+
+			fdt_increase_size(fdt, strlen(data) + 1);
+			snprintf(str, len, "%s %s", bootargs, data);
+			ret = fdt_setprop(fdt, nodeoffset, "bootargs",
+					  str, len);
+			if (ret < 0)
+				printf("WARNING: could not set bootargs %s.\n", fdt_strerror(ret));
+
+			free(str);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+int fdt_bootargs_append_ab(void *fdt, char *slot)
+{
+	char *str;
+	int len, ret = 0;
+
+	if (!slot)
+		return 0;
+
+	len = strlen(ANDROID_ARG_SLOT_SUFFIX) + strlen(slot) + 1;
+	str = malloc(len);
+	if (!str)
+		return -ENOMEM;
+
+	snprintf(str, len, "%s%s", ANDROID_ARG_SLOT_SUFFIX, slot);
+	ret = fdt_bootargs_append(fdt, str);
+	if (ret)
+		printf("Apend slot info to bootargs fail");
+
+	free(str);
+
+	return ret;
 }
 
 int fdt_chosen(void *fdt)
