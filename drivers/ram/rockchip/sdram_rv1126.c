@@ -1256,10 +1256,10 @@ int read_mr(struct dram_info *dram, u32 rank, u32 mr_num, u32 dramtype)
 				       ((dqmap >> (i * 4)) & 0xf));
 		}
 	} else {
-		ret = (readl(&dram->ddrgrf->ddr_grf_status[1]) & 0xff);
+		temp = (readl(&dram->ddrgrf->ddr_grf_status[1]) & 0xff);
 	}
 
-	return ret;
+	return temp;
 }
 
 /* before call this function autorefresh should be disabled */
