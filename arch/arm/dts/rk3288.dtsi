@@ -707,6 +707,8 @@
 		reg = <0xff8a0000 0x10000>;
 		clock-names = "sclk_crypto";
 		clocks = <&cru SCLK_CRYPTO>;
+		resets = <&cru SRST_CRYPTO>;
+		reset-names = "reset";
 		status = "disabled";
 	};
 
