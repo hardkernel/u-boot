@@ -149,7 +149,7 @@ static struct reg_data rk817_init_reg[] = {
  * the under-voltage protection will shutdown the LDO3 and reset the PMIC
  */
 	{ RK817_BUCK4_CMIN, 0x60, 0x60},
-	{ RK817_PMIC_SYS_CFG1, 0x40, 0x40},
+	{ RK817_PMIC_SYS_CFG1, 0x20, 0x70},
 	/* Set pmic_sleep as none function */
 	{ RK817_PMIC_SYS_CFG3, 0x00, 0x18 },
 
