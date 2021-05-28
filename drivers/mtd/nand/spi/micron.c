@@ -102,6 +102,15 @@ static const struct spinand_info micron_spinand_table[] = {
 		     0,
 		     SPINAND_ECCINFO(&mt29f2g01abagd_ooblayout,
 				     mt29f2g01abagd_ecc_get_status)),
+	SPINAND_INFO("MT29F1G01ABAGD", 0x14,
+		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     0,
+		     SPINAND_ECCINFO(&mt29f2g01abagd_ooblayout,
+				     mt29f2g01abagd_ecc_get_status)),
 };
 
 static int micron_spinand_detect(struct spinand_device *spinand)
