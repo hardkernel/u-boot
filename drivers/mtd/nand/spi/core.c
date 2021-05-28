@@ -854,6 +854,9 @@ static const struct spinand_manufacturer *spinand_manufacturers[] = {
 #ifdef CONFIG_SPI_NAND_ETRON
 	&etron_spinand_manufacturer,
 #endif
+#ifdef CONFIG_SPI_NAND_JSC
+	&jsc_spinand_manufacturer,
+#endif
 };
 
 static int spinand_manufacturer_detect(struct spinand_device *spinand)

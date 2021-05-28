@@ -14,4 +14,5 @@ obj-$(CONFIG_SPI_NAND_FMSH) += fmsh.o
 obj-$(CONFIG_SPI_NAND_FORESEE) += foresee.o
 obj-$(CONFIG_SPI_NAND_BIWIN) += biwin.o
 obj-$(CONFIG_SPI_NAND_ETRON) += etron.o
+obj-$(CONFIG_SPI_NAND_JSC) += jsc.o
 obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
