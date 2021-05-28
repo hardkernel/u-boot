@@ -1,9 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Copyright (c) 2021 Rockchip Electronics Co., Ltd
- *
- * Authors:
- *	Dingqiang Lin <jon.lin@rock-chips.com>
+ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
  */
 
 #ifndef __UBOOT__
