@@ -109,6 +109,35 @@ static const struct mtd_ooblayout_ops xt26g02b_ooblayout = {
 	.rfree = xt26g02b_ooblayout_free,
 };
 
+static int xt26g01c_ooblayout_ecc(struct mtd_info *mtd, int section,
+				  struct mtd_oob_region *region)
+{
+	if (section)
+		return -ERANGE;
+
+	region->offset = mtd->oobsize / 2;
+	region->length = mtd->oobsize / 2;
+
+	return 0;
+}
+
+static int xt26g01c_ooblayout_free(struct mtd_info *mtd, int section,
+				   struct mtd_oob_region *region)
+{
+	if (section)
+		return -ERANGE;
+
+	region->offset = 2;
+	region->length = mtd->oobsize / 2 - 2;
+
+	return 0;
+}
+
+static const struct mtd_ooblayout_ops xt26g01c_ooblayout = {
+	.ecc = xt26g01c_ooblayout_ecc,
+	.rfree = xt26g01c_ooblayout_free,
+};
+
 /*
  * ecc bits: 0xC0[2,5]
  * [0x0000], No bit errors were detected;
@@ -223,13 +252,13 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_ECCINFO(&xt26g02b_ooblayout,
 				     xt26g02b_ecc_get_status)),
 	SPINAND_INFO("XT26G01C", 0x11,
-		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
+		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
 					      &write_cache_variants,
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
-		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
+		     SPINAND_ECCINFO(&xt26g01c_ooblayout,
 				     xt26g01c_ecc_get_status)),
 	SPINAND_INFO("XT26G02C", 0x12,
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
@@ -238,16 +267,25 @@ static const struct spinand_info xtx_spinand_table[] = {
 					      &write_cache_variants,
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
-		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
+		     SPINAND_ECCINFO(&xt26g0xa_ooblayout,
 				     xt26g01c_ecc_get_status)),
 	SPINAND_INFO("XT26G04C", 0x13,
-		     NAND_MEMORG(1, 4096, 128, 64, 2048, 1, 1, 1),
+		     NAND_MEMORG(1, 4096, 256, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
 					      &write_cache_variants,
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
-		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
+		     SPINAND_ECCINFO(&xt26g01c_ooblayout,
+				     xt26g01c_ecc_get_status)),
+	SPINAND_INFO("XT26G11C", 0x15,
+		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&xt26g01c_ooblayout,
 				     xt26g01c_ecc_get_status)),
 };
 
