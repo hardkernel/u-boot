@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2020 exceet electronics GmbH
+ * Copyright (c) 2020-2021 Rockchip Electronics Co., Ltd
  *
  * Authors:
- *	Frieder Schrempf <frieder.schrempf@exceet.de>
- *	Boris Brezillon <boris.brezillon@bootlin.com>
+ *	Dingqiang Lin <jon.lin@rock-chips.com>
  */
 
 #ifndef __UBOOT__
