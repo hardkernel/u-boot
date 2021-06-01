@@ -532,6 +532,11 @@ static int rockchip_read_distro_dtb(void *fdt_addr)
 }
 #endif
 
+int __weak board_read_dtb_file(void *fdt_addr)
+{
+	return 1;
+}
+
 int rockchip_read_dtb_file(void *fdt_addr)
 {
 	int hash_size = 0;
@@ -541,6 +546,17 @@ int rockchip_read_dtb_file(void *fdt_addr)
 
 	/* init from storage if resource list is empty */
 	resource_traverse_init_list();
+
+#ifdef CONFIG_TARGET_ODROID_M1
+	ret = board_read_dtb_file(fdt_addr);
+	if (!ret) {
+		fdt_size = fdt_totalsize(fdt_addr);
+
+		if (sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
+		     ALIGN(fdt_size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+			return 0;
+	}
+#endif
 
 	/* distro */
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB

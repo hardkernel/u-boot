@@ -347,7 +347,7 @@ function fixup_platform_configure()
 function select_ini_file()
 {
 	# default
-	INI_LOADER=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+	INI_LOADER=${RKBIN}/RKBOOT/${RKCHIP_LOADER}-ODROIDM1.ini
 	if [ "${ARM64_TRUSTZONE}" == "y" ]; then
 		INI_TRUST=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
 	else
