@@ -341,6 +341,12 @@ const char *bootdelay_process(void)
 	return s;
 }
 
+/*
+ * Board-specific Platform code can reimplement autoboot_command_fail_handle ()
+ * if needed
+ */
+__weak void autoboot_command_fail_handle(void) {}
+
 void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
@@ -351,6 +357,7 @@ void autoboot_command(const char *s)
 #endif
 
 		run_command_list(s, -1, 0);
+		autoboot_command_fail_handle();
 
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)
 		disable_ctrlc(prev);	/* restore Control C checking */
