@@ -1,0 +1,64 @@
+/*
+ * SPDX-License-Identifier:     GPL-2.0+
+ *
+ * (C) Copyright 2021 Hardkernel Co., Ltd
+ */
+
+/dts-v1/;
+#include "rk3568-evb.dts"
+
+/ {
+	model = "Hardkernel ODROID-M1";
+	compatible = "hardkernel,odroid-m1", "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
+	};
+
+	chosen {
+		stdout-path = &uart2;
+		u-boot,spl-boot-order = &spi_nor, &sdhci, &sdmmc0;
+	};
+
+	/delete-node/ adc-keys;
+};
+
+&gmac0 {
+	snps,reset-gpio = <&gpio3 RK_PB7 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&gmac1 {
+	status = "disabled";
+};
+
+&nandc0 {
+	status = "disabled";
+};
+
+&sdhci {
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_bus8
+		     &emmc_clk
+		     &emmc_cmd
+		     &emmc_datastrobe
+		     &emmc_rstnout>;
+	non-removable;
+	cap-mmc-hw-reset;
+};
+
+&sfc {
+	spi_nor: flash@0 {
+		u-boot,dm-spl;
+		compatible = "jedec,spi-nor";
+		label = "sfc_nor";
+		reg = <0>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <1>;
+		spi-max-frequency = <100000000>;
+	};
+
+	/delete-node/ flash@1;
+};
