@@ -6,10 +6,23 @@
 #ifndef __ROCKCHIP_VENDOR_
 #define __ROCKCHIP_VENDOR_
 
-#define VENDOR_SN_ID		1 /* serialno */
-#define VENDOR_WIFI_MAC_ID	2 /* wifi mac */
-#define VENDOR_LAN_MAC_ID	3 /* lan mac */
-#define VENDOR_BLUETOOTH_ID	4 /* bluetooth mac */
+#define RSV_ID				0
+#define SN_ID				1
+#define WIFI_MAC_ID			2
+#define LAN_MAC_ID			3
+#define BT_MAC_ID			4
+#define HDCP_14_HDMI_ID			5
+#define HDCP_14_DP_ID			6
+#define HDCP_2X_ID			7
+#define DRM_KEY_ID			8
+#define PLAYREADY_CERT_ID		9
+#define ATTENTION_KEY_ID		10
+#define PLAYREADY_ROOT_KEY_0_ID		11
+#define PLAYREADY_ROOT_KEY_1_ID		12
+#define SENSOR_CALIBRATION_ID		13
+#define IMEI_ID				15
+#define LAN_RGMII_DL_ID			16
+#define EINK_VCOM_ID			17
 
 struct vendor_item {
 	u16  id;

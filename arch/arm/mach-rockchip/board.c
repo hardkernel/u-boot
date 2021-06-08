@@ -97,7 +97,7 @@ static int rockchip_set_ethaddr(void)
 	int ret, i;
 	bool need_write = false, randomed = false;
 
-	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
+	ret = vendor_storage_read(LAN_MAC_ID, ethaddr, sizeof(ethaddr));
 	for (i = 0; i < MAX_ETHERNET; i++) {
 		if (ret <= 0 || !is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
 			if (!randomed) {
@@ -127,7 +127,7 @@ static int rockchip_set_ethaddr(void)
 	}
 
 	if (need_write) {
-		ret = vendor_storage_write(VENDOR_LAN_MAC_ID,
+		ret = vendor_storage_write(LAN_MAC_ID,
 					   ethaddr, sizeof(ethaddr));
 		if (ret < 0)
 			printf("%s: vendor_storage_write failed %d\n",
@@ -150,7 +150,7 @@ static int rockchip_set_serialno(void)
 	memset(serialno_str, 0, VENDOR_SN_MAX);
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
-	ret = vendor_storage_read(VENDOR_SN_ID, serialno_str, (VENDOR_SN_MAX-1));
+	ret = vendor_storage_read(SN_ID, serialno_str, (VENDOR_SN_MAX-1));
 	if (ret > 0) {
 		i = strlen(serialno_str);
 		for (; i > 0; i--) {
