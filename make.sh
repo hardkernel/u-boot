@@ -11,9 +11,12 @@ SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 CMD_ARGS=$1
 
 ########################################### User can modify #############################################
-RKBIN_TOOLS=../rkbin/tools
-CROSS_COMPILE_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
-CROSS_COMPILE_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+RKBIN_TOOLS=$(pwd)/rkbin/tools
+if grep -q '^CONFIG_ARM32=y' .config ; then
+	CROSS_COMPILE_ARM32=$(dirname $(which arm-linux-gnueabihf-gcc))/bin
+else
+	CROSS_COMPILE_ARM64=$(dirname $(which aarch64-linux-gnu-gcc))/bin
+fi
 ########################################### User not touch #############################################
 # Declare global INI file searching index name for every chip, update in select_chip_info()
 RKCHIP=
@@ -106,7 +109,7 @@ function prepare()
 		absolute_path=$(cd `dirname ${RKBIN_TOOLS}`; pwd)
 		RKBIN=${absolute_path}
 	else
-		echo "ERROR: No ../rkbin repository"
+		echo "ERROR: No $(pwd)/rkbin repository"
 		exit 1
 	fi
 
