@@ -23,6 +23,7 @@
 #define IMEI_ID				15
 #define LAN_RGMII_DL_ID			16
 #define EINK_VCOM_ID			17
+#define FIRMWARE_VER_ID			18
 
 struct vendor_item {
 	u16  id;
