@@ -8,7 +8,7 @@
 
 IMAGE_FILE=$1
 OUTPUT_DIR=$2
-PACK_TOOL=../rkbin/tools/resource_tool
+PACK_TOOL=rkbin/tools/resource_tool
 
 usage()
 {
@@ -23,7 +23,7 @@ prepare()
 		usage
 		exit 0
 	elif [ ! -f "$PACK_TOOL" ];then
-		echo "Can't find '../rkbin/' Responsity, please download it before pack image!"
+		echo "Can't find 'rkbin/' Responsity, please download it before pack image!"
 		echo "How to obtain? 3 ways:"
 		echo "	1. Login your Rockchip gerrit account: \"Projects\" -> \"List\" -> search \"rk/rkbin\" Responsity"
 		echo "	2. Github Responsity: https://github.com/rockchip-linux/rkbin"

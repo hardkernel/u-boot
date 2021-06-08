@@ -11,7 +11,7 @@ RSCE_NEW=resource.img
 BOOT_OLD=$1
 BOOT_NEW=boot.img
 
-TOOL=../rkbin/tools/resource_tool
+TOOL=rkbin/tools/resource_tool
 IMAGES=./tools/images/
 TMP_DIR=.resource_tmp
 TMP_DIR2=.boot_tmp

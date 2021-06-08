@@ -1,0 +1,4 @@
+[submodule "rkbin"]
+	path = rkbin
+	url = ../../../rk/rkbin
+	branch = odroidm1-v2017.09
