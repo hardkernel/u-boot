@@ -966,7 +966,7 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 	return 0;
 }
 
-static int fit_write_trusty_rollback_index(u32 trusty_index)
+int fit_write_trusty_rollback_index(u32 trusty_index)
 {
 	if (!trusty_index)
 		return 0;
