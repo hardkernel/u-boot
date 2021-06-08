@@ -29,7 +29,7 @@ KERNEL_ADDR_PLACEHOLDER="0xffffff01"
 RAMDISK_ADDR_PLACEHOLDER="0xffffff02"
 # tools
 MKIMAGE="./tools/mkimage"
-RK_SIGN_TOOL="../rkbin/tools/rk_sign_tool"
+RK_SIGN_TOOL="rkbin/tools/rk_sign_tool"
 FIT_UNPACK="./scripts/fit-unpack.sh"
 CHECK_SIGN="./tools/fit_check_sign"
 # key
@@ -322,7 +322,7 @@ function fit_gen_uboot_itb()
 			if [ "${ARG_SPL_NEW}" == "y" ]; then
 				 ${CHECK_SIGN} -f ${ITB_UBOOT} -k ${SPL_DTB} -s
 			else
-				spl_file="../rkbin/"`sed -n "/FlashBoot=/s/FlashBoot=//p" ${ARG_INI_LOADER}  |tr -d '\r'`
+				spl_file="rkbin/"`sed -n "/FlashBoot=/s/FlashBoot=//p" ${ARG_INI_LOADER}  |tr -d '\r'`
 				offs=`fdtdump -s ${spl_file} | head -1 | awk -F ":" '{ print $2 }' | sed "s/ found fdt at offset //g" | tr -d " "`
 				if [ -z ${offs}  ]; then
 					echo "ERROR: invalid ${spl_file} , unable to find fdt blob"
