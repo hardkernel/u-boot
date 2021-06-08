@@ -1,11 +1,12 @@
 0x12345678,
 2,/* version */
-(0 << 0) | (1 << 8) | (8 << 16) | (8 << 24),/* cpu_gen,global index */
-(0 << 0) | (9 << 8) | (16 << 16) | (9 << 24),/* d2,d3 index */
-(25 << 0) | (9 << 8) | (0 << 16) | (0 << 24),/* d4,d5 index */
-(0 << 0) | (9 << 8) | (34 << 16) | (9 << 24),/* lp2,lp3 index */
-(43 << 0) | (13 << 8) | (0 << 16) | (0 << 24),/* lp4,lp5 index */
-(0 << 0) | (0 << 8) | (56 << 16) | (8 << 24),/* skew index, dq_map index */
+(0 << 0) | (1 << 8) | (9 << 16) | (8 << 24),/* cpu_gen,global index */
+(0 << 0) | (9 << 8) | (17 << 16) | (9 << 24),/* d2,d3 index */
+(26 << 0) | (9 << 8) | (0 << 16) | (0 << 24),/* d4,d5 index */
+(0 << 0) | (9 << 8) | (35 << 16) | (9 << 24),/* lp2,lp3 index */
+(44 << 0) | (13 << 8) | (0 << 16) | (0 << 24),/* lp4,lp5 index */
+(0 << 0) | (0 << 8) | (57 << 16) | (8 << 24),/* skew index, dq_map index */
+(65 << 0) | (13 << 8) | (0 << 16) | (0 << 24), /*lp4x index*/
 /* global info */
 0,
 (93 << 16) | 13,/* sr_idle << 16 | pd_idle */
@@ -153,4 +154,45 @@
 	((2 << 0 | 0 << 2 | 2 << 4 | 0 << 6) << 0) |
 	((1 << 0 | 3 << 2 | 3 << 4 | 1 << 6) << 8) |
 	((0 << 0 | 0 << 2 | 1 << 4 | 3 << 6) << 16) |
-	((1 << 0 | 3 << 2 | 2 << 4 | 2 << 6) << 24)
+	((1 << 0 | 3 << 2 | 2 << 4 | 2 << 6) << 24),
+
+/* lpddr4x */
+(1056 << DDR_FREQ_F0_SHIFT) | (328 << DDR_FREQ_F1_SHIFT),
+(528 << DDR_FREQ_F2_SHIFT) | (784 << DDR_FREQ_F3_SHIFT),
+(0 << DDR_FREQ_F4_SHIFT) | (0 << DDR_FREQ_F5_SHIFT),
+
+/* drv when odt on */
+(38 << PHY_DQ_DRV_SHIFT) | (38 << PHY_CA_DRV_SHIFT) |
+	(38 << PHY_CLK_DRV_SHIFT) | (40 << DRAM_DQ_DRV_SHIFT),
+/* drv when odt off */
+(38 << PHY_DQ_DRV_SHIFT) | (38 << PHY_CA_DRV_SHIFT) |
+	(38 << PHY_CLK_DRV_SHIFT) | (40 << DRAM_DQ_DRV_SHIFT),
+/* odt info and PU-cal info */
+(48 << DRAM_ODT_SHIFT) | (60 << PHY_ODT_SHIFT) |
+	(120 << LP4_CA_ODT_SHIFT) |
+	(LPDDR4X_VDDQ_0_6 << LP4_DRV_PU_CAL_ODTEN_SHIFT) |
+	(LPDDR4X_VDDQ_0_6 << LP4_DRV_PU_CAL_ODTOFF_SHIFT) |
+	(0 << PHY_LP4_DRV_PULLDOWN_EN_ODTEN_SHIFT) |
+	(0 << PHY_LP4_DRV_PULLDOWN_EN_ODTOFF_SHIFT),
+/* odt enable freq */
+(0 << PHY_LP4_ODT_EN_FREQ_SHIFT) | (0 << LP4_DQ_ODT_EN_FREQ_SHIFT),
+/* slew rate when odt enable */
+(0xf << PHY_DQ_SR_SHIFT) | (0xf << PHY_CA_SR_SHIFT) |
+	(0xf << PHY_CLK_SR_SHIFT),
+/* slew  ratee when odt disable */
+(0xf << PHY_DQ_SR_SHIFT) | (0xf << PHY_CA_SR_SHIFT) |
+	(0xf << PHY_CLK_SR_SHIFT),
+/* ca odt en freq */
+(333 << LP4_CA_ODT_EN_FREQ_SHIFT),
+/* cs drv info and ca odt info */
+(0 << PHY_LP4_CS_DRV_ODTEN_SHIFT) |
+	(0 << PHY_LP4_CS_DRV_ODTOFF_SHIFT) |
+	(0 << LP4_ODTE_CK_SHIFT) | (0 << LP4_ODTE_CS_EN_SHIFT) |
+	(0 << LP4_ODTD_CA_EN_SHIFT),
+/* vref info when odt enable, phy vddq=1.1V, lp4x vddq=0.6V */
+(153 << PHY_LP4_DQ_VREF_SHIFT) | (515 << LP4_DQ_VREF_SHIFT) |
+	(629 << LP4_CA_VREF_SHIFT),
+/* vref info when odt disable */
+(153 << PHY_LP4_DQ_VREF_SHIFT) | (629 << LP4_DQ_VREF_SHIFT) |
+	(629 << LP4_CA_VREF_SHIFT),
+
