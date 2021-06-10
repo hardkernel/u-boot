@@ -2088,8 +2088,18 @@ static int high_freq_training(struct dram_info *dram,
 	dqs_skew = 0x20;
 
 	if (dramtype == LPDDR4 || dramtype == LPDDR4X) {
-		clk_skew = 0;
-		ca_skew = 0;
+		min_val = 0xff;
+		for (j = 0; j < sdram_params->ch.cap_info.rank; j++)
+			for (i = 0; i < sdram_params->ch.cap_info.bw; i++)
+				min_val = MIN(wrlvl_result[j][i], min_val);
+
+		if (min_val < 0) {
+			clk_skew = -min_val;
+			ca_skew = -min_val;
+		} else {
+			clk_skew = 0;
+			ca_skew = 0;
+		}
 	} else if (dramtype == LPDDR3) {
 		ca_skew = clk_skew - 4;
 	} else {
