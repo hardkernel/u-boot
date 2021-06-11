@@ -348,6 +348,13 @@ config SMBIOS_PRODUCT_NAME
 	  The product name to store in SMBIOS structures.
 	  Change this to override the default one (CONFIG_SYS_BOARD).
 
+config LIB_RATIONAL
+	bool "enable continued fraction calculation routines"
+
+config SPL_LIB_RATIONAL
+	bool "enable continued fraction calculation routines for SPL"
+	depends on SPL
+
 endmenu
 
 source lib/efi/Kconfig
