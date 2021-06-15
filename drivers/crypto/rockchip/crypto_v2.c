@@ -921,12 +921,17 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 			       aad, aad_len);
 		} else {
 			aad_tmp_len = aad_len;
-			aad_tmp = align_malloc(aad_tmp_len,
-					       DATA_ADDR_ALIGN_SIZE);
-			if (!aad_tmp)
-				goto exit;
+			if (IS_ALIGNED((ulong)aad, DATA_ADDR_ALIGN_SIZE)) {
+				aad_tmp = (void *)aad;
+			} else {
+				aad_tmp = align_malloc(aad_tmp_len,
+						       DATA_ADDR_ALIGN_SIZE);
+				if (!aad_tmp)
+					goto exit;
 
-			memcpy(aad_tmp, aad, aad_tmp_len);
+				memcpy(aad_tmp, aad, aad_tmp_len);
+			}
+
 			set_aad_len_reg(key_chn, aad_tmp_len);
 			set_pc_len_reg(key_chn, tmp_len);
 		}
@@ -982,10 +987,12 @@ exit:
 	crypto_write(0xffff0000, CRYPTO_BC_CTL);//bc_ctl disable
 	align_free(data_desc);
 	align_free(aad_desc);
-	if (dma_in && dma_in != in)
+	if (dma_in != in)
 		align_free(dma_in);
-	if (dma_out && dma_out != out)
+	if (out && dma_out != out)
 		align_free(dma_out);
+	if (aad && aad != aad_tmp)
+		align_free(aad_tmp);
 
 	return ret;
 }
