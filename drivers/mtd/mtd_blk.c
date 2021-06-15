@@ -10,6 +10,7 @@
 #include <dm.h>
 #include <errno.h>
 #include <image.h>
+#include <linux/log2.h>
 #include <malloc.h>
 #include <nand.h>
 #include <part.h>
@@ -649,6 +650,20 @@ static int mtd_blk_probe(struct udevice *udev)
 		mtd = dev_get_priv(udev->parent);
 #endif
 	}
+
+	/* Fill mtd devices information */
+	if (is_power_of_2(mtd->erasesize))
+		mtd->erasesize_shift = ffs(mtd->erasesize) - 1;
+	else
+		mtd->erasesize_shift = 0;
+
+	if (is_power_of_2(mtd->writesize))
+		mtd->writesize_shift = ffs(mtd->writesize) - 1;
+	else
+		mtd->writesize_shift = 0;
+
+	mtd->erasesize_mask = (1 << mtd->erasesize_shift) - 1;
+	mtd->writesize_mask = (1 << mtd->writesize_shift) - 1;
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
