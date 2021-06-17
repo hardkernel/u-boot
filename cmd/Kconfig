@@ -729,6 +729,11 @@ config CMD_IDE
 	  geting device info. It also enables the 'diskboot' command which
 	  permits booting from an IDE drive.
 
+config CMD_INI
+	bool "ini - import data from an ini file into the env"
+	help
+	  Enables the 'ini' command to import env data from an ini file.
+
 config CMD_IO
 	bool "io - Support for performing I/O accesses"
 	help
