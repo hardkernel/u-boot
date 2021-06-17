@@ -1299,6 +1299,7 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 	uint8_t *fit_value;
 	int fit_value_len;
 	int ignore;
+	int i;
 
 	*err_msgp = NULL;
 
@@ -1331,8 +1332,6 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 		*err_msgp = "Bad hash value len";
 		return -1;
 	} else if (memcmp(value, fit_value, value_len) != 0) {
-		int i;
-
 		printf(" Bad hash: ");
 		for (i = 0; i < value_len; i++)
 			printf("%02x", value[i]);
@@ -1341,6 +1340,13 @@ int fit_image_check_hash(const void *fit, int noffset, const void *data,
 		*err_msgp = "Bad hash value";
 		return -1;
 	}
+
+#ifdef CONFIG_SPL_BUILD
+	printf("(");
+	for (i = 0; i < 5; i++)
+		printf("%02x", value[i]);
+	printf("...) ");
+#endif
 
 	return 0;
 }
