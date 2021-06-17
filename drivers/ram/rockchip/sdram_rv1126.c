@@ -1042,6 +1042,8 @@ static void set_ds_odt(struct dram_info *dram,
 
 		clrsetbits_le32(PHY_REG(phy_base, 0x114 + i * 0x10),
 				1 << 3, phy_lp4_drv_pd_en << 3);
+		if (dramtype == LPDDR4 || dramtype == LPDDR4X)
+			clrbits_le32(PHY_REG(phy_base, 0x114 + i * 0x10), BIT(5));
 		/* dq slew rate */
 		clrsetbits_le32(PHY_REG(phy_base, 0x117 + i * 0x10),
 				0x1f, sr_dq);
