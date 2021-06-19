@@ -133,6 +133,8 @@ void usage(void)
 	printf("\t\t\t Pack low power logo to logo.img from given path\n");
 	printf("\t --kernel-logo path");
 	printf("\t\t\t Pack low power logo to logo.img from given path\n");
+	printf("\t --poweroff-logo path");
+	printf("\t\t\t Pack power off logo to logo.img from given path\n");
 	printf("\t --output path");
 	printf("\t\t\t Output the grayscale image to path\n");
 }
@@ -457,6 +459,18 @@ int main(int argc, char *argv[])
 			}
 			memcpy(in_img_info[logo_count].path, argv[0], len);
 			in_img_info[logo_count].logo_type = EINK_LOGO_KERNEL;
+			logo_count++;
+			argc--, argv++;
+		} else if (!strcmp("--poweroff-logo", arg)) {
+			int len = strlen(argv[0]);
+
+			if (len > 256) {
+				printf("Poweroff logo path %s is too long\n",
+				       argv[0]);
+				return -1;
+			}
+			memcpy(in_img_info[logo_count].path, argv[0], len);
+			in_img_info[logo_count].logo_type = EINK_LOGO_POWEROFF;
 			logo_count++;
 			argc--, argv++;
 		}  else if (!strcmp("--screen-width", arg)) {
