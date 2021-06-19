@@ -588,15 +588,15 @@ static int charge_animation_show(struct udevice *dev)
 			       charging);
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 			/*
-			 * If charger is plug out during charging, display white
-			 * screen before device power off.
+			 * If charger is plug out during charging, display poweroff
+			 * image before device power off.
 			 * Irq must be enable if CONFIG_IRQ is defined, because
 			 * ebc need to wait irq to indicate frame is complete.
 			 */
 #ifdef CONFIG_IRQ
 			local_irq_enable();
 #endif
-			ret = rockchip_eink_show_charge_logo(EINK_LOGO_RESET);
+			ret = rockchip_eink_show_charge_logo(EINK_LOGO_POWEROFF);
 			if (ret != 0)
 				printf("Eink display reset logo failed\n");
 #ifdef CONFIG_IRQ
