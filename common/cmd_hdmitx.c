@@ -123,6 +123,10 @@ READ_EDID:
 
 		/* select best resolution */
 		setenv("hdmimode", select_best_resolution());
+		if (strncmp((const char *)select_best_resolution(), "2160p", 5) == 0)
+			setenv("4k", "yes");
+		else
+			setenv("4k", "no");
 		setenv("vout", getenv("hdmimode"));
 	}
 
