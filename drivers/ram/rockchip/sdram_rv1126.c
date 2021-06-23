@@ -517,7 +517,7 @@ static void set_ctl_address_map(struct dram_info *dram,
 		}
 	}
 
-	if (ddrconf > ARRAY_SIZE(addrmap)) {
+	if (ddrconf >= ARRAY_SIZE(addrmap)) {
 		printascii("set ctl address map fail\n");
 		return;
 	}
