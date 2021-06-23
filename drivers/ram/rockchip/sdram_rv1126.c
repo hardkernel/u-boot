@@ -2606,15 +2606,29 @@ static u64 dram_detect_cap(struct dram_info *dram,
 
 		sdram_detect_row_3_4(cap_info, coltmp, bktmp);
 	} else {
-		mr8 = (read_mr(dram, 1, 8, dram_type) >> 2) & 0xf;
 		cap_info->col = 10;
 		cap_info->bk = 3;
-		cap_info->cs0_row = 14 + (mr8 + 1) / 2;
-		if (mr8 % 2)
-			cap_info->row_3_4 = 1;
-		else
-			cap_info->row_3_4 = 0;
-		cap_info->dbw = 1;
+		mr8 = read_mr(dram, 1, 8, dram_type);
+		cap_info->dbw = ((mr8 >> 6) & 0x3) == 0 ? 1 : 0;
+		mr8 = (mr8 >> 2) & 0xf;
+		if (mr8 >= 0 && mr8 <= 6) {
+			cap_info->cs0_row = 14 + (mr8 + 1) / 2;
+		} else if (mr8 == 0xc) {
+			cap_info->cs0_row = 13;
+		} else {
+			printascii("Cap ERR: Fail to get cap of LPDDR4/X from MR8\n");
+			goto cap_err;
+		}
+		if (cap_info->dbw == 0)
+			cap_info->cs0_row++;
+		cap_info->row_3_4 = mr8 % 2 == 1 ? 1 : 0;
+		if (cap_info->cs0_row >= 17) {
+			printascii("Cap ERR: ");
+			printascii("RV1126 LPDDR4/X cannot support row >= 17\n");
+			goto cap_err;
+			// cap_info->cs0_row = 16;
+			// cap_info->row_3_4 = 0;
+		}
 		cap_info->bw = 2;
 	}
 
