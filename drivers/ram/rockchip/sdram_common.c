@@ -332,22 +332,22 @@ int sdram_detect_dbw(struct sdram_cap_info *cap_info, u32 dram_type)
 		bw = cap_info->bw;
 		cs_cap = (1 << (row + col + bk + bw - 20));
 		if (bw == 2) {
-			if (cs_cap <= 0x2000000) /* 256Mb */
+			if (cs_cap <= 0x20) /* 256Mb */
 				die_bw_0 = (col < 9) ? 2 : 1;
-			else if (cs_cap <= 0x10000000) /* 2Gb */
+			else if (cs_cap <= 0x100) /* 2Gb */
 				die_bw_0 = (col < 10) ? 2 : 1;
-			else if (cs_cap <= 0x40000000) /* 8Gb */
+			else if (cs_cap <= 0x400) /* 8Gb */
 				die_bw_0 = (col < 11) ? 2 : 1;
 			else
 				die_bw_0 = (col < 12) ? 2 : 1;
 			if (cs > 1) {
 				row = cap_info->cs1_row;
 				cs_cap = (1 << (row + col + bk + bw - 20));
-				if (cs_cap <= 0x2000000) /* 256Mb */
+				if (cs_cap <= 0x20) /* 256Mb */
 					die_bw_0 = (col < 9) ? 2 : 1;
-				else if (cs_cap <= 0x10000000) /* 2Gb */
+				else if (cs_cap <= 0x100) /* 2Gb */
 					die_bw_0 = (col < 10) ? 2 : 1;
-				else if (cs_cap <= 0x40000000) /* 8Gb */
+				else if (cs_cap <= 0x400) /* 8Gb */
 					die_bw_0 = (col < 11) ? 2 : 1;
 				else
 					die_bw_0 = (col < 12) ? 2 : 1;
