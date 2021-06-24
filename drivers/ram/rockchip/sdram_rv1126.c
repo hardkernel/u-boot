@@ -536,7 +536,7 @@ static void set_ctl_address_map(struct dram_info *dram,
 	}
 
 	sdram_copy_to_reg((u32 *)(pctl_base + DDR_PCTL2_ADDRMAP0),
-			  &addrmap[ddrconf][0], 9 * 4);
+			  &addrmap[ddrconf][0], ARRAY_SIZE(addrmap[ddrconf]) * 4);
 
 	/* unused row set to 0xf */
 	for (i = 17; i >= row; i--)
