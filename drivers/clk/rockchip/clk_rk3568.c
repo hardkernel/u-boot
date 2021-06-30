@@ -1529,7 +1529,7 @@ static ulong rk3568_sfc_get_clk(struct rk3568_clk_priv *priv)
 	case SCLK_SFC_SEL_125M:
 		return 125 * MHz;
 	case SCLK_SFC_SEL_150M:
-		return 150 * KHz;
+		return 150 * MHz;
 	default:
 		return -ENOENT;
 	}
@@ -1556,7 +1556,7 @@ static ulong rk3568_sfc_set_clk(struct rk3568_clk_priv *priv, ulong rate)
 	case 125 * MHz:
 		src_clk = SCLK_SFC_SEL_125M;
 		break;
-	case 150 * KHz:
+	case 150 * MHz:
 		src_clk = SCLK_SFC_SEL_150M;
 		break;
 	default:
