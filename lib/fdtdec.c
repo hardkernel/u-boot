@@ -1286,8 +1286,10 @@ int fdtdec_setup(void)
 	gd->fdt_blob = (ulong *)&_end;
 
 #    ifdef CONFIG_USING_KERNEL_DTB
-	gd->fdt_blob_kern = (ulong *)((ulong)gd->fdt_blob +
-					ALIGN(fdt_totalsize(gd->fdt_blob), 8));
+	gd->fdt_blob_kern = (ulong *)ALIGN((ulong)gd->fdt_blob +
+				fdt_totalsize(gd->fdt_blob), 8);
+	if (fdt_check_header(gd->fdt_blob_kern))
+		gd->fdt_blob_kern = NULL;
 #    endif
 #  endif
 # elif defined(CONFIG_OF_BOARD)

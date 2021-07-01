@@ -508,10 +508,21 @@ static int reserve_fdt(void)
 	 * will be relocated with other data.
 	 */
 	if (gd->fdt_blob) {
-		gd->fdt_size = ALIGN(fdt_totalsize(gd->fdt_blob) + 0x1000, 32);
+		u32 extrasize = 0;
 
+		if (gd->fdt_blob_kern)
+			extrasize = fdt_totalsize(gd->fdt_blob_kern);
+		gd->fdt_size = ALIGN(fdt_totalsize(gd->fdt_blob) + extrasize + 0x1000, 32);
 		gd->start_addr_sp -= gd->fdt_size;
+
+		/* 8-byte align */
+		gd->start_addr_sp -= 8;
+		gd->start_addr_sp &= ~0x7;
 		gd->new_fdt = map_sysmem(gd->start_addr_sp, gd->fdt_size);
+
+		if (gd->fdt_blob_kern)
+			gd->fdt_blob_kern = (ulong *)ALIGN((ulong)gd->new_fdt +
+					fdt_totalsize(gd->fdt_blob), 8);
 		debug("Reserving %lu Bytes for FDT at: %08lx\n",
 		      gd->fdt_size, gd->start_addr_sp);
 	}
@@ -689,12 +700,14 @@ static int setup_reloc(void)
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
 
 #ifndef CONFIG_SUPPORT_USBPLUG
-	printf("Relocation Offset: %08lx, fdt: %08lx ",
-	      gd->reloc_off, (ulong)gd->new_fdt);
-  #ifdef CONFIG_USING_KERNEL_DTB
-	if (!fdt_check_header((void *)gd->fdt_blob_kern))
-		printf("kfdt: %08lx", (ulong)gd->fdt_blob_kern);
-  #endif
+	printf("Relocation Offset: %08lx\n", gd->reloc_off);
+
+	printf("Relocation fdt: %08lx - %08lx",  (ulong)gd->new_fdt,
+	       (ulong)gd->new_fdt + fdt_totalsize(gd->fdt_blob));
+	if (gd->fdt_blob_kern) {
+		printf(", kfdt: %08lx - %08lx", (ulong)gd->fdt_blob_kern,
+		  (ulong)gd->fdt_blob_kern + fdt_totalsize(gd->fdt_blob_kern));
+	}
 	puts("\n");
 #endif
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",
