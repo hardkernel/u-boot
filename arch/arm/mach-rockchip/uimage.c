@@ -183,7 +183,7 @@ int uimage_sysmem_free_each(image_header_t *img, u32 ramdisk_sz)
 	return 0;
 }
 
-int rockchip_read_uimage_dtb(void *fdt_addr, char **hash, int *hash_size)
+int uimage_init_resource(void)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part;
@@ -194,8 +194,6 @@ int rockchip_read_uimage_dtb(void *fdt_addr, char **hash, int *hash_size)
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
 	ulong dst;
 	int idx = 3;
-#else
-	int idx = 2;
 #endif
 	int ret;
 
@@ -224,10 +222,12 @@ int rockchip_read_uimage_dtb(void *fdt_addr, char **hash, int *hash_size)
 	free(hdr);
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+	ulong fdt_addr;
+
 	/* reserve enough space before fdt */
+	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	dst = (ulong)fdt_addr -
 		   ALIGN(size, dev_desc->blksz) - CONFIG_SYS_FDT_PAD;
-
 	ret = uimage_load_one(dev_desc, &part, offset, size, (void *)dst);
 	if (ret) {
 		UIMG_I("Failed to load resource file, ret=%d\n", ret);
@@ -243,17 +243,7 @@ int rockchip_read_uimage_dtb(void *fdt_addr, char **hash, int *hash_size)
 		UIMG_I("Failed to create resource list, ret=%d\n", ret);
 		return ret;
 	}
-
-	printf("Found DTB in uImage.%d\n", idx);
-	ret = rockchip_read_resource_dtb(fdt_addr, hash, hash_size);
-#else
-	printf("DTB(uimage.%d): rk-kernel.dtb\n", idx);
-	ret = uimage_load_one(dev_desc, &part, offset, size, fdt_addr);
 #endif
-	if (ret) {
-		UIMG_I("Failed to load fdt, ret=%d\n", ret);
-		return ret;
-	}
 
 	return 0;
 }

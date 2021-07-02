@@ -12,7 +12,7 @@
 void *uimage_load_bootables(void);
 int uimage_sysmem_free_each(image_header_t *img, u32 ramdisk_sz);
 int uimage_sysmem_reserve_each(image_header_t *hdr, u32 *ramdisk_sz);
-int rockchip_read_uimage_dtb(void *fdt_addr, char **hash, int *hash_size);
+int uimage_init_resource(void);
 
 #endif
 

@@ -14,7 +14,6 @@ void *fit_image_load_bootables(ulong *size);
 
 int fit_image_pre_process(const void *fit);
 int fit_image_fail_process(const void *fit);
-
-int rockchip_read_fit_dtb(void *fdt_addr, char **hash, int *hash_size);
+int fit_image_init_resource(void);
 
 #endif
