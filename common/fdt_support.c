@@ -280,7 +280,7 @@ int fdt_initrd(void *fdt, ulong initrd_start, ulong initrd_end)
 	return 0;
 }
 
-static int fdt_bootargs_append(void *fdt, char *data)
+int fdt_bootargs_append(void *fdt, char *data)
 {
 	const char *arr_bootargs[] = { "bootargs", "bootargs_ext" };
 	int nodeoffset, len;

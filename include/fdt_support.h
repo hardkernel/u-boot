@@ -28,6 +28,15 @@ u32 fdt_getprop_u32_default(const void *fdt, const char *path,
 int fdt_root(void *fdt);
 
 /**
+ * Append info to bootargs
+ *
+ * @param fdt           FDT address in memory
+ * @param data          string info
+ * @return 0 if ok, else error
+ */
+int fdt_bootargs_append(void *fdt, char *data);
+
+/**
  * Append ab info to bootargs
  *
  * @param fdt		FDT address in memory
