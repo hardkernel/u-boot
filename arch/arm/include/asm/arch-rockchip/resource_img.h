@@ -7,6 +7,25 @@
 #ifndef __RESC_IMG_H_
 #define __RESC_IMG_H_
 
+#include <linux/list.h>
+
+#define MAX_FILE_NAME_LEN		220
+#define MAX_HASH_LEN			32
+
+struct resource_file {
+	char		name[MAX_FILE_NAME_LEN];
+	char		hash[MAX_HASH_LEN];
+	uint32_t	hash_size;
+	uint32_t	f_offset;	/* Sector offset */
+	uint32_t	f_size;		/* Bytes */
+	struct list_head link;
+	/* Sector base of resource when ram=false, byte base when ram=true */
+	uint32_t	rsce_base;
+	bool		ram;
+};
+
+extern struct list_head entrys_head;
+
 /*
  * resource_image_check_header - check resource image header
  *
@@ -46,4 +65,41 @@ int rockchip_read_resource_file(void *buf, const char *name, int offset, int len
  * @hash_size: hash value length
  */
 int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size);
+
+/*
+ * resource_init_list - init resource list of android image from storage
+ */
+int resource_init_list(void);
+
+/*
+ * resource_replace_entry - replace resource entry, override if find exist one
+ */
+int resource_replace_entry(const char *f_name, uint32_t base,
+			   uint32_t f_offset, uint32_t f_size);
+
+/*
+ * resource_read_logo_bmps() - read logo bmp from "logo" partition
+ */
+int resource_read_logo_bmps(void);
+
+/*
+ * resource_read_hwid_dtb() - read hwid dtb
+ */
+struct resource_file *resource_read_hwid_dtb(void);
+
+/*
+ * resource_is_empty() - return if resource is empty
+ */
+int resource_is_empty(void);
+
+/*
+ * resource_populate_dtb() - read fdt from this image: android/fit.
+ */
+int resource_populate_dtb(void *img, void *fdt);
+
+/*
+ * resource_traverse_init_list() - traverse all image(android/fit/uimage)
+ */
+int resource_traverse_init_list(void);
+
 #endif
