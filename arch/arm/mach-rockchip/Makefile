@@ -16,6 +16,9 @@ obj-spl-y += spl.o spl-boot-order.o
 
 ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_$(SPL_)FIT) += fit_misc.o
+ifdef CONFIG_SPL_BUILD
+obj-y += spl_boot_mode.o
+endif
 endif
 
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)

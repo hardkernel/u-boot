@@ -68,8 +68,12 @@ void rockchip_set_bootdev(struct blk_desc *desc);
 void board_run_recovery_wipe_data(void);
 void setup_download_mode(void);
 int get_bcb_recovery_msg(void);
-int rockchip_get_boot_mode(void);
 int rockchip_read_dtb_file(void *fdt_addr);
 int init_kernel_dtb(void);
 
+#ifndef CONFIG_SPL_BUILD
+int rockchip_get_boot_mode(void);
+#else
+int rockchip_get_boot_mode(struct blk_desc *dev_desc, u32 bcb_sector_offset);
+#endif
 #endif
