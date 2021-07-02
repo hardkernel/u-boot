@@ -245,6 +245,9 @@ static int dtb_check_ok(void *fdt, void *ufdt)
 		}
 	}
 
+	if (!compare[0])
+		return 1;
+
 	if (compare[0] && compare[1])
 		return !memcmp(compare[0], compare[1], strlen(compare[0]));
 
