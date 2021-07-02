@@ -505,55 +505,46 @@ static int rockchip_read_distro_dtb(void *fdt_addr)
 
 int rockchip_read_dtb_file(void *fdt_addr)
 {
-	int hash_size;
-	char *hash;
-	u32 size;
+	int hash_size = 0;
 	int ret = -1;
+	u32 fdt_size;
+	char *hash;
 
-#ifdef CONFIG_ROCKCHIP_FIT_IMAGE
-	if (ret) {
-		hash_size = 0;
-		ret = rockchip_read_fit_dtb(fdt_addr, &hash, &hash_size);
-	}
-#endif
-#ifdef CONFIG_ROCKCHIP_UIMAGE
-	if (ret) {
-		hash_size = 0;
-		ret = rockchip_read_uimage_dtb(fdt_addr, &hash, &hash_size);
-	}
-#endif
+	/* init from storage if resource list is empty */
+	resource_traverse_init_list();
+
+	/* distro */
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-	if (ret) {
-		hash_size = 0;
-		ret = rockchip_read_distro_dtb(fdt_addr);
+	ret = rockchip_read_distro_dtb(fdt_addr);
+	if (!ret) {
+		if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
+		     ALIGN(fdt_size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+			return -ENOMEM;
+
+		return 0;
 	}
 #endif
-#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+	/* others(android/fit/uimage) */
+	ret = rockchip_read_resource_dtb(fdt_addr, &hash, &hash_size);
 	if (ret) {
-		hash_size = 0;
-		ret = rockchip_read_resource_dtb(fdt_addr, &hash, &hash_size);
-	}
-#endif
-	if (ret) {
-		printf("Failed to load DTB\n");
+		printf("Failed to load DTB, ret=%d\n", ret);
 		return ret;
 	}
 
 	if (fdt_check_header(fdt_addr)) {
-		printf("Get a bad DTB file !\n");
+		printf("Invalid DTB magic !\n");
 		return -EBADF;
 	}
 
-	size = fdt_totalsize(fdt_addr);
-
+	fdt_size = fdt_totalsize(fdt_addr);
 #ifdef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (hash_size && fdt_check_hash(fdt_addr, size, hash, hash_size)) {
-		printf("Get a bad hash of DTB !\n");
+	if (hash_size && fdt_check_hash(fdt_addr, fdt_size, hash, hash_size)) {
+		printf("Invalid DTB hash !\n");
 		return -EBADF;
 	}
 #endif
 	if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(size, RK_BLK_SIZE) +
+			       ALIGN(fdt_size, RK_BLK_SIZE) +
 			       CONFIG_SYS_FDT_PAD))
 		return -ENOMEM;
 

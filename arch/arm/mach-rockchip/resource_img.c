@@ -16,6 +16,7 @@
 #include <dm/ofnode.h>
 #include <linux/list.h>
 #include <asm/arch/fit.h>
+#include <asm/arch/uimage.h>
 #include <asm/arch/resource_img.h>
 
 DECLARE_GLOBAL_DATA_PTR;
