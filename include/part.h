@@ -30,6 +30,7 @@ struct block_drvr {
 #define PART_TYPE_AMIGA		0x04
 #define PART_TYPE_EFI		0x05
 #define PART_TYPE_RKPARM	0x06
+#define PART_TYPE_RKRAM		0x07
 
 /* maximum number of partition entries supported by search */
 #define DOS_ENTRY_NUMBERS	8
@@ -37,6 +38,8 @@ struct block_drvr {
 #define MAC_ENTRY_NUMBERS	64
 #define AMIGA_ENTRY_NUMBERS	8
 #define RKPARM_ENTRY_NUMBERS	128
+#define RKRAM_ENTRY_NUMBERS	6
+
 /*
  * Type string for U-Boot bootable partitions
  */

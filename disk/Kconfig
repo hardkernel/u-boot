@@ -142,6 +142,14 @@ config RKPARM_PARTITION
 	  Say Y here if you would like to use device under U-Boot which
 	  were partitioned using Rockchip parameter.
 
+config RKRAM_PARTITION
+	bool "Enable Rockchip ram partition table"
+	depends on PARTITIONS && DM_RAMDISK
+	depends on ROCKCHIP_PRELOADER_ATAGS
+	help
+	  Say Y here if you would like to use device under U-Boot which
+	  were partitioned using Rockchip atags.
+
 config SPL_ROCKCHIP_PARTITION
 	bool "Enable Rockchip partition table for SPL"
 
