@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <ramdisk.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/hardware.h>
@@ -547,6 +548,17 @@ int arch_cpu_init(void)
 	 */
 #if defined(CONFIG_SPL_BUILD) || defined(CONFIG_DM_RAMDISK)
 	int delay;
+
+	/*
+	 * Don't rely on CONFIG_DM_RAMDISK since it can be a default
+	 * configuration after disk/part_rkram.c was introduced.
+	 *
+	 * This is compatible code.
+	 */
+  #ifndef CONFIG_SPL_BUILD
+	if (!dm_ramdisk_is_enabled())
+		return 0;
+  #endif
 
 	/* write BOOT_WATCHDOG to boot mode register, if reset by wdt */
 	if (readl(PMUGRF_RSTFUNC_STATUS) & WDT_RESET_SRC) {
