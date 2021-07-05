@@ -5,10 +5,11 @@
 
 #include <common.h>
 #include <dm.h>
+#include <ramdisk.h>
 #include <dm/device-internal.h>
 #include <dm/lists.h>
 #include <dm/root.h>
-#include <ramdisk.h>
+#include <asm/arch/rk_atags.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -55,6 +56,11 @@ static ulong ramdisk_berase(struct udevice *dev,
 		return -ENOSYS;
 
 	return ops->erase(desc, start, blkcnt);
+}
+
+int dm_ramdisk_is_enabled(void)
+{
+	return (atags_is_available() && atags_get_tag(ATAG_RAM_PARTITION));
 }
 
 static const struct blk_ops ramdisk_blk_ops = {
