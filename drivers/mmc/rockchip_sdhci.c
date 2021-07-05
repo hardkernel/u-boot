@@ -161,7 +161,7 @@ static void rk3399_emmc_phy_power_off(struct rockchip_emmc_phy *phy)
 	writel(RK_CLRSETBITS(1 << 1, 0), &phy->emmcphy_con[6]);
 }
 
-static int rk3399_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
+static int rockchip_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
 {
 	unsigned int div, clk = 0, timeout;
 	unsigned int input_clk;
@@ -293,7 +293,7 @@ static int rk3399_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clo
 	if (cycle_phy)
 		rk3399_emmc_phy_power_off(priv->phy);
 
-	rk3399_emmc_set_clock(host, clock);
+	rockchip_emmc_set_clock(host, clock);
 
 	if (cycle_phy)
 		rk3399_emmc_phy_power_on(priv->phy, clock);
@@ -317,7 +317,7 @@ static int rk3568_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int clo
 	u32 extra;
 	int timeout = 500, ret;
 
-	ret = rk3399_emmc_set_clock(host, clock);
+	ret = rockchip_emmc_set_clock(host, clock);
 
 	if (clock >= 50 * 1000000) {
 		sdhci_writel(host, BIT(1), DWCMSHC_EMMC_DLL_CTRL);
@@ -369,7 +369,7 @@ static int rk3568_emmc_get_phy(struct udevice *dev)
 	return 0;
 }
 
-static int arasan_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
+static int rockchip_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 {
 	struct rockchip_sdhc *priv =
 			container_of(host, struct rockchip_sdhc, host);
@@ -380,11 +380,11 @@ static int arasan_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 	return data->emmc_set_clock(host, clock);
 }
 
-static struct sdhci_ops arasan_sdhci_ops = {
-	.set_clock	= arasan_sdhci_set_clock,
+static struct sdhci_ops rockchip_sdhci_ops = {
+	.set_clock	= rockchip_sdhci_set_clock,
 };
 
-static int arasan_sdhci_probe(struct udevice *dev)
+static int rockchip_sdhci_probe(struct udevice *dev)
 {
 	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(dev);
 	struct mmc_uclass_priv *upriv = dev_get_uclass_priv(dev);
@@ -437,7 +437,7 @@ static int arasan_sdhci_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
-	host->ops = &arasan_sdhci_ops;
+	host->ops = &rockchip_sdhci_ops;
 
 	host->quirks = SDHCI_QUIRK_WAIT_SEND_CMD;
 	host->max_clk = max_frequency;
@@ -458,7 +458,7 @@ static int arasan_sdhci_probe(struct udevice *dev)
 	return sdhci_probe(dev);
 }
 
-static int arasan_sdhci_ofdata_to_platdata(struct udevice *dev)
+static int rockchip_sdhci_of_to_plat(struct udevice *dev)
 {
 #if !CONFIG_IS_ENABLED(OF_PLATDATA)
 	struct sdhci_host *host = dev_get_priv(dev);
@@ -489,7 +489,7 @@ static const struct sdhci_data snps_data = {
 	.emmc_phy_init = rk3568_emmc_phy_init,
 };
 
-static const struct udevice_id arasan_sdhci_ids[] = {
+static const struct udevice_id sdhci_ids[] = {
 	{
 		.compatible = "arasan,sdhci-5.1",
 		.data = (ulong)&arasan_data,
@@ -502,13 +502,13 @@ static const struct udevice_id arasan_sdhci_ids[] = {
 };
 
 U_BOOT_DRIVER(arasan_sdhci_drv) = {
-	.name		= "rockchip_rk3399_sdhci_5_1",
+	.name		= "rockchip_sdhci_5_1",
 	.id		= UCLASS_MMC,
-	.of_match	= arasan_sdhci_ids,
-	.ofdata_to_platdata = arasan_sdhci_ofdata_to_platdata,
+	.of_match	= sdhci_ids,
+	.ofdata_to_platdata = rockchip_sdhci_of_to_plat,
 	.ops		= &sdhci_ops,
 	.bind		= rockchip_sdhci_bind,
-	.probe		= arasan_sdhci_probe,
+	.probe		= rockchip_sdhci_probe,
 	.priv_auto_alloc_size = sizeof(struct rockchip_sdhc),
 	.platdata_auto_alloc_size = sizeof(struct rockchip_sdhc_plat),
 };
