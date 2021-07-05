@@ -83,10 +83,7 @@ typedef struct global_data {
 #ifdef CONFIG_TIMER
 	struct udevice	*timer;		/* Timer instance for Driver Model */
 #endif
-
-#ifdef CONFIG_USING_KERNEL_DTB
 	const void *fdt_blob_kern;	/* Kernel dtb at the tail of u-boot.bin */
-#endif
 	const void *fdt_blob;		/* Our device tree, NULL if none */
 
 #ifdef CONFIG_USING_KERNEL_DTB
