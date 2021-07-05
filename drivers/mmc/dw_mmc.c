@@ -447,8 +447,6 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 		}
 	}
 
-	udelay(100);
-
 	return ret;
 }
 
