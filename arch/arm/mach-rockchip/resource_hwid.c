@@ -17,7 +17,6 @@
 #define KEY_WORDS_GPIO		"#gpio"
 #define MAX_ADC_CH_NR		10
 #define MAX_GPIO_NR		10
-#define DTB_SUFFIX		".dtb"
 
 static fdt_addr_t gpio_base_addr[MAX_GPIO_NR];
 static uint32_t gpio_record[MAX_GPIO_NR];
@@ -273,8 +272,8 @@ struct resource_file *resource_read_hwid_dtb(void)
 			return NULL;
 	}
 
-	list_for_each(node, &entrys_head) {
-		file = list_entry(node, struct resource_file, link);
+	list_for_each(node, &entrys_dtbs_head) {
+		file = list_entry(node, struct resource_file, dtbs);
 		if (!strstr(file->name, DTB_SUFFIX))
 			continue;
 
