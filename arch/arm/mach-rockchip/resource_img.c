@@ -648,3 +648,34 @@ int resource_traverse_init_list(void)
 
 	return 0;
 }
+
+static int do_dump_resource(cmd_tbl_t *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	struct resource_file *file;
+	struct list_head *node;
+
+	printf("Resources:\n");
+	list_for_each(node, &entrys_head) {
+		file = list_entry(node, struct resource_file, link);
+		printf("	%s: 0x%08x(sector), 0x%08x(bytes)\n",
+		       file->name, file->rsce_base + file->f_offset, file->f_size);
+	}
+
+#ifdef CONFIG_ROCKCHIP_HWID_DTB
+	printf("DTBs:\n");
+	list_for_each(node, &entrys_dtbs_head) {
+		file = list_entry(node, struct resource_file, dtbs);
+		printf("	%s: 0x%08x(sector),0x%08x(bytes)\n",
+		       file->name, file->rsce_base + file->f_offset, file->f_size);
+	}
+#endif
+	return 0;
+}
+
+U_BOOT_CMD(
+	dump_resource, 1, 1, do_dump_resource,
+	"dump resource list",
+	""
+);
+
