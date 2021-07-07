@@ -136,6 +136,10 @@ static int rockchip_decom_start(struct udevice *dev, void *buf)
 
 	writel(limit_lo, priv->base + DECOM_LMTSL);
 	writel(limit_hi, priv->base + DECOM_LMTSH);
+
+#if defined(CONFIG_SPL_BUILD)
+	writel(DECOM_INT_MASK, priv->base + DECOM_IEN);
+#endif
 	writel(DECOM_ENABLE, priv->base + DECOM_ENR);
 
 	priv->idle_check_once = true;
