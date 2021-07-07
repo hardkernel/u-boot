@@ -626,6 +626,18 @@ int board_bidram_reserve(struct bidram *bidram)
 	return 0;
 }
 
+int board_sysmem_reserve(struct sysmem *sysmem)
+{
+#ifdef CONFIG_SKIP_RELOCATE_UBOOT
+	if (!sysmem_alloc_base_by_name("NO-RELOC-CODE",
+	    CONFIG_SYS_TEXT_BASE, SZ_2M)) {
+		printf("Failed to reserve sysmem for U-Boot code\n");
+		return -ENOMEM;
+	}
+#endif
+	return 0;
+}
+
 parse_fn_t board_bidram_parse_fn(void)
 {
 	return param_parse_ddr_mem;
