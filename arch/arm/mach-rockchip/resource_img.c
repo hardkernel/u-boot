@@ -30,7 +30,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ENTRY_TAG_SIZE			4
 #define MAX_FILE_NAME_LEN		220
 #define MAX_HASH_LEN			32
-#define DTB_FILE			"rk-kernel.dtb"
+#define DEFAULT_DTB_FILE		"rk-kernel.dtb"
 
 /*
  *         resource image structure
@@ -243,7 +243,7 @@ static int resource_create_list(struct blk_desc *dev_desc, int rsce_base)
 			goto err;
 		} else {
 			free(hdr);
-			return resource_replace_entry(DTB_FILE, rsce_base,
+			return resource_replace_entry(DEFAULT_DTB_FILE, rsce_base,
 						      0, fdt_totalsize(hdr));
 		}
 	}
@@ -318,7 +318,7 @@ static int read_dtb_from_android(struct blk_desc *dev_desc,
 	 */
 	dtb_offset = DIV_ROUND_UP(dtb_offset, dev_desc->blksz);
 #ifndef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (replace_resource_entry(DTB_FILE, rsce_base, dtb_offset, dtb_size))
+	if (replace_resource_entry(DEFAULT_DTB_FILE, rsce_base, dtb_offset, dtb_size))
 		printf("Failed to load dtb from v2 dtb position\n");
 	else
 #endif
@@ -516,7 +516,7 @@ int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 #endif
 	/* If dtbs matched hardware id(GPIO/ADC) not found, try the default */
 	if (!file)
-		file = get_file_info(DTB_FILE);
+		file = get_file_info(DEFAULT_DTB_FILE);
 
 	if (!file)
 		return -ENODEV;

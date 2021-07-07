@@ -42,7 +42,7 @@ struct resource_entry *spl_resource_image_get_dtb_entry(const struct
 	for (i = 0; i < hdr->e_nums; i++) {
 		entry = (struct resource_entry *)((char *)hdr
 				+ (hdr->blks + hdr->e_blks * i) * 512);
-		if (!memcmp(entry->name, DTB_FILE, strlen(DTB_FILE)))
+		if (!memcmp(entry->name, DEFAULT_DTB_FILE, strlen(DEFAULT_DTB_FILE)))
 			break;
 	}
 

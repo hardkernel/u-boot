@@ -15,7 +15,7 @@
 #define MAX_FILE_NAME_LEN		220
 #define MAX_HASH_LEN			32
 
-#define DTB_FILE			"rk-kernel.dtb"
+#define DEFAULT_DTB_FILE		"rk-kernel.dtb"
 
 /*
  *         resource image structure
