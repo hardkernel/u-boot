@@ -156,7 +156,7 @@ void board_init_f(ulong dummy)
 	struct udevice *dev;
 #endif
 #endif
-
+	gd->flags = dummy;
 	rockchip_stimer_init();
 #define EARLY_UART
 #if defined(EARLY_UART) && defined(CONFIG_DEBUG_UART)
