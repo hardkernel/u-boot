@@ -19,7 +19,7 @@
 			cpu          = <0x000>;  // mpidr
 			thumb        = <0>;      // 0: arm or thumb2; 1: thumb
 			hyp          = <0>;      // 0: el1/svc; 1: el2/hyp
-			load         = <0xa00000>;
+			load         = <0x12000000>;
 			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
@@ -35,7 +35,7 @@
 			cpu          = <0x100>;
 			thumb        = <0>;
 			hyp          = <0>;
-			load         = <0xb00000>;
+			load         = <0x01800000>;
 			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
@@ -51,7 +51,7 @@
 			cpu          = <0x200>;
 			thumb        = <0>;
 			hyp          = <0>;
-			load         = <0xd00000>;
+			load         = <0x03800000>;
 			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
@@ -67,7 +67,7 @@
 			cpu          = <0x300>;
 			thumb        = <0>;
 			hyp          = <0>;
-			load         = <0xe00000>;
+			load         = <0x05800000>;
 			udelay       = <1000000>;
 			hash {
 				algo = "sha256";
