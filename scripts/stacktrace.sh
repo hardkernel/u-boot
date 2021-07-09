@@ -13,10 +13,13 @@ TPL_SPL=$2
 
 if [ "$TPL_SPL" = "tpl" ]; then
 	SYMBOL_FILE=`find -name u-boot-tpl.sym`
+	ELF_FILE="elf tpl"
 elif [ "$TPL_SPL" = "spl" ]; then
 	SYMBOL_FILE=`find -name u-boot-spl.sym`
+	ELF_FILE="elf spl"
 else
 	SYMBOL_FILE=`find -name u-boot.sym`
+	ELF_FILE="elf"
 fi
 
 echo
@@ -102,4 +105,14 @@ do
 		fpc=strtonum("0x"$1);
 	}'
 done
+echo
+
+# PC instruction
+echo " PC Surrounding Instructions:"
+line=`grep '\[< ' $INPUT_FILE | grep '>\]' | grep [PC]`
+frame_pc_str=`echo $line | awk '{ print "0x"$3 }'`
+frame_pc_dec=`echo $line | awk '{ print strtonum("0x"$3); }'`
+frame_pc_hex=`echo "obase=16;${frame_pc_dec}"|bc |tr '[A-Z]' '[a-z]'`
+PC_INSTR=`./make.sh ${ELF_FILE} | grep -5 -m 1 "${frame_pc_hex}:"`
+echo "${PC_INSTR}"
 echo
