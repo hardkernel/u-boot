@@ -1405,6 +1405,54 @@ static ulong rv1126_pclk_gmac_get_clk(struct rv1126_clk_priv *priv)
 }
 
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+static ulong rv1126_clk_mipicsi_out_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, fracdiv, sel, con, n, m, parent = priv->gpll_hz;
+
+	con = readl(&cru->clksel_con[73]);
+	div = (con & MIPICSI_OUT_DIV_MASK) >> MIPICSI_OUT_DIV_SHIFT;
+	sel = (con & MIPICSI_OUT_SEL_MASK) >> MIPICSI_OUT_SEL_SHIFT;
+	if (sel == MIPICSI_OUT_SEL_XIN24M) {
+		return OSC_HZ;
+	} else if (sel == MIPICSI_OUT_SEL_FRACDIV) {
+		parent = DIV_TO_RATE(parent, div);
+		fracdiv = readl(&cru->clksel_con[74]);
+		n = (fracdiv & 0xffff0000) >> 16;
+		m = fracdiv & 0xffff;
+		return parent * n / m;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_clk_mipicsi_out_set_clk(struct rv1126_clk_priv *priv,
+					    ulong rate)
+{	struct rv1126_cru *cru = priv->cru;
+	int src_clk_div;
+
+	if (rate == OSC_HZ) {
+		rk_clrsetreg(&cru->clksel_con[73], MIPICSI_OUT_SEL_MASK,
+			     MIPICSI_OUT_SEL_XIN24M << MIPICSI_OUT_SEL_SHIFT);
+	} else if (rate == 27000000) {
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, 297000000);
+		rk_clrsetreg(&cru->clksel_con[73], MIPICSI_OUT_DIV_MASK,
+			     (src_clk_div - 1) << MIPICSI_OUT_DIV_SHIFT);
+		rk_clrsetreg(&cru->clksel_con[73], MIPICSI_OUT_SEL_MASK,
+			     MIPICSI_OUT_SEL_FRACDIV << MIPICSI_OUT_SEL_SHIFT);
+		writel(4 << 16 | 44, &cru->clksel_con[74]);
+	} else {
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+		assert(src_clk_div - 1 <= 31);
+		rk_clrsetreg(&cru->clksel_con[73], MIPICSI_OUT_DIV_MASK,
+			     (src_clk_div - 1) << MIPICSI_OUT_DIV_SHIFT);
+		rk_clrsetreg(&cru->clksel_con[73], MIPICSI_OUT_SEL_MASK,
+			     MIPICSI_OUT_SEL_DIV << MIPICSI_OUT_SEL_SHIFT);
+	}
+
+	return rv1126_clk_mipicsi_out_get_clk(priv);
+}
+
 static ulong rv1126_clk_pdvi_ispp_get_clk(struct rv1126_clk_priv *priv,
 					  ulong clk_id)
 {
@@ -1660,6 +1708,9 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 		rate = rv1126_pclk_gmac_get_clk(priv);
 		break;
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+	case CLK_MIPICSI_OUT:
+		rate = rv1126_clk_mipicsi_out_get_clk(priv);
+		break;
 	case CLK_ISP:
 		rate = rv1126_clk_isp_get_clk(priv);
 		break;
@@ -1774,6 +1825,9 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 		ret = rv1126_gmac_tx_rx_set_clk(priv, rate);
 		break;
 #if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_KERNEL_BOOT)
+	case CLK_MIPICSI_OUT:
+		ret = rv1126_clk_mipicsi_out_set_clk(priv, rate);
+		break;
 	case CLK_ISP:
 		ret = rv1126_clk_isp_set_clk(priv, rate);
 		break;
