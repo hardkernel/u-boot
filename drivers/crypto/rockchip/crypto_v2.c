@@ -1486,6 +1486,10 @@ static const struct udevice_id rockchip_crypto_ids[] = {
 		.compatible = "rockchip,rk3568-crypto",
 		.data = (ulong)&soc_data_base_sm
 	},
+	{
+		.compatible = "rockchip,rk3588-crypto",
+		.data = (ulong)&soc_data_base_sm
+	},
 	{ }
 };
 
