@@ -84,6 +84,15 @@ static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 		if (!data_size)
 			continue;
 
+		if ((read_mpidr() & 0x0fff) == cpu) {
+			primary_pe_arch = arch;
+			primary_pe_state = pe_state;
+			primary_pe_entry = entry;
+			primary_on_linux =
+				!!fdt_getprop(fit, noffset, "linux-os", NULL);
+			continue;
+		}
+
 		if (reserved_mem[1]) {
 			ret = bidram_reserve_by_name(desc, reserved_mem[0],
 						     reserved_mem[1]);
@@ -96,15 +105,6 @@ static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 		} else if (!sysmem_alloc_base_by_name(desc,
 					(phys_addr_t)load, data_size)) {
 			return -ENXIO;
-		}
-
-		if ((read_mpidr() & 0x0fff) == cpu) {
-			primary_pe_arch = arch;
-			primary_pe_state = pe_state;
-			primary_pe_entry = entry;
-			primary_on_linux =
-				!!fdt_getprop(fit, noffset, "linux-os", NULL);
-			continue;
 		}
 
 		AMP_I("Brought up cpu[%x] with state 0x%x, entry 0x%08x ...",
