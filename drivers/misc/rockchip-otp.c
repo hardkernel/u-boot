@@ -4,6 +4,7 @@
  */
 
 #include <common.h>
+#include <asm/arch/cpu.h>
 #include <asm/io.h>
 #include <command.h>
 #include <dm.h>
@@ -94,6 +95,136 @@ static int rockchip_px30_otp_read(struct udevice *dev, int offset,
 read_end:
 	writel(0x0 | OTPC_USE_USER_MASK, otp->base + OTPC_USER_CTRL);
 
+	return ret;
+}
+
+static int rk3308bs_otp_wait_status(struct rockchip_otp_platdata *otp, u32 flag)
+{
+	int delay = OTPC_TIMEOUT;
+
+	while (!(readl(otp->base + OTPC_IRQ_ST) & flag)) {
+		udelay(1);
+		delay--;
+		if (delay <= 0) {
+			printf("%s: wait init status timeout\n", __func__);
+			return -ETIMEDOUT;
+		}
+	}
+
+	/* clean int status */
+	writel(flag, otp->base + OTPC_IRQ_ST);
+
+	return 0;
+}
+
+static int rk3308bs_otp_active(struct rockchip_otp_platdata *otp)
+{
+	int ret = 0;
+	u32 mode;
+
+	mode = readl(otp->base + OTPC_MODE_CTRL);
+
+	switch (mode) {
+	case OTPC_DEEP_STANDBY:
+		writel(OTPC_STANDBY, otp->base + OTPC_MODE_CTRL);
+		ret = rk3308bs_otp_wait_status(otp, OTPC_DP2STB_IRQ_ST);
+		if (ret < 0) {
+			dev_err(otp->dev, "timeout during wait dp2stb\n");
+			return ret;
+		}
+	case OTPC_STANDBY:
+		writel(OTPC_ACTIVE, otp->base + OTPC_MODE_CTRL);
+		ret = rk3308bs_otp_wait_status(otp, OTPC_STB2ACT_IRQ_ST);
+		if (ret < 0) {
+			dev_err(otp->dev, "timeout during wait stb2act\n");
+			return ret;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+static int rk3308bs_otp_standby(struct rockchip_otp_platdata *otp)
+{
+	int ret = 0;
+	u32 mode;
+
+	mode = readl(otp->base + OTPC_MODE_CTRL);
+
+	switch (mode) {
+	case OTPC_ACTIVE:
+		writel(OTPC_STANDBY, otp->base + OTPC_MODE_CTRL);
+		ret = rk3308bs_otp_wait_status(otp, OTPC_ACT2STB_IRQ_ST);
+		if (ret < 0) {
+			dev_err(otp->dev, "timeout during wait act2stb\n");
+			return ret;
+		}
+	case OTPC_STANDBY:
+		writel(OTPC_DEEP_STANDBY, otp->base + OTPC_MODE_CTRL);
+		ret = rk3308bs_otp_wait_status(otp, OTPC_STB2DP_IRQ_ST);
+		if (ret < 0) {
+			dev_err(otp->dev, "timeout during wait stb2dp\n");
+			return ret;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+static int rockchip_rk3308bs_otp_read(struct udevice *dev, int offset,
+				      void *buf, int size)
+{
+	struct rockchip_otp_platdata *otp = dev_get_platdata(dev);
+	unsigned int addr_start, addr_end, addr_offset, addr_len;
+	u32 out_value;
+	u8 *buffer;
+	int ret = 0, i = 0;
+
+	if (offset > RK3308BS_MAX_BYTES - 1)
+		return -ENOMEM;
+	if (offset + size > RK3308BS_MAX_BYTES)
+		size = RK3308BS_MAX_BYTES - offset;
+
+	ret = rk3308bs_otp_active(otp);
+	if (ret)
+		goto out;
+
+	addr_start = rounddown(offset, RK3308BS_NBYTES) / RK3308BS_NBYTES;
+	addr_end = roundup(offset + size, RK3308BS_NBYTES) / RK3308BS_NBYTES;
+	addr_offset = offset % RK3308BS_NBYTES;
+	addr_len = addr_end - addr_start;
+
+	buffer = calloc(1, sizeof(*buffer) * addr_len * RK3308BS_NBYTES);
+	if (!buffer) {
+		ret = -ENOMEM;
+		goto read_end;
+	}
+
+	while (addr_len--) {
+		writel(OTPC_TRANS_NUM, otp->base + OTPC_REPR_RD_TRANS_NUM);
+		writel(addr_start++, otp->base + OTPC_ACCESS_ADDR);
+		writel(OTPC_READ_ACCESS, otp->base + OTPC_MODE_CTRL);
+		ret = rk3308bs_otp_wait_status(otp, OTPC_RDM_IRQ_ST);
+		if (ret < 0) {
+			printf("timeout during wait rd\n");
+			goto read_end;
+		}
+		out_value = readl(otp->base + OTPC_RD_DATA);
+		memcpy(&buffer[i], &out_value, RK3308BS_NBYTES);
+		i += RK3308BS_NBYTES;
+	}
+	memcpy(buf, buffer + addr_offset, size);
+
+read_end:
+	kfree(buffer);
+	rk3308bs_otp_standby(otp);
+out:
 	return ret;
 }
 
@@ -206,6 +337,9 @@ static int rockchip_otp_read(struct udevice *dev, int offset,
 	if (!data)
 		return -ENOSYS;
 
+	if (soc_is_rk3308bs())
+		return rockchip_rk3308bs_otp_read(dev, offset, buf, size);
+
 	return data->read(dev, offset, buf, size);
 }
 
@@ -240,6 +374,10 @@ static const struct otp_data px30_data = {
 	.read = rockchip_px30_otp_read,
 };
 
+static const struct otp_data rk3308bs_data = {
+	.read = rockchip_rk3308bs_otp_read,
+};
+
 static const struct otp_data rk3568_data = {
 	.read = rockchip_rk3568_otp_read,
 };
@@ -257,6 +395,10 @@ static const struct udevice_id rockchip_otp_ids[] = {
 	{
 		.compatible = "rockchip,rk3308-otp",
 		.data = (ulong)&px30_data,
+	},
+	{
+		.compatible = "rockchip,rk3308bs-otp",
+		.data = (ulong)&rk3308bs_data,
 	},
 	{
 		.compatible = "rockchip,rk3568-otp",
