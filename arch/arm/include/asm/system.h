@@ -78,6 +78,10 @@
 #define HCR_EL2_RW_AARCH64	(1 << 31) /* EL1 is AArch64                   */
 #define HCR_EL2_RW_AARCH32	(0 << 31) /* Lower levels are AArch32         */
 #define HCR_EL2_HCD_DIS		(1 << 29) /* Hypervisor Call disabled         */
+#define HCR_EL2_TGE		(1 << 27) /* Trap General Exceptions          */
+#define HCR_EL2_AMO		(1 << 5)  /* Asynchronous External Abort and SError Interrupt routing */
+#define HCR_EL2_IMO		(1 << 4)  /* Physical IRQ Routing */
+#define HCR_EL2_FMO		(1 << 3)  /* Physical FIQ Routing */
 
 /*
  * CPACR_EL1 bits definitions
@@ -173,6 +177,20 @@ static inline unsigned long read_mpidr(void)
 	asm volatile("mrs %0, mpidr_el1" : "=r" (val));
 
 	return val;
+}
+
+static inline unsigned long get_daif(void)
+{
+	unsigned long daif;
+
+	asm volatile("mrs %0, daif" : "=r" (daif));
+
+	return daif;
+}
+
+static inline void disable_serror(void)
+{
+	asm volatile("msr daifset, #0x04");
 }
 
 #define BSP_COREID	0
@@ -350,6 +368,20 @@ static inline unsigned long get_cpsr(void)
 
 	asm volatile("mrs %0, cpsr" : "=r"(cpsr): );
 	return cpsr;
+}
+
+static inline void set_cpsr(unsigned long cpsr)
+{
+	asm volatile("msr cpsr_fsxc, %[cpsr]" : : [cpsr] "r" (cpsr));
+}
+
+static inline void disable_async_abort(void)
+{
+	unsigned long cpsr;
+
+	cpsr = get_cpsr();
+	cpsr &= ~(1 << 8);
+	set_cpsr(cpsr);
 }
 
 static inline int is_hyp(void)
