@@ -691,6 +691,11 @@ void spl_cleanup_before_jump(struct spl_image_info *spl_image)
 
 	disable_interrupts();
 
+#ifdef CONFIG_ARM64
+	disable_serror();
+#else
+	disable_async_abort();
+#endif
 	/*
 	 * Turn off I-cache and invalidate it
 	 */

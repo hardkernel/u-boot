@@ -85,6 +85,11 @@ switch_to_hypervisor_ret:
 	mcr	p15, 0, r0, c12, c0, 0	@Set VBAR
 #endif
 
+	/* Enable Asynchronous external abort after vectors setup */
+	mrs	r0, cpsr
+	bic	r0, r0, #0x100		@ CPSR.A bit
+	msr	cpsr_x,r0
+
 	/* the mask ROM code should have PLL and others stable */
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 	bl	cpu_init_cp15

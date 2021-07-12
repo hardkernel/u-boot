@@ -84,10 +84,20 @@ ENTRY(_main)
 2:	mrs	x0, sctlr_el2
 	orr	x0, x0, x1
 	msr	sctlr_el2, x0
+
+	mrs	x0, hcr_el2
+	orr	x0, x0, #HCR_EL2_TGE
+	orr	x0, x0, #HCR_EL2_AMO
+#if CONFIG_IS_ENABLED(IRQ)
+	orr	x0, x0, #HCR_EL2_IMO
+#endif
+	msr	hcr_el2, x0
+	msr	daifclr, #4
 	b	0f
 1:	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0
+	msr	daifclr, #4
 0:
 	isb
 
