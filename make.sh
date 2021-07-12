@@ -716,3 +716,4 @@ clean_files
 make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN_GCC} all --jobs=${JOB}
 pack_images
 finish
+date
