@@ -259,7 +259,9 @@ static int sysmem_alloc_uncomp_kernel(ulong andr_hdr,
 		kaddr -= hdr->page_size;
 		if (sysmem_free((phys_addr_t)kaddr))
 			return -EINVAL;
-
+#ifdef CONFIG_SKIP_RELOCATE_UBOOT
+		sysmem_free(CONFIG_SYS_TEXT_BASE);
+#endif
 		/*
 		 * Use smaller Ratio to get larger estimated uncompress
 		 * kernel size.
