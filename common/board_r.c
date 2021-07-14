@@ -51,6 +51,7 @@
 #include <asm/mmu.h>
 #endif
 #include <asm/sections.h>
+#include <asm/system.h>
 #include <dm/root.h>
 #include <linux/compiler.h>
 #include <linux/err.h>
@@ -112,10 +113,32 @@ static int initr_reloc(void)
  * Some of these functions are needed purely because the functions they
  * call return void. If we change them to return 0, these stubs can go away.
  */
+
+static void print_cr(void)
+{
+	u32 reg;
+
+#ifdef CONFIG_ARM64
+	reg = get_sctlr();	/* get control reg. */
+#else
+	reg = get_cr();
+#endif
+	puts("CR: ");
+	if (reg & CR_M)
+		puts("M/");
+	if (reg & CR_C)
+		puts("C/");
+	if (reg & CR_I)
+		puts("I");
+	putc('\n');
+}
+
 static int initr_caches(void)
 {
 	/* Enable caches */
 	enable_caches();
+	print_cr();
+
 	return 0;
 }
 #endif
