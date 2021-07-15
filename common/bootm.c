@@ -526,10 +526,10 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
 
 	if (!no_overlap && (load < blob_end) && (*load_end > blob_start)) {
-		debug("images.os.start = 0x%lX, images.os.end = 0x%lx\n",
-		      blob_start, blob_end);
-		debug("images.os.load = 0x%lx, load_end = 0x%lx\n", load,
-		      *load_end);
+		printf("images.os.start = 0x%lX, images.os.end = 0x%lx\n",
+		       blob_start, blob_end);
+		printf("images.os.load = 0x%lx, load_end = 0x%lx\n", load,
+		       *load_end);
 
 		/* Check what type of image this is. */
 		if (images->legacy_hdr_valid) {
