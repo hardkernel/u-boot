@@ -305,17 +305,6 @@ int irqs_resume(void)
 }
 
 #ifdef CONFIG_ARM64
-static void cpu_local_irq_enable(void)
-{
-	asm volatile("msr daifclr, #0x02");
-}
-
-static int cpu_local_irq_disable(void)
-{
-	asm volatile("msr daifset, #0x02");
-	return 0;
-}
-
 void do_irq(struct pt_regs *pt_regs, unsigned int esr)
 {
 #ifdef CONFIG_ROCKCHIP_DEBUGGER
@@ -326,30 +315,6 @@ void do_irq(struct pt_regs *pt_regs, unsigned int esr)
 	__do_generic_irq_handler();
 }
 #else
-static void cpu_local_irq_enable(void)
-{
-	unsigned long cpsr;
-
-	__asm__ __volatile__("mrs %0, cpsr\n"
-			     "bic %0, %0, #0x80\n"
-			     "msr cpsr_c, %0"
-			     : "=r" (cpsr) : : "memory");
-}
-
-static int cpu_local_irq_disable(void)
-{
-	unsigned long old_cpsr, new_cpsr;
-
-	__asm__ __volatile__("mrs %0, cpsr\n"
-			     "orr %1, %0, #0xc0\n"
-			     "msr cpsr_c, %1"
-			     : "=r" (old_cpsr), "=r" (new_cpsr)
-			     :
-			     : "memory");
-
-	return (old_cpsr & 0x80) == 0;
-}
-
 void do_irq(struct pt_regs *pt_regs)
 {
 #ifdef CONFIG_ROCKCHIP_DEBUGGER
@@ -398,12 +363,15 @@ int interrupt_init(void)
 
 void enable_interrupts(void)
 {
-	cpu_local_irq_enable();
+	local_irq_enable();
 }
 
 int disable_interrupts(void)
 {
-	return cpu_local_irq_disable();
+	int flags;
+
+	local_irq_save(flags);
+	return flags;
 }
 
 static int do_dump_irqs(cmd_tbl_t *cmdtp, int flag,
