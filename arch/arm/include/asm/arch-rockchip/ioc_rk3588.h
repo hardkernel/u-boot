@@ -51,7 +51,7 @@ struct rk3588_bus_ioc {
 check_member(rk3588_bus_ioc, gpio4d_iomux_sel_h, 0x009C);
 
 
-struct rk3588_pmu0_ioc {
+struct rk3588_pmu1_ioc {
 	uint32_t gpio0a_iomux_sel_l;   /* Address Offset: 0x0000 */
 	uint32_t gpio0a_iomux_sel_h;   /* Address Offset: 0x0004 */
 	uint32_t gpio0b_iomux_sel_l;   /* Address Offset: 0x0008 */
@@ -70,9 +70,9 @@ struct rk3588_pmu0_ioc {
 	uint32_t gpio0b_pdis;          /* Address Offset: 0x003C */
 	uint32_t xin_con;              /* Address Offset: 0x0040 */
 };
-check_member(rk3588_pmu0_ioc, xin_con, 0x0040);
+check_member(rk3588_pmu1_ioc, xin_con, 0x0040);
 
-struct rk3588_pmu1_ioc {
+struct rk3588_pmu2_ioc {
 	uint32_t gpio0b_iomux_sel_h;  /* Address Offset: 0x0000 */
 	uint32_t gpio0c_iomux_sel_l;  /* Address Offset: 0x0004 */
 	uint32_t gpio0c_iomux_sel_h;  /* Address Offset: 0x0008 */
@@ -96,7 +96,7 @@ struct rk3588_pmu1_ioc {
 	uint32_t gpio0c_pdis;         /* Address Offset: 0x0050 */
 	uint32_t gpio0d_pdis;         /* Address Offset: 0x0054 */
 };
-check_member(rk3588_pmu1_ioc, gpio0d_pdis, 0x0054);
+check_member(rk3588_pmu2_ioc, gpio0d_pdis, 0x0054);
 
 #endif
 
