@@ -13,8 +13,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
-
+#if !CONFIG_IS_ENABLED(IRQ)
 int interrupt_init(void)
 {
 	return 0;
@@ -33,7 +32,7 @@ int disable_interrupts(void)
 
 #define REG_BITS(val, shift, mask)	(((val) >> (shift)) & (mask))
 
-#if (!defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD))
+#ifndef CONFIG_SPL_BUILD
 void show_regs(struct pt_regs *regs)
 {
 	int el = current_el();
@@ -187,7 +186,7 @@ void do_sync(struct pt_regs *pt_regs, unsigned int esr)
 	panic("Resetting CPU ...\n");
 }
 
-#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
+#if !CONFIG_IS_ENABLED(IRQ)
 /*
  * do_irq handles the Irq exception.
  */

@@ -262,7 +262,7 @@ ENDPROC(apply_core_errata)
 WEAK(lowlevel_init)
 	mov	x29, lr			/* Save LR */
 
-#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
+#if CONFIG_IS_ENABLED(IRQ)
 	branch_if_slave x0, 1f
 	ldr	x0, =GICD_BASE
 	bl	gic_init_secure

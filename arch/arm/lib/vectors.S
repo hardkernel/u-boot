@@ -147,7 +147,7 @@ IRQ_STACK_START_IN:
 	.word	0x0badc0de
 #endif
 
-#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
+#if CONFIG_IS_ENABLED(IRQ)
 /* IRQ stack memory (calculated at run-time) */
 .globl IRQ_STACK_START
 IRQ_STACK_START:
@@ -289,7 +289,7 @@ not_used:
 
 	.align	5
 irq:
-#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
+#if CONFIG_IS_ENABLED(IRQ)
 	get_irq_stack
 	irq_save_user_regs
 	bl	do_irq

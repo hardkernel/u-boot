@@ -28,7 +28,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
+#if !CONFIG_IS_ENABLED(IRQ)
 int interrupt_init (void)
 {
 	/*
@@ -170,7 +170,7 @@ void do_fiq (struct pt_regs *pt_regs)
 	bad_mode ();
 }
 
-#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
+#if !CONFIG_IS_ENABLED(IRQ)
 void do_irq (struct pt_regs *pt_regs)
 {
 	efi_restore_gd();

@@ -25,7 +25,7 @@ int arch_reserve_stacks(void)
 	gd->irq_sp = gd->start_addr_sp;
 
 # if !defined(CONFIG_ARM64)
-#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
+#if CONFIG_IS_ENABLED(IRQ)
 #ifndef CONFIG_IRQ_STACK_SIZE
 #define CONFIG_IRQ_STACK_SIZE	8192
 #endif

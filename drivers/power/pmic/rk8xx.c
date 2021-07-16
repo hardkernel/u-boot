@@ -14,7 +14,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_IRQ) && !defined(CONFIG_SPL_BUILD)
+#if CONFIG_IS_ENABLED(IRQ)
 /* RK805 */
 static const struct virq_reg rk805_irqs[] = {
 	[RK8XX_IRQ_PWRON_FALL] = {
@@ -359,7 +359,7 @@ static int rk8xx_bind(struct udevice *dev)
 }
 #endif
 
-#if defined(CONFIG_IRQ) && !defined(CONFIG_SPL_BUILD)
+#if CONFIG_IS_ENABLED(IRQ)
 /*
  * When system suspend during U-Boot charge, make sure the plugout event
  * be able to wakeup cpu in wfi/wfe state.

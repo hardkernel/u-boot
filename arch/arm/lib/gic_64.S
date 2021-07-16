@@ -108,7 +108,7 @@ ENTRY(gic_init_secure_percpu)
 	mov	w11, #0x1		/* Enable SGI 0 */
 	str	w11, [x10, GICR_ISENABLERn]
 
-#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
+#if CONFIG_IS_ENABLED(IRQ)
 	/* Rockchip: check elx */
 	switch_el x0, el3_sre, el2_sre, el1_sre
 

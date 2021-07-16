@@ -53,7 +53,7 @@ typedef volatile unsigned char	vu_char;
 # define static_assert _Static_assert
 #endif
 
-#ifndef CONFIG_IRQ
+#if !CONFIG_IS_ENABLED(IRQ)
 typedef void (interrupt_handler_t)(void *);
 #else
 typedef void (interrupt_handler_t)(int, void *);
