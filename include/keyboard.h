@@ -103,4 +103,15 @@ extern void pckbd_leds(unsigned char leds);
 int ps2ser_check(void);
 #endif
 
+#ifdef CONFIG_USB_KEYBOARD
+/**
+ * Check if usb keyboard receive F1~F12.
+ *
+ * @key_fn: KEY_F1, KEY_F2, KEY_F3, .... KEY_F12. (defined in input.h)
+ *
+ * return 1 if received, otherwise 0.
+ */
+extern int usb_kbd_recv_fn(int key_fn);
+#endif
+
 #endif /* __KEYBOARD_H */

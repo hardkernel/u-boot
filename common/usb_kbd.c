@@ -15,6 +15,7 @@
 #include <memalign.h>
 #include <stdio_dev.h>
 #include <asm/byteorder.h>
+#include <linux/input.h>
 
 #include <usb.h>
 
@@ -641,6 +642,61 @@ int usb_kbd_deregister(int force)
 #endif
 
 #if CONFIG_IS_ENABLED(DM_USB)
+
+int usb_kbd_recv_fn(int key_fn)
+{
+	char ch[5];
+	int i;
+
+	if (!ftstc(stdin)) {
+		debug("No char\n");
+		return 0;
+	}
+
+	memset(ch, 0, 5);
+	for (i = 0; i < 5; i++) {
+		if (!ftstc(stdin))
+			break;
+		ch[i] = fgetc(stdin);
+		debug("char[%d]: 0x%x, %d\n", i, ch[i], ch[i]);
+	}
+
+	if (ch[0] != 0x1b) {
+		debug("Invalid 0x1b\n");
+		return 0;
+	}
+
+	switch (key_fn) {
+	case KEY_F1:
+	case KEY_F2:
+	case KEY_F3:
+	case KEY_F4:
+		if (ch[1] != 0x4f)
+			return 0;
+		return (ch[2] - 21 == key_fn);
+	case KEY_F5:
+	case KEY_F6:
+	case KEY_F7:
+	case KEY_F8:
+		if (ch[1] != '[' || ch[2] != '1' || ch[4] != '~')
+			return 0;
+		return (ch[3] + 9 == key_fn);
+	case KEY_F9:
+	case KEY_F10:
+		if (ch[1] != '[' || ch[2] != '2' || ch[4] != '~')
+			return 0;
+		return (ch[3] + 19 == key_fn);
+	case KEY_F11:
+	case KEY_F12:
+		if (ch[1] != '[' || ch[2] != '2' || ch[4] != '~')
+			return 0;
+		return (ch[3] + 36 == key_fn);
+	default:
+		return 0;
+	}
+
+	return 0;
+}
 
 static int usb_kbd_probe(struct udevice *dev)
 {
