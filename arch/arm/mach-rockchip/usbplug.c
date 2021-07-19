@@ -17,12 +17,10 @@ static char *bootdev_rockusb_cmd(void)
 	const char *devtype, *devnum;
 	const char *bootdev_list[] = {
 		"mmc",		"0",
-		"mtd_blk",	"0",
-		"mtd_blk",	"1",
-		"mtd_blk",	"2",
+		"mtd",		"0",
+		"mtd",		"1",
+		"mtd",		"2",
 		"rknand",	"0",
-		"rksfc",	"0",
-		"rksfc",	"1",
 		NULL,		NULL,
 	};
 	char *cmd;
