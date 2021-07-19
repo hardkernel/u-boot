@@ -178,6 +178,8 @@ obj-$(CONFIG_CMD_BLOB) += blob.o
 obj-$(CONFIG_ARCH_ROCKCHIP) += rkimgtest.o
 obj-$(CONFIG_CMD_ATAGS) += atags.o
 
+obj-$(CONFIG_TARGET_ODROID_M1) += setbootdev.o
+
 endif # !CONFIG_SPL_BUILD
 
 # core command
