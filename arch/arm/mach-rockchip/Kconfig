@@ -851,6 +851,7 @@ config TRUST_INI
 	help
 	  The ini file is used to pack trust image.
 
+if !ROCKCHIP_FIT_IMAGE_PACK
 config UBOOT_SIZE_KB
 	int "Per u-boot.bin Image size, unit: KB"
 	default 1024
@@ -880,6 +881,7 @@ config TRUST_SHA_MODE
 	help
 	  The SHA mode for tools to pack, the mode id can be:
 	  0: none; 1: sha1; 2: sha256 RK big endian; 3: sha256 little endian.
+endif
 
 source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
