@@ -35,9 +35,9 @@ DECLARE_GLOBAL_DATA_PTR;
 int android_bootloader_message_load(
 	struct blk_desc *dev_desc,
 	const disk_partition_t *part_info,
-	struct android_bootloader_message *message)
+	struct bootloader_message *message)
 {
-	ulong message_blocks = sizeof(struct android_bootloader_message) /
+	ulong message_blocks = sizeof(struct bootloader_message) /
 	    part_info->blksz;
 	if (message_blocks > part_info->size) {
 		printf("misc partition too small.\n");
@@ -57,9 +57,9 @@ int android_bootloader_message_load(
 static int android_bootloader_message_write(
 	struct blk_desc *dev_desc,
 	const disk_partition_t *part_info,
-	struct android_bootloader_message *message)
+	struct bootloader_message *message)
 {
-	ulong message_blocks = sizeof(struct android_bootloader_message) /
+	ulong message_blocks = sizeof(struct bootloader_message) /
 	    part_info->blksz + android_bcb_msg_sector_offset();
 
 	if (message_blocks > part_info->size) {
@@ -80,7 +80,7 @@ static enum android_boot_mode android_bootloader_load_and_clear_mode(
 	struct blk_desc *dev_desc,
 	const disk_partition_t *misc_part_info)
 {
-	struct android_bootloader_message bcb;
+	struct bootloader_message bcb;
 
 #ifdef CONFIG_FASTBOOT
 	char *bootloader_str;
@@ -122,7 +122,7 @@ static enum android_boot_mode android_bootloader_load_and_clear_mode(
 
 int android_bcb_write(char *cmd)
 {
-	struct android_bootloader_message message = {0};
+	struct bootloader_message message = {0};
 	disk_partition_t part_info;
 	struct blk_desc *dev_desc;
 	int ret;

@@ -21,20 +21,20 @@
  * the CRC-32 calculation.
  */
 static uint32_t android_boot_control_compute_crc(
-		struct android_bootloader_control *abc)
+		struct bootloader_control *abc)
 {
 	return crc32(0, (void *)abc, offsetof(typeof(*abc), crc32_le));
 }
 
-/** android_boot_control_default - Initialize android_bootloader_control to the
+/** android_boot_control_default - Initialize bootloader_control to the
  * default value which allows to boot all slots in order from the first one.
  * This value should be used when the bootloader message is corrupted, but not
  * when a valid message indicates that all slots are unbootable.
  */
-void android_boot_control_default(struct android_bootloader_control *abc)
+void android_boot_control_default(struct bootloader_control *abc)
 {
 	int i;
-	const struct android_slot_metadata metadata = {
+	const struct slot_metadata metadata = {
 		.priority = 15,
 		.tries_remaining = 7,
 		.successful_boot = 0,
@@ -70,7 +70,7 @@ static void *android_boot_control_create_from_disk(
 	ulong abc_offset, abc_blocks;
 	void *buf;
 
-	abc_offset = offsetof(struct android_bootloader_message_ab,
+	abc_offset = offsetof(struct bootloader_message_ab,
 			      slot_suffix);
 	if (abc_offset % part_info->blksz) {
 		printf("ANDROID: Boot control block not block aligned.\n");
@@ -78,7 +78,7 @@ static void *android_boot_control_create_from_disk(
 	}
 	abc_offset /= part_info->blksz;
 
-	abc_blocks = DIV_ROUND_UP(sizeof(struct android_bootloader_control),
+	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
 				  part_info->blksz);
 	if (abc_offset + abc_blocks > part_info->size) {
 		printf("ANDROID: boot control partition too small. Need at"
@@ -116,9 +116,9 @@ static int android_boot_control_store(void *abc_data_block,
 {
 	ulong abc_offset, abc_blocks;
 
-	abc_offset = offsetof(struct android_bootloader_message_ab,
+	abc_offset = offsetof(struct bootloader_message_ab,
 			      slot_suffix) / part_info->blksz;
-	abc_blocks = DIV_ROUND_UP(sizeof(struct android_bootloader_control),
+	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
 				  part_info->blksz);
 	if (blk_dwrite(dev_desc, part_info->start + abc_offset, abc_blocks,
 		       abc_data_block) != abc_blocks) {
@@ -135,8 +135,8 @@ static int android_boot_control_store(void *abc_data_block,
  * @return negative if the slot "a" is better, positive of the slot "b" is
  * better or 0 if they are equally good.
  */
-static int android_ab_compare_slots(const struct android_slot_metadata *a,
-				    const struct android_slot_metadata *b)
+static int android_ab_compare_slots(const struct slot_metadata *a,
+				    const struct slot_metadata *b)
 {
 	/* Higher priority is better */
 	if (a->priority != b->priority)
@@ -155,7 +155,7 @@ static int android_ab_compare_slots(const struct android_slot_metadata *a,
 
 int android_ab_select(struct blk_desc *dev_desc, disk_partition_t *part_info)
 {
-	struct android_bootloader_control *abc;
+	struct bootloader_control *abc;
 	u32 crc32_le;
 	int slot, i;
 	bool store_needed = false;
@@ -274,7 +274,7 @@ int read_misc_virtual_ab_message(struct misc_virtual_ab_message *message)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
-	u32 bcb_offset = (ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
+	u32 bcb_offset = (VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
 	int cnt, ret;
 
 	if (!message) {
@@ -308,7 +308,7 @@ int write_misc_virtual_ab_message(struct misc_virtual_ab_message *message)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
-	u32 bcb_offset = (ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
+	u32 bcb_offset = (VIRTUAL_AB_METADATA_OFFSET_IN_MISC >> 9);
 	int cnt, ret;
 
 	if (!message) {

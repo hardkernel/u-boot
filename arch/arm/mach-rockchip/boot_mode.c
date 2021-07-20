@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <boot_rkimg.h>
+#include <android_bootloader_message.h>
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
