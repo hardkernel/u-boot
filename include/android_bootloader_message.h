@@ -26,9 +26,9 @@
  * Note that these offsets are admitted by bootloader,recovery and uncrypt, so they
  * are not configurable without changing all of them.
  */
-static const size_t ANDROID_BOOTLOADER_MESSAGE_OFFSET_IN_MISC = 0;
-static const size_t ANDROID_WIPE_PACKAGE_OFFSET_IN_MISC = 16 * 1024;
-static const size_t ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC = 32 * 1024;
+static const size_t BOOTLOADER_MESSAGE_OFFSET_IN_MISC = 0;
+static const size_t WIPE_PACKAGE_OFFSET_IN_MISC = 16 * 1024;
+static const size_t VIRTUAL_AB_METADATA_OFFSET_IN_MISC = 32 * 1024;
 
 /* Bootloader Message (2-KiB)
  *
@@ -58,7 +58,7 @@ static const size_t ANDROID_VIRTUAL_AB_METADATA_OFFSET_IN_MISC = 32 * 1024;
  * uncrypt. Move it into struct bootloader_message_ab to avoid the
  * issue.
  */
-struct android_bootloader_message {
+struct bootloader_message {
     char command[32];
     char status[32];
     char recovery[768];
@@ -82,7 +82,7 @@ struct android_bootloader_message {
  * because A/B-specific fields may end up with different offsets.
  */
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct android_bootloader_message) == 2048,
+static_assert(sizeof(struct bootloader_message) == 2048,
               "struct bootloader_message size changes, which may break A/B devices");
 #endif
 
@@ -102,12 +102,13 @@ static_assert(sizeof(struct android_bootloader_message) == 2048,
  * data past the first NUL-byte in this field. It is encouraged, but
  * not mandatory, to use 'struct bootloader_control' described below.
  */
-struct android_bootloader_message_ab {
-    struct android_bootloader_message message;
+struct bootloader_message_ab {
+    struct bootloader_message message;
     char slot_suffix[32];
+    char update_channel[128];
 
     /* Round up the entire struct to 4096-byte. */
-    char reserved[2016];
+    char reserved[1888];
 };
 
 /**
@@ -115,14 +116,14 @@ struct android_bootloader_message_ab {
  * bootloader_message_ab struct (b/29159185).
  */
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct android_bootloader_message_ab) == 4096,
+static_assert(sizeof(struct bootloader_message_ab) == 4096,
               "struct bootloader_message_ab size changes");
 #endif
 
 #define ANDROID_BOOT_CTRL_MAGIC   0x42414342 /* Bootloader Control AB */
 #define ANDROID_BOOT_CTRL_VERSION 1
 
-struct android_slot_metadata {
+struct slot_metadata {
     /* Slot priority with 15 meaning highest priority, 1 lowest
      * priority and 0 the slot is unbootable. */
     uint8_t priority : 4;
@@ -145,7 +146,7 @@ struct android_slot_metadata {
  * 'bootloader_control' structure to store the A/B metadata, but not
  * mandatory.
  */
-struct android_bootloader_control {
+struct bootloader_control {
     /* NUL terminated active slot suffix. */
     char slot_suffix[4];
     /* Bootloader Control AB magic number (see BOOT_CTRL_MAGIC). */
@@ -159,7 +160,7 @@ struct android_bootloader_control {
     /* Ensure 4-bytes alignment for slot_info field. */
     uint8_t reserved0[2];
     /* Per-slot information.  Up to 4 slots. */
-    struct android_slot_metadata slot_info[4];
+    struct slot_metadata slot_info[4];
     /* Reserved for further use. */
     uint8_t reserved1[8];
     /* CRC32 of all 28 bytes preceding this field (little endian
@@ -168,8 +169,8 @@ struct android_bootloader_control {
 } __attribute__((packed));
 
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct android_bootloader_control) ==
-              sizeof(((struct android_bootloader_message_ab *)0)->slot_suffix),
+static_assert(sizeof(struct bootloader_control) ==
+              sizeof(((struct bootloader_message_ab *)0)->slot_suffix),
               "struct bootloader_control has wrong size");
 #endif
 

@@ -7,6 +7,7 @@
 #include <common.h>
 #include <adc.h>
 #include <android_bootloader.h>
+#include <android_bootloader_message.h>
 #include <android_image.h>
 #include <bidram.h>
 #include <bootm.h>
