@@ -1964,7 +1964,7 @@ out:
 static int get_wrlvl_val(struct dram_info *dram,
 			 struct rv1126_sdram_params *sdram_params)
 {
-	u32 i, j, clk_skew;
+	int i, j, clk_skew;
 	void __iomem *phy_base = dram->phy;
 	u32 lp_stat;
 	int ret;
@@ -1982,8 +1982,7 @@ static int get_wrlvl_val(struct dram_info *dram,
 	for (j = 0; j < 2; j++)
 		for (i = 0; i < 4; i++)
 			wrlvl_result[j][i] =
-				readl(PHY_REG(phy_base,
-					      wrlvl_result_offset[j][i])) -
+				(readl(PHY_REG(phy_base, wrlvl_result_offset[j][i])) & 0x3f) -
 				clk_skew;
 
 	low_power_update(dram, lp_stat);
@@ -2096,8 +2095,8 @@ static int high_freq_training(struct dram_info *dram,
 				dqs_skew += wrlvl_result[j][i];
 		}
 	}
-	dqs_skew = dqs_skew / (sdram_params->ch.cap_info.rank *
-			       (1 << sdram_params->ch.cap_info.bw));
+	dqs_skew = dqs_skew /
+		   (int)(sdram_params->ch.cap_info.rank * (1 << sdram_params->ch.cap_info.bw));
 
 	clk_skew = 0x20 - dqs_skew;
 	dqs_skew = 0x20;
