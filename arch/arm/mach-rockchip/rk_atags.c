@@ -364,6 +364,21 @@ int atags_set_bootdev_by_spl_bootdevice(int bootdevice)
 
 	return atags_set_tag(ATAG_BOOTDEV, &boot_dev);
 }
+
+int atags_set_pub_key(void *data, int len, int flag)
+{
+	struct tag_pub_key pub_key;
+
+	if (!data)
+		return -ENOMEM;
+
+	memset(&pub_key, 0, sizeof(struct tag_pub_key));
+	pub_key.len = len;
+	pub_key.flag = flag;
+	memcpy(pub_key.data, data, len);
+
+	return atags_set_tag(ATAG_PUB_KEY, &pub_key);
+}
 #endif
 
 void atags_destroy(void)

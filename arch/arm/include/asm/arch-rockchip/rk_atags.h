@@ -252,6 +252,17 @@ int get_bootdev_by_spl_bootdevice(int bootdevice);
  * return: 0 success, others fail.
  */
 int atags_set_bootdev_by_spl_bootdevice(int bootdevice);
+
+/*
+ * atags_set_pub_key
+ *
+ * @data: public key data
+ * @len: public key len
+ * @flag: indicate the pulic key hash is burned or not
+ *
+ * return: 0 success, others fail.
+ */
+int atags_set_pub_key(void *data, int len, int flag);
 #endif
 
 /* Print only one tag */
