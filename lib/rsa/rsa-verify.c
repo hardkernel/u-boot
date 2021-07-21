@@ -15,6 +15,7 @@
 #include <asm/types.h>
 #include <asm/unaligned.h>
 #include <dm.h>
+#include <asm/arch/rk_atags.h>
 #else
 #include "fdt_host.h"
 #include "mkimage.h"
@@ -106,6 +107,21 @@ static int rsa_mod_exp_hw(struct key_prop *prop, const uint8_t *sig,
 #else
 	rsa_convert_big_endian(rsa_key.c, (uint32_t *)prop->factor_np,
 			       key_len, key_len);
+#endif
+#if defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS) && defined(CONFIG_SPL_BUILD)
+	char *rsa_key_data = malloc(3 * key_len);
+	int flag = 0;
+
+	if (rsa_key_data) {
+		memcpy(rsa_key_data, rsa_key.n, key_len);
+		memcpy(rsa_key_data + key_len, rsa_key.e, key_len);
+		memcpy(rsa_key_data + 2 * key_len, rsa_key.c, key_len);
+		if (fit_board_verify_required_sigs())
+			flag = PUBKEY_FUSE_PROGRAMMED;
+
+		if (atags_set_pub_key(rsa_key_data, 3 * key_len, flag))
+			printf("Send public key through atags fail.");
+	}
 #endif
 	for (i = 0; i < sig_len; i++)
 		sig_reverse[sig_len-1-i] = sig[i];
