@@ -307,6 +307,14 @@ dtb_embed:
 		memcpy((void *)fdt_addr, gd->fdt_blob_kern,
 		       fdt_totalsize(gd->fdt_blob_kern));
 		printf("DTB: %s\n", CONFIG_EMBED_KERNEL_DTB_PATH);
+	} else if (ret == -EBADF) {
+		/*
+		 * If there is not embedded DTB, and the DTB in boot/recovery.img
+		 * is corrupted, just exit.
+		 *
+		 * Avoid data-abort while calling fdt-lib API for a corrupted DTB.
+		 */
+		return ret;
 	}
 
 	if (fdt_check_header((void *)fdt_addr)) {
