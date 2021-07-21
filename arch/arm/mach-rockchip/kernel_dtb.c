@@ -256,11 +256,18 @@ static int dtb_check_ok(void *fdt, void *ufdt)
 
 int init_kernel_dtb(void)
 {
-	ulong fdt_addr;
+	ulong fdt_addr = 0;
 	void *ufdt_blob;
 	int ret = -ENODEV;
 
-	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
+	/*
+	 * If memory size <= 128MB, we firstly try to get "fdt_addr1_r".
+	 */
+	if (gd->ram_size <= SZ_128M)
+		fdt_addr = env_get_ulong("fdt_addr1_r", 16, 0);
+
+	if (!fdt_addr)
+		fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
 		printf("No Found FDT Load Address.\n");
 		return -ENODEV;
