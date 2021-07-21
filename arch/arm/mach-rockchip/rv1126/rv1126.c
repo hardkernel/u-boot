@@ -435,7 +435,7 @@ void board_debug_uart_init(void)
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
     (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 	/* UART3 m0*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART3_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART3_IO_SEL_MASK,
 		     UART3_IO_SEL_M0 << UART3_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -446,7 +446,7 @@ void board_debug_uart_init(void)
 #elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
       (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
 	/* UART3 m1*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART3_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART3_IO_SEL_MASK,
 		     UART3_IO_SEL_M1 << UART3_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -456,7 +456,7 @@ void board_debug_uart_init(void)
 		     GPIO1A6_UART3_RX_M1 << GPIO1A6_SHIFT);
 #else
 	/* UART3 m2*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART3_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART3_IO_SEL_MASK,
 		     UART3_IO_SEL_M2 << UART3_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -471,7 +471,7 @@ void board_debug_uart_init(void)
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
     (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 	/* UART4 m0*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART4_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART4_IO_SEL_MASK,
 		     UART4_IO_SEL_M0 << UART4_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -482,7 +482,7 @@ void board_debug_uart_init(void)
 #elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
       (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
 	/* UART4 m1*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART4_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART4_IO_SEL_MASK,
 		     UART4_IO_SEL_M1 << UART4_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -492,7 +492,7 @@ void board_debug_uart_init(void)
 		     GPIO2A6_UART4_TX_M1 << GPIO2A6_SHIFT);
 #else
 	/* UART4 m2*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART4_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART4_IO_SEL_MASK,
 		     UART4_IO_SEL_M2 << UART4_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -507,7 +507,7 @@ void board_debug_uart_init(void)
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
     (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 	/* UART5 m0*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART5_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART5_IO_SEL_MASK,
 		     UART5_IO_SEL_M0 << UART5_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -518,7 +518,7 @@ void board_debug_uart_init(void)
 #elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
       (CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
 	/* UART5 m1*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART5_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART5_IO_SEL_MASK,
 		     UART5_IO_SEL_M1 << UART5_IO_SEL_SHIFT);
 
 	/* Switch iomux */
@@ -528,7 +528,7 @@ void board_debug_uart_init(void)
 		     GPIO2B0_UART5_TX_M1 << GPIO2B0_SHIFT);
 #else
 	/* UART5 m2*/
-	rk_clrsetreg(&grf->iofunc_con[2], UART5_IO_SEL_MASK,
+	rk_clrsetreg(&grf->iofunc_con2, UART5_IO_SEL_MASK,
 		     UART5_IO_SEL_M2 << UART5_IO_SEL_SHIFT);
 
 	/* Switch iomux */
