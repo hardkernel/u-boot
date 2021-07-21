@@ -69,6 +69,15 @@
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 #define CONFIG_ROCKUSB_G_DNL_PID	0x110b
 
+/* memory size <= 128MB,  TEE: 0x3000000 - 0x3200000 */
+#define ENV_MEM_LAYOUT_SETTINGS1	\
+	"scriptaddr1=0x00000000\0"	\
+	"pxefile_addr1_r=0x00100000\0"	\
+	"fdt_addr1_r=0x02f00000\0"	\
+	"kernel_addr1_r=0x02008000\0"	\
+	"ramdisk_addr1_r=0x03200000\0"
+
+/* memory size > 128MB */
 #define ENV_MEM_LAYOUT_SETTINGS		\
 	"scriptaddr=0x00000000\0"	\
 	"pxefile_addr_r=0x00100000\0"	\
@@ -79,6 +88,7 @@
 #include <config_distro_bootcmd.h>
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	ENV_MEM_LAYOUT_SETTINGS		\
+	ENV_MEM_LAYOUT_SETTINGS1	\
 	"partitions=" PARTS_DEFAULT	\
 	ROCKCHIP_DEVICE_SETTINGS	\
 	RKIMG_DET_BOOTDEV		\
