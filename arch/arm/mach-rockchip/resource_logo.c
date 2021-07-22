@@ -18,19 +18,18 @@ static int read_bmp(struct blk_desc *dev_desc, const char *name,
 		    uint32_t *size)
 {
 	struct bmp_header *header;
-	u32 blk_start, blk_offset;
+	u32 blk_offset;
 	u32 filesz;
 	int ret;
 
 	blk_offset = DIV_ROUND_UP(offset, dev_desc->blksz);
-	blk_start = part->start + blk_offset;
 	header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
 	if (!header) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	if (blk_dread(dev_desc, blk_start, 1, header) != 1) {
+	if (blk_dread(dev_desc, part->start + blk_offset, 1, header) != 1) {
 		ret = -EIO;
 		goto out;
 	}
@@ -41,7 +40,7 @@ static int read_bmp(struct blk_desc *dev_desc, const char *name,
 	}
 
 	filesz = get_unaligned_le32(&header->file_size);
-	ret = resource_replace_entry(name, blk_start, blk_offset, filesz);
+	ret = resource_replace_entry(name, part->start, blk_offset, filesz);
 	if (!ret) {
 		printf("LOGO: %s\n", name);
 		if (size)
