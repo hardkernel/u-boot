@@ -14,6 +14,27 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #include <asm/armv8/mmu.h>
 
+#define FIREWALL_DDR_BASE	0xfe030000
+#define FW_DDR_MST5_REG		0x54
+#define FW_DDR_MST13_REG	0x74
+#define FW_DDR_MST21_REG	0x94
+#define FW_DDR_MST26_REG	0xa8
+#define FW_DDR_MST27_REG	0xac
+#define FIREWALL_SYSMEM_BASE	0xfe038000
+#define FW_SYSM_MST5_REG	0x54
+#define FW_SYSM_MST13_REG	0x74
+#define FW_SYSM_MST21_REG	0x94
+#define FW_SYSM_MST26_REG	0xa8
+#define FW_SYSM_MST27_REG	0xac
+#define SYS_GRF_BASE		0xfd58c000
+#define SYS_GRF_SOC_CON6	0x0318
+#define USBGRF_BASE		0xfd5ac000
+#define USB_GRF_USB3OTG0_CON1	0x001c
+#define BUS_SGRF_BASE		0xfd586000
+#define BUS_SGRF_FIREWALL_CON18	0x288
+#define PMU_BASE		0xfd8d0000
+#define PMU_PWR_GATE_SFTCON1	0x8150
+
 static struct mm_region rk3588_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -28,7 +49,14 @@ static struct mm_region rk3588_mem_map[] = {
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
-	}, {
+	},  {
+		.virt = 0x900000000,
+		.phys = 0x900000000,
+		.size = 0x150000000,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	},  {
 		/* List terminator */
 		0,
 	}
@@ -719,9 +747,67 @@ void board_debug_uart_init(void)
 #endif
 }
 
+#ifdef CONFIG_SPL_BUILD
+void rockchip_stimer_init(void)
+{
+	/* If Timer already enabled, don't re-init it */
+	u32 reg = readl(CONFIG_ROCKCHIP_STIMER_BASE + 0x4);
+
+	if (reg & 0x1)
+		return;
+
+	asm volatile("msr CNTFRQ_EL0, %0" : : "r" (COUNTER_FREQUENCY));
+	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 0x14);
+	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 0x18);
+	writel(0x1, CONFIG_ROCKCHIP_STIMER_BASE + 0x4);
+}
+#endif
+
 #ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
+#ifdef CONFIG_SPL_BUILD
+	int secure_reg;
+
+	/* Set the SDMMC eMMC crypto_ns FSPI access secure area */
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST13_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST13_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST21_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST21_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST26_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST26_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST27_REG);
+	secure_reg &= 0xffff0000;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST27_REG);
+
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST5_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST5_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST13_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST13_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST21_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST21_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST26_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST26_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
+	secure_reg &= 0xffff0000;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
+
+	/* Select clk_tx source as default for i2s2/i2s3 */
+	writel(0x03400340, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
+#endif
+	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
+	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
+
 	return 0;
 }
 #endif
