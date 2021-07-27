@@ -14,6 +14,7 @@
 #include "rk_sftl.h"
 
 #define     CPU_DELAY_NS(n)	ndelay(n)
+#define     usleep_range(a, b)	udelay((b))
 
 #define	    NANDC_MASTER_EN
 
@@ -333,11 +334,14 @@ static void nandc_xfer_done(void)
 			do {
 				fl_reg.d32 = nandc_readl(NANDC_V9_FLCTL);
 				stat_reg.d32 = nandc_readl(NANDC_V9_MTRANS_STAT);
+				usleep_range(20, 30);
 			} while (stat_reg.V9.mtrans_cnt < fl_reg.V9.page_num ||
 				 fl_reg.V9.tr_rdy == 0);
+			udelay(5);
 		} else {
 			do {
 				fl_reg.d32 = nandc_readl(NANDC_V9_FLCTL);
+				usleep_range(20, 30);
 			} while (fl_reg.V9.tr_rdy == 0);
 		}
 	} else {
@@ -349,11 +353,13 @@ static void nandc_xfer_done(void)
 			do {
 				fl_reg.d32 = nandc_readl(NANDC_FLCTL);
 				stat_reg.d32 = nandc_readl(NANDC_MTRANS_STAT);
+				usleep_range(20, 30);
 			} while (stat_reg.V6.mtrans_cnt < fl_reg.V6.page_num ||
 				 fl_reg.V6.tr_rdy == 0);
 		} else {
 			do {
 				fl_reg.d32 = nandc_readl(NANDC_FLCTL);
+				usleep_range(20, 30);
 			} while (fl_reg.V6.tr_rdy == 0);
 			}
 		} else {
