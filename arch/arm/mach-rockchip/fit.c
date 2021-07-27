@@ -227,9 +227,9 @@ int fit_image_pre_process(const void *fit)
 {
 	int ret;
 
-#ifdef CONFIG_USING_KERNEL_DTB
-	sysmem_free((phys_addr_t)gd->fdt_blob);
-#endif
+	if ((gd->flags & GD_FLG_KDTB_READY) && !gd->fdt_blob_kern)
+		sysmem_free((phys_addr_t)gd->fdt_blob);
+
 	ret = fit_image_fixup_alloc(fit, FIT_FDT_PROP,
 				    "fdt_addr_r", MEM_FDT);
 	if (ret < 0)

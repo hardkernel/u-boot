@@ -114,10 +114,13 @@ void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 
 #if CONFIG_IS_ENABLED(USING_KERNEL_DTB)
 	/* Avoid overriding processed(overlay, hw-dtb, ...) kernel dtb */
-	if (fit_image_check_type(fit, node, IH_TYPE_FLATDT) &&
-	    !fdt_check_header(gd->fdt_blob)) {
-		*src_addr = (void *)gd->fdt_blob;
-		*src_len = (size_t)fdt_totalsize(gd->fdt_blob);
+	if (fit_image_check_type(fit, node, IH_TYPE_FLATDT)) {
+		if ((gd->flags & GD_FLG_KDTB_READY) && !gd->fdt_blob_kern) {
+			*src_addr = (void *)gd->fdt_blob;
+			*src_len = (size_t)fdt_totalsize(gd->fdt_blob);
+		} else {
+			printf("   Using fdt from load-in fdt\n");
+		}
 	}
 #endif
 }
