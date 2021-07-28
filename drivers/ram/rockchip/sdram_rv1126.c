@@ -3173,11 +3173,11 @@ static void pctl_modify_trfc(struct ddr_pctl_regs *pctl_regs,
 
 	case LPDDR4:
 	case LPDDR4X:
-		if (die_cap <= DIE_CAP_4GBIT)
+		if (die_cap <= DIE_CAP_2GBIT)
 			trfc_ns = 130;
-		else if (die_cap <= DIE_CAP_8GBIT)
+		else if (die_cap <= DIE_CAP_4GBIT)
 			trfc_ns = 180;
-		else if (die_cap <= DIE_CAP_16GBIT)
+		else if (die_cap <= DIE_CAP_8GBIT)
 			trfc_ns = 280;
 		else
 			trfc_ns = 380;
