@@ -397,7 +397,7 @@ int fdt_chosen(void *fdt)
 				env_update("bootargs", bootargs);
 #endif
 #ifdef CONFIG_MTD_BLK
-				char *mtd_par_info = mtd_part_parse();
+				char *mtd_par_info = mtd_part_parse(NULL);
 
 				if (mtd_par_info) {
 					if (memcmp(env_get("devtype"), "mtd", 3) == 0)

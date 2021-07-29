@@ -548,7 +548,7 @@ static int spl_load_kernel_fit(struct spl_image_info *spl_image,
 			struct blk_desc *desc = info->dev;
 
 			if (desc->devnum == BLK_MTD_SPI_NAND)
-				fdt_bootargs_append((void *)image_info.load_addr, mtd_part_parse());
+				fdt_bootargs_append((void *)image_info.load_addr, mtd_part_parse(desc));
 #endif
 		} else if (!strcmp(images[i], FIT_KERNEL_PROP)) {
 #if CONFIG_IS_ENABLED(OPTEE)
