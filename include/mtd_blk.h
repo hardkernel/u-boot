@@ -11,7 +11,7 @@
  *
  * @return mtd part info. If fail, return NULL
  */
-char *mtd_part_parse(void);
+char *mtd_part_parse(struct blk_desc *dev_desc);
 int mtd_blk_map_table_init(struct blk_desc *desc,
 			   loff_t offset,
 			   size_t length);
