@@ -305,9 +305,9 @@ int fdt_bootargs_append(void *fdt, char *data)
 			if (!str)
 				return -ENOMEM;
 
-			fdt_increase_size(fdt, strlen(data) + 1);
+			fdt_increase_size(fdt, 512);
 			snprintf(str, len, "%s %s", bootargs, data);
-			ret = fdt_setprop(fdt, nodeoffset, "bootargs",
+			ret = fdt_setprop(fdt, nodeoffset, arr_bootargs[i],
 					  str, len);
 			if (ret < 0)
 				printf("WARNING: could not set bootargs %s.\n", fdt_strerror(ret));
