@@ -661,22 +661,22 @@ int arch_cpu_init(void)
 	writel(0x303, DMA_PRIORITY_REG);
 	writel(0x101, MCU_DM_PRIORITY_REG);
 	writel(0x101, MCU_IM_PRIORITY_REG);
-	writel(0x101, A7_PRIORITY_REG);
+	writel(0x202, A7_PRIORITY_REG);
 	writel(0x303, GMAC_PRIORITY_REG);
 	writel(0x101, NPU_PRIORITY_REG);
 	writel(0x303, EMMC_PRIORITY_REG);
 	writel(0x303, NANDC_PRIORITY_REG);
 	writel(0x303, SFC_PRIORITY_REG);
-	writel(0x303, SDMMC_PRIORITY_REG);
+	writel(0x202, SDMMC_PRIORITY_REG);
 	writel(0x303, SDIO_PRIORITY_REG);
-	writel(0x101, VEPU_RD0_PRIORITY_REG);
-	writel(0x101, VEPU_RD1_PRIORITY_REG);
-	writel(0x101, VEPU_WR_PRIORITY_REG);
-	writel(0x101, ISPP_M0_PRIORITY_REG);
-	writel(0x101, ISPP_M1_PRIORITY_REG);
-	writel(0x101, ISP_PRIORITY_REG);
-	writel(0x202, CIF_LITE_PRIORITY_REG);
-	writel(0x202, CIF_PRIORITY_REG);
+	writel(0x202, VEPU_RD0_PRIORITY_REG);
+	writel(0x202, VEPU_RD1_PRIORITY_REG);
+	writel(0x202, VEPU_WR_PRIORITY_REG);
+	writel(0x202, ISPP_M0_PRIORITY_REG);
+	writel(0x202, ISPP_M1_PRIORITY_REG);
+	writel(0x202, ISP_PRIORITY_REG);
+	writel(0x303, CIF_LITE_PRIORITY_REG);
+	writel(0x303, CIF_PRIORITY_REG);
 	writel(0x101, IEP_PRIORITY_REG);
 	writel(0x101, RGA_RD_PRIORITY_REG);
 	writel(0x101, RGA_WR_PRIORITY_REG);
@@ -685,7 +685,7 @@ int arch_cpu_init(void)
 	writel(0x101, JPEG_PRIORITY_REG);
 	writel(0x101, CRYPTO_PRIORITY_REG);
 	/* enable dynamic priority */
-	writel(0x1, ISP_PRIORITY_EX_REG);
+	writel(0x0, ISP_PRIORITY_EX_REG);
 
 	/*
 	 * Init the i2c0 iomux and use it to control electronic voltmeter
