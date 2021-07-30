@@ -22,6 +22,7 @@
 #define STORAGE_CMD_READ_ENABLE_FLAG		5
 #define STORAGE_CMD_WRITE_TA_ENCRYPTION_KEY	9
 #define STORAGE_CMD_CHECK_SECURITY_LEVEL_FLAG	10
+#define STORAGE_CMD_WRITE_OEM_HUK		11
 
 static uint8_t b2hs_add_base(uint8_t in)
 {
@@ -563,6 +564,12 @@ uint32_t trusty_check_security_level_flag(uint8_t flag)
 	levelflag = flag;
 	return trusty_base_efuse_or_otp_operation(STORAGE_CMD_CHECK_SECURITY_LEVEL_FLAG,
 						  true, &levelflag, 1);
+}
+
+uint32_t trusty_write_oem_huk(uint32_t *buf, uint32_t length)
+{
+	return trusty_base_efuse_or_otp_operation(STORAGE_CMD_WRITE_OEM_HUK,
+						  true, buf, length);
 }
 
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size)
