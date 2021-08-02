@@ -44,10 +44,11 @@ static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
 }
 
 static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
-			    ulong **src_addr, size_t *src_len)
+			    ulong **src_addr, size_t *src_len, void *spec)
 {
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 	const void *prop;
+	u32 flags = 0;
 #endif
 	u64 len = *src_len;
 	int ret;
@@ -60,9 +61,30 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 		return 0;
 
 #ifndef CONFIG_SPL_BUILD
-	/* handled late in bootm_decomp_image() */
+	/*
+	 * U-Boot:
+	 *	handled late in bootm_decomp_image()
+	 */
 	if (fit_image_check_type(fit, node, IH_TYPE_KERNEL))
 		return 0;
+#elif defined(CONFIG_SPL_MTD_SUPPORT) && defined(CONFIG_SPL_MISC_DECOMPRESS) && \
+      defined(CONFIG_SPL_KERNEL_BOOT)
+	/*
+	 * SPL Thunder-boot policty on spi-nand:
+	 *	enable and use interrupt status as a sync signal for
+	 *	kernel to poll that whether ramdisk decompress is done.
+	 */
+	struct spl_load_info *info = spec;
+	struct blk_desc *desc;
+
+	if (info && info->dev) {
+		desc = info->dev;
+		if ((desc->if_type == IF_TYPE_MTD) &&
+		    (desc->devnum == BLK_MTD_SPI_NAND) &&
+		    fit_image_check_type(fit, node, IH_TYPE_RAMDISK)) {
+			flags |= DCOMP_FLG_IRQ_ONESHOT;
+		}
+	}
 #endif
 	/*
 	 * For smaller spl size, we don't use misc_decompress_process()
@@ -71,7 +93,7 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 	ret = misc_decompress_process((ulong)(*load_addr),
 				      (ulong)(*src_addr), (ulong)(*src_len),
-				      DECOM_GZIP, false, &len);
+				      DECOM_GZIP, false, &len, flags);
 #else
 	ret = gunzip((void *)(*load_addr), ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
 		     (void *)(*src_addr), (void *)(&len));
@@ -106,10 +128,10 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 #endif
 
 void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
-				  ulong **src_addr, size_t *src_len)
+				  ulong **src_addr, size_t *src_len, void *spec)
 {
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
-	fit_gunzip_image(fit, node, load_addr, src_addr, src_len);
+	fit_gunzip_image(fit, node, load_addr, src_addr, src_len, spec);
 #endif
 
 #if CONFIG_IS_ENABLED(USING_KERNEL_DTB)
