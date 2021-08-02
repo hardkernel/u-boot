@@ -155,12 +155,6 @@ struct decom_param {
 	enum misc_mode mode;
 };
 
-struct udevice *misc_decompress_get_device(u32 capability);
-int misc_decompress_start(struct udevice *dev, unsigned long src,
-			  unsigned long dst, unsigned long size);
-int misc_decompress_stop(struct udevice *dev);
-bool misc_decompress_is_complete(struct udevice *dev);
-
 void misc_decompress_async(u8 comp);
 void misc_decompress_sync(u8 comp);
 int misc_decompress_cleanup(void);

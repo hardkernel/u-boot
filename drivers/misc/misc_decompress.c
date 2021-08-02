@@ -71,13 +71,13 @@ static u32 misc_get_data_size(unsigned long src, unsigned long len, u32 cap)
 	return 0;
 }
 
-struct udevice *misc_decompress_get_device(u32 capability)
+static struct udevice *misc_decompress_get_device(u32 capability)
 {
 	return misc_get_device_by_capability(capability);
 }
 
-int misc_decompress_start(struct udevice *dev, unsigned long dst,
-			  unsigned long src, unsigned long src_len)
+static int misc_decompress_start(struct udevice *dev, unsigned long dst,
+				 unsigned long src, unsigned long src_len)
 {
 	struct decom_param param;
 
@@ -99,12 +99,12 @@ int misc_decompress_start(struct udevice *dev, unsigned long dst,
 	return misc_ioctl(dev, IOCTL_REQ_START, &param);
 }
 
-int misc_decompress_stop(struct udevice *dev)
+static int misc_decompress_stop(struct udevice *dev)
 {
 	return misc_ioctl(dev, IOCTL_REQ_STOP, NULL);
 }
 
-bool misc_decompress_is_complete(struct udevice *dev)
+static bool misc_decompress_is_complete(struct udevice *dev)
 {
 	if (misc_ioctl(dev, IOCTL_REQ_POLL, NULL))
 		return false;
@@ -112,7 +112,7 @@ bool misc_decompress_is_complete(struct udevice *dev)
 		return true;
 }
 
-int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 cap)
+static int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 cap)
 {
 	struct decom_param param;
 	int ret;
