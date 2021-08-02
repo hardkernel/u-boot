@@ -572,6 +572,26 @@ uint32_t trusty_write_oem_huk(uint32_t *buf, uint32_t length)
 						  true, buf, length);
 }
 
+void trusty_select_security_level(void)
+{
+#if (CONFIG_OPTEE_SECURITY_LEVEL > 0)
+	TEEC_Result TeecResult;
+
+	TeecResult = trusty_check_security_level_flag(CONFIG_OPTEE_SECURITY_LEVEL);
+	if (TeecResult == TEE_ERROR_CANCEL) {
+		run_command("download", 0);
+		return;
+	}
+
+	if (TeecResult == TEEC_SUCCESS)
+		debug("optee select security level success!");
+	else
+		panic("optee select security level fail!");
+
+	return;
+#endif
+}
+
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size)
 {
 	TEEC_Result TeecResult;

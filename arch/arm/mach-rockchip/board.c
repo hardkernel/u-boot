@@ -447,6 +447,10 @@ static void board_mtd_blk_map_partitions(void)
 int board_init(void)
 {
 	board_debug_init();
+	/* optee select security level */
+#ifdef CONFIG_OPTEE_CLIENT
+	trusty_select_security_level();
+#endif
 
 #ifdef DEBUG
 	soc_clk_dump();
