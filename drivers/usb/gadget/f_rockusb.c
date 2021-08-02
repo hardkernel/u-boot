@@ -494,6 +494,17 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 						curlun->sense_data = SS_WRITE_ERROR;
 						return -EIO;
 					}
+				} else if (memcmp(data, "EHUK", 4) == 0) {
+					if (vhead->size - 8 != 32) {
+						printf("check oem huk size fail!\n");
+						curlun->sense_data = SS_WRITE_ERROR;
+						return -EIO;
+					}
+					if (trusty_write_oem_huk((uint32_t *)(data + 8), 8) != 0) {
+						printf("trusty_write_oem_huk error!");
+						curlun->sense_data = SS_WRITE_ERROR;
+						return -EIO;
+					}
 				} else {
 					printf("Unknown tag\n");
 					curlun->sense_data = SS_WRITE_ERROR;
