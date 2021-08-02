@@ -2197,7 +2197,7 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 
 	/* perform any post-processing on the image data */
 	board_fit_image_post_process((void *)fit, noffset,
-				     &load, (ulong **)&buf, &size);
+				     &load, (ulong **)&buf, &size, NULL);
 #endif
 
 	len = (ulong)size;
