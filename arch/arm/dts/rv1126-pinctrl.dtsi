@@ -1154,7 +1154,7 @@
 				<0 RK_PC0 1 &pcfg_pull_none>;
 		};
 	};
-	sdmmc1 {
+	sdmmc1: sdmmc1 {
 		sdmmc1_bus4: sdmmc1-bus4 {
 			rockchip,pins =
 				/* sdmmc1_d0 */
