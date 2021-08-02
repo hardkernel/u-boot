@@ -23,12 +23,16 @@ static int rkusb_read_sector(struct ums *ums_dev,
 {
 	struct blk_desc *block_dev = &ums_dev->block_dev;
 	lbaint_t blkstart = start + ums_dev->start_sector;
+	int ret;
 
 	if ((blkstart + blkcnt) > RKUSB_READ_LIMIT_ADDR) {
 		memset(buf, 0xcc, blkcnt * SECTOR_SIZE);
 		return blkcnt;
 	} else {
-		return blk_dread(block_dev, blkstart, blkcnt, buf);
+		ret = blk_dread(block_dev, blkstart, blkcnt, buf);
+		if (!ret)
+			ret = -EIO;
+		return ret;
 	}
 }
 
@@ -41,7 +45,11 @@ static int rkusb_write_sector(struct ums *ums_dev,
 
 	if (block_dev->if_type == IF_TYPE_MTD)
 		block_dev->op_flag |= BLK_MTD_CONT_WRITE;
+
 	ret = blk_dwrite(block_dev, blkstart, blkcnt, buf);
+	if (!ret)
+		ret = -EIO;
+
 	if (block_dev->if_type == IF_TYPE_MTD)
 		block_dev->op_flag &= ~(BLK_MTD_CONT_WRITE);
 	return ret;
