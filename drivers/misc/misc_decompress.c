@@ -77,12 +77,14 @@ static struct udevice *misc_decompress_get_device(u32 capability)
 }
 
 static int misc_decompress_start(struct udevice *dev, unsigned long dst,
-				 unsigned long src, unsigned long src_len)
+				 unsigned long src, unsigned long src_len,
+				 u32 flags)
 {
 	struct decom_param param;
 
 	param.addr_dst = dst;
 	param.addr_src = src;
+	param.flags = flags;
 	if (misc_gzip_parse_header((unsigned char *)src, 0xffff) > 0) {
 		param.mode = DECOM_GZIP;
 	} else {
@@ -180,7 +182,7 @@ int misc_decompress_cleanup(void)
 
 int misc_decompress_process(unsigned long dst, unsigned long src,
 			    unsigned long src_len, u32 cap, bool sync,
-			    u64 *size)
+			    u64 *size, u32 flags)
 {
 	struct udevice *dev;
 	int ret;
@@ -194,7 +196,7 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 	if (ret)
 		return ret;
 
-	ret = misc_decompress_start(dev, dst, src, src_len);
+	ret = misc_decompress_start(dev, dst, src, src_len, flags);
 	if (ret)
 		return ret;
 
