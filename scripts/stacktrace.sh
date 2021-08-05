@@ -107,10 +107,14 @@ done
 echo
 
 # PC instruction
-echo " PC Surrounding Instructions:"
+echo "PC Surrounding Instructions:"
 line=`grep '\[< ' ${INPUT_FILE} | grep '>\]' | grep [PC]`
 frame_pc_str=`echo ${line} | awk '{ print "0x"$3 }'`
 frame_pc_dec=`echo ${line} | awk '{ print strtonum("0x"$3); }'`
+# Handle Thumb instr
+if [ `expr ${frame_pc_dec} % 2` -ne 0 ];then
+	frame_pc_dec=`expr ${frame_pc_dec} - 1`
+fi
 frame_pc_hex=`echo "obase=16;${frame_pc_dec}"|bc |tr '[A-Z]' '[a-z]'`
 PC_INSTR=`./make.sh ${ELF_FILE} | grep -5 -m 1 "${frame_pc_hex}:"`
 echo "${PC_INSTR}"
