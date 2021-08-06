@@ -765,6 +765,7 @@ static int rk816_bat_get_usb_state(struct battery_priv *di)
 		charger_type = USB_CHARGER;
 		break;
 	case 2:
+	case 4:
 		charger_type = AC_CHARGER;
 		break;
 	default:
