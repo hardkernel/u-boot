@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <syscon.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/cru_px30.h>
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
@@ -1026,6 +1027,83 @@ static ulong px30_peri_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	return px30_peri_get_clk(priv, clk_id);
 }
 
+static ulong px30_otp_get_clk(struct px30_clk_priv *priv, ulong clk_id)
+{
+	struct px30_cru *cru = priv->cru;
+	u32 src, div, con, parent;
+
+	if (soc_is_px30s()) {
+		con = readl(&cru->clksel_con[56]);
+		src = (con & CLK_OTP_S_SEL_MASK) >> CLK_OTP_S_SEL_SHIFT;
+		div = (con & CLK_OTP_S_DIV_CON_MASK) >> CLK_OTP_S_DIV_CON_SHIFT;
+		if (src)
+			return DIV_TO_RATE(priv->gpll_hz, div);
+		else
+			return DIV_TO_RATE(OSC_HZ, div);
+	}
+
+	switch (clk_id) {
+	case SCLK_OTP:
+		con = readl(&cru->clksel_con[56]);
+		div = (con & CLK_OTP_DIV_CON_MASK) >> CLK_OTP_DIV_CON_SHIFT;
+		parent = OSC_HZ;
+		break;
+	case SCLK_OTP_USR:
+		con = readl(&cru->clksel_con[56]);
+		div = (con & CLK_OTP_USR_DIV_CON_MASK) >>
+		      CLK_OTP_USR_DIV_CON_SHIFT;
+		parent = px30_otp_get_clk(priv, SCLK_OTP);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong px30_otp_set_clk(struct px30_clk_priv *priv, ulong clk_id,
+			      ulong hz)
+{
+	struct px30_cru *cru = priv->cru;
+	u32 src, div, parent;
+
+	if (soc_is_px30s()) {
+		if ((OSC_HZ % hz) == 0) {
+			src = 0;
+			parent = OSC_HZ;
+		} else {
+			src = 1;
+			parent = priv->gpll_hz;
+		}
+		div = DIV_ROUND_UP(parent, hz);
+		rk_clrsetreg(&cru->clksel_con[56],
+			     CLK_OTP_S_SEL_MASK | CLK_OTP_S_DIV_CON_MASK,
+			     src << CLK_OTP_S_SEL_SHIFT |
+			     (div - 1) << CLK_OTP_S_DIV_CON_SHIFT);
+		return px30_otp_get_clk(priv, clk_id);
+	}
+
+	switch (clk_id) {
+	case SCLK_OTP:
+		div = DIV_ROUND_UP(OSC_HZ, hz);
+		rk_clrsetreg(&cru->clksel_con[56],
+			     CLK_OTP_DIV_CON_MASK,
+			     (div - 1) << CLK_OTP_DIV_CON_SHIFT);
+		break;
+	case SCLK_OTP_USR:
+		div = DIV_ROUND_UP(px30_otp_get_clk(priv, SCLK_OTP), hz);
+		rk_clrsetreg(&cru->clksel_con[56],
+			     CLK_OTP_USR_DIV_CON_MASK,
+			     (div - 1) << CLK_OTP_USR_DIV_CON_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return px30_otp_get_clk(priv, clk_id);
+}
+
 static ulong px30_crypto_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 {
 	struct px30_cru *cru = priv->cru;
@@ -1288,12 +1366,14 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case HCLK_PERI_PRE:
 		rate = px30_peri_get_clk(priv, clk->id);
 		break;
-#ifndef CONFIG_SPL_BUILD
+	case SCLK_OTP:
+	case SCLK_OTP_USR:
+		rate = px30_otp_get_clk(priv, clk->id);
+		break;
 	case SCLK_CRYPTO:
 	case SCLK_CRYPTO_APK:
 		rate = px30_crypto_get_clk(priv, clk->id);
 		break;
-#endif
 	default:
 		return -ENOENT;
 	}
@@ -1370,6 +1450,10 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_PERI_PRE:
 	case HCLK_PERI_PRE:
 		ret = px30_peri_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_OTP:
+	case SCLK_OTP_USR:
+		ret = px30_otp_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_CRYPTO:
 	case SCLK_CRYPTO_APK:
