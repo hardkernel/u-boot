@@ -59,6 +59,8 @@
 
 /* SIP_AMP_CFG */
 #define AMP_PE_STATE			0x0
+#define AMP_BOOT_ARG01			0x1
+#define AMP_BOOT_ARG23			0x2
 
 /* Share mem page types */
 typedef enum {
@@ -80,7 +82,8 @@ int sip_smc_set_suspend_mode(unsigned long ctrl,
 /*
  * sip_smc_amp_cfg() - config AMP
  */
-int sip_smc_amp_cfg(unsigned long func, unsigned long arg0, unsigned long arg1);
+int sip_smc_amp_cfg(unsigned long func, unsigned long arg0, unsigned long arg1,
+		    unsigned long arg2);
 
 /*
  * sip_smc_dram() - Set dram configure for trust.
