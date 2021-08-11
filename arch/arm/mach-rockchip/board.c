@@ -371,9 +371,6 @@ int board_late_init(void)
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif
-#ifdef CONFIG_AMP
-	amp_cpus_on();
-#endif
 #ifdef CONFIG_ROCKCHIP_USB_BOOT
 	boot_from_udisk();
 #endif
@@ -389,7 +386,9 @@ int board_late_init(void)
 	env_fixup();
 	soc_clk_dump();
 	cmdline_handle();
-
+#ifdef CONFIG_AMP
+	amp_cpus_on();
+#endif
 	return rk_board_late_init();
 }
 
