@@ -686,6 +686,11 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	boot_os_fn *boot_fn;
 	ulong iflag = 0;
 	int ret = 0, need_boot_fn;
+	u32 unmask;
+
+	unmask = env_get_ulong("bootm_states_unmask", 16, 0);
+	if (unmask)
+		states &= ~unmask;
 
 	images->state |= states;
 
