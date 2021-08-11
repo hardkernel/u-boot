@@ -9,32 +9,15 @@
 	#address-cells = <1>;
 
 	images {
-
-		amp0 {
-			description  = "bare-mental-core0";
-			data         = /incbin/("../../hal0.bin");
-			type         = "firmware";
-			compression  = "none";
-			arch         = "arm";	 // "arm64" or "arm"
-			cpu          = <0x000>;  // mpidr
-			thumb        = <0>;      // 0: arm or thumb2; 1: thumb
-			hyp          = <0>;      // 0: el1/svc; 1: el2/hyp
-			load         = <0x12000000>;
-			udelay       = <1000000>;
-			hash {
-				algo = "sha256";
-			};
-		};
-
 		amp1 {
 			description  = "bare-mental-core1";
-			data         = /incbin/("../../hal1.bin");
+			data         = /incbin/("./amp1.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm";
-			cpu          = <0x100>;
-			thumb        = <0>;
-			hyp          = <0>;
+			arch         = "arm64";		// "arm64" or "arm"
+			cpu          = <0x100>;		// mpidr
+			thumb        = <0>;		// 0: arm or thumb2; 1: thumb
+			hyp          = <0>;		// 0: el1/svc; 1: el2/hyp
 			load         = <0x01800000>;
 			udelay       = <1000000>;
 			hash {
@@ -44,10 +27,10 @@
 
 		amp2 {
 			description  = "bare-mental-core2";
-			data         = /incbin/("../../hal2.bin");
+			data         = /incbin/("./amp2.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm";
+			arch         = "arm64";
 			cpu          = <0x200>;
 			thumb        = <0>;
 			hyp          = <0>;
@@ -60,10 +43,10 @@
 
 		amp3 {
 			description  = "bare-mental-core3";
-			data         = /incbin/("../../hal3.bin");
+			data         = /incbin/("./amp3.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm";
+			arch         = "arm64";
 			cpu          = <0x300>;
 			thumb        = <0>;
 			hyp          = <0>;
@@ -80,13 +63,26 @@
 		conf {
 			description = "Rockchip AMP images";
 			rollback-index = <0x0>;
-			loadables = "amp0", "amp1", "amp2", "amp3";
+			loadables = "amp1", "amp2", "amp3";
 
 			signature {
 				algo = "sha256,rsa2048";
 				padding = "pss";
 				key-name-hint = "dev";
 				sign-images = "loadables";
+			};
+
+			/* - run linux on cpu0
+			 * - it is brought up by amp(that run on U-Boot)
+			 * - it is boot entry depends on U-Boot
+			 */
+			linux {
+				description  = "linux-os";
+				arch         = "arm64";
+				cpu          = <0x000>;
+				thumb        = <0>;
+				hyp          = <0>;
+				udelay       = <1000000>;
 			};
 		};
 	};
