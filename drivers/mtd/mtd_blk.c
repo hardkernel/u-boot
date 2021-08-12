@@ -511,7 +511,7 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 			spi->mode |= SPI_DMA_PREPARE;
 		mtd_read(mtd, off, rwsize, &retlen_nor, dst);
 		if (desc->op_flag == BLK_PRE_RW)
-			spi->mode |= SPI_DMA_PREPARE;
+			spi->mode &= ~SPI_DMA_PREPARE;
 
 		if (retlen_nor == rwsize)
 			return blkcnt;
