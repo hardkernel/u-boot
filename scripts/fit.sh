@@ -268,7 +268,12 @@ function fit_gen_uboot_itb()
 
 		# burn-key-hash
 		if [ "${ARG_BURN_KEY_HASH}" == "y" ]; then
-			fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} burn-key-hash 0x1
+			if grep -q '^CONFIG_SPL_FIT_HW_CRYPTO=y' .config ; then
+				fdtput -tx ${SPL_DTB} ${SIGNATURE_KEY_NODE} burn-key-hash 0x1
+			else
+				echo "ERROR: --burn-key-hash requires CONFIG_SPL_FIT_HW_CRYPTO=y"
+				exit 1
+			fi
 		fi
 
 		# rollback-index read back check
