@@ -527,13 +527,13 @@ int nand_spl_load_image(u32 offs, u32 size, void *buf)
 		 * Check if we have crossed a block boundary, and if so
 		 * check for bad block.
 		 */
-		if (!(page % nand_page_size)) {
+		if (!(page % nand_page_num)) {
 			/*
 			 * Yes, new block. See if this block is good. If not,
 			 * loop until we find a good block.
 			 */
 			while (is_badblock(page)) {
-				page = page + nand_page_size;
+				page = page + nand_page_num;
 				/* Check i we've reached the end of flash. */
 				if (page >= maxpages)
 					return -EIO;
