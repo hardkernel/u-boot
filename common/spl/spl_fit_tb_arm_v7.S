@@ -20,7 +20,7 @@
 	.fpu softvfp
 	.type	spl_fit_get_image_name.isra.0, %function
 spl_fit_get_image_name.isra.0:
-.LFB221:
+.LFB223:
 	.file 1 "common/spl/spl_fit_tb_arm_v7.c"
 	.loc 1 37 0
 	.cfi_startproc
@@ -165,7 +165,7 @@ spl_fit_get_image_name.isra.0:
 	.word	.LC5
 	.word	.LC6
 	.cfi_endproc
-.LFE221:
+.LFE223:
 	.size	spl_fit_get_image_name.isra.0, .-spl_fit_get_image_name.isra.0
 	.section	.text.spl_fit_get_image_node,"ax",%progbits
 	.align	1
@@ -175,7 +175,7 @@ spl_fit_get_image_name.isra.0:
 	.fpu softvfp
 	.type	spl_fit_get_image_node, %function
 spl_fit_get_image_node:
-.LFB207:
+.LFB209:
 	.loc 1 93 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 8
@@ -222,7 +222,7 @@ spl_fit_get_image_node:
 	@ sp needed
 	pop	{r4, r5, pc}
 	.cfi_endproc
-.LFE207:
+.LFE209:
 	.size	spl_fit_get_image_node, .-spl_fit_get_image_node
 	.global	__aeabi_idivmod
 	.global	__aeabi_idiv
@@ -234,7 +234,7 @@ spl_fit_get_image_node:
 	.fpu softvfp
 	.type	spl_load_fit_image, %function
 spl_load_fit_image:
-.LFB211:
+.LFB213:
 	.loc 1 171 0
 	.cfi_startproc
 	@ args = 8, pretend = 0, frame = 48
@@ -509,6 +509,7 @@ spl_load_fit_image:
 	str	r3, [sp]
 	mov	r0, r5
 	add	r3, sp, #48
+	str	r10, [sp, #4]
 	bl	board_fit_image_post_process
 .LVL73:
 	.loc 1 287 0
@@ -647,7 +648,7 @@ spl_load_fit_image:
 	.word	.LC10
 	.word	.LC7
 	.cfi_endproc
-.LFE211:
+.LFE213:
 	.size	spl_load_fit_image, .-spl_load_fit_image
 	.section	.text.spl_fit_append_fdt,"ax",%progbits
 	.align	1
@@ -657,7 +658,7 @@ spl_load_fit_image:
 	.fpu softvfp
 	.type	spl_fit_append_fdt, %function
 spl_fit_append_fdt:
-.LFB212:
+.LFB214:
 	.loc 1 316 0
 	.cfi_startproc
 	@ args = 8, pretend = 0, frame = 48
@@ -735,7 +736,7 @@ spl_fit_append_fdt:
 .L68:
 	.word	.LC0
 	.cfi_endproc
-.LFE212:
+.LFE214:
 	.size	spl_fit_append_fdt, .-spl_fit_append_fdt
 	.section	.text.spl_fit_load_blob,"ax",%progbits
 	.align	1
@@ -745,7 +746,7 @@ spl_fit_append_fdt:
 	.fpu softvfp
 	.type	spl_fit_load_blob, %function
 spl_fit_load_blob:
-.LFB216:
+.LFB218:
 	.loc 1 388 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 0
@@ -818,9 +819,9 @@ spl_fit_load_blob:
 .L74:
 	.align	2
 .L73:
-	.word	4194241
+	.word	6291393
 	.cfi_endproc
-.LFE216:
+.LFE218:
 	.size	spl_fit_load_blob, .-spl_fit_load_blob
 	.section	.text.fit_config_verify,"ax",%progbits
 	.align	1
@@ -831,7 +832,7 @@ spl_fit_load_blob:
 	.fpu softvfp
 	.type	fit_config_verify, %function
 fit_config_verify:
-.LFB205:
+.LFB207:
 	.loc 1 21 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 0
@@ -843,7 +844,7 @@ fit_config_verify:
 .LVL118:
 	bx	lr
 	.cfi_endproc
-.LFE205:
+.LFE207:
 	.size	fit_config_verify, .-fit_config_verify
 	.section	.text.spl_fit_standalone_release,"ax",%progbits
 	.align	1
@@ -854,7 +855,7 @@ fit_config_verify:
 	.fpu softvfp
 	.type	spl_fit_standalone_release, %function
 spl_fit_standalone_release:
-.LFB215:
+.LFB217:
 	.loc 1 381 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 0
@@ -866,7 +867,7 @@ spl_fit_standalone_release:
 .LVL120:
 	bx	lr
 	.cfi_endproc
-.LFE215:
+.LFE217:
 	.size	spl_fit_standalone_release, .-spl_fit_standalone_release
 	.section	.text.spl_kernel_partition,"ax",%progbits
 	.align	1
@@ -877,7 +878,7 @@ spl_fit_standalone_release:
 	.fpu softvfp
 	.type	spl_kernel_partition, %function
 spl_kernel_partition:
-.LFB217:
+.LFB219:
 	.loc 1 437 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 0
@@ -893,7 +894,7 @@ spl_kernel_partition:
 .L78:
 	.word	.LC13
 	.cfi_endproc
-.LFE217:
+.LFE219:
 	.size	spl_kernel_partition, .-spl_kernel_partition
 	.section	.text.spl_load_simple_fit,"ax",%progbits
 	.align	1
@@ -904,7 +905,7 @@ spl_kernel_partition:
 	.fpu softvfp
 	.type	spl_load_simple_fit, %function
 spl_load_simple_fit:
-.LFB220:
+.LFB222:
 	.loc 1 760 0
 	.cfi_startproc
 	@ args = 0, pretend = 0, frame = 248
@@ -1597,7 +1598,7 @@ spl_load_simple_fit:
 .LBE92:
 .LBE100:
 	.cfi_endproc
-.LFE220:
+.LFE222:
 	.size	spl_load_simple_fit, .-spl_load_simple_fit
 	.section	.rodata
 	.align	2
@@ -1606,11 +1607,11 @@ spl_load_simple_fit:
 	.word	.LC0
 	.word	.LC1
 	.word	.LC2
-	.section	.rodata.__func__.8780,"a",%progbits
+	.section	.rodata.__func__.8795,"a",%progbits
 	.set	.LANCHOR0,. + 0
-	.type	__func__.8780, %object
-	.size	__func__.8780, 20
-__func__.8780:
+	.type	__func__.8795, %object
+	.size	__func__.8795, 20
+__func__.8795:
 	.ascii	"spl_load_kernel_fit\000"
 	.section	.rodata.spl_fit_get_image_name.isra.0.str1.1,"aMS",%progbits,1
 .LC4:
@@ -1700,7 +1701,7 @@ __func__.8780:
 	.file 29 "include/stdio.h"
 	.section	.debug_info,"",%progbits
 .Ldebug_info0:
-	.4byte	0x2836
+	.4byte	0x283d
 	.2byte	0x4
 	.4byte	.Ldebug_abbrev0
 	.byte	0x4
@@ -2212,54 +2213,54 @@ __func__.8780:
 	.4byte	.LASF76
 	.byte	0x9c
 	.byte	0xc
-	.byte	0x39
+	.byte	0x3c
 	.4byte	0x48c
 	.uleb128 0x15
 	.4byte	.LASF77
 	.byte	0xc
-	.byte	0x3a
+	.byte	0x3d
 	.4byte	0x1c4
 	.byte	0
 	.uleb128 0x15
 	.4byte	.LASF78
 	.byte	0xc
-	.byte	0x3b
+	.byte	0x3e
 	.4byte	0x1c4
 	.byte	0x4
 	.uleb128 0x15
 	.4byte	.LASF65
 	.byte	0xc
-	.byte	0x3c
+	.byte	0x3f
 	.4byte	0x122
 	.byte	0x8
 	.uleb128 0x15
 	.4byte	.LASF74
 	.byte	0xc
-	.byte	0x3d
+	.byte	0x40
 	.4byte	0x48c
 	.byte	0xc
 	.uleb128 0x15
 	.4byte	.LASF62
 	.byte	0xc
-	.byte	0x3e
+	.byte	0x41
 	.4byte	0x48c
 	.byte	0x2c
 	.uleb128 0x15
 	.4byte	.LASF79
 	.byte	0xc
-	.byte	0x3f
+	.byte	0x42
 	.4byte	0x50
 	.byte	0x4c
 	.uleb128 0x15
 	.4byte	.LASF80
 	.byte	0xc
-	.byte	0x41
+	.byte	0x44
 	.4byte	0x49c
 	.byte	0x50
 	.uleb128 0x15
 	.4byte	.LASF81
 	.byte	0xc
-	.byte	0x44
+	.byte	0x47
 	.4byte	0x49c
 	.byte	0x75
 	.byte	0
@@ -2280,7 +2281,7 @@ __func__.8780:
 	.uleb128 0x2
 	.4byte	.LASF82
 	.byte	0xc
-	.byte	0x49
+	.byte	0x4c
 	.4byte	0x41f
 	.uleb128 0xc
 	.4byte	0x400
@@ -2292,7 +2293,7 @@ __func__.8780:
 	.uleb128 0x4
 	.4byte	.LASF73
 	.byte	0xc
-	.byte	0xce
+	.byte	0xd1
 	.4byte	0x4c2
 	.uleb128 0x8
 	.byte	0x4
@@ -3866,8 +3867,8 @@ __func__.8780:
 	.byte	0x1
 	.2byte	0x2f6
 	.4byte	0x50
-	.4byte	.LFB220
-	.4byte	.LFE220-.LFB220
+	.4byte	.LFB222
+	.4byte	.LFE222-.LFB222
 	.uleb128 0x1
 	.byte	0x9c
 	.4byte	0x1984
@@ -3982,7 +3983,7 @@ __func__.8780:
 	.4byte	.LLST78
 	.uleb128 0x37
 	.4byte	.LVL163
-	.4byte	0x26e6
+	.4byte	0x26ed
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -4030,7 +4031,7 @@ __func__.8780:
 	.4byte	.LLST81
 	.uleb128 0x37
 	.4byte	.LVL169
-	.4byte	0x26e6
+	.4byte	0x26ed
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -4089,7 +4090,7 @@ __func__.8780:
 	.4byte	.LLST87
 	.uleb128 0x3c
 	.4byte	.LVL176
-	.4byte	0x258c
+	.4byte	0x2593
 	.4byte	0x140a
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4118,7 +4119,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL178
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x1433
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4147,7 +4148,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL181
-	.4byte	0x26f2
+	.4byte	0x26f9
 	.4byte	0x145b
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4175,7 +4176,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL182
-	.4byte	0x26f2
+	.4byte	0x26f9
 	.4byte	0x1483
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4203,7 +4204,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL183
-	.4byte	0x26fe
+	.4byte	0x2705
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -4260,7 +4261,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL165
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x14f1
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4365,7 +4366,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3d
 	.4byte	.LVL131
-	.4byte	0x2709
+	.4byte	0x2710
 	.uleb128 0x3c
 	.4byte	.LVL135
 	.4byte	0x1b94
@@ -4399,7 +4400,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL136
-	.4byte	0x2714
+	.4byte	0x271b
 	.4byte	0x159f
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4416,10 +4417,10 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3d
 	.4byte	.LVL137
-	.4byte	0x2720
+	.4byte	0x2727
 	.uleb128 0x3c
 	.4byte	.LVL138
-	.4byte	0x272c
+	.4byte	0x2733
 	.4byte	0x15c1
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4435,7 +4436,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL142
-	.4byte	0x24e2
+	.4byte	0x24e9
 	.4byte	0x15d5
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4446,7 +4447,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL144
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x15f2
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4463,7 +4464,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL145
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x1609
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4474,7 +4475,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL146
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x1632
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4544,7 +4545,7 @@ __func__.8780:
 	.4byte	0x1c89
 	.uleb128 0x3c
 	.4byte	.LVL152
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x1683
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4555,7 +4556,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL153
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x16ab
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4583,7 +4584,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL155
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x16d3
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4712,7 +4713,7 @@ __func__.8780:
 	.sleb128 -232
 	.uleb128 0x3e
 	.4byte	0x1a97
-	.4byte	0x26d3
+	.4byte	0x26da
 	.4byte	.LLST91
 	.uleb128 0x34
 	.4byte	0x1aa3
@@ -4769,7 +4770,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL193
-	.4byte	0x2738
+	.4byte	0x273f
 	.4byte	0x1808
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4780,7 +4781,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3d
 	.4byte	.LVL194
-	.4byte	0x2709
+	.4byte	0x2710
 	.uleb128 0x3f
 	.4byte	.LVL199
 	.uleb128 0x2
@@ -4842,7 +4843,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL204
-	.4byte	0x272c
+	.4byte	0x2733
 	.4byte	0x1875
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4858,7 +4859,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL206
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x188c
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4869,7 +4870,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL209
-	.4byte	0x24e2
+	.4byte	0x24e9
 	.4byte	0x18a0
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4880,7 +4881,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL212
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x18bf
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4898,7 +4899,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL215
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x18d6
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4909,7 +4910,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL216
-	.4byte	0x2714
+	.4byte	0x271b
 	.4byte	0x18f3
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4926,7 +4927,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL219
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x191a
 	.uleb128 0x38
 	.uleb128 0x1
@@ -4985,7 +4986,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL223
-	.4byte	0x2743
+	.4byte	0x274a
 	.4byte	0x195f
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5002,7 +5003,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL227
-	.4byte	0x2743
+	.4byte	0x274a
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -5224,8 +5225,8 @@ __func__.8780:
 	.byte	0x1
 	.2byte	0x1b3
 	.4byte	0xd7
-	.4byte	.LFB217
-	.4byte	.LFE217-.LFB217
+	.4byte	.LFB219
+	.4byte	.LFE219-.LFB219
 	.uleb128 0x1
 	.byte	0x9c
 	.4byte	0x1b94
@@ -5248,8 +5249,8 @@ __func__.8780:
 	.byte	0x1
 	.2byte	0x181
 	.4byte	0x153
-	.4byte	.LFB216
-	.4byte	.LFE216-.LFB216
+	.4byte	.LFB218
+	.4byte	.LFE218-.LFB218
 	.uleb128 0x1
 	.byte	0x9c
 	.4byte	0x1c83
@@ -5307,20 +5308,20 @@ __func__.8780:
 	.4byte	0x153
 	.4byte	.LLST53
 	.uleb128 0x36
-	.4byte	0x230c
+	.4byte	0x2313
 	.4byte	.LBB61
 	.4byte	.LBE61-.LBB61
 	.byte	0x1
 	.2byte	0x1a7
 	.4byte	0x1c67
 	.uleb128 0x31
-	.4byte	0x2332
+	.4byte	0x2339
 	.4byte	.LLST54
 	.uleb128 0x31
-	.4byte	0x2327
+	.4byte	0x232e
 	.4byte	.LLST55
 	.uleb128 0x31
-	.4byte	0x231c
+	.4byte	0x2323
 	.4byte	.LLST56
 	.byte	0
 	.uleb128 0x4b
@@ -5356,8 +5357,8 @@ __func__.8780:
 	.byte	0x1
 	.2byte	0x17c
 	.4byte	0x50
-	.4byte	.LFB215
-	.4byte	.LFE215-.LFB215
+	.4byte	.LFB217
+	.4byte	.LFE217-.LFB217
 	.uleb128 0x1
 	.byte	0x9c
 	.4byte	0x1cb4
@@ -5444,8 +5445,8 @@ __func__.8780:
 	.byte	0x1
 	.2byte	0x139
 	.4byte	0x50
-	.4byte	.LFB212
-	.4byte	.LFE212-.LFB212
+	.4byte	.LFB214
+	.4byte	.LFE214-.LFB214
 	.uleb128 0x1
 	.byte	0x9c
 	.4byte	0x1e78
@@ -5510,7 +5511,7 @@ __func__.8780:
 	.4byte	0x1e88
 	.uleb128 0x3c
 	.4byte	.LVL98
-	.4byte	0x238c
+	.4byte	0x2393
 	.4byte	0x1e37
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5576,7 +5577,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL102
-	.4byte	0x274e
+	.4byte	0x2755
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x51
@@ -5599,11 +5600,11 @@ __func__.8780:
 	.byte	0x1
 	.byte	0xa8
 	.4byte	0x50
-	.4byte	.LFB211
-	.4byte	.LFE211-.LFB211
+	.4byte	.LFB213
+	.4byte	.LFE213-.LFB213
 	.uleb128 0x1
 	.byte	0x9c
-	.4byte	0x230c
+	.4byte	0x2313
 	.uleb128 0x51
 	.4byte	.LASF327
 	.byte	0x1
@@ -5762,69 +5763,69 @@ __func__.8780:
 	.2byte	0x12f
 	.4byte	.LDL1
 	.uleb128 0x59
-	.4byte	0x233e
+	.4byte	0x2345
 	.4byte	.LBB35
 	.4byte	.Ldebug_ranges0+0
 	.byte	0x1
 	.byte	0xe8
 	.4byte	0x201b
 	.uleb128 0x31
-	.4byte	0x2359
+	.4byte	0x2360
 	.4byte	.LLST26
 	.uleb128 0x31
-	.4byte	0x234e
+	.4byte	0x2355
 	.4byte	.LLST27
 	.byte	0
 	.uleb128 0x5a
-	.4byte	0x230c
+	.4byte	0x2313
 	.4byte	.LBB40
 	.4byte	.LBE40-.LBB40
 	.byte	0x1
 	.byte	0xe9
 	.4byte	0x204a
 	.uleb128 0x31
-	.4byte	0x2332
+	.4byte	0x2339
 	.4byte	.LLST28
 	.uleb128 0x31
-	.4byte	0x2327
+	.4byte	0x232e
 	.4byte	.LLST29
 	.uleb128 0x31
-	.4byte	0x231c
+	.4byte	0x2323
 	.4byte	.LLST30
 	.byte	0
 	.uleb128 0x59
-	.4byte	0x2365
+	.4byte	0x236c
 	.4byte	.LBB42
 	.4byte	.Ldebug_ranges0+0x20
 	.byte	0x1
 	.byte	0xf2
 	.4byte	0x2070
 	.uleb128 0x31
-	.4byte	0x2380
+	.4byte	0x2387
 	.4byte	.LLST31
 	.uleb128 0x31
-	.4byte	0x2375
+	.4byte	0x237c
 	.4byte	.LLST32
 	.byte	0
 	.uleb128 0x30
-	.4byte	0x2518
+	.4byte	0x251f
 	.4byte	.LBB45
 	.4byte	.Ldebug_ranges0+0x38
 	.byte	0x1
 	.2byte	0x10b
 	.4byte	0x20bb
 	.uleb128 0x31
-	.4byte	0x2541
+	.4byte	0x2548
 	.4byte	.LLST33
 	.uleb128 0x31
-	.4byte	0x2535
+	.4byte	0x253c
 	.4byte	.LLST34
 	.uleb128 0x31
-	.4byte	0x2529
+	.4byte	0x2530
 	.4byte	.LLST35
 	.uleb128 0x37
 	.4byte	.LVL68
-	.4byte	0x2759
+	.4byte	0x2760
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -5845,28 +5846,28 @@ __func__.8780:
 	.byte	0
 	.byte	0
 	.uleb128 0x36
-	.4byte	0x2518
+	.4byte	0x251f
 	.4byte	.LBB53
 	.4byte	.LBE53-.LBB53
 	.byte	0x1
 	.2byte	0x110
 	.4byte	0x20f4
 	.uleb128 0x31
-	.4byte	0x2541
+	.4byte	0x2548
 	.4byte	.LLST36
 	.uleb128 0x31
-	.4byte	0x2535
+	.4byte	0x253c
 	.4byte	.LLST37
 	.uleb128 0x31
-	.4byte	0x2529
+	.4byte	0x2530
 	.4byte	.LLST38
 	.uleb128 0x3d
 	.4byte	.LVL85
-	.4byte	0x2759
+	.4byte	0x2760
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL45
-	.4byte	0x2765
+	.4byte	0x276c
 	.4byte	0x2114
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5889,7 +5890,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL46
-	.4byte	0x2771
+	.4byte	0x2778
 	.4byte	0x2134
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5912,7 +5913,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL47
-	.4byte	0x277d
+	.4byte	0x2784
 	.4byte	0x2154
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5935,7 +5936,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL48
-	.4byte	0x2789
+	.4byte	0x2790
 	.4byte	0x2174
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5958,7 +5959,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL49
-	.4byte	0x2795
+	.4byte	0x279c
 	.4byte	0x2194
 	.uleb128 0x38
 	.uleb128 0x1
@@ -5981,7 +5982,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL51
-	.4byte	0x27a1
+	.4byte	0x27a8
 	.4byte	0x21b4
 	.uleb128 0x38
 	.uleb128 0x1
@@ -6004,7 +6005,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL54
-	.4byte	0x27ad
+	.4byte	0x27b4
 	.4byte	0x21c8
 	.uleb128 0x38
 	.uleb128 0x1
@@ -6038,7 +6039,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL70
-	.4byte	0x26f2
+	.4byte	0x26f9
 	.4byte	0x220e
 	.uleb128 0x38
 	.uleb128 0x1
@@ -6066,7 +6067,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL71
-	.4byte	0x2709
+	.4byte	0x2710
 	.4byte	0x2231
 	.uleb128 0x38
 	.uleb128 0x1
@@ -6089,7 +6090,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL72
-	.4byte	0x27b9
+	.4byte	0x27c0
 	.4byte	0x224b
 	.uleb128 0x38
 	.uleb128 0x1
@@ -6106,8 +6107,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL73
-	.4byte	0x27c5
-	.4byte	0x2278
+	.4byte	0x27cc
+	.4byte	0x227f
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6139,11 +6140,18 @@ __func__.8780:
 	.uleb128 0x2
 	.byte	0x91
 	.sleb128 -56
+	.uleb128 0x38
+	.uleb128 0x2
+	.byte	0x7d
+	.sleb128 4
+	.uleb128 0x2
+	.byte	0x7a
+	.sleb128 0
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL74
-	.4byte	0x27d1
-	.4byte	0x228f
+	.4byte	0x27d8
+	.4byte	0x2296
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6153,11 +6161,11 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3d
 	.4byte	.LVL75
-	.4byte	0x27dc
+	.4byte	0x27e3
 	.uleb128 0x3c
 	.4byte	.LVL76
-	.4byte	0x27e8
-	.4byte	0x22bb
+	.4byte	0x27ef
+	.4byte	0x22c2
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6179,8 +6187,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL86
-	.4byte	0x2709
-	.4byte	0x22d2
+	.4byte	0x2710
+	.4byte	0x22d9
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6190,8 +6198,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL90
-	.4byte	0x27f4
-	.4byte	0x22f8
+	.4byte	0x27fb
+	.4byte	0x22ff
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6219,7 +6227,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL91
-	.4byte	0x27d1
+	.4byte	0x27d8
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6234,7 +6242,7 @@ __func__.8780:
 	.byte	0x8c
 	.4byte	0x50
 	.byte	0x1
-	.4byte	0x233e
+	.4byte	0x2345
 	.uleb128 0x5d
 	.4byte	.LASF327
 	.byte	0x1
@@ -6257,7 +6265,7 @@ __func__.8780:
 	.byte	0x7e
 	.4byte	0x50
 	.byte	0x1
-	.4byte	0x2365
+	.4byte	0x236c
 	.uleb128 0x5d
 	.4byte	.LASF327
 	.byte	0x1
@@ -6275,7 +6283,7 @@ __func__.8780:
 	.byte	0x71
 	.4byte	0x50
 	.byte	0x1
-	.4byte	0x238c
+	.4byte	0x2393
 	.uleb128 0x5d
 	.4byte	.LASF327
 	.byte	0x1
@@ -6292,11 +6300,11 @@ __func__.8780:
 	.byte	0x1
 	.byte	0x5b
 	.4byte	0x50
-	.4byte	.LFB207
-	.4byte	.LFE207-.LFB207
+	.4byte	.LFB209
+	.4byte	.LFE209-.LFB209
 	.uleb128 0x1
 	.byte	0x9c
-	.4byte	0x2454
+	.4byte	0x245b
 	.uleb128 0x52
 	.ascii	"fit\000"
 	.byte	0x1
@@ -6343,8 +6351,8 @@ __func__.8780:
 	.4byte	.LLST14
 	.uleb128 0x3c
 	.4byte	.LVL34
-	.4byte	0x258c
-	.4byte	0x243d
+	.4byte	0x2593
+	.4byte	0x2444
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6372,14 +6380,14 @@ __func__.8780:
 	.byte	0x91
 	.sleb128 -20
 	.uleb128 0x60
-	.4byte	0x246f
+	.4byte	0x2476
 	.uleb128 0x2
 	.byte	0x75
 	.sleb128 0
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL36
-	.4byte	0x2800
+	.4byte	0x2807
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6400,7 +6408,7 @@ __func__.8780:
 	.byte	0x25
 	.4byte	0x50
 	.byte	0x1
-	.4byte	0x24dc
+	.4byte	0x24e3
 	.uleb128 0x61
 	.ascii	"fit\000"
 	.byte	0x1
@@ -6425,7 +6433,7 @@ __func__.8780:
 	.4byte	.LASF372
 	.byte	0x1
 	.byte	0x27
-	.4byte	0x24dc
+	.4byte	0x24e3
 	.uleb128 0x55
 	.4byte	.LASF74
 	.byte	0x1
@@ -6465,11 +6473,11 @@ __func__.8780:
 	.byte	0x1
 	.byte	0x14
 	.4byte	0x50
-	.4byte	.LFB205
-	.4byte	.LFE205-.LFB205
+	.4byte	.LFB207
+	.4byte	.LFE207-.LFB207
 	.uleb128 0x1
 	.byte	0x9c
-	.4byte	0x2518
+	.4byte	0x251f
 	.uleb128 0x52
 	.ascii	"fit\000"
 	.byte	0x1
@@ -6490,7 +6498,7 @@ __func__.8780:
 	.2byte	0x3ea
 	.4byte	0xd7
 	.byte	0x3
-	.4byte	0x254e
+	.4byte	0x2555
 	.uleb128 0x42
 	.4byte	.LASF376
 	.byte	0x2
@@ -6513,12 +6521,12 @@ __func__.8780:
 	.2byte	0x2e0
 	.4byte	0x13d
 	.byte	0x3
-	.4byte	0x256c
+	.4byte	0x2573
 	.uleb128 0x4c
 	.ascii	"hdr\000"
 	.byte	0x2
 	.2byte	0x2e0
-	.4byte	0x256c
+	.4byte	0x2573
 	.byte	0
 	.uleb128 0x8
 	.byte	0x4
@@ -6529,7 +6537,7 @@ __func__.8780:
 	.byte	0x70
 	.4byte	0x70
 	.byte	0x3
-	.4byte	0x258c
+	.4byte	0x2593
 	.uleb128 0x61
 	.ascii	"x\000"
 	.byte	0x1a
@@ -6537,54 +6545,54 @@ __func__.8780:
 	.4byte	0x70
 	.byte	0
 	.uleb128 0x65
-	.4byte	0x2454
-	.4byte	.LFB221
-	.4byte	.LFE221-.LFB221
+	.4byte	0x245b
+	.4byte	.LFB223
+	.4byte	.LFE223-.LFB223
 	.uleb128 0x1
 	.byte	0x9c
-	.4byte	0x26d3
+	.4byte	0x26da
 	.uleb128 0x31
-	.4byte	0x2464
+	.4byte	0x246b
 	.4byte	.LLST0
 	.uleb128 0x31
-	.4byte	0x247a
+	.4byte	0x2481
 	.4byte	.LLST1
 	.uleb128 0x31
-	.4byte	0x2485
+	.4byte	0x248c
 	.4byte	.LLST2
 	.uleb128 0x31
-	.4byte	0x2490
+	.4byte	0x2497
 	.4byte	.LLST3
 	.uleb128 0x66
-	.4byte	0x246f
+	.4byte	0x2476
 	.uleb128 0x6
 	.byte	0xfa
-	.4byte	0x246f
+	.4byte	0x2476
 	.byte	0x9f
 	.uleb128 0x34
-	.4byte	0x249b
+	.4byte	0x24a2
 	.4byte	.LLST4
 	.uleb128 0x34
-	.4byte	0x24a6
+	.4byte	0x24ad
 	.4byte	.LLST5
 	.uleb128 0x34
-	.4byte	0x24b1
+	.4byte	0x24b8
 	.4byte	.LLST6
 	.uleb128 0x34
-	.4byte	0x24bc
+	.4byte	0x24c3
 	.4byte	.LLST7
 	.uleb128 0x33
-	.4byte	0x24c7
+	.4byte	0x24ce
 	.uleb128 0x2
 	.byte	0x91
 	.sleb128 -28
 	.uleb128 0x34
-	.4byte	0x24d2
+	.4byte	0x24d9
 	.4byte	.LLST8
 	.uleb128 0x3c
 	.4byte	.LVL1
-	.4byte	0x280c
-	.4byte	0x2618
+	.4byte	0x2813
+	.4byte	0x261f
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6594,8 +6602,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL5
-	.4byte	0x2709
-	.4byte	0x262f
+	.4byte	0x2710
+	.4byte	0x2636
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6605,8 +6613,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL6
-	.4byte	0x2818
-	.4byte	0x2649
+	.4byte	0x281f
+	.4byte	0x2650
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6622,8 +6630,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL11
-	.4byte	0x26f2
-	.4byte	0x266f
+	.4byte	0x26f9
+	.4byte	0x2676
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6651,8 +6659,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL13
-	.4byte	0x2709
-	.4byte	0x2683
+	.4byte	0x2710
+	.4byte	0x268a
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6662,8 +6670,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL14
-	.4byte	0x2823
-	.4byte	0x269d
+	.4byte	0x282a
+	.4byte	0x26a4
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6679,8 +6687,8 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x3c
 	.4byte	.LVL18
-	.4byte	0x26f2
-	.4byte	0x26c3
+	.4byte	0x26f9
+	.4byte	0x26ca
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x50
@@ -6708,7 +6716,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0x37
 	.4byte	.LVL23
-	.4byte	0x282e
+	.4byte	0x2835
 	.uleb128 0x38
 	.uleb128 0x1
 	.byte	0x51
@@ -6718,7 +6726,7 @@ __func__.8780:
 	.byte	0
 	.uleb128 0xc
 	.4byte	0xdd
-	.4byte	0x26e6
+	.4byte	0x26ed
 	.uleb128 0x67
 	.4byte	0xcb
 	.4byte	0x197a
@@ -6737,7 +6745,7 @@ __func__.8780:
 	.4byte	.LASF381
 	.4byte	.LASF381
 	.byte	0x1c
-	.byte	0x98
+	.byte	0xaa
 	.uleb128 0x69
 	.4byte	.LASF382
 	.4byte	.LASF382
@@ -6762,7 +6770,7 @@ __func__.8780:
 	.4byte	.LASF386
 	.4byte	.LASF386
 	.byte	0xc
-	.byte	0xbd
+	.byte	0xc0
 	.uleb128 0x69
 	.4byte	.LASF387
 	.4byte	.LASF387
@@ -6772,7 +6780,7 @@ __func__.8780:
 	.4byte	.LASF388
 	.4byte	.LASF388
 	.byte	0x1c
-	.byte	0xce
+	.byte	0xe0
 	.uleb128 0x68
 	.4byte	.LASF389
 	.4byte	.LASF389
@@ -6822,7 +6830,7 @@ __func__.8780:
 	.4byte	.LASF398
 	.4byte	.LASF398
 	.byte	0x2
-	.2byte	0x596
+	.2byte	0x598
 	.uleb128 0x69
 	.4byte	.LASF399
 	.4byte	.LASF399
@@ -6837,7 +6845,7 @@ __func__.8780:
 	.4byte	.LASF401
 	.4byte	.LASF401
 	.byte	0x2
-	.2byte	0x59d
+	.2byte	0x59f
 	.uleb128 0x68
 	.4byte	.LASF402
 	.4byte	.LASF402
@@ -6852,7 +6860,7 @@ __func__.8780:
 	.4byte	.LASF404
 	.4byte	.LASF404
 	.byte	0x2
-	.2byte	0x5ab
+	.2byte	0x5ad
 	.uleb128 0x69
 	.4byte	.LASF405
 	.4byte	.LASF405
@@ -8287,7 +8295,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL134
-	.4byte	.LFE220
+	.4byte	.LFE222
 	.2byte	0x1
 	.byte	0x54
 	.4byte	0
@@ -8298,7 +8306,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x51
 	.4byte	.LVL128
-	.4byte	.LFE220
+	.4byte	.LFE222
 	.2byte	0x1
 	.byte	0x55
 	.4byte	0
@@ -8367,7 +8375,7 @@ __func__.8780:
 	.byte	0x77
 	.sleb128 84
 	.4byte	.LVL230
-	.4byte	.LFE220
+	.4byte	.LFE222
 	.2byte	0x3
 	.byte	0x7d
 	.sleb128 100
@@ -8394,7 +8402,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x52
 	.4byte	.LVL135-1
-	.4byte	.LFE220
+	.4byte	.LFE222
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -8995,7 +9003,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL122
-	.4byte	.LFE217
+	.4byte	.LFE219
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9013,7 +9021,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x54
 	.4byte	.LVL116
-	.4byte	.LFE216
+	.4byte	.LFE218
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9031,7 +9039,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x55
 	.4byte	.LVL116
-	.4byte	.LFE216
+	.4byte	.LFE218
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9045,7 +9053,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x52
 	.4byte	.LVL105
-	.4byte	.LFE216
+	.4byte	.LFE218
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9059,7 +9067,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x53
 	.4byte	.LVL109
-	.4byte	.LFE216
+	.4byte	.LFE218
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9177,7 +9185,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL120
-	.4byte	.LFE215
+	.4byte	.LFE217
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9195,7 +9203,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x54
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9213,7 +9221,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x56
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9231,7 +9239,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x57
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9249,7 +9257,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x55
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9264,7 +9272,7 @@ __func__.8780:
 	.byte	0x91
 	.sleb128 0
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x2
 	.byte	0x7d
 	.sleb128 0
@@ -9277,7 +9285,7 @@ __func__.8780:
 	.byte	0x91
 	.sleb128 4
 	.4byte	.LVL103
-	.4byte	.LFE212
+	.4byte	.LFE214
 	.2byte	0x2
 	.byte	0x7d
 	.sleb128 4
@@ -9308,7 +9316,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL44
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x1
 	.byte	0x5a
 	.4byte	0
@@ -9319,7 +9327,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x51
 	.4byte	.LVL42
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x3
 	.byte	0x91
 	.sleb128 -76
@@ -9347,7 +9355,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL85-1
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x1
 	.byte	0x55
 	.4byte	0
@@ -9391,7 +9399,7 @@ __func__.8780:
 	.byte	0x53
 	.byte	0x9f
 	.4byte	.LVL89
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x1
 	.byte	0x57
 	.4byte	0
@@ -9403,7 +9411,7 @@ __func__.8780:
 	.byte	0x91
 	.sleb128 0
 	.4byte	.LVL78
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x2
 	.byte	0x91
 	.sleb128 0
@@ -9416,7 +9424,7 @@ __func__.8780:
 	.byte	0x91
 	.sleb128 4
 	.4byte	.LVL78
-	.4byte	.LFE211
+	.4byte	.LFE213
 	.2byte	0x2
 	.byte	0x91
 	.sleb128 4
@@ -9666,7 +9674,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL34-1
-	.4byte	.LFE207
+	.4byte	.LFE209
 	.2byte	0x1
 	.byte	0x54
 	.4byte	0
@@ -9677,7 +9685,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x51
 	.4byte	.LVL31
-	.4byte	.LFE207
+	.4byte	.LFE209
 	.2byte	0x1
 	.byte	0x55
 	.4byte	0
@@ -9692,7 +9700,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x51
 	.4byte	.LVL34-1
-	.4byte	.LFE207
+	.4byte	.LFE209
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9710,7 +9718,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x52
 	.4byte	.LVL34-1
-	.4byte	.LFE207
+	.4byte	.LFE209
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9738,7 +9746,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL118
-	.4byte	.LFE205
+	.4byte	.LFE207
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9767,7 +9775,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x55
 	.4byte	.LVL19
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
@@ -9792,7 +9800,7 @@ __func__.8780:
 	.byte	0x51
 	.byte	0x9f
 	.4byte	.LVL16
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x1
 	.byte	0x58
 	.4byte	0
@@ -9814,7 +9822,7 @@ __func__.8780:
 	.byte	0x52
 	.byte	0x9f
 	.4byte	.LVL16
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x1
 	.byte	0x57
 	.4byte	0
@@ -9836,7 +9844,7 @@ __func__.8780:
 	.byte	0x53
 	.byte	0x9f
 	.4byte	.LVL16
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x1
 	.byte	0x56
 	.4byte	0
@@ -9863,7 +9871,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL28
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x1
 	.byte	0x55
 	.4byte	0
@@ -9884,7 +9892,7 @@ __func__.8780:
 	.2byte	0x1
 	.byte	0x50
 	.4byte	.LVL28
-	.4byte	.LFE221
+	.4byte	.LFE223
 	.2byte	0x1
 	.byte	0x50
 	.4byte	0
@@ -9958,24 +9966,24 @@ __func__.8780:
 	.byte	0
 	.2byte	0
 	.2byte	0
-	.4byte	.LFB221
-	.4byte	.LFE221-.LFB221
+	.4byte	.LFB223
+	.4byte	.LFE223-.LFB223
+	.4byte	.LFB209
+	.4byte	.LFE209-.LFB209
+	.4byte	.LFB213
+	.4byte	.LFE213-.LFB213
+	.4byte	.LFB214
+	.4byte	.LFE214-.LFB214
+	.4byte	.LFB218
+	.4byte	.LFE218-.LFB218
 	.4byte	.LFB207
 	.4byte	.LFE207-.LFB207
-	.4byte	.LFB211
-	.4byte	.LFE211-.LFB211
-	.4byte	.LFB212
-	.4byte	.LFE212-.LFB212
-	.4byte	.LFB216
-	.4byte	.LFE216-.LFB216
-	.4byte	.LFB205
-	.4byte	.LFE205-.LFB205
-	.4byte	.LFB215
-	.4byte	.LFE215-.LFB215
 	.4byte	.LFB217
 	.4byte	.LFE217-.LFB217
-	.4byte	.LFB220
-	.4byte	.LFE220-.LFB220
+	.4byte	.LFB219
+	.4byte	.LFE219-.LFB219
+	.4byte	.LFB222
+	.4byte	.LFE222-.LFB222
 	.4byte	0
 	.4byte	0
 	.section	.debug_ranges,"",%progbits
@@ -10018,24 +10026,24 @@ __func__.8780:
 	.4byte	.LBE99
 	.4byte	0
 	.4byte	0
-	.4byte	.LFB221
-	.4byte	.LFE221
+	.4byte	.LFB223
+	.4byte	.LFE223
+	.4byte	.LFB209
+	.4byte	.LFE209
+	.4byte	.LFB213
+	.4byte	.LFE213
+	.4byte	.LFB214
+	.4byte	.LFE214
+	.4byte	.LFB218
+	.4byte	.LFE218
 	.4byte	.LFB207
 	.4byte	.LFE207
-	.4byte	.LFB211
-	.4byte	.LFE211
-	.4byte	.LFB212
-	.4byte	.LFE212
-	.4byte	.LFB216
-	.4byte	.LFE216
-	.4byte	.LFB205
-	.4byte	.LFE205
-	.4byte	.LFB215
-	.4byte	.LFE215
 	.4byte	.LFB217
 	.4byte	.LFE217
-	.4byte	.LFB220
-	.4byte	.LFE220
+	.4byte	.LFB219
+	.4byte	.LFE219
+	.4byte	.LFB222
+	.4byte	.LFE222
 	.4byte	0
 	.4byte	0
 	.section	.debug_line,"",%progbits
@@ -10075,8 +10083,6 @@ __func__.8780:
 	.ascii	"__func__\000"
 .LASF37:
 	.ascii	"IF_TYPE_DOC\000"
-.LASF410:
-	.ascii	"/home/zzz/u-boot\000"
 .LASF59:
 	.ascii	"part_type\000"
 .LASF112:
@@ -10173,6 +10179,8 @@ __func__.8780:
 	.ascii	"image_get_magic\000"
 .LASF378:
 	.ascii	"__fswab32\000"
+.LASF410:
+	.ascii	"/home/zzz/code/u-boot\000"
 .LASF302:
 	.ascii	"net_boot_file_size\000"
 .LASF362:
