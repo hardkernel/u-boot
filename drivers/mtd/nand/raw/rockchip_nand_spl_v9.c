@@ -368,7 +368,8 @@ static int rockchip_nandc_probe(struct udevice *dev)
 			nand_page_num = 128;
 			nand_block_num = 4096;
 		} else if (id[1] == 0xD3) {
-			if (id[2] == 0xD1 && id[4] == 0x5a) { /* S34ML08G2 */
+			if ((id[2] == 0xD1 && id[4] == 0x5a) || /* S34ML08G2 */
+			    (id[3] == 0x05 && id[4] == 0x04)) { /* S34ML08G3 */
 				nand_block_num = 8192;
 			} else {
 				nand_page_size = 4096;
