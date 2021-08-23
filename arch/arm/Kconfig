@@ -1143,7 +1143,6 @@ config ARCH_ROCKCHIP
 	select SYS_THUMB_BUILD if !ARM64
 	select SPL_SYS_MALLOC_SIMPLE if SPL
 	select DM_GPIO
-	select DM_MMC
 	select DM_SERIAL
 	select DM_SPI
 	select DM_SPI_FLASH
@@ -1154,6 +1153,7 @@ config ARCH_ROCKCHIP
 	select SPI
 	select DEBUG_UART_BOARD_INIT
 	select PANIC_HANG
+	imply DM_MMC
 	imply DM_I2C
 	imply DM_PWM
 	imply DM_REGULATOR
