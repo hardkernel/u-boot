@@ -239,10 +239,10 @@ static int rockchip_decom_ofdata_to_platdata(struct udevice *dev)
 
 static int rockchip_decom_probe(struct udevice *dev)
 {
-#if CONFIG_IS_ENABLED(DM_RESET)
 	struct rockchip_decom_priv *priv = dev_get_priv(dev);
 	int ret;
 
+#if CONFIG_IS_ENABLED(DM_RESET)
 	ret = reset_get_by_name(dev, "dresetn", &priv->rst);
 	if (ret) {
 		debug("reset_get_by_name() failed: %d\n", ret);
