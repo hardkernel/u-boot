@@ -792,6 +792,7 @@ int vendor_storage_test(void)
 		size = total_size / item_num;
 		break;
 	default:
+		item_num = 0;
 		total_size = 0;
 		break;
 	}
