@@ -180,6 +180,10 @@ struct tag {
 	} u;
 } __aligned(4);
 
+#define tag_next(t)	((struct tag *)((u32 *)(t) + (t)->hdr.size))
+#define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
+#define for_each_tag(t, base)		\
+	for (t = base; t->hdr.size; t = tag_next(t))
 /*
  * Destroy atags
  *
@@ -215,6 +219,20 @@ struct tag *atags_get_tag(u32 magic);
  * return: 0 is not available, otherwise available.
  */
 int atags_is_available(void);
+
+/*
+ * atags_overflow - check if atags is overflow
+ *
+ * return: 0 if not overflow, otherwise overflow.
+ */
+int atags_overflow(struct tag *t);
+
+/*
+ * atags_bad_magic - check if atags magic is invalid.
+ *
+ * return: 1 if invalid, otherwise valid.
+ */
+int atags_bad_magic(u32 magic);
 
 #ifdef CONFIG_SPL_BUILD
 /*
@@ -264,18 +282,6 @@ int atags_set_bootdev_by_spl_bootdevice(int bootdevice);
  */
 int atags_set_pub_key(void *data, int len, int flag);
 #endif
-
-/* Print only one tag */
-void atags_print_tag(struct tag *t);
-
-/* Print all tags */
-void atags_print_all_tags(void);
-
-/* An atags example test */
-void atags_test(void);
-
-/* Atags stat */
-void atags_stat(void);
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
