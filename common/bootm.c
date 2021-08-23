@@ -265,7 +265,9 @@ int bootm_find_images(int flag, int argc, char * const argv[])
 		puts("Could not find a valid device tree\n");
 		return 1;
 	}
+#ifdef CONFIG_CMD_FDT
 	set_working_fdt_addr((ulong)images.ft_addr);
+#endif
 	lmb_reserve(&images.lmb, (ulong)images.ft_addr, (ulong)images.ft_len);
 #endif
 
