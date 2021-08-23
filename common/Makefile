@@ -158,7 +158,7 @@ obj-y += command.o
 obj-$(CONFIG_$(SPL_)LOG) += log.o
 obj-$(CONFIG_$(SPL_)LOG_CONSOLE) += log_console.o
 obj-y += s_record.o
-obj-y += xyzModem.o
+obj-$(CONFIG_CMD_LOADB) += xyzModem.o
 
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_IO_TRACE) += iotrace.o
