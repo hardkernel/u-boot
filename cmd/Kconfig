@@ -1637,6 +1637,12 @@ endmenu
 
 menu "Debug commands"
 
+config CMD_ATAGS
+	bool "atags - Dump all rockchip atags"
+	default y
+	help
+	  This command dump all rockchip atags.
+
 config CMD_BEDBUG
 	bool "bedbug"
 	help
