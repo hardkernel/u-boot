@@ -674,7 +674,7 @@ config ROCKCHIP_USB_BOOT
 
 config ROCKCHIP_FIT_IMAGE
 	bool "Enable support for FIT image"
-	depends on FIT && USING_KERNEL_DTB
+	depends on FIT
 	select CMD_BOOT_FIT
 	default n
 	help
