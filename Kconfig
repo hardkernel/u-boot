@@ -191,7 +191,7 @@ if FIT
 
 config FIT_ENABLE_SHA256_SUPPORT
 	bool "Support SHA256 checksum of FIT image contents"
-	select SHA256
+	select SHA256 if !DM_CRYPTO
 	default y
 	help
 	  Enable this to support SHA256 checksum of FIT image contents. A
