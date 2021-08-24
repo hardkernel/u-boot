@@ -13,11 +13,10 @@ static int do_download(cmd_tbl_t *cmdtp, int flag,
 #ifdef CONFIG_CMD_ROCKUSB
 	run_command("rockusb 0 $devtype $devnum", 0);
 #endif
-#ifdef CONFIG_CMD_GO
 	printf("Enter rockusb failed, fallback to bootrom...\n");
 	flushc();
 	run_command("rbrom", 0);
-#endif
+
 	return 0;
 }
 
