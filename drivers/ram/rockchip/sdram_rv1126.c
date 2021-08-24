@@ -1601,10 +1601,7 @@ static int data_training_rg(struct dram_info *dram, u32 cs, u32 dramtype)
 	clrbits_le32(PHY_REG(phy_base, 2), 0x30);
 	pctl_rest_zqcs_aref(dram->pctl, dis_auto_zq);
 
-	if (ret & 0x20)
-		ret = -1;
-	else
-		ret = (ret & 0xf) ^ (readl(PHY_REG(phy_base, 0xf)) & 0xf);
+	ret = (ret & 0x2f) ^ (readl(PHY_REG(phy_base, 0xf)) & 0xf);
 
 	if (dramtype != LPDDR4 || dramtype != LPDDR4X) {
 		for (i = 0; i < 4; i++) {
@@ -2574,6 +2571,10 @@ static u64 dram_detect_cap(struct dram_info *dram,
 	u32 pwrctl;
 	u32 i, dq_map;
 	u32 byte1 = 0, byte0 = 0;
+	u32 tmp, byte;
+	struct sdram_head_info_index_v2 *index = (struct sdram_head_info_index_v2 *)common_info;
+	struct dq_map_info *map_info = (struct dq_map_info *)
+				       ((void *)common_info + index->dq_map_index.offset * 4);
 
 	cap_info->bw = dram_type == DDR3 ? 0 : 1;
 	if (dram_type != LPDDR4 && dram_type != LPDDR4X) {
@@ -2641,22 +2642,43 @@ static u64 dram_detect_cap(struct dram_info *dram,
 
 	setbits_le32(PHY_REG(phy_base, 0xf), 0xf);
 
-	if (data_training(dram, 0, sdram_params, 0, READ_GATE_TRAINING) == 0) {
+	tmp = data_training_rg(dram, 0, dram_type) & 0xf;
+
+	if (tmp == 0) {
 		cap_info->bw = 2;
 	} else {
-		dq_map = readl(PHY_REG(phy_base, 0x4f));
-		for (i = 0; i < 4; i++) {
-			if (((dq_map >> (i * 2)) & 0x3) == 0)
-				byte0 = i;
-			if (((dq_map >> (i * 2)) & 0x3) == 1)
-				byte1 = i;
+		if (dram_type == DDR3 || dram_type == DDR4) {
+			dq_map = 0;
+			byte = 0;
+			for (i = 0; i < 4; i++) {
+				if ((tmp & BIT(i)) == 0) {
+					dq_map |= byte << (i * 2);
+					byte++;
+				}
+			}
+			cap_info->bw = byte / 2;
+			for (i = 0; i < 4; i++) {
+				if ((tmp & BIT(i)) != 0) {
+					dq_map |= byte << (i * 2);
+					byte++;
+				}
+			}
+			clrsetbits_le32(&map_info->byte_map[0], 0xff << 24, dq_map << 24);
+		} else {
+			dq_map = readl(PHY_REG(phy_base, 0x4f));
+			for (i = 0; i < 4; i++) {
+				if (((dq_map >> (i * 2)) & 0x3) == 0)
+					byte0 = i;
+				if (((dq_map >> (i * 2)) & 0x3) == 1)
+					byte1 = i;
+			}
+			clrsetbits_le32(PHY_REG(phy_base, 0xf), PHY_DQ_WIDTH_MASK,
+					BIT(byte0) | BIT(byte1));
+			if (data_training(dram, 0, sdram_params, 0, READ_GATE_TRAINING) == 0)
+				cap_info->bw = 1;
+			else
+				cap_info->bw = 0;
 		}
-		clrsetbits_le32(PHY_REG(phy_base, 0xf), PHY_DQ_WIDTH_MASK,
-				BIT(byte0) | BIT(byte1));
-		if (data_training(dram, 0, sdram_params, 0, READ_GATE_TRAINING) == 0)
-			cap_info->bw = 1;
-		else
-			cap_info->bw = 0;
 	}
 	if (cap_info->bw > 0)
 		cap_info->dbw = 1;
