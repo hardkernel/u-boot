@@ -141,7 +141,7 @@ static int rockchip_p3phy_configure(struct phy *phy, union phy_configure_opts *o
 {
 	struct rockchip_p3phy_priv *priv = dev_get_priv(phy->dev);
 
-	priv->pcie.is_bifurcation = opts->pcie.is_bifurcation;
+	priv->is_bifurcation = opts->pcie.is_bifurcation;
 
 	return 0;
 }
