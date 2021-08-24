@@ -58,6 +58,8 @@
 #include <efi_loader.h>
 #include <sysmem.h>
 #include <bidram.h>
+#include <boot_rkimg.h>
+#include <mtd_blk.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
