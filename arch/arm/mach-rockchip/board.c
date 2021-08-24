@@ -433,7 +433,7 @@ static void board_debug_init(void)
 		printf("Cmd interface: disabled\n");
 }
 
-#ifdef CONFIG_MTD_BLK
+#if defined(CONFIG_MTD_BLK) && defined(CONFIG_USING_KERNEL_DTB)
 static void board_mtd_blk_map_partitions(void)
 {
 	struct blk_desc *dev_desc;
