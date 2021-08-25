@@ -3,6 +3,13 @@ config ROCKCHIP_DMC
 	help
 	  This enable dram devfreq driver.
 
+config ROCKCHIP_DMC_FSP
+	bool "Rockchip initialize DMC FSP"
+	depends on DM_DMC && ROCKCHIP_SMCCC
+	help
+	  This enable support for Rockchip initialize frequency set point of dynamic memory
+	  interface.
+
 config ROCKCHIP_SDRAM_COMMON
 	bool "Enable rockchip sdram common driver"
 	depends on TPL_RAM || SPL_RAM
