@@ -32,8 +32,13 @@
 /* Special value used to verify platform parameters from BL2 to BL3-1 */
 #define RK_BL31_PLAT_PARAM_VAL		0x0f1e2d3c4b5a6978ULL
 
+#ifdef CONFIG_MTD_NAND_CORE
+#define RKFW_RETRY_SECTOR_SIZE		256
+#define RKFW_RETRY_SECTOR_TIMES		32
+#else
 #define RKFW_RETRY_SECTOR_SIZE		1024
 #define RKFW_RETRY_SECTOR_TIMES		8
+#endif
 
 struct s_fip_name_id {
 	const char *name;
