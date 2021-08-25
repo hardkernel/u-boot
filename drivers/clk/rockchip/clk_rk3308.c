@@ -883,7 +883,7 @@ static ulong rk3308_rtc32k_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 				    &m, &n);
 	val = m << CLK_RTC32K_FRAC_NUMERATOR_SHIFT | n;
 	writel(val, &cru->clksel_con[3]);
-	rk_clrsetreg(&cru->clkgate_con[2], CLK_RTC32K_SEL_MASK,
+	rk_clrsetreg(&cru->clksel_con[2], CLK_RTC32K_SEL_MASK,
 		     CLK_RTC32K_FRAC_DIV << CLK_RTC32K_SEL_SHIFT);
 
 	return rk3308_rtc32k_get_clk(priv, clk_id);
