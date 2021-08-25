@@ -1082,10 +1082,14 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		printf("Close optee client failed!\n");
 #endif
 
+#ifdef CONFIG_AMP
+	return android_bootloader_boot_kernel(load_address);
+#else
 	android_bootloader_boot_kernel(load_address);
 
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
 	return -1;
+#endif
 }
 
 int android_avb_boot_flow(unsigned long kernel_address)
