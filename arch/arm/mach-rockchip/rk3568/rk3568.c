@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <clk.h>
+#include <dm.h>
 #include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
@@ -1179,3 +1180,19 @@ int rk_board_fdt_fixup(const void *blob)
 
 	return 0;
 }
+
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_ROCKCHIP_DMC_FSP)
+int rk_board_init(void)
+{
+	struct udevice *dev;
+	u32 ret = 0;
+
+	ret = uclass_get_device_by_driver(UCLASS_DMC, DM_GET_DRIVER(dmc_fsp), &dev);
+	if (ret) {
+		printf("dmc_fsp failed, ret=%d\n", ret);
+		return 0;
+	}
+
+	return 0;
+}
+#endif
