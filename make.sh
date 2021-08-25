@@ -11,21 +11,9 @@ SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 CMD_ARGS=$1
 
 ########################################### User can modify #############################################
-# User's rkbin tool relative path
 RKBIN_TOOLS=../rkbin/tools
-
-# User's GCC toolchain and relative path
-ADDR2LINE_ARM32=arm-linux-gnueabihf-addr2line
-ADDR2LINE_ARM64=aarch64-linux-gnu-addr2line
-OBJ_ARM32=arm-linux-gnueabihf-objdump
-OBJ_ARM64=aarch64-linux-gnu-objdump
-NM_ARM32=arm-linux-gnueabihf-nm
-NM_ARM64=aarch64-linux-gnu-nm
-GCC_ARM32=arm-linux-gnueabihf-
-GCC_ARM64=aarch64-linux-gnu-
-TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin
-TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
-
+CROSS_COMPILE_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
+CROSS_COMPILE_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 ########################################### User not touch #############################################
 # Declare global INI file searching index name for every chip, update in select_chip_info()
 RKCHIP=
@@ -39,7 +27,7 @@ INI_LOADER=
 RKBIN=
 
 # Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
-TOOLCHAIN_GCC=
+TOOLCHAIN=
 TOOLCHAIN_NM=
 TOOLCHAIN_OBJDUMP=
 TOOLCHAIN_ADDR2LINE=
@@ -58,7 +46,7 @@ SCRIPT_TOS="${SRCTREE}/scripts/tos.sh"
 SCRIPT_SPL="${SRCTREE}/scripts/spl.sh"
 SCRIPT_UBOOT="${SRCTREE}/scripts/uboot.sh"
 SCRIPT_LOADER="${SRCTREE}/scripts/loader.sh"
-
+CC_FILE=".cc"
 REP_DIR="./rep"
 #########################################################################################################
 function help()
@@ -130,6 +118,17 @@ function process_args()
 			*help|--h|-h)
 				help
 				exit 0
+				;;
+			CROSS_COMPILE=*)  # set CROSS_COMPILE
+				ARG_COMPILE="y"
+				CROSS_COMPILE_ARM32=${1#*=}
+				CROSS_COMPILE_ARM64=${1#*=}
+				if [ ${CMD_ARGS} == $1 ]; then
+					shift 1
+					CMD_ARGS=$1
+				else
+					shift 1
+				fi
 				;;
 			# '': build with exist .config
 			# loader|trust|uboot: pack image
@@ -230,10 +229,12 @@ function process_args()
 						MAKE_CMD="make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config -j${JOB}"
 						echo "## ${MAKE_CMD}"
 						make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config ${OPTION}
+						rm -f ${CC_FILE}
 					else
 						MAKE_CMD="make ${ARG_BOARD}_defconfig -j${JOB}"
 						echo "## ${MAKE_CMD}"
 						make ${ARG_BOARD}_defconfig ${OPTION}
+						rm -f ${CC_FILE}
 					fi
 				fi
 				shift 1
@@ -251,28 +252,40 @@ function process_args()
 
 function select_toolchain()
 {
+	# If no outer CROSS_COMPILE, look for it from CC_FILE.
+	if [ "${ARG_COMPILE}" != "y" ]; then
+		if [ -f ${CC_FILE} ]; then
+			CROSS_COMPILE_ARM32=`cat ${CC_FILE}`
+			CROSS_COMPILE_ARM64=`cat ${CC_FILE}`
+		else
+			if grep -q '^CONFIG_ARM64=y' .config ; then
+				CROSS_COMPILE_ARM64=$(cd `dirname ${CROSS_COMPILE_ARM64}`; pwd)"/aarch64-linux-gnu-"
+			else
+				CROSS_COMPILE_ARM32=$(cd `dirname ${CROSS_COMPILE_ARM32}`; pwd)"/arm-linux-gnueabihf-"
+			fi
+		fi
+	fi
+
 	if grep -q '^CONFIG_ARM64=y' .config ; then
-		if [ -d ${TOOLCHAIN_ARM64} ]; then
-			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
-			TOOLCHAIN_NM=${absolute_path}/bin/${NM_ARM64}
-			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
-			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
-			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM64}
-		else
-			echo "ERROR: No toolchain: ${TOOLCHAIN_ARM64}"
-			exit 1
-		fi
+		TOOLCHAIN=${CROSS_COMPILE_ARM64}
+		TOOLCHAIN_NM=${CROSS_COMPILE_ARM64}nm
+		TOOLCHAIN_OBJDUMP=${CROSS_COMPILE_ARM64}objdump
+		TOOLCHAIN_ADDR2LINE=${CROSS_COMPILE_ARM64}addr2line
 	else
-		if [ -d ${TOOLCHAIN_ARM32} ]; then
-			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM32}`; pwd)
-			TOOLCHAIN_NM=${absolute_path}/bin/${NM_ARM32}
-			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
-			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
-			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM32}
-		else
-			echo "ERROR: No toolchain: ${TOOLCHAIN_ARM32}"
-			exit 1
-		fi
+		TOOLCHAIN=${CROSS_COMPILE_ARM32}
+		TOOLCHAIN_NM=${CROSS_COMPILE_ARM32}nm
+		TOOLCHAIN_OBJDUMP=${CROSS_COMPILE_ARM32}objdump
+		TOOLCHAIN_ADDR2LINE=${CROSS_COMPILE_ARM32}addr2line
+	fi
+
+	if ! which ${TOOLCHAIN}gcc ; then
+		echo "ERROR: No find ${TOOLCHAIN}gcc"
+		exit 1
+	fi
+
+	# save to CC_FILE
+	if [ "${ARG_COMPILE}" == "y" ]; then
+		echo "${TOOLCHAIN}" > ${CC_FILE}
 	fi
 }
 
@@ -424,7 +437,7 @@ function sub_commands()
 			exit 0
 			;;
 		env)
-			make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools
+			make CROSS_COMPILE=${TOOLCHAIN} envtools
 			exit 0
 			;;
 		--idblock)
@@ -713,7 +726,7 @@ select_ini_file
 handle_args_late
 sub_commands
 clean_files
-make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN_GCC} all --jobs=${JOB}
+make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN} all --jobs=${JOB}
 pack_images
 finish
 date
