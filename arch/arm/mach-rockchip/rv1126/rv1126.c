@@ -730,9 +730,10 @@ int arch_cpu_init(void)
   #endif
 
 #endif
-
+#if defined(CONFIG_ROCKCHIP_SFC)
 	/* GPIO0_D6 pull down in default, pull up it for SPI Flash */
 	writel(((0x3 << 12) << 16) | (0x1 << 12), GRF1_GPIO0D_P);
+#endif
 
 	return 0;
 }
