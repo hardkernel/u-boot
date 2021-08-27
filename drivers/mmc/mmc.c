@@ -2002,9 +2002,9 @@ static int mmc_startup(struct mmc *mmc)
 			return err;
 
 		if (mmc->card_caps & MMC_MODE_HS)
-			tran_speed = 50000000;
+			tran_speed = MMC_HIGH_52_MAX_DTR;
 		else
-			tran_speed = 25000000;
+			tran_speed = MMC_HIGH_26_MAX_DTR;
 
 		mmc_set_clock(mmc, tran_speed);
 	}
