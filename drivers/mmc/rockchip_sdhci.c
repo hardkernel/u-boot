@@ -50,9 +50,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DWCMSHC_CARD_IS_EMMC		BIT(0)
 #define DWCMSHC_ENHANCED_STROBE		BIT(8)
 
+#define DWCMSHC_VER_ID			0x500
+#define DWCMSHC_VER_TYPE		0x504
 #define DWCMSHC_HOST_CTRL3		0x508
 #define DWCMSHC_EMMC_CONTROL		0x52c
 #define DWCMSHC_EMMC_ATCTRL		0x540
+
 #define DWCMSHC_EMMC_DLL_CTRL		0x800
 #define DWCMSHC_EMMC_DLL_CTRL_RESET	BIT(1)
 #define DWCMSHC_EMMC_DLL_RXCLK		0x804
@@ -78,6 +81,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DLL_TXCLK_NO_INVERTER		BIT(29)
 #define DWCMSHC_EMMC_DLL_LOCKED		BIT(8)
 #define DWCMSHC_EMMC_DLL_TIMEOUT	BIT(9)
+#define DWCMSHC_EMMC_RST_N_OE		BIT(3)
+#define DWCMSHC_EMMC_RST_N		BIT(2)
 #define DLL_TAP_VALUE_SEL		BIT(25)
 #define DLL_TAP_VALUE_OFFSET		8
 #define DLL_RXCLK_NO_INVERTER		BIT(29)
@@ -476,6 +481,24 @@ static int dwcmshc_emmc_get_phy(struct udevice *dev)
 	return 0;
 }
 
+static int rk3568_emmc_hw_reset(struct udevice *dev)
+{
+	struct rockchip_sdhc *prv = dev_get_priv(dev);
+	struct sdhci_host *host = &prv->host;
+	u32 extra;
+
+	extra = sdhci_readl(host, DWCMSHC_EMMC_CONTROL);
+	extra |= DWCMSHC_EMMC_RST_N_OE;
+	extra &= ~DWCMSHC_EMMC_RST_N;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_CONTROL);
+	udelay(20);
+
+	extra |= DWCMSHC_EMMC_RST_N;
+	sdhci_writel(host, extra, DWCMSHC_EMMC_CONTROL);
+	udelay(300);
+	return 0;
+}
+
 static int rockchip_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 {
 	struct rockchip_sdhc *priv =
@@ -585,6 +608,9 @@ static int rockchip_sdhci_probe(struct udevice *dev)
 	host->mmc->priv = &prv->host;
 	host->mmc->dev = dev;
 	upriv->mmc = host->mmc;
+
+	if (dev_read_bool(dev, "cap-mmc-hw-reset"))
+		rk3568_emmc_hw_reset(dev);
 
 	return sdhci_probe(dev);
 }
