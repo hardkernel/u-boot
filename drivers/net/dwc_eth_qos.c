@@ -308,6 +308,7 @@ static void eqos_free_descs(void *descs)
 #endif
 }
 
+#ifdef CONFIG_QOS_FULL
 static void eqos_inval_desc_tegra186(void *desc)
 {
 #ifndef CONFIG_SYS_NONCACHED_MEMORY
@@ -318,6 +319,7 @@ static void eqos_inval_desc_tegra186(void *desc)
 	invalidate_dcache_range(start, end);
 #endif
 }
+#endif
 
 static void eqos_inval_desc_generic(void *desc)
 {
@@ -330,12 +332,14 @@ static void eqos_inval_desc_generic(void *desc)
 #endif
 }
 
+#ifdef CONFIG_QOS_FULL
 static void eqos_flush_desc_tegra186(void *desc)
 {
 #ifndef CONFIG_SYS_NONCACHED_MEMORY
 	flush_cache((unsigned long)desc, EQOS_DESCRIPTOR_SIZE);
 #endif
 }
+#endif
 
 static void eqos_flush_desc_generic(void *desc)
 {
@@ -348,6 +352,7 @@ static void eqos_flush_desc_generic(void *desc)
 #endif
 }
 
+#ifdef CONFIG_QOS_FULL
 static void eqos_inval_buffer_tegra186(void *buf, size_t size)
 {
 	unsigned long start = (unsigned long)buf & ~(ARCH_DMA_MINALIGN - 1);
@@ -355,6 +360,7 @@ static void eqos_inval_buffer_tegra186(void *buf, size_t size)
 
 	invalidate_dcache_range(start, end);
 }
+#endif
 
 static void eqos_inval_buffer_generic(void *buf, size_t size)
 {
@@ -365,10 +371,12 @@ static void eqos_inval_buffer_generic(void *buf, size_t size)
 	invalidate_dcache_range(start, end);
 }
 
+#ifdef CONFIG_QOS_FULL
 static void eqos_flush_buffer_tegra186(void *buf, size_t size)
 {
 	flush_cache((unsigned long)buf, size);
 }
+#endif
 
 static void eqos_flush_buffer_generic(void *buf, size_t size)
 {
@@ -471,6 +479,7 @@ static int eqos_mdio_write(struct mii_dev *bus, int mdio_addr, int mdio_devad,
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_start_clks_tegra186(struct udevice *dev)
 {
 #ifdef CONFIG_CLK
@@ -675,6 +684,7 @@ static int eqos_start_resets_tegra186(struct udevice *dev)
 	debug("%s: OK\n", __func__);
 	return 0;
 }
+#endif
 
 static int eqos_start_resets_stm32(struct udevice *dev)
 {
@@ -715,6 +725,7 @@ static int eqos_start_resets_stm32(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_start_resets_imx(struct udevice *dev)
 {
 	return 0;
@@ -729,6 +740,7 @@ static int eqos_stop_resets_tegra186(struct udevice *dev)
 
 	return 0;
 }
+#endif
 
 static int eqos_stop_resets_stm32(struct udevice *dev)
 {
@@ -747,6 +759,7 @@ static int eqos_stop_resets_stm32(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_stop_resets_imx(struct udevice *dev)
 {
 	return 0;
@@ -814,6 +827,7 @@ static ulong eqos_get_tick_clk_rate_tegra186(struct udevice *dev)
 	return 0;
 #endif
 }
+#endif
 
 static ulong eqos_get_tick_clk_rate_stm32(struct udevice *dev)
 {
@@ -826,6 +840,7 @@ static ulong eqos_get_tick_clk_rate_stm32(struct udevice *dev)
 #endif
 }
 
+#ifdef CONFIG_QOS_FULL
 __weak u32 imx_get_eqos_csr_clk(void)
 {
 	return 100 * 1000000;
@@ -839,26 +854,31 @@ static ulong eqos_get_tick_clk_rate_imx(struct udevice *dev)
 {
 	return imx_get_eqos_csr_clk();
 }
+#endif
 
 static int eqos_calibrate_pads_stm32(struct udevice *dev)
 {
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_calibrate_pads_imx(struct udevice *dev)
 {
 	return 0;
 }
+#endif
 
 static int eqos_disable_calibration_stm32(struct udevice *dev)
 {
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_disable_calibration_imx(struct udevice *dev)
 {
 	return 0;
 }
+#endif
 
 static int eqos_set_full_duplex(struct udevice *dev)
 {
@@ -922,6 +942,7 @@ static int eqos_set_mii_speed_10(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_set_tx_clk_speed_tegra186(struct udevice *dev)
 {
 #ifdef CONFIG_CLK
@@ -955,12 +976,14 @@ static int eqos_set_tx_clk_speed_tegra186(struct udevice *dev)
 
 	return 0;
 }
+#endif
 
 static int eqos_set_tx_clk_speed_stm32(struct udevice *dev)
 {
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_set_tx_clk_speed_imx(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
@@ -992,6 +1015,7 @@ static int eqos_set_tx_clk_speed_imx(struct udevice *dev)
 
 	return 0;
 }
+#endif
 
 static int eqos_adjust_link(struct udevice *dev)
 {
@@ -1100,6 +1124,7 @@ int eqos_write_hwaddr(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_read_rom_hwaddr(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_platdata(dev);
@@ -1109,6 +1134,7 @@ static int eqos_read_rom_hwaddr(struct udevice *dev)
 #endif
 	return !is_valid_ethaddr(pdata->enetaddr);
 }
+#endif
 
 int eqos_init(struct udevice *dev)
 {
@@ -1463,7 +1489,7 @@ void eqos_enable(struct udevice *dev)
 	eqos->started = true;
 }
 
-static int eqos_start(struct udevice *dev)
+static int __maybe_unused eqos_start(struct udevice *dev)
 {
 	int ret;
 
@@ -1716,6 +1742,7 @@ static int eqos_remove_resources_core(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_probe_resources_tegra186(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
@@ -1787,6 +1814,7 @@ err_free_reset_eqos:
 	debug("%s: returns %d\n", __func__, ret);
 	return ret;
 }
+#endif
 
 /* board-specific Ethernet Interface initializations. */
 __weak int board_interface_eth_init(struct udevice *dev,
@@ -1890,6 +1918,7 @@ static phy_interface_t eqos_get_interface_stm32(struct udevice *dev)
 	return interface;
 }
 
+#ifdef CONFIG_QOS_FULL
 static phy_interface_t eqos_get_interface_tegra186(struct udevice *dev)
 {
 	return PHY_INTERFACE_MODE_MII;
@@ -1947,6 +1976,7 @@ static int eqos_remove_resources_tegra186(struct udevice *dev)
 	debug("%s: OK\n", __func__);
 	return 0;
 }
+#endif
 
 static int eqos_remove_resources_stm32(struct udevice *dev)
 {
@@ -1971,10 +2001,12 @@ static int eqos_remove_resources_stm32(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static int eqos_remove_resources_imx(struct udevice *dev)
 {
 	return 0;
 }
+#endif
 
 int eqos_probe(struct udevice *dev)
 {
@@ -2048,7 +2080,7 @@ err_remove_resources_core:
 	return ret;
 }
 
-static int eqos_remove(struct udevice *dev)
+static int __maybe_unused eqos_remove(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
 
@@ -2064,6 +2096,7 @@ static int eqos_remove(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_QOS_FULL
 static const struct eth_ops eqos_ops = {
 	.start = eqos_start,
 	.stop = eqos_stop,
@@ -2154,6 +2187,7 @@ struct eqos_config eqos_imx_config = {
 	.config_mac_mdio = EQOS_MAC_MDIO_ADDRESS_CR_250_300,
 	.ops = &eqos_imx_ops
 };
+#endif
 
 struct eqos_ops eqos_rockchip_ops = {
 	.eqos_inval_desc = eqos_inval_desc_generic,
@@ -2171,6 +2205,7 @@ struct eqos_ops eqos_rockchip_ops = {
 	.eqos_get_interface = eqos_get_interface_stm32
 };
 
+#ifdef CONFIG_QOS_FULL
 static const struct udevice_id eqos_ids[] = {
 	{
 		.compatible = "nvidia,tegra186-eqos",
@@ -2198,3 +2233,4 @@ U_BOOT_DRIVER(eth_eqos) = {
 	.priv_auto_alloc_size = sizeof(struct eqos_priv),
 	.platdata_auto_alloc_size = sizeof(struct eth_pdata),
 };
+#endif

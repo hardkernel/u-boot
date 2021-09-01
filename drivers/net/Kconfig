@@ -101,6 +101,15 @@ config DWC_ETH_QOS
 	  supports the specific configuration used in NVIDIA's Tegra186 chip,
 	  but should be extensible to other combinations quite easily.
 
+config DWC_ETH_QOS_FULL
+	bool "Synopsys DWC Ethernet QOS full vendor support"
+	depends on DWC_ETH_QOS
+	default y
+	help
+	  Select this to supports the Synopsys Designware Ethernet QOS (Quality
+	  Of Service) IP block for all chips, default is Y, if select it N, only
+	  support rockchip's chips.
+
 config E1000
 	bool "Intel PRO/1000 Gigabit Ethernet support"
 	help
