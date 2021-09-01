@@ -7,7 +7,10 @@
 #include <amp.h>
 #include <bidram.h>
 #include <boot_rkimg.h>
+#include <config.h>
 #include <sysmem.h>
+#include <asm/gic.h>
+#include <asm/io.h>
 #include <asm/arch/rockchip_smccc.h>
 
 /*
@@ -37,6 +40,8 @@
  */
 
 #define AMP_PART	"amp"
+#define gicd_readl(offset)	readl((void *)GICD_BASE + (offset))
+#define gicd_writel(v, offset)	writel(v, (void *)GICD_BASE + (offset))
 
 typedef struct boot_args {
 	ulong arg0;
@@ -113,6 +118,19 @@ static int is_default_pe_state(u32 pe_state)
 #else
 	return (pe_state == PE_STATE(0, 0, 0, 0));
 #endif
+}
+
+static void setup_sync_bits_for_linux(void)
+{
+	u32 val, num_irq, offset;
+
+	val = gicd_readl(GICD_CTLR);
+	val &= ~0x3;
+	gicd_writel(val, GICD_CTLR);
+
+	num_irq = 32 * ((gicd_readl(GICD_TYPER) & 0x1F) + 1);
+	offset = ((num_irq - 1) / 4) * 4;
+	gicd_writel(0x0, GICD_IPRIORITYRn + offset);
 }
 
 static int smc_cpu_on(u32 cpu, u32 pe_state, u32 entry, boot_args_t *args)
@@ -212,6 +230,12 @@ static int brought_up_amp(void *fit, int noffset,
 				aarch64, load, &entry, &args);
 		if (ret)
 			return ret;
+		/*
+		 * Must setup before jump to linux.
+		 * This is an appointment on RK amp solution to handle
+		 * GIC configure competition.
+		 */
+		setup_sync_bits_for_linux();
 	} else {
 		if (!sysmem_alloc_base_by_name(desc,
 				(phys_addr_t)load, data_size))
