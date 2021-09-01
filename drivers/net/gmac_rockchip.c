@@ -1365,29 +1365,60 @@ const struct rk_gmac_ops rv1126_gmac_ops = {
 
 static const struct udevice_id rockchip_gmac_ids[] = {
 #ifndef CONFIG_DWC_ETH_QOS
+#ifdef CONFIG_ROCKCHIP_PX30
 	{ .compatible = "rockchip,px30-gmac",
 	  .data = (ulong)&px30_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK1808
 	{ .compatible = "rockchip,rk1808-gmac",
 	  .data = (ulong)&rk1808_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3228
 	{ .compatible = "rockchip,rk3228-gmac",
 	  .data = (ulong)&rk3228_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3288
 	{ .compatible = "rockchip,rk3288-gmac",
 	  .data = (ulong)&rk3288_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3308
 	{ .compatible = "rockchip,rk3308-mac",
 	  .data = (ulong)&rk3308_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3328
 	{ .compatible = "rockchip,rk3328-gmac",
 	  .data = (ulong)&rk3328_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3368
 	{ .compatible = "rockchip,rk3368-gmac",
 	  .data = (ulong)&rk3368_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3399
 	{ .compatible = "rockchip,rk3399-gmac",
 	  .data = (ulong)&rk3399_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RV1108
 	{ .compatible = "rockchip,rv1108-gmac",
 	  .data = (ulong)&rv1108_gmac_ops },
+#endif
 #else
+#ifdef CONFIG_ROCKCHIP_RK3568
 	{ .compatible = "rockchip,rk3568-gmac",
 	  .data = (ulong)&rk3568_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RV1126
 	{ .compatible = "rockchip,rv1126-gmac",
 	  .data = (ulong)&rv1126_gmac_ops },
+#endif
 #endif
 	{ }
 };
