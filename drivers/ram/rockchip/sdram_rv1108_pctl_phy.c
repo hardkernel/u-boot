@@ -59,20 +59,22 @@ static void phy_pctrl_reset(struct dram_info *priv)
 
 static void phy_dll_bypass_set(struct dram_info *priv, unsigned int freq)
 {
-	clrsetbits_le32(&priv->phy->phy_reg13, CMD_DLL_BYPASS_MASK,
+	clrsetbits_le32(&priv->phy->phy_reg13,
+			CMD_DLL_BYPASS_MASK << CMD_DLL_BYPASS_SHIFT,
 			CMD_DLL_BYPASS << CMD_DLL_BYPASS_SHIFT);
 
 	writel(CK_DLL_BYPASS_DISABLE << CK_DLL_BYPASS_SHIFT,
 	       &priv->phy->phy_reg14);
 
-	clrsetbits_le32(&priv->phy->phy_reg26, LEFT_CHN_A_DQ_DLL_BYPASS_MASK,
+	clrsetbits_le32(&priv->phy->phy_reg26,
+			LEFT_CHN_A_DQ_DLL_BYPASS_MASK << LEFT_CHN_A_DQ_DLL_SHIFT,
 			LEFT_CHN_A_DQ_DLL_BYPASS << LEFT_CHN_A_DQ_DLL_SHIFT);
-	writel(LEFT_CHN_A_DQS_DLL_BYPASS_DIS <<
-	       LEFT_CHN_A_DQS_DLL_SHIFT, &priv->phy->phy_reg27);
+	writel(LEFT_CHN_A_DQS_DLL_BYPASS_DIS << LEFT_CHN_A_DQS_DLL_SHIFT,
+	       &priv->phy->phy_reg27);
 
-	clrsetbits_le32(&priv->phy->phy_reg36, RIGHT_CHN_A_DQ_DLL_BYPASS_MASK,
-			RIGHT_CHN_A_DQ_DLL_BYPASS <<
-			RIGHT_CHN_A_DQ_DLL_SHIFT);
+	clrsetbits_le32(&priv->phy->phy_reg36,
+			RIGHT_CHN_A_DQ_DLL_BYPASS_MASK << RIGHT_CHN_A_DQ_DLL_SHIFT,
+			RIGHT_CHN_A_DQ_DLL_BYPASS << RIGHT_CHN_A_DQ_DLL_SHIFT);
 	writel(RIGHT_CHN_A_DQS_DLL_BYPASS_DIS <<
 	       RIGHT_CHN_A_DQS_DLL_SHIFT, &priv->phy->phy_reg37);
 
