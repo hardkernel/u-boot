@@ -95,4 +95,10 @@ config SPI_NAND_JSC
 	help
 	  Add support for various JSC SPI Nand flash chips
 
+config SPI_NAND_SILICONGO
+	default y
+	bool "SILICONGO SPI flash support"
+	help
+	  Add support for various SILICONGO SPI Nand flash chips
+
 endif
