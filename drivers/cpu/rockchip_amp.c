@@ -133,13 +133,15 @@ static void setup_sync_bits_for_linux(void)
 	gicd_writel(0x0, GICD_IPRIORITYRn + offset);
 }
 
-static int smc_cpu_on(u32 cpu, u32 pe_state, u32 entry, boot_args_t *args)
+static int smc_cpu_on(u32 cpu, u32 pe_state, u32 entry,
+		      boot_args_t *args, bool is_linux)
 {
 	int ret;
 
 	AMP_I("Brought up cpu[%x] with state 0x%x, entry 0x%08x ...",
 	      cpu, pe_state, entry);
 
+	/* if target pe state is default arch state, power up cpu directly */
 	if (is_default_pe_state(pe_state))
 		goto finish;
 
@@ -148,6 +150,10 @@ static int smc_cpu_on(u32 cpu, u32 pe_state, u32 entry, boot_args_t *args)
 		AMP_E("smc pe-state, ret=%d\n", ret);
 		return ret;
 	}
+
+	/* only linux needs boot args */
+	if (!is_linux)
+		goto finish;
 
 	ret = sip_smc_amp_cfg(AMP_BOOT_ARG01, cpu, args->arg0, args->arg1);
 	if (ret) {
@@ -243,7 +249,7 @@ static int brought_up_amp(void *fit, int noffset,
 	}
 
 	/* wakeup */
-	ret = smc_cpu_on(cpu, pe_state, entry, &args);
+	ret = smc_cpu_on(cpu, pe_state, entry, &args, is_linux);
 	if (ret)
 		return ret;
 
