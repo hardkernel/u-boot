@@ -190,6 +190,17 @@ int fdt_find_or_add_subnode(void *fdt, int parentoffset, const char *name);
  */
 int ft_board_setup(void *blob, bd_t *bd);
 
+/**
+ * board_fdt_chosen_bootargs() - Arbitrarily amend fdt kernel command line
+ *
+ * This is used for late modification of kernel command line arguments just
+ * before they are added into the /chosen node in flat device tree.
+ *
+ * @fdt: fdt blob
+ * @return: pointer to kernel command line arguments in memory
+ */
+char *board_fdt_chosen_bootargs(void *fdt);
+
 /*
  * The keystone2 SOC requires all 32 bit aliased addresses to be converted
  * to their 36 physical format. This has to happen after all fdt nodes
