@@ -539,6 +539,53 @@ int env_update(const char *varname, const char *varvalue)
 	return env_update_filter(varname, varvalue, NULL);
 }
 
+int env_update_extract_subset(const char *varname,
+			      const char *subset_varname,
+			      const char *subset_key)
+{
+	char *subset_varvalue;
+	char *tmp_varvalue;
+	char *new_varvalue;
+	char *varvalue;
+	char *p, *item;
+	int ret = 0;
+	u32 len;
+
+	varvalue = env_get(varname);
+	if (!varvalue)
+		return 0;
+
+	len = strlen(varvalue) + 1;
+	new_varvalue = calloc(1, len);
+	subset_varvalue = calloc(1, len);
+	tmp_varvalue = strdup(varvalue);
+	if (!new_varvalue || !tmp_varvalue || !subset_varvalue) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	item = strtok(tmp_varvalue, " ");
+	while (item) {
+		p = strstr(item, subset_key) ? subset_varvalue : new_varvalue;
+		strcat(p, item);
+		strcat(p, " ");
+		debug("%s: [item]: %s\n", __func__, item);
+		item = strtok(NULL, " ");
+	}
+
+	env_set(varname, new_varvalue);
+	env_set(subset_varname, subset_varvalue);
+out:
+	if (new_varvalue)
+		free(new_varvalue);
+	if (subset_varvalue)
+		free(subset_varvalue);
+	if (tmp_varvalue)
+		free(tmp_varvalue);
+
+	return ret;
+}
+
 char *env_exist(const char *varname, const char *varvalue)
 {
 	char *buf, *ptr = NULL;
