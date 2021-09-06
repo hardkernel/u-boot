@@ -597,15 +597,15 @@ retry_verify:
 		hdr = (void *)slot_data[0]->loaded_partitions->data;
 
 		/*
-		 *		populate boot_img_hdr_v3
+		 *		populate boot_img_hdr_v34
 		 *
 		 * If allow verification error: the image is loaded by
 		 * ops->get_preloaded_partition() which auto populates
-		 * boot_img_hdr_v3.
+		 * boot_img_hdr_v34.
 		 *
 		 * If not allow verification error: the image is full loaded
 		 * by ops->read_from_partition() which doesn't populate
-		 * boot_img_hdr_v3, we need to fix it here.
+		 * boot_img_hdr_v34, we need to fix it here.
 		 */
 		if (hdr->header_version >= 3 &&
 		    !(flags & AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR)) {
@@ -820,16 +820,19 @@ int android_fdt_overlay_apply(void *fdt_addr)
 #endif
 
 	/*
-	 * recovery_dtbo fields
+	 * Google requires a/b system mandory from Android Header v3 for
+	 * google authentication, that means there is not recovery.
 	 *
-	 * boot_img_hdr_v0: unsupported
-	 * boot_img_hdr_v1,2: supported
-	 * boot_img_hdr_v3 + boot.img: supported
-	 * boot_img_hdr_v3 + recovery.img: unsupported
+	 * But for the products that don't care about google authentication,
+	 * it's not mandory to use a/b system. So that we use the solution:
+	 * boot.img(v3+) with recovery(v2).
+	 *
+	 * [recovery_dtbo fields]
+	 *	recovery.img with boot_img_hdr_v1,2:  supported
+	 *	recovery.img with boot_img_hdr_v0,3+: illegal
 	 */
 	if ((hdr->header_version == 0) ||
-	    (hdr->header_version == 3 && !strcmp(part_boot, PART_RECOVERY)) ||
-	    (hdr->header_version > 3))
+	    (hdr->header_version >= 3 && !strcmp(part_boot, PART_RECOVERY)))
 		goto out;
 
 	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index, part_dtbo);
