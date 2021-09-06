@@ -139,6 +139,20 @@ config TPM
 
 endmenu
 
+menu "Boot Configuration"
+
+config XBC
+	bool "Boot Configuration support"
+	depends on ANDROID_BOOT_IMAGE
+	default n
+	help
+	  This enables support of Boot Configuration which can be used
+	  to pass boot configuration parameters to user space. These
+	  parameters will show up in /proc/bootconfig similar to the kernel
+	  parameters that show up in /proc/cmdline
+
+endmenu
+
 menu "Hashing Support"
 
 config SHA1

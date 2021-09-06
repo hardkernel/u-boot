@@ -48,6 +48,7 @@ obj-y += list_sort.o
 obj-$(CONFIG_OPTEE_CLIENT) += optee_clientApi/
 endif
 
+obj-$(CONFIG_XBC) += libxbc/
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB) += avb/libavb/
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB_ATX) += avb/libavb_atx/
 obj-$(CONFIG_$(SPL_TPL_)AVB_LIBAVB_USER) += avb/libavb_user/
