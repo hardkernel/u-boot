@@ -316,26 +316,26 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 {
 	struct blk_desc *desc = rockchip_get_bootdev();
 	disk_partition_t part_vendor_boot;
-	__maybe_unused u32 sizesz;
+	__maybe_unused u32 typesz;
 	ulong pgsz = hdr->page_size;
 	ulong blksz = desc->blksz;
 	ulong blkcnt, blkoff;
-	ulong orgdst = 0;
-	ulong offset = 0;
+	ulong memmove_dst = 0;
+	ulong bsoffs = 0;
 	ulong extra = 0;
-	ulong datasz;
-	void *ramdst;
+	ulong length;
+	void *buffer;
 	int ret = 0;
 
 	switch (img) {
 	case IMG_KERNEL:
-		offset = 0; /* include a page_size(image header) */
+		bsoffs = 0; /* include a page_size(image header) */
+		length = hdr->kernel_size + pgsz;
+		buffer = (void *)env_get_ulong("android_addr_r", 16, 0);
 		blkcnt = DIV_ROUND_UP(hdr->kernel_size + pgsz, blksz);
-		ramdst = (void *)env_get_ulong("android_addr_r", 16, 0);
-		datasz = hdr->kernel_size + pgsz;
-		sizesz = sizeof(hdr->kernel_size);
+		typesz = sizeof(hdr->kernel_size);
 		if (!sysmem_alloc_base(MEM_KERNEL,
-				(phys_addr_t)ramdst, blkcnt * blksz))
+			(phys_addr_t)buffer, blkcnt * blksz))
 			return -ENOMEM;
 		break;
 	case IMG_VENDOR_RAMDISK:
@@ -347,14 +347,14 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		}
 		/* Always load vendor boot from storage: avb full load boot/recovery */
 		blkstart = part_vendor_boot.start;
+		pgsz = hdr->vendor_page_size;
 		ram_base = 0;
 
-		pgsz = hdr->vendor_page_size;
-		offset = ALIGN(VENDOR_BOOT_HDR_SIZE, pgsz);
+		bsoffs = ALIGN(VENDOR_BOOT_HDR_SIZE, pgsz);
+		length = hdr->vendor_ramdisk_size;
+		buffer = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
 		blkcnt = DIV_ROUND_UP(hdr->vendor_ramdisk_size, blksz);
-		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
-		datasz = hdr->vendor_ramdisk_size;
-		sizesz = sizeof(hdr->vendor_ramdisk_size);
+		typesz = sizeof(hdr->vendor_ramdisk_size);
 		/*
 		 * Add extra memory for generic ramdisk space.
 		 *
@@ -363,14 +363,17 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		 */
 		if (hdr->header_version == 3)
 			extra = ALIGN(hdr->ramdisk_size, blksz) + blksz;
-		if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
-			(phys_addr_t)ramdst, blkcnt * blksz + extra))
+		if (length && !sysmem_alloc_base(MEM_RAMDISK,
+			(phys_addr_t)buffer, blkcnt * blksz + extra))
 			return -ENOMEM;
 		break;
 	case IMG_RAMDISK:
-		offset = pgsz + ALIGN(hdr->kernel_size, pgsz);
+		bsoffs = pgsz + ALIGN(hdr->kernel_size, pgsz);
+		length = hdr->ramdisk_size;
+		buffer = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
 		blkcnt = DIV_ROUND_UP(hdr->ramdisk_size, blksz);
-		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
+		typesz = sizeof(hdr->ramdisk_size);
+
 		/*
 		 * ramdisk_addr_r:
 		 *	|----------------|---------|
@@ -378,99 +381,95 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		 *	|----------------|---------|
 		 */
 		if (hdr->header_version >= 3) {
-			ramdst += hdr->vendor_ramdisk_size;
-			if (!IS_ALIGNED((ulong)ramdst, blksz)) {
-				orgdst = (ulong)ramdst;
-				ramdst = (void *)ALIGN(orgdst, blksz);
+			buffer += hdr->vendor_ramdisk_size;
+			if (!IS_ALIGNED((ulong)buffer, blksz)) {
+				memmove_dst = (ulong)buffer;
+				buffer = (void *)ALIGN(memmove_dst, blksz);
 			}
 		}
-		datasz = hdr->ramdisk_size;
-		sizesz = sizeof(hdr->ramdisk_size);
-		/*
-		 * skip v3: sysmem has been alloced by vendor ramdisk.
-		 */
+		/* sysmem has been alloced by vendor ramdisk */
 		if (hdr->header_version < 3) {
-			if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
-				(phys_addr_t)ramdst, blkcnt * blksz))
+			if (length && !sysmem_alloc_base(MEM_RAMDISK,
+				(phys_addr_t)buffer, blkcnt * blksz))
 				return -ENOMEM;
 		}
 		break;
 	case IMG_SECOND:
-		offset = pgsz +
+		bsoffs = pgsz +
 			 ALIGN(hdr->kernel_size, pgsz) +
 			 ALIGN(hdr->ramdisk_size, pgsz);
+		length = hdr->second_size;
 		blkcnt = DIV_ROUND_UP(hdr->second_size, blksz);
-		datasz = hdr->second_size;
-		sizesz = sizeof(hdr->second_size);
-		ramdst = malloc(blkcnt * blksz);
+		buffer = malloc(blkcnt * blksz);
+		typesz = sizeof(hdr->second_size);
 		break;
 	case IMG_RECOVERY_DTBO:
-		offset = pgsz +
+		bsoffs = pgsz +
 			 ALIGN(hdr->kernel_size, pgsz) +
 			 ALIGN(hdr->ramdisk_size, pgsz) +
 			 ALIGN(hdr->second_size, pgsz);
+		length = hdr->recovery_dtbo_size;
 		blkcnt = DIV_ROUND_UP(hdr->recovery_dtbo_size, blksz);
-		datasz = hdr->recovery_dtbo_size;
-		sizesz = sizeof(hdr->recovery_dtbo_size);
-		ramdst = malloc(blkcnt * blksz);
+		buffer = malloc(blkcnt * blksz);
+		typesz = sizeof(hdr->recovery_dtbo_size);
 		break;
 	case IMG_DTB:
-		offset = pgsz +
+		bsoffs = pgsz +
 			 ALIGN(hdr->kernel_size, pgsz) +
 			 ALIGN(hdr->ramdisk_size, pgsz) +
 			 ALIGN(hdr->second_size, pgsz) +
 			 ALIGN(hdr->recovery_dtbo_size, pgsz);
+		length = hdr->dtb_size;
 		blkcnt = DIV_ROUND_UP(hdr->dtb_size, blksz);
-		datasz = hdr->dtb_size;
-		sizesz = sizeof(hdr->dtb_size);
-		ramdst = malloc(blkcnt * blksz);
+		buffer = malloc(blkcnt * blksz);
+		typesz = sizeof(hdr->dtb_size);
 		break;
 	case IMG_RK_DTB:
 #ifdef CONFIG_RKIMG_BOOTLOADER
 		/* No going further, it handles DTBO, HW-ID, etc */
-		ramdst = (void *)env_get_ulong("fdt_addr_r", 16, 0);
-		if (gd->fdt_blob != (void *)ramdst)
-			ret = rockchip_read_dtb_file(ramdst);
+		buffer = (void *)env_get_ulong("fdt_addr_r", 16, 0);
+		if (gd->fdt_blob != (void *)buffer)
+			ret = rockchip_read_dtb_file(buffer);
 #endif
 		return ret < 0 ? ret : 0;
 	default:
 		return -EINVAL;
 	}
 
-	if (!ramdst) {
+	if (!buffer) {
 		printf("No memory for image(%d)\n", img);
 		return -ENOMEM;
 	}
 
-	if (!blksz || !datasz)
+	if (!blksz || !length)
 		goto crypto_calc;
 
 	/* load */
 	if (ram_base) {
-		memcpy(ramdst, (char *)((ulong)ram_base + offset), datasz);
+		memcpy(buffer, (char *)((ulong)ram_base + bsoffs), length);
 	} else {
-		blkoff = DIV_ROUND_UP(offset, blksz);
-		ret = blk_dread(desc, blkstart + blkoff, blkcnt, ramdst);
+		blkoff = DIV_ROUND_UP(bsoffs, blksz);
+		ret = blk_dread(desc, blkstart + blkoff, blkcnt, buffer);
 		if (ret != blkcnt) {
 			printf("Failed to read img(%d), ret=%d\n", img, ret);
 			return -EIO;
 		}
 	}
 
-	if (orgdst)
-		memmove((char *)orgdst, ramdst, datasz);
+	if (memmove_dst)
+		memmove((char *)memmove_dst, buffer, length);
 
 crypto_calc:
 	/* sha1 */
 #ifdef CONFIG_DM_CRYPTO
 	if (crypto) {
 		if (img == IMG_KERNEL) {
-			ramdst += pgsz;
-			datasz -= pgsz;
+			buffer += pgsz;
+			length -= pgsz;
 		}
 
-		crypto_sha_update(crypto, (u32 *)ramdst, datasz);
-		crypto_sha_update(crypto, (u32 *)&datasz, sizesz);
+		crypto_sha_update(crypto, (u32 *)buffer, length);
+		crypto_sha_update(crypto, (u32 *)&length, typesz);
 	}
 #endif
 
