@@ -51,6 +51,7 @@
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 #include <rk_eink.h>
 #endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 __weak int rk_board_late_init(void)
@@ -1002,3 +1003,81 @@ void board_quiesce_devices(void *images)
 	misc_decompress_cleanup();
 #endif
 }
+
+char *board_fdt_chosen_bootargs(void *fdt)
+{
+	/* bootargs_ext is used when dtbo is applied. */
+	const char *arr_bootargs[] = { "bootargs", "bootargs_ext" };
+	const char *bootargs;
+	int nodeoffset;
+	int i, dump;
+
+	/* debug */
+	hotkey_run(HK_INITCALL);
+	dump = is_hotkey(HK_CMDLINE);
+	if (dump)
+		printf("## bootargs(u-boot): %s\n\n", env_get("bootargs"));
+
+	/* find or create "/chosen" node. */
+	nodeoffset = fdt_find_or_add_subnode(fdt, 0, "chosen");
+	if (nodeoffset < 0)
+		return NULL;
+
+	for (i = 0; i < ARRAY_SIZE(arr_bootargs); i++) {
+		bootargs = fdt_getprop(fdt, nodeoffset, arr_bootargs[i], NULL);
+		if (!bootargs)
+			continue;
+		if (dump)
+			printf("## bootargs(kernel-%s): %s\n\n",
+			       arr_bootargs[i], bootargs);
+		/*
+		 * Append kernel bootargs
+		 * If use AB system, delete default "root=" which route
+		 * to rootfs. Then the ab bootctl will choose the
+		 * high priority system to boot and add its UUID
+		 * to cmdline. The format is "roo=PARTUUID=xxxx...".
+		 */
+#ifdef CONFIG_ANDROID_AB
+		env_update_filter("bootargs", bootargs, "root=");
+#else
+		env_update("bootargs", bootargs);
+#endif
+	}
+
+#ifdef CONFIG_MTD_BLK
+	char *mtd_par_info = mtd_part_parse(NULL);
+
+	if (mtd_par_info) {
+		if (memcmp(env_get("devtype"), "mtd", 3) == 0)
+			env_update("bootargs", mtd_par_info);
+	}
+#endif
+	/*
+	 * Initrd fixup: remove unused "initrd=0x...,0x...",
+	 * this for compatible with legacy parameter.txt
+	 */
+	env_delete("bootargs", "initrd=", 0);
+
+	/*
+	 * If uart is required to be disabled during
+	 * power on, it would be not initialized by
+	 * any pre-loader and U-Boot.
+	 *
+	 * If we don't remove earlycon from commandline,
+	 * kernel hangs while using earlycon to putc/getc
+	 * which may dead loop for waiting uart status.
+	 * (It seems the root cause is baundrate is not
+	 * initilalized)
+	 *
+	 * So let's remove earlycon from commandline.
+	 */
+	if (gd->flags & GD_FLG_DISABLE_CONSOLE)
+		env_delete("bootargs", "earlycon=", 0);
+
+	bootargs = env_get("bootargs");
+	if (dump)
+		printf("## bootargs(merged): %s\n\n", bootargs);
+
+	return (char *)bootargs;
+}
+
