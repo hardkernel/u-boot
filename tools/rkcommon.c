@@ -258,7 +258,6 @@ const char *rkcommon_get_spl_hdr(struct image_tool_params *params)
 	return info->spl_hdr;
 }
 
-
 int rkcommon_get_spl_size(struct image_tool_params *params)
 {
 	struct spl_info *info = rkcommon_get_spl_info(params->imagename);
@@ -298,7 +297,6 @@ static void do_sha256_hash(uint8_t *buf, uint32_t size, uint8_t *out)
 	sha256_finish(&ctx, out);
 }
 
-
 static void rkcommon_set_header0(void *buf, struct image_tool_params *params)
 {
 	struct header0_info *hdr = buf;
@@ -335,6 +333,7 @@ static void rkcommon_set_header0_v2(void *buf, struct image_tool_params *params)
 	uint8_t *image_ptr = NULL;
 	int i;
 
+	printf("Image Type:   Rockchip %s boot image\n", rkcommon_get_spl_hdr(params));
 	memset(buf, '\0', RK_INIT_OFFSET * RK_BLK_SIZE);
 	hdr->magic   = cpu_to_le32(RK_MAGIC_V2);
 	hdr->size_and_nimage = cpu_to_le32((2 << 16) + 384);
@@ -362,11 +361,6 @@ void rkcommon_set_header(void *buf,  struct stat *sbuf,  int ifd,
 	struct header1_info *hdr = buf + RK_SPL_HDR_START;
 
 	if (rkcommon_is_header_v2(params)) {
-		/* Set up the SPL name (i.e. copy spl_hdr over) */
-		memcpy(&hdr->magic, rkcommon_get_spl_hdr(params), RK_SPL_HDR_SIZE);
-		/* because of doing hash in the set_header0_v2
-		*  magic need to be changed first
-		*/
 		rkcommon_set_header0_v2(buf, params);
 	} else {
 		rkcommon_set_header0(buf, params);
@@ -388,7 +382,7 @@ void rkcommon_set_header(void *buf,  struct stat *sbuf,  int ifd,
 	}
 }
 
-static inline unsigned rkcommon_offset_to_spi(unsigned offset)
+static inline unsigned int rkcommon_offset_to_spi(unsigned int offset)
 {
 	/*
 	 * While SD/MMC images use a flat addressing, SPI images are padded
@@ -400,7 +394,7 @@ static inline unsigned rkcommon_offset_to_spi(unsigned offset)
 static int rkcommon_parse_header(const void *buf, struct header0_info *header0,
 				 struct spl_info **spl_info)
 {
-	unsigned hdr1_offset;
+	unsigned int hdr1_offset;
 	struct header1_info *hdr1_sdmmc, *hdr1_spi;
 	int i;
 
@@ -441,41 +435,14 @@ static int rkcommon_parse_header(const void *buf, struct header0_info *header0,
 	return -1;
 }
 
-static int rkcommon_parse_header_v2(const void *buf,
-				 struct header0_info_v2 *header, struct spl_info **spl_info)
+static int rkcommon_parse_header_v2(const void *buf, struct header0_info_v2 *header)
 {
-	unsigned int hdr1_offset;
-	struct header1_info *hdr1_sdmmc, *hdr1_spi;
-	int i;
-
-	if (spl_info)
-		*spl_info = NULL;
-
 	memcpy((void *)header, buf, sizeof(struct header0_info_v2));
 
 	if (le32_to_cpu(header->magic) != RK_MAGIC_V2)
 		return -EPROTO;
 
-	hdr1_offset = ((le32_to_cpu(header->images[0].size_and_off)) & 0xFFFF) * RK_BLK_SIZE;
-	hdr1_sdmmc = (struct header1_info *)(buf + hdr1_offset);
-	hdr1_spi = (struct header1_info *)(buf +
-					   rkcommon_offset_to_spi(hdr1_offset));
-
-	for (i = 0; i < ARRAY_SIZE(spl_infos); i++) {
-		if (!memcmp(&hdr1_sdmmc->magic, spl_infos[i].spl_hdr,
-			    RK_SPL_HDR_SIZE)) {
-			if (spl_info)
-				*spl_info = &spl_infos[i];
-			return IH_TYPE_RKSD;
-		} else if (!memcmp(&hdr1_spi->magic, spl_infos[i].spl_hdr,
-				   RK_SPL_HDR_SIZE)) {
-			if (spl_info)
-				*spl_info = &spl_infos[i];
-			return IH_TYPE_RKSPI;
-		}
-	}
-
-	return -1;
+	return 0;
 }
 
 int rkcommon_verify_header(unsigned char *buf, int size,
@@ -518,14 +485,13 @@ void rkcommon_print_header(const void *buf)
 	int ret, boot_size, init_size;
 
 	if ((*(uint32_t *)buf) == RK_MAGIC_V2) {
-		ret = rkcommon_parse_header_v2(buf, &header0_v2, &spl_info);
+		ret = rkcommon_parse_header_v2(buf, &header0_v2);
 
 		if (ret < 0) {
 			fprintf(stderr, "Error: image verification failed\n");
 			return;
 		}
 
-		image_type = ret;
 		init_size = header0_v2.images[0].size_and_off >> 16;
 		init_size = init_size * RK_BLK_SIZE;
 		boot_size = header0_v2.images[1].size_and_off >> 16;
@@ -545,10 +511,11 @@ void rkcommon_print_header(const void *buf)
 		image_type = ret;
 		init_size = header0.init_size * RK_BLK_SIZE;
 		boot_size = header0.init_boot_size * RK_BLK_SIZE - init_size;
-	}
-	printf("Image Type:   Rockchip %s (%s) boot image\n",
+		printf("Image Type:   Rockchip %s (%s) boot image\n",
 		       spl_info->spl_hdr,
 		       (image_type == IH_TYPE_RKSD) ? "SD/MMC" : "SPI");
+	}
+
 	printf("Init Data Size: %d bytes\n", init_size);
 
 	if (boot_size != RK_MAX_BOOT_SIZE)
