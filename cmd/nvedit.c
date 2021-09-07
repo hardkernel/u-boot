@@ -320,9 +320,9 @@ static int env_append(const char *varname, const char *varvalue)
 	if (oldvalue)
 		len += strlen(oldvalue);
 
-	newvalue = malloc(len + 2);
+	newvalue = calloc(1, len + 2);
 	if (!newvalue) {
-		printf("Error: malloc in %s failed!\n", __func__);
+		printf("Error: calloc in %s failed!\n", __func__);
 		return 1;
 	}
 
@@ -370,9 +370,9 @@ static int env_replace(const char *varname, const char *substr,
 	else
 		len = oldvalue_len + substr_len - replace_len;
 
-	newvalue = malloc(len);
+	newvalue = calloc(1, len);
 	if (!newvalue) {
-		printf("Error: malloc in %s failed!\n", __func__);
+		printf("Error: calloc in %s failed!\n", __func__);
 		return 1;
 	}
 
@@ -444,7 +444,7 @@ int env_update_filter(const char *varname, const char *varvalue,
 		return 1;
 	}
 
-	/* Splite varargs into items containing "=" by the blank */
+	/* Splite varargs into items containing "=" by the space */
 	a_item = strtok(a_string_tok, " ");
 	while (a_item && i < ARGS_ITEM_NUM) {
 		debug("%s: [a_item %d]: %s\n", __func__, i, a_item);
@@ -454,7 +454,7 @@ int env_update_filter(const char *varname, const char *varvalue,
 	}
 
 	/*
-	 * Splite varvalue into items containing "=" by the blank.
+	 * Splite varvalue into items containing "=" by the space.
 	 * parse varvalue title, eg: "bootmode=emmc", title is "bootmode"
 	 */
 	v_item = strtok(v_string_tok, " ");
