@@ -29,6 +29,7 @@
 #include <syscon.h>
 #include <sysmem.h>
 #include <video_rockchip.h>
+#include <xbc.h>
 #include <asm/io.h>
 #include <asm/gpio.h>
 #include <android_avb/rk_avb_ops_user.h>
@@ -1074,10 +1075,100 @@ char *board_fdt_chosen_bootargs(void *fdt)
 	if (gd->flags & GD_FLG_DISABLE_CONSOLE)
 		env_delete("bootargs", "earlycon=", 0);
 
+	/* Android header v4+ need this handle */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	struct andr_img_hdr *hdr;
+
+	hdr = (void *)env_get_ulong("android_addr_r", 16, 0);
+	if (hdr && !android_image_check_header(hdr) && hdr->header_version >= 4) {
+		if (env_update_extract_subset("bootargs", "andr_bootargs", "androidboot."))
+			printf("extract androidboot.xxx error\n");
+		if (dump)
+			printf("## bootargs(android): %s\n\n", env_get("andr_bootargs"));
+	}
+#endif
 	bootargs = env_get("bootargs");
 	if (dump)
 		printf("## bootargs(merged): %s\n\n", bootargs);
 
 	return (char *)bootargs;
+}
+
+int ft_verify_fdt(void *fdt)
+{
+	/* for android header v4+, we load bootparams and fixup initrd */
+#if defined(CONFIG_ANDROID_BOOT_IMAGE) && defined(CONFIG_XBC)
+	struct andr_img_hdr *hdr;
+	uint64_t initrd_start, initrd_end;
+	char *bootargs, *p;
+	int nodeoffset;
+	int is_u64, err;
+	u32 len;
+
+	hdr = (void *)env_get_ulong("android_addr_r", 16, 0);
+	if (!hdr || android_image_check_header(hdr) ||
+	    hdr->header_version < 4)
+		return 1;
+
+	bootargs = env_get("andr_bootargs");
+	if (!bootargs)
+		return 1;
+
+	/* trans character: space to new line */
+	p = bootargs;
+	while (*p++) {
+		if (*p == ' ')
+			*p = '\n';
+	}
+
+	debug("## andr_bootargs: %s\n", bootargs);
+
+	/*
+	 * add boot params right after bootconfig
+	 *
+	 * because we can get final full bootargs in board_fdt_chosen_bootargs(),
+	 * android_image_get_ramdisk() is early than that.
+	 *
+	 * we have to add boot params by now.
+	 */
+	len = addBootConfigParameters((char *)bootargs, strlen(bootargs),
+		(u64)hdr->ramdisk_addr + hdr->ramdisk_size +
+		hdr->vendor_ramdisk_size, hdr->vendor_bootconfig_size);
+	if (len < 0) {
+		printf("error: addBootConfigParameters\n");
+		return 0;
+	}
+
+	nodeoffset = fdt_subnode_offset(fdt, 0, "chosen");
+	if (nodeoffset < 0) {
+		printf("error: No /chosen node\n");
+		return 0;
+	}
+
+	/* fixup initrd with real value */
+	fdt_delprop(fdt, nodeoffset, "linux,initrd-start");
+	fdt_delprop(fdt, nodeoffset, "linux,initrd-end");
+
+	is_u64 = (fdt_address_cells(fdt, 0) == 2);
+	initrd_start = hdr->ramdisk_addr;
+	initrd_end = initrd_start + hdr->ramdisk_size +
+			hdr->vendor_ramdisk_size +
+			hdr->vendor_bootconfig_size + len;
+	err = fdt_setprop_uxx(fdt, nodeoffset, "linux,initrd-start",
+			      initrd_start, is_u64);
+	if (err < 0) {
+		printf("WARNING: could not set linux,initrd-start %s.\n",
+		       fdt_strerror(err));
+		return 0;
+	}
+	err = fdt_setprop_uxx(fdt, nodeoffset, "linux,initrd-end",
+			      initrd_end, is_u64);
+	if (err < 0) {
+		printf("WARNING: could not set linux,initrd-end %s.\n",
+		       fdt_strerror(err));
+		return 0;
+	}
+#endif
+	return 1;
 }
 

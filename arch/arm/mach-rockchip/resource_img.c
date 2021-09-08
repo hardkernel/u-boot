@@ -308,8 +308,11 @@ static int read_dtb_from_android(struct blk_desc *dev_desc,
 		dtb_offset += ALIGN(hdr->recovery_dtbo_size, hdr->page_size) +
 			      ALIGN(hdr->second_size, hdr->page_size);
 		dtb_size = hdr->dtb_size;
-	} else if (hdr->header_version == 3) {
-		dtb_offset += ALIGN(VENDOR_BOOT_HDR_SIZE,
+	} else if (hdr->header_version >= 3) {
+		ulong vendor_boot_hdr_size = (hdr->header_version == 3) ?
+			VENDOR_BOOT_HDRv3_SIZE : VENDOR_BOOT_HDRv4_SIZE;
+
+		dtb_offset += ALIGN(vendor_boot_hdr_size,
 				    hdr->vendor_page_size) +
 			      ALIGN(hdr->vendor_ramdisk_size,
 				    hdr->vendor_page_size);
@@ -320,7 +323,7 @@ static int read_dtb_from_android(struct blk_desc *dev_desc,
 		return 0;
 
 	/*
-	 * boot_img_hdr_v2,3 feature.
+	 * boot_img_hdr_v234 feature.
 	 *
 	 * If dtb position is present, replace the old with new one if
 	 * we don't need to verify DTB hash from resource.img file entry.
