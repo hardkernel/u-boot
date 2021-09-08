@@ -40,18 +40,41 @@
 #define DFU_ALT_BOOT_EMMC \
 	"gpt raw 0x0 0x20000;" \
 	"loader raw 0x20000 0xE0000;"\
+	"uboot part 0 1;" \
+	"boot part 0 2;" \
+	"rootfs partubi 0 3;" \
+	"userdata partubi 0 4\0"
+
+#ifdef CONFIG_ANDROID_AB
+#define DFU_ALT_BOOT_MTD_A \
+	"gpt raw 0x0 0x20000;" \
+	"loader raw 0x20000 0xE0000;"\
+	"vnvm part vnvm;" \
 	"uboot part uboot;" \
-	"boot part boot;" \
-	"rootfs partubi rootfs;" \
+	"boot raw 0x700000 0x600000;" \
+	"misc part misc;" \
+	"system rawubi 0x1380000 0x3280000;" \
 	"userdata partubi userdata\0"
 
+#define DFU_ALT_BOOT_MTD_B \
+	"gpt raw 0x0 0x20000;" \
+	"loader raw 0x20000 0xE0000;"\
+	"vnvm part vnvm;" \
+	"uboot part uboot;" \
+	"boot raw 0xd00000 0x600000;" \
+	"misc part misc;" \
+	"system rawubi 0x4600000 0x3280000;" \
+	"userdata partubi userdata\0"
+#else
 #define DFU_ALT_BOOT_MTD \
 	"gpt raw 0x0 0x20000;" \
 	"loader raw 0x20000 0xE0000;"\
 	"vnvm part vnvm;" \
 	"uboot part uboot;" \
 	"boot part boot;" \
-	"rootfs partubi rootfs;" \
+	"misc part misc;" \
+	"system partubi system;" \
 	"userdata partubi userdata\0"
+#endif /* CONFIG_ANDROID_AB */
 #endif /* !CONFIG_SPL_BUILD */
-#endif
+#endif /* __EVB_RV1126_H */

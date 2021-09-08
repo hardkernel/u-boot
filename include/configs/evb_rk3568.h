@@ -26,10 +26,10 @@
 #define DFU_ALT_BOOT_EMMC \
 	"gpt raw 0x0 0x20000;" \
 	"loader raw 0x20000 0xE0000;"\
-	"uboot part uboot;" \
-	"boot part boot;" \
-	"rootfs partubi rootfs;" \
-	"userdata partubi userdata\0"
+	"uboot part 0 1;" \
+	"boot part 0 2;" \
+	"rootfs part 0 3;" \
+	"userdata part 0 4\0"
 
 #define DFU_ALT_BOOT_MTD \
 	"gpt raw 0x0 0x20000;" \
@@ -40,6 +40,6 @@
 	"rootfs partubi rootfs;" \
 	"userdata partubi userdata\0"
 
-#endif
-#endif
+#endif /* CONFIG_SPL_BUILD */
+#endif /* __CONFIGS_RK3568_EVB_H */
 
