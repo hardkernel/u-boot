@@ -18,4 +18,7 @@ U_BOOT_DRIVER(syscon_rk3308) = {
 	.name = "rk3308_syscon",
 	.id = UCLASS_SYSCON,
 	.of_match = rk3308_syscon_ids,
+#if !defined(CONFIG_SPL_BUILD) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.bind = dm_scan_fdt_dev,
+#endif
 };
