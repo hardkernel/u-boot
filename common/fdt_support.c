@@ -185,8 +185,8 @@ static int fdt_fixup_stdout(void *fdt, int chosenoff)
 }
 #endif
 
-static inline int fdt_setprop_uxx(void *fdt, int nodeoffset, const char *name,
-				  uint64_t val, int is_u64)
+int fdt_setprop_uxx(void *fdt, int nodeoffset, const char *name,
+		    uint64_t val, int is_u64)
 {
 	if (is_u64)
 		return fdt_setprop_u64(fdt, nodeoffset, name, val);
