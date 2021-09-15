@@ -10,6 +10,7 @@
 #include <android_avb/rk_avb_ops_user.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/chip_info.h>
+#include <asm/arch/rk_atags.h>
 #include <write_keybox.h>
 #include <linux/mtd/mtd.h>
 #include <optee_include/OpteeClientInterface.h>
@@ -605,6 +606,54 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 }
 #endif
 
+static int rkusb_do_get_storage_info(struct fsg_common *common,
+				     struct fsg_buffhd *bh)
+{
+	enum if_type type = ums[common->lun].block_dev.if_type;
+	int devnum = ums[common->lun].block_dev.devnum;
+	u32 media = BOOT_TYPE_UNKNOWN;
+	u32 len = common->data_size;
+	u8 *buf = (u8 *)bh->buf;
+
+	if (len > 4)
+		len = 4;
+
+	switch (type) {
+	case IF_TYPE_MMC:
+		media = BOOT_TYPE_EMMC;
+		break;
+
+	case IF_TYPE_SD:
+		media = BOOT_TYPE_SD0;
+		break;
+
+	case IF_TYPE_MTD:
+		if (devnum == BLK_MTD_SPI_NAND)
+			media = BOOT_TYPE_MTD_BLK_SPI_NAND;
+		else if (devnum == BLK_MTD_NAND)
+			media = BOOT_TYPE_NAND;
+		else
+			media = BOOT_TYPE_MTD_BLK_SPI_NOR;
+		break;
+
+	case IF_TYPE_SCSI:
+		media = BOOT_TYPE_SATA;
+		break;
+
+	case IF_TYPE_RKNAND:
+		media = BOOT_TYPE_NAND;
+		break;
+	default:
+		break;
+	}
+
+	memcpy((void *)&buf[0], (void *)&media, len);
+	common->residue = len;
+	common->data_size_from_cmnd = len;
+
+	return len;
+}
+
 static int rkusb_do_read_capacity(struct fsg_common *common,
 				  struct fsg_buffhd *bh)
 {
@@ -619,7 +668,12 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	 * bit[2]: First 4M Access, 0: Disabled;
 	 * bit[3]: Read LBA On, 0: Disabed (default);
 	 * bit[4]: New Vendor Storage API, 0: Disabed;
-	 * bit[5:63}: Reserved.
+	 * bit[5]: Read uart data from ram
+	 * bit[6]: Read IDB config
+	 * bit[7]: Read SecureMode
+	 * bit[8]: New IDB feature
+	 * bit[9]: Get storage media info
+	 * bit[10:63}: Reserved.
 	 */
 	memset((void *)&buf[0], 0, len);
 	if (type == IF_TYPE_MMC || type == IF_TYPE_SD)
@@ -640,6 +694,8 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 #if defined(CONFIG_ROCKCHIP_RK3568)
 	buf[1] = BIT(0);
 #endif
+	buf[1] |= BIT(1);
+
 	/* Set data xfer size */
 	common->residue = len;
 	common->data_size_from_cmnd = len;
@@ -747,6 +803,10 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		rc = RKUSB_RC_FINISHED;
 		break;
 #endif
+	case RKUSB_GET_STORAGE_MEDIA:
+		*reply = rkusb_do_get_storage_info(common, bh);
+		rc = RKUSB_RC_FINISHED;
+		break;
 
 	case RKUSB_READ_CAPACITY:
 		*reply = rkusb_do_read_capacity(common, bh);
