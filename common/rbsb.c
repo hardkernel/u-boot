@@ -109,7 +109,11 @@ static struct {
 	{0, 0}
 };
 
-static unsigned
+extern int CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c);
+extern void CYGACC_COMM_IF_PUTC (char x, char y);
+extern int CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c);
+
+unsigned
 getspeed(int  code)
 {
 	int n;
@@ -249,7 +253,7 @@ int
 io_mode(int fd, int n)
 {
 #if 1
-	static int did0 = FALSE;
+	__maybe_unused static int did0 = FALSE;
 
 	vfile("mode:%d", n);
 

@@ -42,8 +42,9 @@ static int readline_fd;
 static char *readline_buffer;
 int readline_left=0;
 char *readline_ptr;
+extern int read_data(int tout_in_100ms, char *buf, int size);
 
-static RETSIGTYPE
+RETSIGTYPE
 zreadline_alarm_handler(int dummy LRZSZ_ATTRIB_UNUSED)
 {
 	/* doesn't need to do anything */
@@ -69,13 +70,13 @@ readline_internal(unsigned int timeout)
 			n=1;
 		if (Verbose > 5)
 			vstringf("Calling read: alarm=%d  Readnum=%d ",
-			  n, readline_readnum);
+			  n, (u32)readline_readnum);
 		//signal(SIGALRM, zreadline_alarm_handler); 
 		//alarm(n);
 	}
 	else if (Verbose > 5)
 		vstringf("Calling read: Readnum=%d ",
-		  readline_readnum);
+		  (u32)readline_readnum);
 
 	readline_ptr=readline_buffer;
 	readline_left=read_data(n*10, readline_ptr, readline_readnum);

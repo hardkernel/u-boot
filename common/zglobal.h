@@ -389,8 +389,8 @@ extern unsigned Baudrate;
 void zperr __P ((const char *fmt, ...));
 void zpfatal __P ((const char *fmt, ...));
 void vfile __P ((const char *format, ...));
-#define vchar(x) putc(x,stderr)
-#define vstring(x) fputs(x,stderr)
+#define vchar(x) putc(x)
+#define vstring(x) fputs(stderr, x)
 
 #ifdef __GNUC__
 #if __GNUC__ > 1

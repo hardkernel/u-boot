@@ -173,7 +173,7 @@
 //#define HAVE_GETTIMEOFDAY 1
 
 /* Define if you have the memcpy function.  */
-#define HAVE_MEMCPY 1
+//#define HAVE_MEMCPY 1
 
 /* Define if you have the mkdir function.  */
 #define HAVE_MKDIR 1

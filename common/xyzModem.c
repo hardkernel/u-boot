@@ -52,14 +52,15 @@ static struct
   unsigned long file_length, read_length;
 } xyz;
 
-#define xyzModem_CHAR_TIMEOUT            2000	/* 2 seconds */
+#define _xyzModem_CHAR_TIMEOUT            2000	/* 2 seconds */
 #define xyzModem_MAX_RETRIES             20
 #define xyzModem_MAX_RETRIES_WITH_CRC    10
 #define xyzModem_CAN_COUNT                3	/* Wait for 3 CAN before quitting */
 
+int xyzModem_CHAR_TIMEOUT = _xyzModem_CHAR_TIMEOUT;
 
 typedef int cyg_int32;
-static int
+int
 CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c)
 {
 
@@ -77,7 +78,7 @@ CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c)
   return 0;
 }
 
-static void
+void
 CYGACC_COMM_IF_PUTC (char x, char y)
 {
   putc (y);

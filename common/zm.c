@@ -104,7 +104,9 @@ static int zrdat32 __P ((char *buf, int length, size_t *));
 static void zsbh32 __P ((char *hdr, int type));
 
 extern int zmodem_requested;
-
+extern void xsendline(int c);
+extern void send_data(int fd, char *buf, int size);
+extern void flushmo(void);
 
 /*
  * Read a character from the modem line with timeout.
@@ -290,7 +292,7 @@ zsendline_s(const char *s, size_t count)
 		}
 		if (t!=s) {
 			//fwrite(s,(size_t)(t-s),1,stdout);
-			send_data(1, s, t-s);
+			send_data(1, (char *)s, t-s);
 			lastsent=t[-1];
 			s=t;
 		}
@@ -450,7 +452,7 @@ zsda32(const char *buf, size_t length, int frameend)
 	int c;
 	unsigned long crc;
 	int i;
-	VPRINTF(3,("zsdat32: %d %s", length, Zendnames[(frameend-ZCRCE)&3]));
+	VPRINTF(3,("zsdat32: %d %s", (u32)length, Zendnames[(frameend-ZCRCE)&3]));
 
 	crc = 0xFFFFFFFFL;
 	zsendline_s(buf,length);

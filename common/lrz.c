@@ -123,12 +123,12 @@ static int o_sync = 0;
 static int rzfiles __P ((struct zm_fileinfo *));
 static int tryz __P ((void));
 static void checkpath __P ((const char *name));
-static void chkinvok __P ((const char *s));
+//static void chkinvok __P ((const char *s));
 static void report __P ((int sct));
 static void uncaps __P ((char *s));
 static int IsAnyLower __P ((const char *s));
 static int putsec __P ((struct zm_fileinfo *zi, char *buf, size_t n));
-static int make_dirs __P ((char *pathname));
+//static int make_dirs __P ((char *pathname));
 static int procheader __P ((char *name, struct zm_fileinfo *));
 static int wcgetsec __P ((size_t *Blklen, char *rxbuf, unsigned int maxtime));
 static int wcrx __P ((struct zm_fileinfo *));
@@ -136,7 +136,7 @@ static int wcrxpn __P ((struct zm_fileinfo *, char *rpn));
 static int wcreceive __P ((int argc, char **argp));
 static int rzfile __P ((struct zm_fileinfo *));
 static void usage __P ((int exitcode, const char *what));
-static void usage1 __P ((int exitcode));
+//static void usage1 __P ((int exitcode));
 static void exec2 __P ((const char *s));
 static int closeit __P ((struct zm_fileinfo *));
 static void ackbibi __P ((void));
@@ -147,6 +147,10 @@ static size_t getfree __P ((void));
 static long buffersize=1024*128;
 static unsigned long min_bps=0;
 static long min_bps_time=120;
+
+extern int CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c);
+extern void CYGACC_COMM_IF_PUTC (char x, char y);
+extern int CYGACC_COMM_IF_GETC_TIMEOUT (char chan, char *c);
 
 char Lzmanag;		/* Local file management request */
 char zconv;		/* ZMODEM file conversion request */
@@ -214,7 +218,7 @@ void sendline(int c)
 int read_data(int tout_in_100ms, char *buf, int size)
 {
 	extern int xyzModem_CHAR_TIMEOUT;
-	int c;
+	char c;
 	int wait_msec = tout_in_100ms * 100;
 	int ret;
 	
@@ -243,12 +247,12 @@ void send_data(int fd, char *buf, int size)
 	
 }
 //flush tx data
-void flushmo()
+void flushmo(void)
 {
 	//flush tx
 }
 //return seconds elapsed between reset=1 & reset=0. float allowed
-double timing (int reset, time_t *nowp)
+ulong timing (int reset, time_t *nowp)
 {
 	static unsigned long start;
 	if(reset) {
@@ -520,7 +524,7 @@ static struct option const long_options[] =
 };
 #endif
 
-static void
+void
 show_version(void)
 {
 	printf ("%s (%s) %s\n", program_name, PACKAGE, VERSION);
@@ -528,17 +532,17 @@ show_version(void)
 
 int
 //main(int argc, char *argv[])
-zmodem_rx(unsigned int addr, int *rxsize)
+zmodem_rx(unsigned long addr, int *rxsize)
 {
-	register char *cp;
+	__maybe_unused register char *cp;
 	//register int npats;
 	//char **patts=NULL; /* keep compiler quiet */
 	int exitcode=0;
-	int c;
-	unsigned int startup_delay=0;
-	int argc = 1 ;
-	char *argv[] = { "rz" };
-	zmodem_addr = addr;
+	__maybe_unused int c;
+	__maybe_unused unsigned int startup_delay=0;
+	__maybe_unused int argc = 1;
+	__maybe_unused char *argv[] = { "rz" };
+	zmodem_addr = (void *)addr;
 	zmodem_offset = 0;
 
 	Rxtimeout = 100;
@@ -858,17 +862,17 @@ zmodem_rx(unsigned int addr, int *rxsize)
 		canit(0);
 	if (Verbose)
 	{
-		fputs("\r\n",stderr);
+		fputs(stderr, "\r\n");
 		if (exitcode)
-			fputs(_("Transfer incomplete\n"),stderr);
+			fputs(stderr, "Transfer incomplete\n");
 		else
-			fputs(_("Transfer complete\n"),stderr);
+			fputs(stderr, "Transfer complete\n");
 	}
 	*rxsize = zmodem_offset;
 	return exitcode;
 }
 
-static void
+void
 usage1(int exitcode)
 {
 	usage(exitcode,NULL);
@@ -965,7 +969,7 @@ wcreceive(int argc, char **argp)
 					|| enable_syslog
 #endif
 				) {
-					double d;
+					ulong d;
 					long bps;
 					d=timing(0,NULL);
 					if (d==0)
@@ -1038,7 +1042,7 @@ wcreceive(int argc, char **argp)
 			|| enable_syslog
 #endif
 	 		) {
-			double d;
+			ulong d;
 			long bps;
 			d=timing(0,NULL);
 			if (d==0)
@@ -1363,7 +1367,7 @@ do_crc_check(void *f, size_t remote_bytes, size_t check_bytes)
 static int
 procheader(char *name, struct zm_fileinfo *zi)
 {
-	const char *openmode;
+	__maybe_unused const char *openmode;
 	char *p;
 	static char *name_static=NULL;
 	char *nameend;
@@ -1456,7 +1460,7 @@ procheader(char *name, struct zm_fileinfo *zi)
 		//struct stat sta;
 		char *tmpname;
 		char *ptr;
-		int i;
+		int i  __maybe_unused;
 		if (zmanag == ZF1_ZMNEW || zmanag==ZF1_ZMNEWL) {
 #if 0
 			if (-1==fstat(fileno(fout),&sta)) {
@@ -1760,7 +1764,7 @@ buffer_it:
  * it's because some required directory was not present, and if
  * so, create all required dirs.
  */
-static int
+int
 make_dirs(char *pathname)
 {
 	register char *p;		/* Points into path */
@@ -1771,7 +1775,7 @@ make_dirs(char *pathname)
 		return 0;		/* Not our problem */
 
 	for (p = strchr(pathname, '/'); p != NULL; p = strchr(p+1, '/')) {
-		/* Avoid mkdir of empty string, if leading or double '/' */
+		/* Avoid mkdir of empty string, if leading or ulong '/' */
 		if (p == pathname || p[-1] == '/')
 			continue;
 		/* Avoid mkdir where last part of path is '.' */
@@ -1807,6 +1811,7 @@ static int putsec(struct zm_fileinfo *zi, char *buf, size_t n)
 {
 	memcpy(zmodem_addr + zmodem_offset, buf, n);
 	zmodem_offset += n;
+	return 0;
 }
 #if 0
 static int 
@@ -1890,7 +1895,7 @@ report(int sct)
  * If called as [-][dir/../]rzCOMMAND set the pipe flag
  * If called as rb use YMODEM protocol
  */
-static void
+void
 chkinvok(const char *s)
 {
 	const char *p;
@@ -2141,13 +2146,13 @@ rzfiles(struct zm_fileinfo *zi)
 		//xil_printf("%s(): L%d debug, c=%d\n\r", __func__, __LINE__, c);
 		switch (c) {
 		case ZEOF:
-			xil_printf("%s(): receive %s (%d bytes)complete\n\r", __func__, zi->fname, zi->bytes_total);
+			xil_printf("%s(): receive %s (%d bytes)complete\n\r", __func__, zi->fname, (u32)zi->bytes_total);
 			if (Verbose > 1
 #ifdef ENABLE_SYSLOG
 				|| enable_syslog
 #endif
 	 		) {
-				double d;
+				ulong d;
 				long bps;
 				d=timing(0,NULL);
 				if (d==0)
@@ -2394,7 +2399,7 @@ moredata:
 				int minleft =  0;
 				int secleft =  0;
 				time_t now;
-				double d;
+				ulong d;
 				//xil_printf("%s(): L%d debug\n\r", __func__, __LINE__);
 				d=timing(0,&now);
 				if (d==0)
@@ -2546,7 +2551,7 @@ moredata:
 static void
 zmputs(const char *s)
 {
-	const char *p;
+	__maybe_unused const char *p;
 
 	xil_printf("%s(): L%d zmputs not implmenment yet\n\r", __func__, __LINE__);
 #if 0
@@ -2625,7 +2630,7 @@ closeit(struct zm_fileinfo *zi)
 		timep.modtime = zi->modtime;
 		//utime(Pathname, &timep);
 #else
-		time_t timep[2];
+		__maybe_unused time_t timep[2];
 		//timep[0] = time(NULL);
 		//timep[1] = zi->modtime;
 		//utime(Pathname, timep);
@@ -2688,6 +2693,7 @@ sys2(const char *s)
 {
 	if (*s == '!')
 		++s;
+	return 0;
 	//return system(s);
 }
 
