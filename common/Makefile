@@ -158,9 +158,9 @@ obj-y += command.o
 obj-$(CONFIG_$(SPL_)LOG) += log.o
 obj-$(CONFIG_$(SPL_)LOG_CONSOLE) += log_console.o
 obj-y += s_record.o
-obj-$(CONFIG_CMD_LOADB) += xyzModem.o
 
 ifndef CONFIG_SPL_BUILD
+obj-$(CONFIG_CMD_LOADB) += xyzModem.o rbsb.o zm.o zreadline.o lrz.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-$(CONFIG_ANDROID_WRITE_KEYBOX) += write_keybox.o
 obj-$(CONFIG_ANDROID_KEYMASTER_CA) += keymaster.o
