@@ -642,7 +642,10 @@ static inline bool is_des_mode(u32 rk_mode)
 		rk_mode == RK_MODE_OFB);
 }
 
-static void dump_crypto_state(struct crypto_lli_desc *desc, int ret)
+static void dump_crypto_state(struct crypto_lli_desc *desc,
+			      u32 tmp, u32 expt_int,
+			      const u8 *in, const u8 *out,
+			      u32 len, int ret)
 {
 	IMSG("%s\n", ret == -ETIME ? "timeout" : "dismatch");
 
@@ -979,7 +982,7 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 			get_tag_from_reg(key_chn, tag, AES_BLOCK_SIZE);
 		}
 	} else {
-		dump_crypto_state(data_desc, ret);
+		dump_crypto_state(data_desc, tmp, expt_int, in, out, len, ret);
 		ret = -1;
 	}
 
