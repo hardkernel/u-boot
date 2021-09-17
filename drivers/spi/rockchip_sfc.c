@@ -178,6 +178,9 @@ struct rockchip_sfc {
 	bool use_dma;
 	u32 max_iosize;
 	u16 version;
+
+	u32 last_async_size;
+	u32 async;
 };
 
 static int rockchip_sfc_reset(struct rockchip_sfc *sfc)
@@ -536,6 +539,27 @@ static int rockchip_sfc_xfer_data_dma(struct rockchip_sfc *sfc,
 	return ret;
 }
 
+static int rockchip_sfc_xfer_data_dma_async(struct rockchip_sfc *sfc,
+					    const struct spi_mem_op *op, u32 len)
+{
+	void *dma_buf;
+
+	if (op->data.dir == SPI_MEM_DATA_OUT)
+		dma_buf = (void *)op->data.buf.out;
+	else
+		dma_buf = (void *)op->data.buf.in;
+
+	dev_dbg(sfc->dev, "xfer_dma_async len=%x %p\n", len, dma_buf);
+
+	flush_dcache_range((unsigned long)dma_buf,
+			   (unsigned long)dma_buf + len);
+
+	rockchip_sfc_fifo_transfer_dma(sfc, (dma_addr_t)dma_buf, len);
+	sfc->last_async_size = len;
+
+	return 0;
+}
+
 static int rockchip_sfc_xfer_done(struct rockchip_sfc *sfc, u32 timeout_us)
 {
 	int ret = 0;
@@ -561,13 +585,21 @@ static int rockchip_sfc_exec_op(struct spi_slave *mem,
 	u32 len = min_t(u32, op->data.nbytes, sfc->max_iosize);
 	int ret;
 
+	/* Wait for last async transfer finished */
+	if (sfc->last_async_size) {
+		rockchip_sfc_wait_for_dma_finished(sfc, sfc->last_async_size);
+		sfc->last_async_size = 0;
+	}
 	rockchip_sfc_adjust_op_work((struct spi_mem_op *)op);
 	rockchip_sfc_xfer_setup(sfc, mem, op, len);
 	if (len) {
-		if (likely(sfc->use_dma) && len >= SFC_DMA_TRANS_THRETHOLD)
+		if (likely(sfc->use_dma) && len >= SFC_DMA_TRANS_THRETHOLD) {
+			if (mem->mode & SPI_DMA_PREPARE)
+				return rockchip_sfc_xfer_data_dma_async(sfc, op, len);
 			ret = rockchip_sfc_xfer_data_dma(sfc, op, len);
-		else
+		} else {
 			ret = rockchip_sfc_xfer_data_poll(sfc, op, len);
+		}
 
 		if (ret != len) {
 			dev_err(sfc->dev, "xfer data failed ret %d dir %d\n", ret, op->data.dir);
