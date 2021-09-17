@@ -539,66 +539,68 @@ int env_update(const char *varname, const char *varvalue)
 	return env_update_filter(varname, varvalue, NULL);
 }
 
-#define VARVALUE_BUF_SIZE	512
-
 char *env_exist(const char *varname, const char *varvalue)
 {
-	int len;
+	char *buf, *ptr = NULL;
 	char *oldvalue, *p;
-	char buf[VARVALUE_BUF_SIZE];
+	int len;
 
 	/* before import into hashtable */
 	if (!(gd->flags & GD_FLG_ENV_READY) || !varname)
 		return NULL;
 
+	len = strlen(varvalue) + 8; /* extra 8 byte is enough*/
+	buf = calloc(1, len);
+	if (!buf)
+		return NULL;
+
 	oldvalue = env_get(varname);
 	if (oldvalue) {
-		if (strlen(varvalue) > VARVALUE_BUF_SIZE) {
-			printf("%s: '%s' is too long than 512\n",
-			       __func__, varvalue);
-			return NULL;
-		}
-
 		/* Match middle one ? */
-		snprintf(buf, VARVALUE_BUF_SIZE, " %s ", varvalue);
+		snprintf(buf, len, " %s ", varvalue);
 		p = strstr(oldvalue, buf);
 		if (p) {
 			debug("%s: '%s' is already exist in '%s'(middle)\n",
 			      __func__, varvalue, varname);
-			return (p + 1);
+			ptr = (p + 1);
+			goto out;
 		} else {
 			debug("%s: not find in middle one\n", __func__);
 		}
 
 		/* Match last one ? */
-		snprintf(buf, VARVALUE_BUF_SIZE, " %s", varvalue);
+		snprintf(buf, len, " %s", varvalue);
 		p = strstr(oldvalue, buf);
 		if (p) {
 			if (*(p + strlen(varvalue) + 1) == '\0') {
 				debug("%s: '%s' is already exist in '%s'(last)\n",
 				      __func__, varvalue, varname);
-				return (p + 1);
+				ptr = (p + 1);
+				goto out;
 			}
 		} else {
 			debug("%s: not find in last one\n", __func__);
 		}
 
 		/* Match first one ? */
-		snprintf(buf, VARVALUE_BUF_SIZE, "%s ", varvalue);
+		snprintf(buf, len, "%s ", varvalue);
 		p = strstr(oldvalue, buf);
 		if (p) {
 			len = strstr(p, " ") - oldvalue;
 			if (len == strlen(varvalue)) {
 				debug("%s: '%s' is already exist in '%s'(first)\n",
 				      __func__, varvalue, varname);
-				return p;
+				ptr = p;
+				goto out;
 			}
 		} else  {
 			debug("%s: not find in first one\n", __func__);
 		}
 	}
+out:
+	free(buf);
 
-	return NULL;
+	return ptr;
 }
 
 int env_delete(const char *varname, const char *varvalue, int complete_match)
