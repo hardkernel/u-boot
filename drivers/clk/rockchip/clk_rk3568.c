@@ -1464,6 +1464,7 @@ static ulong rk3568_sdmmc_set_clk(struct rk3568_clk_priv *priv,
 
 	switch (rate) {
 	case OSC_HZ:
+	case 26 * MHz:
 		src_clk = CLK_SDMMC_SEL_24M;
 		break;
 	case 400 * MHz:
