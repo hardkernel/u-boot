@@ -128,8 +128,9 @@ static int fmsh_spinand_detect(struct spinand_device *spinand)
 
 	ret = spinand_match_and_init(spinand, fmsh_spinand_table,
 				     ARRAY_SIZE(fmsh_spinand_table), id[2]);
+	/* Not Only GD Nands MFR equals A1h */
 	if (ret)
-		return ret;
+		return 0;
 
 	return 1;
 }

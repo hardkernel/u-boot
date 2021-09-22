@@ -16,4 +16,5 @@ obj-$(CONFIG_SPI_NAND_BIWIN) += biwin.o
 obj-$(CONFIG_SPI_NAND_ETRON) += etron.o
 obj-$(CONFIG_SPI_NAND_JSC) += jsc.o
 obj-$(CONFIG_SPI_NAND_SILICONGO) += silicongo.o
+obj-$(CONFIG_SPI_NAND_UNIM) += unim.o
 obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
