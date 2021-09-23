@@ -601,6 +601,9 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 		return -EINVAL;
 	}
 
+	if (sclk == 0)
+		return -EINVAL;
+
 	if (sclk == freq)
 		div = 0;	/* bypass mode */
 	else
