@@ -515,12 +515,9 @@ static int rk_pcie_link_up(struct rk_pcie *priv, u32 cap_speed)
 	/* DW pre link configurations */
 	rk_pcie_configure(priv, cap_speed);
 
-	/* Rest the device */
-	if (dm_gpio_is_valid(&priv->rst_gpio)) {
-		dm_gpio_set_value(&priv->rst_gpio, 0);
-		msleep(1000);
+	/* Release the device */
+	if (dm_gpio_is_valid(&priv->rst_gpio))
 		dm_gpio_set_value(&priv->rst_gpio, 1);
-	}
 
 	rk_pcie_disable_ltssm(priv);
 	rk_pcie_link_status_clear(priv);
@@ -542,7 +539,7 @@ static int rk_pcie_link_up(struct rk_pcie *priv, u32 cap_speed)
 		dev_info(priv->dev, "PCIe Linking... LTSSM is 0x%x\n",
 			 rk_pcie_readl_apb(priv, PCIE_CLIENT_LTSSM_STATUS));
 		rk_pcie_debug_dump(priv);
-		msleep(100);
+		msleep(10);
 	}
 
 	dev_err(priv->dev, "PCIe-%d Link Fail\n", priv->dev->seq);
@@ -556,6 +553,10 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 	struct rk_pcie *priv = dev_get_priv(dev);
 	union phy_configure_opts phy_cfg;
 
+	/* Rest the device */
+	if (dm_gpio_is_valid(&priv->rst_gpio))
+		dm_gpio_set_value(&priv->rst_gpio, 0);
+
 	/* Set power and maybe external ref clk input */
 	if (priv->vpcie3v3) {
 		ret = regulator_set_enable(priv->vpcie3v3, true);
@@ -565,8 +566,6 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 			return ret;
 		}
 	}
-
-	msleep(1000);
 
 	if (priv->is_bifurcation) {
 		phy_cfg.pcie.is_bifurcation = true;
