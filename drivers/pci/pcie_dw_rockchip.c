@@ -558,7 +558,7 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 
 	/* Set power and maybe external ref clk input */
 	if (priv->vpcie3v3) {
-		ret = regulator_set_value(priv->vpcie3v3, 3300000);
+		ret = regulator_set_enable(priv->vpcie3v3, true);
 		if (ret) {
 			dev_err(priv->dev, "failed to enable vpcie3v3 (ret=%d)\n",
 				ret);
