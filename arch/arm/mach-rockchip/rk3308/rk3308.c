@@ -375,8 +375,10 @@ static int fdt_fixup_cpu_opp_table(const void *blob)
 	int len;
 	u32 phandle;
 	u32 *pp;
+	u32 val;
 	bool is_opp_enabled;
 
+	/* Replace opp table */
 	opp_node = fdt_path_offset(blob, "/rk3308bs-cpu0-opp-table");
 	if (opp_node < 0) {
 		printf("Failed to get rk3308bs-cpu0-opp-table node\n");
@@ -409,6 +411,7 @@ static int fdt_fixup_cpu_opp_table(const void *blob)
 		return -EINVAL;
 	}
 
+	/* Enable 1296MHz and 1200MHz */
 	is_opp_enabled = false;
 	sub_node = fdt_subnode_offset(blob, old_opp_node, "opp-1296000000");
 	if (sub_node >= 0) {
@@ -437,6 +440,31 @@ static int fdt_fixup_cpu_opp_table(const void *blob)
 		if (fdt_setprop_string((void *)blob, sub_node,
 				       "status", "okay") < 0)
 			printf("Failed to set 1200 okay\n");
+	}
+
+	/* Add high temp configure */
+	pp = (u32 *)fdt_getprop(blob, old_opp_node, "rockchip,high-temp", &len);
+	if (pp) {
+		val = fdt32_to_cpu(*pp);
+		pp = (u32 *)fdt_getprop(blob, opp_node,
+					"rockchip,high-temp", &len);
+		if (!pp) {
+			if (fdt_setprop_u32((void *)blob, opp_node,
+					    "rockchip,high-temp", val))
+				printf("Failed to set high temp prop\n");
+		}
+	}
+	pp = (u32 *)fdt_getprop(blob, old_opp_node,
+				"rockchip,high-temp-max-volt", &len);
+	if (pp) {
+		val = fdt32_to_cpu(*pp);
+		pp = (u32 *)fdt_getprop(blob, opp_node,
+					"rockchip,high-temp-max-volt", &len);
+		if (!pp) {
+			if (fdt_setprop_u32((void *)blob, opp_node,
+					    "rockchip,high-temp-max-volt", val))
+				printf("Failed to set high temp max volt prop\n");
+		}
 	}
 
 	return 0;
@@ -475,11 +503,38 @@ static int fdt_fixup_dmc_opp_table(const void *blob)
 	return 0;
 }
 
+static int fdt_fixup_thermal_zones(const void *blob)
+{
+	int thermal_node;
+	int len;
+	u32 *pp;
+	u32 val;
+
+	thermal_node = fdt_path_offset(blob, "/thermal-zones/soc-thermal");
+	if (thermal_node < 0) {
+		printf("Failed to get soc thermal node\n");
+		return -EINVAL;
+	}
+
+	pp = (u32 *)fdt_getprop(blob, thermal_node,
+				"rk3308bs-sustainable-power", &len);
+	if (pp) {
+		val = fdt32_to_cpu(*pp);
+		pp = (u32 *)fdt_getprop(blob, thermal_node,
+					"sustainable-power", &len);
+		if (pp)
+			pp[0] = cpu_to_fdt32(val);
+	}
+
+	return 0;
+}
+
 int rk_board_fdt_fixup(const void *blob)
 {
 	if (soc_is_rk3308bs()) {
 		fdt_fixup_cpu_opp_table(blob);
 		fdt_fixup_dmc_opp_table(blob);
+		fdt_fixup_thermal_zones(blob);
 	}
 
 	return 0;
