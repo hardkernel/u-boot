@@ -19,6 +19,7 @@
 #include <key.h>
 #include <mmc.h>
 #include <malloc.h>
+#include <nvme.h>
 #include <stdlib.h>
 #include <sysmem.h>
 #include <asm/io.h>
@@ -64,6 +65,24 @@ static void boot_devtype_init(void)
 			env_set("devnum", devnum);
 			goto finish;
 		}
+	}
+#endif
+
+#ifdef CONFIG_NVME
+	struct udevice *udev;
+
+	ret = nvme_scan_namespace();
+	if (!ret) {
+		ret = blk_get_device(IF_TYPE_NVME, 0, &udev);
+		if (!ret) {
+			devtype = "nvme";
+			devnum = "0";
+			env_set("devtype", devtype);
+			env_set("devnum", devnum);
+			goto finish;
+		}
+	} else {
+		printf("Set nvme as boot storage fail ret=%d\n", ret);
 	}
 #endif
 
@@ -153,6 +172,9 @@ static int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "scsi")) {
 		type = IF_TYPE_SCSI;
 		boot_media = "scsi";
+	} else if (!strcmp(devtype, "nvme")) {
+		type = IF_TYPE_NVME;
+		boot_media = "nvme";
 	} else {
 		/* Add new to support */
 	}
