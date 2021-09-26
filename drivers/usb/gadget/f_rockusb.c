@@ -643,6 +643,11 @@ static int rkusb_do_get_storage_info(struct fsg_common *common,
 	case IF_TYPE_RKNAND:
 		media = BOOT_TYPE_NAND;
 		break;
+
+	case IF_TYPE_NVME:
+		media = BOOT_TYPE_PCIE;
+		break;
+
 	default:
 		break;
 	}
@@ -676,7 +681,7 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	 * bit[10:63}: Reserved.
 	 */
 	memset((void *)&buf[0], 0, len);
-	if (type == IF_TYPE_MMC || type == IF_TYPE_SD)
+	if (type == IF_TYPE_MMC || type == IF_TYPE_SD || type == IF_TYPE_NVME)
 		buf[0] = BIT(0) | BIT(2) | BIT(4);
 	else
 		buf[0] = BIT(0) | BIT(4);
