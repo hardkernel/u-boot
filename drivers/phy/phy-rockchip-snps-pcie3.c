@@ -116,19 +116,19 @@ static int rockchip_p3phy_probe(struct udevice *dev)
 		return ret;
 	}
 
-	ret = clk_get_by_name(dev, "refclk_m", &priv->ref_clk_m);
+	ret = clk_get_by_index(dev, 0, &priv->ref_clk_m);
 	if (ret) {
 		dev_err(dev, "failed to find ref clock M\n");
 		return PTR_ERR(&priv->ref_clk_m);
 	}
 
-	ret = clk_get_by_name(dev, "refclk_n", &priv->ref_clk_n);
+	ret = clk_get_by_index(dev, 1, &priv->ref_clk_n);
 	if (ret) {
 		dev_err(dev, "failed to find ref clock N\n");
 		return PTR_ERR(&priv->ref_clk_n);
 	}
 
-	ret = clk_get_by_name(dev, "pclk", &priv->pclk);
+	ret = clk_get_by_index(dev, 2, &priv->pclk);
 	if (ret) {
 		dev_err(dev, "failed to find pclk\n");
 		return PTR_ERR(&priv->pclk);
