@@ -47,6 +47,12 @@ static void boot_devtype_init(void)
 	if (done)
 		return;
 
+	/*
+	 * The loader stage does not support SATA, and the boot device
+	 * can only be other storage. Therefore, it is necessary to
+	 * initialize the SATA device before judging the initialization
+	 * of atag boot device
+	 */
 #if defined(CONFIG_SCSI) && defined(CONFIG_CMD_SCSI) && defined(CONFIG_AHCI)
 	ret = run_command("scsi scan", 0);
 	if (!ret) {
