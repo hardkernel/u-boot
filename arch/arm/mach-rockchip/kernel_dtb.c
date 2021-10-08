@@ -13,6 +13,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifndef CONFIG_USING_KERNEL_DTB_V2
 /* Here, only fixup cru phandle, pmucru is not included */
 static int phandles_fixup_cru(const void *fdt)
 {
@@ -193,6 +194,7 @@ static int phandles_fixup_gpio(const void *fdt, void *ufdt)
 
 	return 0;
 }
+#endif
 
 __weak int board_mmc_dm_reinit(struct udevice *dev)
 {
@@ -240,10 +242,17 @@ static int dtb_check_ok(void *kfdt, void *ufdt)
 
 int init_kernel_dtb(void)
 {
+#ifndef CONFIG_USING_KERNEL_DTB_V2
+	void *ufdt_blob = (void *)gd->fdt_blob;
+#endif
 	ulong fdt_addr = 0;
-	void *ufdt_blob;
 	int ret = -ENODEV;
 
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	printf("DM: v2\n");
+#else
+	printf("DM: v1\n");
+#endif
 	/*
 	 * If memory size <= 128MB, we firstly try to get "fdt_addr1_r".
 	 */
@@ -297,11 +306,10 @@ dtb_embed:
 	}
 
 dtb_okay:
-	ufdt_blob = (void *)gd->fdt_blob;
 	gd->fdt_blob = (void *)fdt_addr;
-
 	hotkey_run(HK_FDT);
 
+#ifndef CONFIG_USING_KERNEL_DTB_V2
 	/*
 	 * There is a phandle miss match between U-Boot and kernel dtb node,
 	 * we fixup it in U-Boot live dt nodes.
@@ -311,6 +319,7 @@ dtb_okay:
 	 */
 	phandles_fixup_cru((void *)gd->fdt_blob);
 	phandles_fixup_gpio((void *)gd->fdt_blob, (void *)ufdt_blob);
+#endif
 
 	gd->flags |= GD_FLG_KDTB_READY;
 	gd->of_root_f = gd->of_root;
@@ -330,3 +339,4 @@ dtb_okay:
 
 	return 0;
 }
+

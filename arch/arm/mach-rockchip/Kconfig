@@ -760,6 +760,20 @@ config USING_KERNEL_DTB
 	  the uart and emmc will still using U-Boot dtb, but other devices like
 	  regulator/pmic, display, usb will use dts node from kernel.
 
+config USING_KERNEL_DTB_V2
+	bool "Version 2 of kernel dtb mechanism"
+	depends on USING_KERNEL_DTB
+	default n
+	help
+	  The V2 mechanism:
+	    - both of U-Boot and kernel's *ALL* devices are exist in dm tree.
+	    - put the necessary U-Boot devices in the head of device uclass list.
+	    - the both existence policy don't require phandle fixup any more.
+	    - it is for the next generation(rk3588 ...) or necessary platforms.
+	  The V1 mechanism(legacy):
+	    - U-Boot: only some necessary U-Boot devices(storage, crypto...) in dm tree.
+	    - kernel: all the devices(except the U-Boot only) in dm tree.
+
 config EMBED_KERNEL_DTB_PATH
 	string "Embeded kernel dtb file path"
 	depends on USING_KERNEL_DTB
