@@ -368,6 +368,29 @@ void board_debug_uart_init(void)
 #endif /* defined(CONFIG_DEBUG_UART_BASE) */
 }
 
+static int fdt_fixup_cpu_idle(const void *blob)
+{
+	int cpu_node, sub_node, len;
+	u32 *pp;
+
+	cpu_node = fdt_path_offset(blob, "/cpus");
+	if (cpu_node < 0) {
+		printf("Failed to get cpus node\n");
+		return -EINVAL;
+	}
+
+	fdt_for_each_subnode(sub_node, blob, cpu_node) {
+		pp = (u32 *)fdt_getprop(blob, sub_node, "cpu-idle-states",
+					&len);
+		if (!pp)
+			continue;
+		if (fdt_delprop((void *)blob, sub_node, "cpu-idle-states") < 0)
+			printf("Failed to del cpu-idle-states prop\n");
+	}
+
+	return 0;
+}
+
 static int fdt_fixup_cpu_opp_table(const void *blob)
 {
 	int opp_node, old_opp_node;
@@ -532,6 +555,7 @@ static int fdt_fixup_thermal_zones(const void *blob)
 int rk_board_fdt_fixup(const void *blob)
 {
 	if (soc_is_rk3308bs()) {
+		fdt_fixup_cpu_idle(blob);
 		fdt_fixup_cpu_opp_table(blob);
 		fdt_fixup_dmc_opp_table(blob);
 		fdt_fixup_thermal_zones(blob);
