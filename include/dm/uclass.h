@@ -37,6 +37,9 @@ struct uclass {
 	struct uclass_driver *uc_drv;
 	struct list_head dev_head;
 	struct list_head sibling_node;
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	struct list_head *u_boot_dev_head;
+#endif
 };
 
 struct driver;

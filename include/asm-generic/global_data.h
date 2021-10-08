@@ -91,6 +91,7 @@ typedef struct global_data {
 #ifdef CONFIG_USING_KERNEL_DTB
 	const void *ufdt_blob;		/* Our U-Boot device tree, NULL if none */
 	const void *fdt_blob_kern;	/* Kernel dtb at the tail of u-boot.bin */
+	struct device_node *of_root_f;  /* U-Boot of-root instance */
 #endif
 #endif
 	struct jt_funcs *jt;		/* jump table */

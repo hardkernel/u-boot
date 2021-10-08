@@ -80,6 +80,9 @@ static int uclass_add(enum uclass_id id, struct uclass **ucp)
 		}
 	}
 	uc->uc_drv = uc_drv;
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	uc->u_boot_dev_head = NULL;
+#endif
 	INIT_LIST_HEAD(&uc->sibling_node);
 	INIT_LIST_HEAD(&uc->dev_head);
 	list_add(&uc->sibling_node, &DM_UCLASS_ROOT_NON_CONST);
@@ -564,14 +567,20 @@ int uclass_next_device_check(struct udevice **devp)
 	return device_probe(*devp);
 }
 
-int uclass_bind_device(struct udevice *dev)
+int uclass_bind_device(struct udevice *dev, bool after_u_boot_dev)
 {
 	struct uclass *uc;
 	int ret;
 
 	uc = dev->uclass;
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	if (after_u_boot_dev)
+		list_add_tail(&dev->uclass_node, &uc->dev_head);
+	else
+		list_add_tail(&dev->uclass_node, uc->u_boot_dev_head);
+#else
 	list_add_tail(&dev->uclass_node, &uc->dev_head);
-
+#endif
 	if (dev->parent) {
 		struct uclass_driver *uc_drv = dev->parent->uclass->uc_drv;
 

@@ -37,6 +37,7 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 {
 	struct udevice *dev;
 	struct uclass *uc;
+	bool after_u_boot_dev = true;
 	int size, ret = 0;
 
 	if (devp)
@@ -50,7 +51,7 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 		return ret;
 	}
 
-#ifdef CONFIG_USING_KERNEL_DTB
+#if defined(CONFIG_USING_KERNEL_DTB) && !defined(CONFIG_USING_KERNEL_DTB_V2)
 	if (gd->flags & GD_FLG_RELOC) {
 		/* For mmc/nand/spiflash, just update from kernel dtb instead bind again*/
 		if (drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND ||
@@ -194,7 +195,59 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 	if (parent)
 		list_add_tail(&dev->sibling_node, &parent->child_head);
 
-	ret = uclass_bind_device(dev);
+#ifdef CONFIG_USING_KERNEL_DTB
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	/*
+	 * Put these U-Boot devices in the head of uclass device list for
+	 * the primary get by uclass_get_device_xxx().
+	 *
+	 * device-list: U0, U1, U2, ... K0, K1, K2, ... (prior u-boot dev)
+	 * device-list: K0, K1, K2, ... U0, U1, U2, ... (normal)
+	 *
+	 * U: u-boot dev
+	 * K: kernel dev
+	 */
+	u32 i, prior_u_boot_uclass_id[] = {
+		UCLASS_AHCI,		/* boot device */
+		UCLASS_BLK,
+		UCLASS_MMC,
+		UCLASS_MTD,
+		UCLASS_PCI,
+		UCLASS_RKNAND,
+		UCLASS_SPI_FLASH,
+
+		UCLASS_CRYPTO,		/* RSA security */
+		UCLASS_FIRMWARE,	/* psci sysreset */
+		UCLASS_RNG,		/* ramdom number */
+		UCLASS_SYSCON,		/* grf, pmugrf */
+		UCLASS_SYSRESET,	/* psci sysreset */
+		UCLASS_WDT,		/* reliable sysreset */
+	};
+
+	if (gd->flags & GD_FLG_KDTB_READY) {
+		after_u_boot_dev = false;
+		dev->flags |= DM_FLAG_KNRL_DTB;
+
+		for (i = 0; i < ARRAY_SIZE(prior_u_boot_uclass_id); i++) {
+			if (drv->id == prior_u_boot_uclass_id[i]) {
+				after_u_boot_dev = true;
+				break;
+			}
+		}
+
+		/* no u-boot dev ? */
+		if (!dev->uclass->u_boot_dev_head)
+			dev->uclass->u_boot_dev_head = &uc->dev_head;
+	} else {
+		if (!dev->uclass->u_boot_dev_head)
+			dev->uclass->u_boot_dev_head = &dev->uclass_node;
+	}
+#else
+	if (gd->flags & GD_FLG_KDTB_READY)
+		dev->flags |= DM_FLAG_KNRL_DTB;
+#endif
+#endif
+	ret = uclass_bind_device(dev, after_u_boot_dev);
 	if (ret)
 		goto fail_uclass_bind;
 

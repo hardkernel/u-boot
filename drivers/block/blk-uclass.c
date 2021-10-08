@@ -566,7 +566,17 @@ static int blk_claim_devnum(enum if_type if_type, int devnum)
 
 			if (next < 0)
 				return next;
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+			/*
+			 * Not allow devnum to be forced distributed.
+			 * See commit (e48eeb9ea3 dm: blk: Improve block device claiming).
+			 *
+			 * fix like: "Device 'dwmmc@fe2b0000': seq 0 is in use by 'sdhci@fe310000'"
+			 */
+			if (!(gd->flags & GD_FLG_KDTB_READY))
+#endif
 			desc->devnum = next;
+
 			return 0;
 		}
 	}

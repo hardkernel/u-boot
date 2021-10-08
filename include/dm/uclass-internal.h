@@ -140,7 +140,7 @@ int uclass_find_device_by_ofnode(enum uclass_id id, ofnode node,
  * @dev:	Pointer to the device
  * #return 0 on success, -ve on error
  */
-int uclass_bind_device(struct udevice *dev);
+int uclass_bind_device(struct udevice *dev, bool after_u_boot_dev);
 
 /**
  * uclass_unbind_device() - Deassociate device with a uclass
