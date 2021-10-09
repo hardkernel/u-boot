@@ -788,8 +788,8 @@ static int dwmci_init(struct mmc *mmc)
 static int dwmci_get_cd(struct udevice *dev)
 {
 	int ret = -1;
-#ifndef CONFIG_SPL_BUILD
-#ifdef CONFIG_DM_GPIO
+
+#if defined(CONFIG_DM_GPIO) && (defined(CONFIG_SPL_GPIO_SUPPORT) || !defined(CONFIG_SPL_BUILD))
 	struct gpio_desc detect;
 
 	ret = gpio_request_by_name(dev, "cd-gpios", 0, &detect, GPIOD_IS_IN);
@@ -798,7 +798,6 @@ static int dwmci_get_cd(struct udevice *dev)
 	}
 
 	ret = !dm_gpio_get_value(&detect);
-#endif
 #endif
 	return ret;
 }
