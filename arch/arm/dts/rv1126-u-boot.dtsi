@@ -193,6 +193,11 @@
 	status = "okay";
 };
 
+&gpio0 {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
 &gpio1 {
 	u-boot,dm-spl;
 	status = "okay";
