@@ -526,6 +526,49 @@ static int fdt_fixup_dmc_opp_table(const void *blob)
 	return 0;
 }
 
+static void fixup_pcfg_drive_strength(const void *blob, int noffset)
+{
+	u32 *ds, *dss;
+	u32 val;
+
+	dss = (u32 *)fdt_getprop(blob, noffset, "drive-strength-s", NULL);
+	if (!dss)
+		return;
+
+	val = dss[0];
+	ds = (u32 *)fdt_getprop(blob, noffset, "drive-strength", NULL);
+	if (ds) {
+		ds[0] = val;
+	} else {
+		if (fdt_setprop((void *)blob, noffset,
+				"drive-strength", &val, 4) < 0)
+			printf("Failed to add drive-strength prop\n");
+	}
+}
+
+static int fdt_fixup_pcfg(const void *blob)
+{
+	int depth1_node;
+	int depth2_node;
+	int root_node;
+
+	root_node = fdt_path_offset(blob, "/");
+	if (root_node < 0)
+		return root_node;
+
+	fdt_for_each_subnode(depth1_node, blob, root_node) {
+		debug("depth1: %s\n", fdt_get_name(blob, depth2_node, NULL));
+		fixup_pcfg_drive_strength(blob, depth1_node);
+		fdt_for_each_subnode(depth2_node, blob, depth1_node) {
+			debug("    depth2: %s\n",
+			      fdt_get_name(blob, depth2_node, NULL));
+			fixup_pcfg_drive_strength(blob, depth2_node);
+		}
+	}
+
+	return 0;
+}
+
 static int fdt_fixup_thermal_zones(const void *blob)
 {
 	int thermal_node;
@@ -558,6 +601,7 @@ int rk_board_fdt_fixup(const void *blob)
 		fdt_fixup_cpu_idle(blob);
 		fdt_fixup_cpu_opp_table(blob);
 		fdt_fixup_dmc_opp_table(blob);
+		fdt_fixup_pcfg(blob);
 		fdt_fixup_thermal_zones(blob);
 	}
 
