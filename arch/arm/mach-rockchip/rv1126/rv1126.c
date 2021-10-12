@@ -87,6 +87,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_PMU_GPLL_CON1	0x14
 
 #define GRF_BASE		0xFE000000
+#define GRF_SOC_CON2		0x008
 #define PMUGRF_BASE		0xFE020000
 #define SGRF_BASE		0xFE0A0000
 #define SGRF_CON_SCR1_BOOT_ADDR	0x0b0
@@ -742,6 +743,11 @@ int arch_cpu_init(void)
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(uintptr_t entry_point)
 {
+	/*
+	 * Fix mcu does not work probabilistically through reset the
+	 * mcu debug module. If use the jtag debug, reset it.
+	 */
+	writel(0x80008000, GRF_BASE + GRF_SOC_CON2);
 	/* Reset the scr1 */
 	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON02);
 	udelay(100);
