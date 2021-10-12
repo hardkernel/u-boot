@@ -185,6 +185,8 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 			    u64 *size, u32 flags)
 {
 	struct udevice *dev;
+	ulong dst_org = dst;
+	u64 dst_size = 0;
 	int ret;
 
 	dev = misc_decompress_get_device(cap);
@@ -195,6 +197,16 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 	ret = misc_decompress_finish(dev, cap);
 	if (ret)
 		return ret;
+
+	/*
+	 * Check if ARCH_DMA_MINALIGN aligned, otherwise use sync action
+	 * for output data memcpy.
+	 */
+	if (!IS_ALIGNED(dst, ARCH_DMA_MINALIGN)) {
+		dst_org = dst;
+		dst = ALIGN(dst, ARCH_DMA_MINALIGN);
+		sync = true;
+	}
 
 	ret = misc_decompress_start(dev, dst, src, src_len, flags);
 	if (ret)
@@ -210,8 +222,15 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 		ret = misc_decompress_finish(dev, cap);
 		if (ret)
 			return ret;
-		if (size)
-			ret = misc_decompress_data_size(dev, size, cap);
+
+		if (size || (dst != dst_org)) {
+			ret = misc_decompress_data_size(dev, &dst_size, cap);
+			if (size)
+				*size = dst_size;
+			if (dst != dst_org)
+				memcpy((char *)dst_org,
+				       (const char *)dst, dst_size);
+		}
 	} else {
 		if (size)
 			*size = misc_get_data_size(src, src_len, cap);
