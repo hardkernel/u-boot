@@ -355,6 +355,10 @@ static void cmdline_handle(void)
 	if (!dev_desc)
 		return;
 
+	/*
+	 * From rk356x, the sd/udisk update flag was moved from
+	 * IDB to Android BCB.
+	 */
 	if (get_bcb_recovery_msg() == BCB_MSG_RECOVERY_RK_FWUPDATE) {
 		if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1)
 			env_update("bootargs", "sdfwupdate");
