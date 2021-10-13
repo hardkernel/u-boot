@@ -138,6 +138,9 @@ static void rk3399_emmc_phy_power_on(struct rockchip_emmc_phy *phy, u32 clock)
 	writel(RK_CLRSETBITS(3 << 12, freqsel << 12), &phy->emmcphy_con[0]);
 	writel(RK_CLRSETBITS(1 << 1, 1 << 1), &phy->emmcphy_con[6]);
 
+	/* REN Enable on STRB Line for HS400 */
+	writel(RK_CLRSETBITS(0, 1 << 9), &phy->emmcphy_con[2]);
+
 	start = get_timer(0);
 
 	do {
