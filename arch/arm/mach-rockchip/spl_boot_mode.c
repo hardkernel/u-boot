@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <android_bootloader_message.h>
 
 static int misc_require_recovery(struct blk_desc *dev_desc, u32 bcb_offset)
 {
