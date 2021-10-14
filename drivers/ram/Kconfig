@@ -48,4 +48,10 @@ config RAMDISK_RO
 	help
 	  This enables the read only ramdisk support.
 
+config DM_DMC
+	bool "Enable Driver Model for DMC drivers"
+	depends on DM
+	help
+	  This config enables the driver-model DMC support.
+
 source "drivers/ram/rockchip/Kconfig"
