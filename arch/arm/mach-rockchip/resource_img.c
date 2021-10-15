@@ -584,6 +584,9 @@ int resource_populate_dtb(void *img, void *fdt)
 	int format;
 	int ret;
 
+	if (!fdt_check_header(fdt))
+		return 0;
+
 	format = (genimg_get_format(img));
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	if (format == IMAGE_FORMAT_ANDROID) {
