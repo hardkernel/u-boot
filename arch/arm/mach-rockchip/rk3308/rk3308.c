@@ -393,13 +393,10 @@ static int fdt_fixup_cpu_idle(const void *blob)
 
 static int fdt_fixup_cpu_opp_table(const void *blob)
 {
-	int opp_node, old_opp_node;
-	int cpu_node, sub_node;
+	int opp_node, cpu_node, sub_node;
 	int len;
 	u32 phandle;
 	u32 *pp;
-	u32 val;
-	bool is_opp_enabled;
 
 	/* Replace opp table */
 	opp_node = fdt_path_offset(blob, "/rk3308bs-cpu0-opp-table");
@@ -426,68 +423,6 @@ static int fdt_fixup_cpu_opp_table(const void *blob)
 		if (!pp)
 			continue;
 		pp[0] = cpu_to_fdt32(phandle);
-	}
-
-	old_opp_node = fdt_path_offset(blob, "/cpu0-opp-table");
-	if (old_opp_node < 0) {
-		printf("Failed to get cpu0-opp-table node\n");
-		return -EINVAL;
-	}
-
-	/* Enable 1296MHz and 1200MHz */
-	is_opp_enabled = false;
-	sub_node = fdt_subnode_offset(blob, old_opp_node, "opp-1296000000");
-	if (sub_node >= 0) {
-		if (fdt_stringlist_search(blob, sub_node,
-					  "status", "okay") >= 0)
-			is_opp_enabled = true;
-	}
-
-	sub_node = fdt_subnode_offset(blob, opp_node, "opp-1296000000");
-	if (sub_node >= 0 && is_opp_enabled) {
-		if (fdt_setprop_string((void *)blob, sub_node,
-				       "status", "okay") < 0)
-			printf("Failed to set 1296 okay\n");
-	}
-
-	is_opp_enabled = false;
-	sub_node = fdt_subnode_offset(blob, old_opp_node, "opp-1200000000");
-	if (sub_node >= 0) {
-		if (fdt_stringlist_search(blob, sub_node,
-					  "status", "okay") >= 0)
-			is_opp_enabled = true;
-	}
-
-	sub_node = fdt_subnode_offset(blob, opp_node, "opp-1200000000");
-	if (sub_node >= 0 && is_opp_enabled) {
-		if (fdt_setprop_string((void *)blob, sub_node,
-				       "status", "okay") < 0)
-			printf("Failed to set 1200 okay\n");
-	}
-
-	/* Add high temp configure */
-	pp = (u32 *)fdt_getprop(blob, old_opp_node, "rockchip,high-temp", &len);
-	if (pp) {
-		val = fdt32_to_cpu(*pp);
-		pp = (u32 *)fdt_getprop(blob, opp_node,
-					"rockchip,high-temp", &len);
-		if (!pp) {
-			if (fdt_setprop_u32((void *)blob, opp_node,
-					    "rockchip,high-temp", val))
-				printf("Failed to set high temp prop\n");
-		}
-	}
-	pp = (u32 *)fdt_getprop(blob, old_opp_node,
-				"rockchip,high-temp-max-volt", &len);
-	if (pp) {
-		val = fdt32_to_cpu(*pp);
-		pp = (u32 *)fdt_getprop(blob, opp_node,
-					"rockchip,high-temp-max-volt", &len);
-		if (!pp) {
-			if (fdt_setprop_u32((void *)blob, opp_node,
-					    "rockchip,high-temp-max-volt", val))
-				printf("Failed to set high temp max volt prop\n");
-		}
 	}
 
 	return 0;
