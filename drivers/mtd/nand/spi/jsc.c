@@ -83,7 +83,8 @@ static int js28u1gqscahg_ecc_get_status(struct spinand_device *spinand,
 }
 
 static const struct spinand_info jsc_spinand_table[] = {
-	SPINAND_INFO("JS28U1GQSCAHG-83", 0x21,
+	SPINAND_INFO("JS28U1GQSCAHG-83",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x21),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -93,39 +94,13 @@ static const struct spinand_info jsc_spinand_table[] = {
 		     SPINAND_ECCINFO(&js28u1gqscahg_ooblayout, js28u1gqscahg_ecc_get_status)),
 };
 
-/**
- * jsc_spinand_detect - initialize device related part in spinand_device
- * struct if it is a JSC device.
- * @spinand: SPI NAND device structure
- */
-static int jsc_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * JSC SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_JSC)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, jsc_spinand_table,
-				     ARRAY_SIZE(jsc_spinand_table),
-				     id[2]);
-
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops jsc_spinand_manuf_ops = {
-	.detect = jsc_spinand_detect,
 };
 
 const struct spinand_manufacturer jsc_spinand_manufacturer = {
 	.id = SPINAND_MFR_JSC,
 	.name = "JSC",
+	.chips = jsc_spinand_table,
+	.nchips = ARRAY_SIZE(jsc_spinand_table),
 	.ops = &jsc_spinand_manuf_ops,
 };

@@ -83,7 +83,8 @@ static const struct mtd_ooblayout_ops fm25s01_ooblayout = {
 };
 
 static const struct spinand_info fmsh_spinand_table[] = {
-	SPINAND_INFO("FM25S01A", 0xE4,
+	SPINAND_INFO("FM25S01A",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xE4),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -91,7 +92,8 @@ static const struct spinand_info fmsh_spinand_table[] = {
 					      &update_cache_variants),
 		     0,
 		     SPINAND_ECCINFO(&fm25s01a_ooblayout, NULL)),
-	SPINAND_INFO("FM25S02A", 0xE5,
+	SPINAND_INFO("FM25S02A",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xE5),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 2, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -99,7 +101,8 @@ static const struct spinand_info fmsh_spinand_table[] = {
 					      &update_cache_variants),
 		     1,
 		     SPINAND_ECCINFO(&fm25s01a_ooblayout, NULL)),
-	SPINAND_INFO("FM25S01", 0xA1,
+	SPINAND_INFO("FM25S01",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xA1),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -109,38 +112,13 @@ static const struct spinand_info fmsh_spinand_table[] = {
 		     SPINAND_ECCINFO(&fm25s01_ooblayout, NULL)),
 };
 
-/**
- * fmsh_spinand_detect - initialize device related part in spinand_device
- * struct if it is a FMSH device.
- * @spinand: SPI NAND device structure
- */
-static int fmsh_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * FMSH SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_FMSH)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, fmsh_spinand_table,
-				     ARRAY_SIZE(fmsh_spinand_table), id[2]);
-	/* Not Only GD Nands MFR equals A1h */
-	if (ret)
-		return 0;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops fmsh_spinand_manuf_ops = {
-	.detect = fmsh_spinand_detect,
 };
 
 const struct spinand_manufacturer fmsh_spinand_manufacturer = {
 	.id = SPINAND_MFR_FMSH,
 	.name = "FMSH",
+	.chips = fmsh_spinand_table,
+	.nchips = ARRAY_SIZE(fmsh_spinand_table),
 	.ops = &fmsh_spinand_manuf_ops,
 };

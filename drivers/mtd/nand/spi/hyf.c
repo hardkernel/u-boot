@@ -140,7 +140,8 @@ static int hyf1gq4udacae_ecc_get_status(struct spinand_device *spinand,
 }
 
 static const struct spinand_info hyf_spinand_table[] = {
-	SPINAND_INFO("HYF1GQ4UPACAE", 0xA1,
+	SPINAND_INFO("HYF1GQ4UPACAE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xA1),
 		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -148,7 +149,8 @@ static const struct spinand_info hyf_spinand_table[] = {
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf1gq4upacae_ooblayout, NULL)),
-	SPINAND_INFO("HYF1GQ4UDACAE", 0x21,
+	SPINAND_INFO("HYF1GQ4UDACAE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x21),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -157,7 +159,8 @@ static const struct spinand_info hyf_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf1gq4udacae_ooblayout,
 				     hyf1gq4udacae_ecc_get_status)),
-	SPINAND_INFO("HYF1GQ4UDACAE", 0x22,
+	SPINAND_INFO("HYF1GQ4UDACAE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x22),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -166,7 +169,8 @@ static const struct spinand_info hyf_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf1gq4udacae_ooblayout,
 				     hyf1gq4udacae_ecc_get_status)),
-	SPINAND_INFO("HYF2GQ4UAACAE", 0x52,
+	SPINAND_INFO("HYF2GQ4UAACAE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x52),
 		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(14, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -175,7 +179,8 @@ static const struct spinand_info hyf_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf2gq4uaacae_ooblayout,
 				     hyf1gq4udacae_ecc_get_status)),
-	SPINAND_INFO("HYF2GQ4UHCCAE", 0x5A,
+	SPINAND_INFO("HYF2GQ4UHCCAE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x5A),
 		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(14, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -184,7 +189,8 @@ static const struct spinand_info hyf_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&hyf2gq4uaacae_ooblayout,
 				     hyf1gq4udacae_ecc_get_status)),
-	SPINAND_INFO("HYF4GQ4UAACBE", 0xD4,
+	SPINAND_INFO("HYF4GQ4UAACBE",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xD4),
 		     NAND_MEMORG(1, 4096, 128, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -195,38 +201,13 @@ static const struct spinand_info hyf_spinand_table[] = {
 				     hyf1gq4udacae_ecc_get_status)),
 };
 
-/**
- * hyf_spinand_detect - initialize device related part in spinand_device
- * struct if it is a hyf device.
- * @spinand: SPI NAND device structure
- */
-static int hyf_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * hyf SPI NAND read ID needs a dummy byte, so the first byte in
-	 * raw_id is garbage.
-	 */
-	if (id[1] != SPINAND_MFR_HYF)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, hyf_spinand_table,
-				     ARRAY_SIZE(hyf_spinand_table),
-				     id[2]);
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops hyf_spinand_manuf_ops = {
-	.detect = hyf_spinand_detect,
 };
 
 const struct spinand_manufacturer hyf_spinand_manufacturer = {
 	.id = SPINAND_MFR_HYF,
 	.name = "hyf",
+	.chips = hyf_spinand_table,
+	.nchips = ARRAY_SIZE(hyf_spinand_table),
 	.ops = &hyf_spinand_manuf_ops,
 };

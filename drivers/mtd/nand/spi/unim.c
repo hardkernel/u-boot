@@ -82,7 +82,8 @@ static int tx25g01_ecc_get_status(struct spinand_device *spinand,
 }
 
 static const struct spinand_info unim_spinand_table[] = {
-	SPINAND_INFO("TX25G01", 0xF1,
+	SPINAND_INFO("TX25G01",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xF1),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -92,39 +93,13 @@ static const struct spinand_info unim_spinand_table[] = {
 		     SPINAND_ECCINFO(&tx25g01_ooblayout, tx25g01_ecc_get_status)),
 };
 
-/**
- * unim_spinand_detect - initialize device related part in spinand_device
- * struct if it is a UNIM device.
- * @spinand: SPI NAND device structure
- */
-static int unim_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * UNIM SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_UNIM)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, unim_spinand_table,
-				     ARRAY_SIZE(unim_spinand_table),
-				     id[2]);
-	/* Not Only UNIM Nands MFR equals A1h */
-	if (ret)
-		return 0;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops unim_spinand_manuf_ops = {
-	.detect = unim_spinand_detect,
 };
 
 const struct spinand_manufacturer unim_spinand_manufacturer = {
 	.id = SPINAND_MFR_UNIM,
 	.name = "UNIM",
+	.chips = unim_spinand_table,
+	.nchips = ARRAY_SIZE(unim_spinand_table),
 	.ops = &unim_spinand_manuf_ops,
 };

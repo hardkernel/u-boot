@@ -60,7 +60,8 @@ static const struct mtd_ooblayout_ops f50lxx41x_ooblayout = {
 };
 
 static const struct spinand_info esmt_spinand_table[] = {
-	SPINAND_INFO("F50L1G41LB", 0x01,
+	SPINAND_INFO("F50L1G41LB",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x01),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -70,44 +71,13 @@ static const struct spinand_info esmt_spinand_table[] = {
 		     SPINAND_ECCINFO(&f50lxx41x_ooblayout, NULL)),
 };
 
-/**
- * esmt_spinand_detect - initialize device related part in spinand_device
- * struct if it is a esmt device.
- * @spinand: SPI NAND device structure
- */
-static int esmt_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * esmt SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_ESMT)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, esmt_spinand_table,
-				     ARRAY_SIZE(esmt_spinand_table), id[2]);
-	/* Not Only ESMT Nands MFR equals C8h */
-	if (ret)
-		return 0;
-
-	return 1;
-}
-
-static int esmt_spinand_init(struct spinand_device *spinand)
-{
-	return 0;
-}
-
 static const struct spinand_manufacturer_ops esmt_spinand_manuf_ops = {
-	.detect = esmt_spinand_detect,
-	.init = esmt_spinand_init,
 };
 
 const struct spinand_manufacturer esmt_spinand_manufacturer = {
 	.id = SPINAND_MFR_ESMT,
 	.name = "esmt",
+	.chips = esmt_spinand_table,
+	.nchips = ARRAY_SIZE(esmt_spinand_table),
 	.ops = &esmt_spinand_manuf_ops,
 };

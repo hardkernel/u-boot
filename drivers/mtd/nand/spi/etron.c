@@ -79,7 +79,8 @@ static int em73c044vcf_oh_ecc_get_status(struct spinand_device *spinand,
 }
 
 static const struct spinand_info etron_spinand_table[] = {
-	SPINAND_INFO("EM73C044VCF-0H", 0x36,
+	SPINAND_INFO("EM73C044VCF-0H",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x36),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -90,37 +91,13 @@ static const struct spinand_info etron_spinand_table[] = {
 				     em73c044vcf_oh_ecc_get_status)),
 };
 
-/**
- * etron_spinand_detect - initialize device related part in spinand_device
- * struct if it is a Etron device.
- * @spinand: SPI NAND device structure
- */
-static int etron_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * Etron SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_ETRON)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, etron_spinand_table,
-				     ARRAY_SIZE(etron_spinand_table), id[2]);
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops etron_spinand_manuf_ops = {
-	.detect = etron_spinand_detect,
 };
 
 const struct spinand_manufacturer etron_spinand_manufacturer = {
 	.id = SPINAND_MFR_ETRON,
 	.name = "Etron",
+	.chips = etron_spinand_table,
+	.nchips = ARRAY_SIZE(etron_spinand_table),
 	.ops = &etron_spinand_manuf_ops,
 };

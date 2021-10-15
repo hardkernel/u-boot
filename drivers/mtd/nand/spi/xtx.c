@@ -206,7 +206,8 @@ static int xt26g01c_ecc_get_status(struct spinand_device *spinand,
 }
 
 static const struct spinand_info xtx_spinand_table[] = {
-	SPINAND_INFO("XT26G01A", 0xE1,
+	SPINAND_INFO("XT26G01A",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xE1),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -215,7 +216,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g0xa_ooblayout,
 				     xt26g0xa_ecc_get_status)),
-	SPINAND_INFO("XT26G02A", 0xE2,
+	SPINAND_INFO("XT26G02A",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xE2),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -224,7 +226,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g0xa_ooblayout,
 				     xt26g0xa_ecc_get_status)),
-	SPINAND_INFO("XT26G04A", 0xE3,
+	SPINAND_INFO("XT26G04A",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xE3),
 		     NAND_MEMORG(1, 2048, 64, 128, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -233,7 +236,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g0xa_ooblayout,
 				     xt26g0xa_ecc_get_status)),
-	SPINAND_INFO("XT26G01B", 0xF1,
+	SPINAND_INFO("XT26G01B",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xF1),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -242,7 +246,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g01b_ooblayout,
 				     xt26g0xa_ecc_get_status)),
-	SPINAND_INFO("XT26G02B", 0xF2,
+	SPINAND_INFO("XT26G02B",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xF2),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -251,7 +256,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g02b_ooblayout,
 				     xt26g02b_ecc_get_status)),
-	SPINAND_INFO("XT26G01C", 0x11,
+	SPINAND_INFO("XT26G01C",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x11),
 		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -260,7 +266,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g01c_ooblayout,
 				     xt26g01c_ecc_get_status)),
-	SPINAND_INFO("XT26G02C", 0x12,
+	SPINAND_INFO("XT26G02C",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x12),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -269,7 +276,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g0xa_ooblayout,
 				     xt26g01c_ecc_get_status)),
-	SPINAND_INFO("XT26G04C", 0x13,
+	SPINAND_INFO("XT26G04C",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x13),
 		     NAND_MEMORG(1, 4096, 256, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -278,7 +286,8 @@ static const struct spinand_info xtx_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&xt26g01c_ooblayout,
 				     xt26g01c_ecc_get_status)),
-	SPINAND_INFO("XT26G11C", 0x15,
+	SPINAND_INFO("XT26G11C",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x15),
 		     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -289,33 +298,13 @@ static const struct spinand_info xtx_spinand_table[] = {
 				     xt26g01c_ecc_get_status)),
 };
 
-static int xtx_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * XTX SPI NAND read ID needs a dummy byte, so the first byte in
-	 * raw_id is garbage.
-	 */
-	if (id[1] != SPINAND_MFR_XTX)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, xtx_spinand_table,
-				     ARRAY_SIZE(xtx_spinand_table),
-				     id[2]);
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops xtx_spinand_manuf_ops = {
-	.detect = xtx_spinand_detect,
 };
 
 const struct spinand_manufacturer xtx_spinand_manufacturer = {
 	.id = SPINAND_MFR_XTX,
 	.name = "xtx",
+	.chips = xtx_spinand_table,
+	.nchips = ARRAY_SIZE(xtx_spinand_table),
 	.ops = &xtx_spinand_manuf_ops,
 };

@@ -83,7 +83,8 @@ static int bwjx08k_ecc_get_status(struct spinand_device *spinand,
 
 /* Another set for the same id[2] devices in one series */
 static const struct spinand_info biwin_spinand_table[] = {
-	SPINAND_INFO("BWJX08K", 0xB3,
+	SPINAND_INFO("BWJX08K",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xB3),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(8, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -94,37 +95,13 @@ static const struct spinand_info biwin_spinand_table[] = {
 				     bwjx08k_ecc_get_status)),
 };
 
-/**
- * biwin_spinand_detect - initialize device related part in spinand_device
- * struct if it is a Winbond device.
- * @spinand: SPI NAND device structure
- */
-static int biwin_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * BIWIN SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_BIWIN)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, biwin_spinand_table,
-				     ARRAY_SIZE(biwin_spinand_table), id[2]);
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
 static const struct spinand_manufacturer_ops biwin_spinand_manuf_ops = {
-	.detect = biwin_spinand_detect,
 };
 
 const struct spinand_manufacturer biwin_spinand_manufacturer = {
 	.id = SPINAND_MFR_BIWIN,
 	.name = "BIWIN",
+	.chips = biwin_spinand_table,
+	.nchips = ARRAY_SIZE(biwin_spinand_table),
 	.ops = &biwin_spinand_manuf_ops,
 };

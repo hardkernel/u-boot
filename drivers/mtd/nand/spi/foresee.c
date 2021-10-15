@@ -54,7 +54,8 @@ static const struct mtd_ooblayout_ops fsxxndxxg_ooblayout = {
 };
 
 static const struct spinand_info foresee_spinand_table[] = {
-	SPINAND_INFO("FS35ND01G-S1Y2", 0xEA,
+	SPINAND_INFO("FS35ND01G-S1Y2",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xEA),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -62,7 +63,8 @@ static const struct spinand_info foresee_spinand_table[] = {
 					      &update_cache_variants),
 		     0,
 		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
-	SPINAND_INFO("FS35ND02G-S3Y2", 0xEB,
+	SPINAND_INFO("FS35ND02G-S3Y2",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xEB),
 		     NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -70,7 +72,8 @@ static const struct spinand_info foresee_spinand_table[] = {
 					      &update_cache_variants),
 		     0,
 		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
-	SPINAND_INFO("FS35ND04G-S2Y2", 0xEC,
+	SPINAND_INFO("FS35ND04G-S2Y2",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xEC),
 		     NAND_MEMORG(1, 2048, 64, 64, 4096, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -78,7 +81,8 @@ static const struct spinand_info foresee_spinand_table[] = {
 					      &update_cache_variants),
 		     0,
 		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
-	SPINAND_INFO("fsxxndxxg", 0x71,
+	SPINAND_INFO("fsxxndxxg",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x71),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(1, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -88,43 +92,13 @@ static const struct spinand_info foresee_spinand_table[] = {
 		     SPINAND_ECCINFO(&fsxxndxxg_ooblayout, NULL)),
 };
 
-/**
- * foresee_spinand_detect - initialize device related part in spinand_device
- * struct if it is a foresee device.
- * @spinand: SPI NAND device structure
- */
-static int foresee_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * foresee SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_FORESEE)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, foresee_spinand_table,
-				     ARRAY_SIZE(foresee_spinand_table), id[2]);
-	if (ret)
-		return ret;
-
-	return 1;
-}
-
-static int foresee_spinand_init(struct spinand_device *spinand)
-{
-	return 0;
-}
-
 static const struct spinand_manufacturer_ops foresee_spinand_manuf_ops = {
-	.detect = foresee_spinand_detect,
-	.init = foresee_spinand_init,
 };
 
 const struct spinand_manufacturer foresee_spinand_manufacturer = {
 	.id = SPINAND_MFR_FORESEE,
 	.name = "foresee",
+	.chips = foresee_spinand_table,
+	.nchips = ARRAY_SIZE(foresee_spinand_table),
 	.ops = &foresee_spinand_manuf_ops,
 };

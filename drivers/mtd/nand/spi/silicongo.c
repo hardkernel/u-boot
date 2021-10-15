@@ -54,7 +54,8 @@ static const struct mtd_ooblayout_ops sgm7000i_ooblayout = {
 };
 
 static const struct spinand_info silicongo_spinand_table[] = {
-	SPINAND_INFO("SGM7000I-S24W1GH", 0xC1,
+	SPINAND_INFO("SGM7000I-S24W1GH",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xC1),
 		     NAND_MEMORG(1, 2048, 64, 64, 1024, 1, 1, 1),
 		     NAND_ECCREQ(4, 512),
 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
@@ -64,44 +65,13 @@ static const struct spinand_info silicongo_spinand_table[] = {
 		     SPINAND_ECCINFO(&sgm7000i_ooblayout, NULL)),
 };
 
-/**
- * silicongo_spinand_detect - initialize device related part in spinand_device
- * struct if it is a silicongo device.
- * @spinand: SPI NAND device structure
- */
-static int silicongo_spinand_detect(struct spinand_device *spinand)
-{
-	u8 *id = spinand->id.data;
-	int ret;
-
-	/*
-	 * silicongo SPI NAND read ID need a dummy byte,
-	 * so the first byte in raw_id is dummy.
-	 */
-	if (id[1] != SPINAND_MFR_SILICONGO)
-		return 0;
-
-	ret = spinand_match_and_init(spinand, silicongo_spinand_table,
-				     ARRAY_SIZE(silicongo_spinand_table), id[2]);
-	/* Not Only SILICONGO Nands MFR equals C8h */
-	if (ret)
-		return 0;
-
-	return 1;
-}
-
-static int silicongo_spinand_init(struct spinand_device *spinand)
-{
-	return 0;
-}
-
 static const struct spinand_manufacturer_ops silicongo_spinand_manuf_ops = {
-	.detect = silicongo_spinand_detect,
-	.init = silicongo_spinand_init,
 };
 
 const struct spinand_manufacturer silicongo_spinand_manufacturer = {
 	.id = SPINAND_MFR_SILICONGO,
 	.name = "silicongo",
+	.chips = silicongo_spinand_table,
+	.nchips = ARRAY_SIZE(silicongo_spinand_table),
 	.ops = &silicongo_spinand_manuf_ops,
 };
