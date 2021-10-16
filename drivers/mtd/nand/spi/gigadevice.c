@@ -123,7 +123,7 @@ static int gd5fxgq5xexxg_ecc_get_status(struct spinand_device *spinand,
 			return ret;
 
 		/*
-		 * 4 ... 7 bits are flipped (1..4 can't be detected, so
+		 * 1 ... 4 bits are flipped (1..4 can't be detected, so
 		 * report the maximum of 4 in this case
 		 */
 		/* bits sorted this way (3...0): ECCS1,ECCS0,ECCSE1,ECCSE0 */
@@ -253,6 +253,26 @@ static const struct spinand_info gigadevice_spinand_table[] = {
 		     SPINAND_HAS_QE_BIT,
 		     SPINAND_ECCINFO(&gd5fxgq4xexxg_ooblayout,
 				     gd5fxgq5xexxg_ecc_get_status)),
+	SPINAND_INFO("GD5F2GM7RxG",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0x82),
+		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&gd5fxgq4xexxg_ooblayout,
+				     gd5f1gq4xexxg_ecc_get_status)),
+	SPINAND_INFO("GD5F2GM7UxG",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_ADDR, 0x92),
+		     NAND_MEMORG(1, 2048, 128, 64, 2048, 1, 1, 1),
+		     NAND_ECCREQ(8, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&gd5fxgq4xexxg_ooblayout,
+				     gd5f1gq4xexxg_ecc_get_status)),
 };
 
 static const struct spinand_manufacturer_ops gigadevice_spinand_manuf_ops = {
