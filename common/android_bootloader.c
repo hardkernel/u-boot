@@ -519,6 +519,15 @@ retry_verify:
 			flags,
 			AVB_HASHTREE_ERROR_MODE_RESTART,
 			&slot_data[0]);
+	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK &&
+	    verify_result != AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
+		if (retry_no_vbmeta_partition && strcmp(boot_partname, "recovery") == 0) {
+			printf("Verify recovery with vbmeta.\n");
+			flags &= ~AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
+			retry_no_vbmeta_partition = 0;
+			goto retry_verify;
+		}
+	}
 
 	strcat(verify_state, ANDROID_VERIFY_STATE);
 	switch (verify_result) {
@@ -546,16 +555,6 @@ retry_verify:
 		else
 			strcat(verify_state, "red");
 		break;
-	}
-
-	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK &&
-	    verify_result != AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
-		if (retry_no_vbmeta_partition && strcmp(boot_partname, "recovery") == 0) {
-			printf("Verify recovery with vbmeta.\n");
-			flags &= ~AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
-			retry_no_vbmeta_partition = 0;
-			goto retry_verify;
-		}
 	}
 
 	if (!slot_data[0]) {
