@@ -14,7 +14,7 @@
 			data         = /incbin/("./amp1.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm64";		// "arm64" or "arm"
+			arch         = "arm";		// "arm64" or "arm"
 			cpu          = <0x100>;		// mpidr
 			thumb        = <0>;		// 0: arm or thumb2; 1: thumb
 			hyp          = <0>;		// 0: el1/svc; 1: el2/hyp
@@ -30,7 +30,7 @@
 			data         = /incbin/("./amp2.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm64";
+			arch         = "arm";
 			cpu          = <0x200>;
 			thumb        = <0>;
 			hyp          = <0>;
@@ -46,7 +46,7 @@
 			data         = /incbin/("./amp3.bin");
 			type         = "firmware";
 			compression  = "none";
-			arch         = "arm64";
+			arch         = "arm";
 			cpu          = <0x300>;
 			thumb        = <0>;
 			hyp          = <0>;
