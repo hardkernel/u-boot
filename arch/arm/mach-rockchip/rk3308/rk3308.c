@@ -544,3 +544,11 @@ int rk_board_fdt_fixup(const void *blob)
 
 	return 0;
 }
+
+int rk_board_early_fdt_fixup(const void *blob)
+{
+	rk_board_fdt_fixup(blob);
+
+	return 0;
+}
+
