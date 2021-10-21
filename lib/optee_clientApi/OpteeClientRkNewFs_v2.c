@@ -213,7 +213,7 @@ static int rkss_storage_delete(uint32_t area_index)
 
 	printf("TEEC: delete area index 0x%x!\n", area_index);
 	size = RKSS_SECTION_COUNT * RKSS_BACKUP_NUM * RKSS_DATA_LEN;
-	delete_buff = (uint8_t *)malloc(size);
+	delete_buff = (uint8_t *)memalign(CONFIG_SYS_CACHELINE_SIZE, size);
 	if (!delete_buff) {
 		printf("TEEC: Malloc failed!\n");
 		return -1;
@@ -788,7 +788,7 @@ static int rkss_storage_init(uint32_t area_index)
 
 	if (rkss_buffer[area_index] == NULL) {
 		/* Always use, no need to release */
-		rkss_buffer[area_index] = (uint8_t *)malloc(size);
+		rkss_buffer[area_index] = (uint8_t *)memalign(CONFIG_SYS_CACHELINE_SIZE, size);
 		if (!(rkss_buffer[area_index])) {
 			printf("TEEC: Malloc failed!\n");
 			return -1;

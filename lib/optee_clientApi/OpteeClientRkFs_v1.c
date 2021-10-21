@@ -136,7 +136,7 @@ static int check_security_exist(int print_flag)
  */
 static int rkss_begin_commit(void)
 {
-	unsigned char data[RKSS_DATA_SECTION_LEN];
+	unsigned char *data = NULL;
 	struct rkss_backup_verification p;
 	unsigned long ret;
 
@@ -148,10 +148,16 @@ static int rkss_begin_commit(void)
 	p.backup_enable = RKSS_BACKUP_ENABLE;
 	p.backup_count = 0;
 
-	memset(data, 0, sizeof(data));
+	data = memalign(CONFIG_SYS_CACHELINE_SIZE, RKSS_DATA_SECTION_LEN);
+	if (!data) {
+		printf("TEEC: malloc data fail\n");
+		return -1;
+	}
+	memset(data, 0, RKSS_DATA_SECTION_LEN);
 	memcpy(data, &p, sizeof(p));
 
 	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
+	free(data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
@@ -161,16 +167,22 @@ static int rkss_begin_commit(void)
 
 static int rkss_finish_commit(void)
 {
-	unsigned char data[RKSS_DATA_SECTION_LEN];
+	unsigned char *data = NULL;
 	unsigned long ret;
 
 	if (check_security_exist(1) < 0)
 		return -1;
 
 	debug("TEEC: %s\n", __func__);
-	memset(data, 0, sizeof(data));
+	data = memalign(CONFIG_SYS_CACHELINE_SIZE, RKSS_DATA_SECTION_LEN);
+	if (!data) {
+		printf("TEEC: malloc data fail\n");
+		return -1;
+	}
+	memset(data, 0, RKSS_DATA_SECTION_LEN);
 
 	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
+	free(data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
@@ -180,7 +192,7 @@ static int rkss_finish_commit(void)
 
 static int rkss_backup_sections(unsigned long index, unsigned int num)
 {
-	unsigned char data[RKSS_DATA_SECTION_LEN];
+	unsigned char *data = NULL;
 	unsigned char *backup_data = NULL;
 	struct rkss_backup_verification p;
 	struct rkss_backup_info info_last, info_current;
@@ -189,10 +201,15 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 	if (check_security_exist(1) < 0)
 		return -1;
 
+	data = memalign(CONFIG_SYS_CACHELINE_SIZE, RKSS_DATA_SECTION_LEN);
+	if (!data) {
+		printf("TEEC: malloc data fail\n");
+		goto error;
+	}
 	ret = blk_dread(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dread fail\n");
-		return -1;
+		goto error;
 	}
 
 	memcpy(&p, data, sizeof(p));
@@ -222,7 +239,7 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 		debug("TEEC: %s index=0x%lx num=0x%x backup_data_index=0x%x\n",
 		      __func__, index, num, info_current.backup_data_index);
 
-		backup_data = malloc(num * RKSS_DATA_SECTION_LEN);
+		backup_data = memalign(CONFIG_SYS_CACHELINE_SIZE, num * RKSS_DATA_SECTION_LEN);
 		if (!backup_data) {
 			printf("TEEC: malloc backup_data fail\n");
 			goto error;
@@ -231,17 +248,16 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 		ret = blk_dread(dev_desc, part_info.start + index, num, backup_data);
 		if (ret != num) {
 			printf("TEEC: blk_dread fail\n");
-			return -1;
+			goto error;
 		}
 
 		ret = blk_dwrite(dev_desc, part_info.start + info_current.backup_data_index,
 				 num, backup_data);
 		if (ret != num) {
 			printf("TEEC: blk_dwrite fail\n");
-			return -1;
+			goto error;
 		}
 		free(backup_data);
-		backup_data = NULL;
 
 		p.backup_count += 1;
 
@@ -253,12 +269,15 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 		ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 		if (ret != 1) {
 			printf("TEEC: blk_dwrite fail\n");
-			return -1;
+			goto error;
 		}
 	}
-
+	free(data);
 	return 0;
+
 error:
+	if (data)
+		free(data);
 	if (backup_data)
 		free(backup_data);
 	return -1;
@@ -266,7 +285,7 @@ error:
 
 static int rkss_resume(void)
 {
-	unsigned char data[RKSS_DATA_SECTION_LEN];
+	unsigned char *data = NULL;
 	unsigned char *backup_data = NULL;
 	struct rkss_backup_verification p;
 	struct rkss_backup_info info_current;
@@ -276,10 +295,15 @@ static int rkss_resume(void)
 	if (check_security_exist(1) < 0)
 		return -1;
 
+	data = memalign(CONFIG_SYS_CACHELINE_SIZE, RKSS_DATA_SECTION_LEN);
+	if (!data) {
+		printf("TEEC: malloc data fail\n");
+		goto error;
+	}
 	ret = blk_dread(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dread fail\n");
-		return -1;
+		goto error;
 	}
 
 	memcpy(&p, data, sizeof(p));
@@ -309,8 +333,9 @@ static int rkss_resume(void)
 					printf("TEEC: original sections error!");
 					goto error;
 				}
-				backup_data = malloc(info_current.backup_num *
-						     RKSS_DATA_SECTION_LEN);
+
+				backup_data = memalign(CONFIG_SYS_CACHELINE_SIZE,
+						       info_current.backup_num * RKSS_DATA_SECTION_LEN);
 				if (!backup_data) {
 					printf("TEEC: malloc backup_data fail\n");
 					goto error;
@@ -322,7 +347,7 @@ static int rkss_resume(void)
 						backup_data);
 				if (ret != info_current.backup_num) {
 					printf("TEEC: blk_dread fail\n");
-					return -1;
+					goto error;
 				}
 
 				ret = blk_dwrite(dev_desc,
@@ -331,21 +356,24 @@ static int rkss_resume(void)
 						 backup_data);
 				if (ret != info_current.backup_num) {
 					printf("TEEC: blk_dwrite fail\n");
-					return -1;
+					goto error;
 				}
 				free(backup_data);
-				backup_data = NULL;
 			}
 		}
 	}
-	memset(data, 0, sizeof(data));
+	memset(data, 0, RKSS_DATA_SECTION_LEN);
 	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
-		return -1;
+		goto error;
 	}
+	free(data);
 	return 0;
+
 error:
+	if (data)
+		free(data);
 	if (backup_data)
 		free(backup_data);
 	return -1;
@@ -353,16 +381,25 @@ error:
 
 static int rkss_read_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
+	unsigned char *tmp_data = NULL;
 	unsigned long ret;
 
 	if (check_security_exist(1) < 0)
 		return -1;
 
-	ret = blk_dread(dev_desc, part_info.start + index, num, data);
-	if (ret != num) {
-		printf("TEEC: blk_dread fail\n");
+	tmp_data = memalign(CONFIG_SYS_CACHELINE_SIZE, num * RKSS_DATA_SECTION_LEN);
+	if (!tmp_data) {
+		printf("TEEC: malloc tmp_data fail\n");
 		return -1;
 	}
+	ret = blk_dread(dev_desc, part_info.start + index, num, tmp_data);
+	if (ret != num) {
+		printf("TEEC: blk_dread fail\n");
+		free(tmp_data);
+		return -1;
+	}
+	memcpy(data, tmp_data, num * RKSS_DATA_SECTION_LEN);
+	free(tmp_data);
 	return 0;
 }
 
@@ -373,6 +410,7 @@ static int rkss_read_section(struct rk_secure_storage *rkss)
 
 static int rkss_write_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
+	unsigned char *tmp_data = NULL;
 	unsigned long ret;
 	int result;
 
@@ -385,7 +423,14 @@ static int rkss_write_multi_sections(unsigned char *data, unsigned long index, u
 	if (check_security_exist(1) < 0)
 		return -1;
 
-	ret = blk_dwrite(dev_desc, part_info.start + index, num, data);
+	tmp_data = memalign(CONFIG_SYS_CACHELINE_SIZE, num * RKSS_DATA_SECTION_LEN);
+	if (!tmp_data) {
+		printf("TEEC: malloc tmp_data fail\n");
+		return -1;
+	}
+	memcpy(tmp_data, data, num * RKSS_DATA_SECTION_LEN);
+	ret = blk_dwrite(dev_desc, part_info.start + index, num, tmp_data);
+	free(tmp_data);
 	if (ret != num) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
@@ -401,15 +446,25 @@ static int rkss_write_section(struct rk_secure_storage *rkss)
 static int rkss_read_patition_tables(unsigned char *data)
 {
 	unsigned long ret;
+	unsigned char *table_data = NULL;
 
 	if (check_security_exist(1) < 0)
 		return -1;
 
-	ret = blk_dread(dev_desc, part_info.start, RKSS_PARTITION_TABLE_COUNT, data);
-	if (ret != RKSS_PARTITION_TABLE_COUNT) {
-		printf("TEEC: blk_dread fail\n");
+	table_data = memalign(CONFIG_SYS_CACHELINE_SIZE,
+			      RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
+	if (!table_data) {
+		printf("TEEC: malloc table_data fail\n");
 		return -1;
 	}
+	ret = blk_dread(dev_desc, part_info.start, RKSS_PARTITION_TABLE_COUNT, table_data);
+	if (ret != RKSS_PARTITION_TABLE_COUNT) {
+		printf("TEEC: blk_dread fail\n");
+		free(table_data);
+		return -1;
+	}
+	memcpy(data, table_data, RKSS_DATA_SECTION_LEN * RKSS_PARTITION_TABLE_COUNT);
+	free(table_data);
 	return 0;
 }
 
