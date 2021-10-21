@@ -595,6 +595,8 @@ config BOARD_EARLY_INIT_R
 	  in the post-relocation init sequence.
 
 endmenu
+
+menu "Android features support"
 config ANDROID_BOOTLOADER
 	bool "Support for Android Bootloader boot flow"
 	default n
@@ -654,6 +656,7 @@ config ANDROID_BOOT_IMAGE_HASH
 	help
 	  This enables support for Android image hash verify, the mkbootimg always use
 	  SHA1 for images.
+endmenu
 
 config SKIP_RELOCATE_UBOOT
 	bool "Skip U-Boot relocation"
