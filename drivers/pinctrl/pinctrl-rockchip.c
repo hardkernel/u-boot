@@ -71,6 +71,7 @@ enum rockchip_pin_drv_type {
 	DRV_TYPE_IO_1V8_ONLY,
 	DRV_TYPE_IO_1V8_3V0_AUTO,
 	DRV_TYPE_IO_3V3_ONLY,
+	DRV_TYPE_IO_SMIC,
 	DRV_TYPE_MAX
 };
 
@@ -2466,12 +2467,34 @@ static void rk3399_calc_drv_reg_and_bit(struct rockchip_pin_bank *bank,
 		*bit = (pin_num % 8) * 2;
 }
 
+#define RK3308_SLEW_RATE_GRF_OFFSET		0x150
+#define RK3308_SLEW_RATE_BANK_STRIDE		16
+#define RK3308_SLEW_RATE_PINS_PER_GRF_REG	8
+
+static void rk3308_calc_slew_rate_reg_and_bit(struct rockchip_pin_bank *bank,
+					      int pin_num,
+					      struct regmap **regmap,
+					      int *reg, u8 *bit)
+{
+	struct rockchip_pinctrl_priv *priv = bank->priv;
+	int pins_per_reg;
+
+	*regmap = priv->regmap_base;
+	*reg = RK3308_SLEW_RATE_GRF_OFFSET;
+	*reg += (bank->bank_num) * RK3308_SLEW_RATE_BANK_STRIDE;
+	pins_per_reg = RK3308_SLEW_RATE_PINS_PER_GRF_REG;
+
+	*reg += ((pin_num / pins_per_reg) * 4);
+	*bit = pin_num % pins_per_reg;
+}
+
 static int rockchip_perpin_drv_list[DRV_TYPE_MAX][8] = {
 	{ 2, 4, 8, 12, -1, -1, -1, -1 },
 	{ 3, 6, 9, 12, -1, -1, -1, -1 },
 	{ 5, 10, 15, 20, -1, -1, -1, -1 },
 	{ 4, 6, 8, 10, 12, 14, 16, 18 },
-	{ 4, 7, 10, 13, 16, 19, 22, 26 }
+	{ 4, 7, 10, 13, 16, 19, 22, 26 },
+	{ 0, 2, 4, 6, 6, 8, 10, 12 }
 };
 
 static int rockchip_set_drive_perpin(struct rockchip_pin_bank *bank,
@@ -2495,6 +2518,8 @@ static int rockchip_set_drive_perpin(struct rockchip_pin_bank *bank,
 		ret = strength;
 		goto config;
 	}
+	if (soc_is_rk3308bs())
+		drv_type = DRV_TYPE_IO_SMIC;
 
 	ret = -EINVAL;
 	for (i = 0; i < ARRAY_SIZE(rockchip_perpin_drv_list[drv_type]); i++) {
@@ -2513,6 +2538,25 @@ static int rockchip_set_drive_perpin(struct rockchip_pin_bank *bank,
 	}
 
 	switch (drv_type) {
+	case DRV_TYPE_IO_SMIC:
+		if (ctrl->type == RK3308) { /* RK3308B-S */
+			int regval = ret;
+
+			data = 0x3 << (bit + 16);
+			data |= ((regval & 0x3) << bit);
+
+			ret = regmap_write(regmap, reg, data);
+			if (ret < 0)
+				return ret;
+
+			rk3308_calc_slew_rate_reg_and_bit(bank, pin_num, &regmap, &reg, &bit);
+			data = BIT(bit + 16) | (((regval > 3) ? 1 : 0) << bit);
+
+			return regmap_write(regmap, reg, data);
+		}
+
+		dev_err(info->dev, "unsupported type DRV_TYPE_IO_SMIC\n");
+		return -EINVAL;
 	case DRV_TYPE_IO_1V8_3V0_AUTO:
 	case DRV_TYPE_IO_3V3_ONLY:
 		rmask_bits = RK3399_DRV_3BITS_PER_PIN;
@@ -3005,7 +3049,7 @@ rockchip_pinctrl_get_soc_data(struct udevice *dev)
 	int grf_offs, pmu_offs, drv_grf_offs, drv_pmu_offs, i, j;
 	u32 nr_pins;
 
-	if (soc_is_rk3308b())
+	if (soc_is_rk3308b() || soc_is_rk3308bs())
 		ctrl = &rk3308b_pin_ctrl;
 
 	grf_offs = ctrl->grf_mux_offset;
