@@ -3,8 +3,8 @@
  * (C) Copyright 2019 Rockchip Electronics Co., Ltd
  */
 
-#ifndef _ROCKCHIP_OTP_V2_H_
-#define _ROCKCHIP_OTP_V2_H_
+#ifndef _RV1126_SECURE_OTP_H_
+#define _RV1126_SECURE_OTP_H_
 
 #define NVM_CEB			0x00
 #define NVM_RSTB		0x04
@@ -51,7 +51,7 @@
 #define OTP_SLICE_LOCK		0x041c
 #define OTP_SLICE		0x0420
 
-struct rockchip_otp_v2_platdata {
+struct rockchip_otp_platdata {
 	void __iomem *base;
 	unsigned long secure_conf_base;
 };

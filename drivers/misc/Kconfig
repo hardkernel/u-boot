@@ -92,18 +92,11 @@ config SPL_ROCKCHIP_HW_DECOMPRESS
 	  This driver support Decompress IP built-in Rockchip SoC, support
 	  LZ4, GZIP, PNG, ZLIB.
 
-config SPL_ROCKCHIP_SECURE_OTP_V1
-	bool "Rockchip Secure OTP Version 1 Support in spl"
+config SPL_ROCKCHIP_SECURE_OTP
+	bool "Rockchip Secure OTP Support in spl"
 	depends on SPL_MISC
 	help
-	  Support read & write secure otp in spl. Support platforms: rk3308,
-	  rk3326, px30, rk3568, rk3566.
-
-config SPL_ROCKCHIP_SECURE_OTP_V2
-	bool "Rockchip Secure OTP Version 2 Support in spl"
-	depends on SPL_MISC
-	help
-	  Support read & write secure otp in spl. Support platforms: rv1126.
+	  Support read & write secure otp in spl.
 
 config CMD_CROS_EC
 	bool "Enable crosec command"
