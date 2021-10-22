@@ -406,6 +406,7 @@ char *android_assemble_cmdline(const char *slot_suffix,
 	/* The |slot_suffix| needs to be passed to the kernel to know what
 	 * slot to boot from.
 	 */
+#ifdef CONFIG_ANDROID_AB
 	if (slot_suffix) {
 		allocated_suffix = malloc(strlen(ANDROID_ARG_SLOT_SUFFIX) +
 					  strlen(slot_suffix) + 1);
@@ -415,7 +416,7 @@ char *android_assemble_cmdline(const char *slot_suffix,
 		strcat(allocated_suffix, slot_suffix);
 		*(current_chunk++) = allocated_suffix;
 	}
-
+#endif
 	serialno = env_get("serial#");
 	if (serialno) {
 		allocated_serialno = malloc(strlen(ANDROID_ARG_SERIALNO) +
