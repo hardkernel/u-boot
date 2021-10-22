@@ -22,7 +22,10 @@
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 
+#ifdef CONFIG_USB_FUNCTION_DFU
 #define CONFIG_SET_DFU_ALT_INFO
+#endif
+
 #define DFU_ALT_BOOT_EMMC \
 	"gpt raw 0x0 0x20000;" \
 	"loader raw 0x20000 0xE0000;"\
@@ -42,4 +45,3 @@
 
 #endif /* CONFIG_SPL_BUILD */
 #endif /* __CONFIGS_RK3568_EVB_H */
-
