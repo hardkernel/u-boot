@@ -37,6 +37,11 @@
 #define GICD_BASE			0xff581000
 #define GICC_BASE			0xff582000
 
+#define OTP_SECURE_BOOT_ENABLE_ADDR	0x0
+#define OTP_SECURE_BOOT_ENABLE_SIZE	1
+#define OTP_RSA_HASH_ADDR		0x10
+#define OTP_RSA_HASH_SIZE		32
+
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* 64M */
 
 /* MMC/SD IP block */
