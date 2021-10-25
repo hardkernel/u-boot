@@ -62,6 +62,8 @@
 #define RK3568_PMU_GRF_IO_VSEL1		(0x0144)
 #define RK3568_PMU_GRF_IO_VSEL2		(0x0148)
 
+#define RV1126_PMU_GRF_IO_RETENTION	(0x0144)
+
 struct rockchip_iodomain_priv;
 
 /**
@@ -139,6 +141,32 @@ static int rk3568_pmu_iodomain_write(struct rockchip_iodomain_supply *supply,
 	default:
 		return -EINVAL;
 	};
+
+	return 0;
+}
+
+static int rv1126_iodomain_write(struct rockchip_iodomain_supply *supply,
+				 int uV)
+{
+	struct rockchip_iodomain_priv *priv = supply->iod;
+	struct regmap *regmap = priv->regmap_base;
+	u32 val, vret_hold, vret_release;
+
+	/* set value bit */
+	val = (uV > MAX_VOLTAGE_1_8) ? 0 : 1;
+	val <<= supply->idx;
+	/* apply hiword-mask */
+	val |= (BIT(supply->idx) << 16);
+
+	vret_hold = (BIT(supply->idx) << 16);
+	vret_release = (BIT(supply->idx) << 16) | BIT(supply->idx);
+
+	printf("%s: %d uv, vsel: 0x%x\n",
+	       priv->sdata->supply_names[supply->idx], uV, val);
+
+	regmap_write(regmap, RV1126_PMU_GRF_IO_RETENTION, vret_hold);
+	regmap_write(regmap, priv->sdata->grf_offset, val);
+	regmap_write(regmap, RV1126_PMU_GRF_IO_RETENTION, vret_release);
 
 	return 0;
 }
@@ -584,6 +612,8 @@ static int rockchip_iodomain_probe(struct udevice *dev)
 	priv->sdata = sdata;
 	if (sdata == &soc_data_rk3568_pmu)
 		priv->write = rk3568_pmu_iodomain_write;
+	else if (sdata == &soc_data_rv1126_pmu)
+		priv->write = rv1126_iodomain_write;
 	else
 		priv->write = rockchip_iodomain_write;
 
