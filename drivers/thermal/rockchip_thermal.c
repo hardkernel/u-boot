@@ -120,6 +120,7 @@ enum adc_sort_mode {
 #define GRF_TSADC_TESTBIT_L			0x0e648
 #define GRF_TSADC_TESTBIT_H			0x0e64c
 
+#define PX30_GRF_SOC_CON0			0x0400
 #define PX30_GRF_SOC_CON2			0x0408
 
 #define RK3568_GRF_TSADC_CON			0x0600
@@ -134,6 +135,7 @@ enum adc_sort_mode {
 #define GRF_TSADC_VCM_EN_H			(0x10001 << 7)
 
 #define GRF_CON_TSADC_CH_INV			(0x10001 << 1)
+#define PX30S_TSADC_TDC_MODE                    (0x10001 << 4)
 
 #define MIN_TEMP				(-40000)
 #define LOWEST_TEMP				(-273000)
@@ -795,6 +797,15 @@ static void tsadc_init_v8(struct udevice *dev)
 	else
 		writel(TSADCV2_AUTO_TSHUT_POLARITY_MASK,
 		       priv->base + TSADCV2_AUTO_CON);
+};
+
+static void tsadc_init_v9(struct udevice *dev)
+{
+	struct rockchip_thermal_priv *priv = dev_get_priv(dev);
+
+	tsadc_init_v2(dev);
+	if (!IS_ERR(priv->grf))
+		writel(PX30S_TSADC_TDC_MODE, priv->grf + PX30_GRF_SOC_CON0);
 }
 
 static int tsadc_get_temp_v2(struct udevice *dev,
@@ -1016,6 +1027,30 @@ static const struct dm_thermal_ops rockchip_thermal_ops = {
 	.get_temp	= rockchip_thermal_get_temp,
 };
 
+static const struct rockchip_tsadc_chip px30s_tsadc_data = {
+	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
+	.chn_id[SENSOR_GPU] = 1, /* gpu sensor is channel 1 */
+	.chn_num = 2, /* 2 channels for tsadc */
+
+	.tshut_mode = TSHUT_MODE_CRU, /* default TSHUT via CRU */
+	.tshut_temp = 95000,
+
+	.tsadc_init = tsadc_init_v9,
+	.tsadc_control = tsadc_control_v2,
+	.tsadc_get_temp = tsadc_get_temp_v2,
+	.irq_ack = tsadc_irq_ack_v3,
+	.set_alarm_temp = tsadc_alarm_temp_v2,
+	.set_tshut_temp = tsadc_tshut_temp_v2,
+	.set_tshut_mode = tsadc_tshut_mode_v2,
+
+	.table = {
+		.knum = 2699,
+		.bnum = 2796,
+		.data_mask = TSADCV2_DATA_MASK,
+		.mode = ADC_INCREMENT,
+	},
+};
+
 static const struct rockchip_tsadc_chip rk3308bs_tsadc_data = {
 	.chn_id[SENSOR_CPU] = 0, /* cpu sensor is channel 0 */
 	.chn_num = 1, /* 1 channels for tsadc */
@@ -1051,7 +1086,7 @@ static int rockchip_thermal_probe(struct udevice *dev)
 	if (ret)
 		printf("%s clk_set_defaults failed %d\n", __func__, ret);
 
-	if (soc_is_rk3308bs()) {
+	if (soc_is_rk3308bs() || soc_is_px30s()) {
 		ret = clk_get_by_name(dev, "tsadc", &clk);
 		if (ret) {
 			printf("%s get tsadc clk fail\n", __func__);
@@ -1063,11 +1098,14 @@ static int rockchip_thermal_probe(struct udevice *dev)
 			       __func__, dev_read_name(dev));
 			return -EINVAL;
 		}
-
-		tsadc = (struct rockchip_tsadc_chip *)&rk3308bs_tsadc_data;
-	} else {
-		tsadc = (struct rockchip_tsadc_chip *)dev_get_driver_data(dev);
 	}
+	if (soc_is_rk3308bs())
+		tsadc = (struct rockchip_tsadc_chip *)&rk3308bs_tsadc_data;
+	else if (soc_is_px30s())
+		tsadc = (struct rockchip_tsadc_chip *)&px30s_tsadc_data;
+	else
+		tsadc = (struct rockchip_tsadc_chip *)dev_get_driver_data(dev);
+
 	priv->data = tsadc;
 
 	priv->tshut_mode = dev_read_u32_default(dev,
@@ -1104,7 +1142,7 @@ static int rockchip_thermal_probe(struct udevice *dev)
 	}
 
 	tsadc->tsadc_control(dev, true);
-	if (soc_is_rk3308bs())
+	if (soc_is_rk3308bs() || soc_is_px30s())
 		mdelay(3);
 	else
 		udelay(1000);
@@ -1397,6 +1435,10 @@ static const struct udevice_id rockchip_thermal_match[] = {
 	{
 		.compatible = "rockchip,px30-tsadc",
 		.data = (ulong)&px30_tsadc_data,
+	},
+	{
+		.compatible = "rockchip,px30s-tsadc",
+		.data = (ulong)&px30s_tsadc_data,
 	},
 	{
 		.compatible = "rockchip,rk1808-tsadc",
