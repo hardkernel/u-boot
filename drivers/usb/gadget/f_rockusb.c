@@ -696,7 +696,7 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 		buf[0] |= (1 << 6);
 #endif
 
-#if defined(CONFIG_ROCKCHIP_RK3568)
+#if defined(CONFIG_ROCKCHIP_NEW_IDB)
 	buf[1] = BIT(0);
 #endif
 	buf[1] |= BIT(1);
