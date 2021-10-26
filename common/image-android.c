@@ -251,11 +251,15 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 	}
 
 	*rd_data = ramdisk_addr_r;
-	*rd_len = hdr->ramdisk_size +
-		  hdr->vendor_ramdisk_size +
-		  hdr->vendor_bootconfig_size +
+	*rd_len = hdr->ramdisk_size;
+	if (hdr->header_version >= 3)
+		*rd_len += hdr->vendor_ramdisk_size;
+	if (hdr->header_version >= 4) {
+		 *rd_len += hdr->vendor_bootconfig_size +
 		  ANDROID_ADDITION_BOOTCONFIG_PARAMS_MAX_SIZE;
+	}
 
+	/* just for print msg */
 	start = ramdisk_addr_r;
 	if (hdr->header_version >= 3) {
 		end = start + (ulong)hdr->vendor_ramdisk_size;
