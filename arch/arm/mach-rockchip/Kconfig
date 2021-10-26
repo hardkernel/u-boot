@@ -805,6 +805,12 @@ config ROCKCHIP_REBOOT_TEST
 	help
 	  It's a reboot stress test before kernel stages.
 
+config ROCKCHIP_NEW_IDB
+	bool "Rockchip new IDB header"
+	default n
+	help
+	  The new IDB header was introduced from RK356X.
+
 config GICV2
 	bool "ARM GICv2"
 
