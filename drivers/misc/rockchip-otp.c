@@ -388,7 +388,7 @@ static int rockchip_otp_read(struct udevice *dev, int offset,
 	if (!data)
 		return -ENOSYS;
 
-	if (soc_is_rk3308bs())
+	if (soc_is_rk3308bs() || soc_is_px30s())
 		return rockchip_rk3308bs_otp_read(dev, offset, buf, size);
 
 	return data->read(dev, offset, buf, size);
@@ -446,6 +446,10 @@ static const struct udevice_id rockchip_otp_ids[] = {
 	{
 		.compatible = "rockchip,px30-otp",
 		.data = (ulong)&px30_data,
+	},
+	{
+		.compatible = "rockchip,px30s-otp",
+		.data = (ulong)&rk3308bs_data,
 	},
 	{
 		.compatible = "rockchip,rk3308-otp",
