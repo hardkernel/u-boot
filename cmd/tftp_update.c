@@ -79,6 +79,7 @@ static u32 tftpfw_version_get(void)
 	if (ret < 0) {
 		if (ret == -EINVAL) {
 			version = 0; /* first initial as 0 */
+			TFTPUD_I("Initial firmware version as 0\n");
 			ret = tftpfw_version_set(version);
 			if (ret < 0)
 				return ret;
