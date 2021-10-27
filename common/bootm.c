@@ -522,7 +522,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	}
 	flush_cache(load, ALIGN(*load_end - load, ARCH_DMA_MINALIGN));
 
-	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
+	printf("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
 	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
 
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
@@ -545,6 +545,9 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			return BOOTM_ERR_RESET;
 		}
 	}
+
+	/* update image len as decompressed kernel size for late use */
+	images->os.image_len = *load_end - load;
 
 	return 0;
 }
@@ -775,7 +778,7 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		if (images->os.os == IH_OS_LINUX)
 			fixup_silent_linux();
 #endif
-		arch_preboot_os(BOOTM_STATE_OS_PREP);
+		arch_preboot_os(BOOTM_STATE_OS_PREP, images);
 
 		ret = boot_fn(BOOTM_STATE_OS_PREP, argc, argv, images);
 	}
