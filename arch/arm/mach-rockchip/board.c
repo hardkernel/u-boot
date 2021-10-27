@@ -543,10 +543,41 @@ int board_initr_caches_fixup(void)
 }
 #endif
 
-void arch_preboot_os(uint32_t bootm_state)
+void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 {
-	if (bootm_state & BOOTM_STATE_OS_PREP)
-		hotkey_run(HK_CLI_OS_PRE);
+	if (!(bootm_state & BOOTM_STATE_OS_PREP))
+		return;
+
+#ifdef CONFIG_ARM64
+	u8 *data = (void *)images->ep;
+	ulong dst;
+
+	/*
+	 * Fix kernel 5.10 arm64 boot warning:
+	 * "[Firmware Bug]: Kernel image misaligned at boot, please fix your bootloader!"
+	 *
+	 * kernel: 5.10 commit 120dc60d0bdb ("arm64: get rid of TEXT_OFFSET")
+	 * arm64 kernel version:
+	 *	data[10] == 0x00 if kernel version >= 5.10
+	 *	data[10] == 0x08 if kernel version <  5.10
+	 *
+	 * Why fix here?
+	 *   1. this is the common and final path for any boot command.
+	 *   2. don't influence original boot flow, just fix it exactly before
+	 *	jumping kernel.
+	 */
+	if (data[10] == 0x00) {
+		dst = round_down(images->ep, SZ_2M);
+		if (dst != images->ep) {
+			memcpy((char *)dst, (const char *)images->ep,
+			       images->os.image_len);
+			printf("   ** RELOCATE ** Kernel from 0x%08lx to 0x%08lx\n",
+			       images->ep, dst);
+			images->ep = dst;
+		}
+	}
+#endif
+	hotkey_run(HK_CLI_OS_PRE);
 }
 
 void enable_caches(void)
