@@ -2590,7 +2590,8 @@ static u64 dram_detect_cap(struct dram_info *dram,
 				goto cap_err;
 
 			sdram_detect_bank(cap_info, coltmp, bktmp);
-			sdram_detect_dbw(cap_info, dram_type);
+			if (dram_type != LPDDR3)
+				sdram_detect_dbw(cap_info, dram_type);
 		} else {
 			coltmp = 10;
 			bktmp = 4;
@@ -2693,6 +2694,9 @@ static u64 dram_detect_cap(struct dram_info *dram,
 		cap_info->cs1_row = 0;
 		cap_info->cs1_high16bit_row = 0;
 	}
+
+	if (dram_type == LPDDR3)
+		sdram_detect_dbw(cap_info, dram_type);
 
 	return 0;
 cap_err:
