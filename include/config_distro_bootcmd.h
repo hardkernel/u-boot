@@ -368,7 +368,7 @@
 		"\0"                                                      \
 	\
 	"scan_dev_for_boot_part="                                         \
-		"part list ${devtype} ${devnum} -bootable devplist; "     \
+		"part list ${devtype} ${devnum} devplist; "               \
 		"env exists devplist || setenv devplist 1; "              \
 		"for distro_bootpart in ${devplist}; do "                 \
 			"if fstype ${devtype} "                           \
