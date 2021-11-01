@@ -14,6 +14,7 @@
 #include <syscon.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/cpu.h>
 
 #include "../usb/gadget/dwc2_udc_otg_priv.h"
 
@@ -638,6 +639,75 @@ static int rk322x_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 	return ret;
 }
 
+static int rk3308_usb2phy_tuning(struct rockchip_usb2phy *rphy)
+{
+	struct regmap *base = get_reg_base(rphy);
+	unsigned int tmp, orig;
+	int ret;
+
+	if (soc_is_rk3308bs()) {
+		/* Enable otg/host port pre-emphasis during non-chirp phase */
+		ret = regmap_read(base, 0, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(2, 0);
+		tmp |= BIT(2) & GENMASK(2, 0);
+		ret = regmap_write(base, 0, tmp);
+		if (ret)
+			return ret;
+
+		/* Set otg port squelch trigger point configure to 100mv */
+		ret = regmap_read(base, 0x004, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(7, 5);
+		tmp |= 0x40 & GENMASK(7, 5);
+		ret = regmap_write(base, 0x004, tmp);
+		if (ret)
+			return ret;
+
+		ret = regmap_read(base, 0x008, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~BIT(0);
+		tmp |= 0x1 & BIT(0);
+		ret = regmap_write(base, 0x008, tmp);
+		if (ret)
+			return ret;
+
+		/* Enable host port pre-emphasis during non-chirp phase */
+		ret = regmap_read(base, 0x400, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(2, 0);
+		tmp |= BIT(2) & GENMASK(2, 0);
+		ret = regmap_write(base, 0x400, tmp);
+		if (ret)
+			return ret;
+
+		/* Set host port squelch trigger point configure to 100mv */
+		ret = regmap_read(base, 0x404, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(7, 5);
+		tmp |= 0x40 & GENMASK(7, 5);
+		ret = regmap_write(base, 0x404, tmp);
+		if (ret)
+			return ret;
+
+		ret = regmap_read(base, 0x408, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~BIT(0);
+		tmp |= 0x1 & BIT(0);
+		ret = regmap_write(base, 0x408, tmp);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static struct phy_ops rockchip_usb2phy_ops = {
 	.init = rockchip_usb2phy_init,
 	.exit = rockchip_usb2phy_exit,
@@ -813,6 +883,60 @@ static const struct rockchip_usb2phy_cfg rk322x_phy_cfgs[] = {
 				.ls_det_st	= { 0x0694, 0, 0, 0, 1 },
 				.ls_det_clr	= { 0x06a4, 0, 0, 0, 1 }
 			}
+		},
+	},
+	{ /* sentinel */ }
+};
+
+static const struct rockchip_usb2phy_cfg rk3308_phy_cfgs[] = {
+	{
+		.reg = 0x100,
+		.num_ports	= 2,
+		.phy_tuning	= rk3308_usb2phy_tuning,
+		.clkout_ctl	= { 0x0108, 4, 4, 1, 0 },
+		.port_cfgs	= {
+			[USB2PHY_PORT_OTG] = {
+				.phy_sus	= { 0x0100, 8, 0, 0, 0x1d1 },
+				.bvalid_det_en	= { 0x3020, 2, 2, 0, 1 },
+				.bvalid_det_st	= { 0x3024, 2, 2, 0, 1 },
+				.bvalid_det_clr = { 0x3028, 2, 2, 0, 1 },
+				.iddig_output	= { 0x0100, 10, 10, 0, 1 },
+				.iddig_en	= { 0x0100, 9, 9, 0, 1 },
+				.idfall_det_en	= { 0x3020, 5, 5, 0, 1 },
+				.idfall_det_st	= { 0x3024, 5, 5, 0, 1 },
+				.idfall_det_clr = { 0x3028, 5, 5, 0, 1 },
+				.idrise_det_en	= { 0x3020, 4, 4, 0, 1 },
+				.idrise_det_st	= { 0x3024, 4, 4, 0, 1 },
+				.idrise_det_clr = { 0x3028, 4, 4, 0, 1 },
+				.ls_det_en	= { 0x3020, 0, 0, 0, 1 },
+				.ls_det_st	= { 0x3024, 0, 0, 0, 1 },
+				.ls_det_clr	= { 0x3028, 0, 0, 0, 1 },
+				.utmi_avalid	= { 0x0120, 10, 10, 0, 1 },
+				.utmi_bvalid	= { 0x0120, 9, 9, 0, 1 },
+				.utmi_iddig	= { 0x0120, 6, 6, 0, 1 },
+				.utmi_ls	= { 0x0120, 5, 4, 0, 1 },
+				.vbus_det_en	= { 0x001c, 15, 15, 1, 0 },
+			},
+			[USB2PHY_PORT_HOST] = {
+				.phy_sus	= { 0x0104, 8, 0, 0, 0x1d1 },
+				.ls_det_en	= { 0x3020, 1, 1, 0, 1 },
+				.ls_det_st	= { 0x3024, 1, 1, 0, 1 },
+				.ls_det_clr	= { 0x3028, 1, 1, 0, 1 },
+				.utmi_ls	= { 0x120, 17, 16, 0, 1 },
+				.utmi_hstdet	= { 0x120, 19, 19, 0, 1 }
+			}
+		},
+		.chg_det = {
+			.opmode		= { 0x0100, 3, 0, 5, 1 },
+			.cp_det		= { 0x0120, 24, 24, 0, 1 },
+			.dcp_det	= { 0x0120, 23, 23, 0, 1 },
+			.dp_det		= { 0x0120, 25, 25, 0, 1 },
+			.idm_sink_en	= { 0x0108, 8, 8, 0, 1 },
+			.idp_sink_en	= { 0x0108, 7, 7, 0, 1 },
+			.idp_src_en	= { 0x0108, 9, 9, 0, 1 },
+			.rdm_pdwn_en	= { 0x0108, 10, 10, 0, 1 },
+			.vdm_src_en	= { 0x0108, 12, 12, 0, 1 },
+			.vdp_src_en	= { 0x0108, 11, 11, 0, 1 },
 		},
 	},
 	{ /* sentinel */ }
@@ -1129,7 +1253,7 @@ static const struct udevice_id rockchip_usb2phy_ids[] = {
 	{ .compatible = "rockchip,rk1808-usb2phy", .data = (ulong)&rk1808_phy_cfgs },
 	{ .compatible = "rockchip,rk3128-usb2phy", .data = (ulong)&rk312x_phy_cfgs },
 	{ .compatible = "rockchip,rk322x-usb2phy", .data = (ulong)&rk322x_phy_cfgs },
-	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
+	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3308_phy_cfgs },
 	{ .compatible = "rockchip,rk3328-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 	{ .compatible = "rockchip,rk3368-usb2phy", .data = (ulong)&rk3368_phy_cfgs },
 	{ .compatible = "rockchip,rk3399-usb2phy", .data = (ulong)&rk3399_phy_cfgs },
