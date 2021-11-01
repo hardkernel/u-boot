@@ -43,7 +43,7 @@ static int get_rkss_version(void)
 		return rkss_version;
 	}
 
-	read_buff = (uint8_t *)malloc(512);
+	read_buff = (uint8_t *)memalign(CONFIG_SYS_CACHELINE_SIZE, 512);
 	if (!read_buff) {
 		printf("TEEC: Malloc failed!\n");
 		return -1;
