@@ -185,6 +185,7 @@ enum {
 
 enum {
 	RK805_ID = 0x8050,
+	RK806_ID = 0x8060,
 	RK808_ID = 0x0000,
 	RK809_ID = 0x8090,
 	RK816_ID = 0x8160,
@@ -278,6 +279,7 @@ struct rk8xx_reg_table {
 
 struct rk8xx_priv {
 	struct virq_chip *irq_chip;
+	struct spi_slave *slave;
 	int variant;
 	int irq;
 	int lp_off_time;
