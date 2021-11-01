@@ -1322,9 +1322,18 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
 	int len, ret = -EINVAL;
 
+	memset(priv, 0x00, sizeof(*priv));
+
+	priv->reg = (fdt_addr_t)dev_read_addr_ptr(dev);
+	if (priv->reg == FDT_ADDR_T_NONE)
+		return -EINVAL;
+
+	crypto_base = priv->reg;
+
+	/* if there is no clocks in dts, just skip it */
 	if (!dev_read_prop(dev, "clocks", &len)) {
 		printf("Can't find \"clocks\" property\n");
-		return -EINVAL;
+		return 0;
 	}
 
 	memset(priv, 0x00, sizeof(*priv));
@@ -1360,10 +1369,6 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 		goto exit;
 	}
 
-	priv->reg = (fdt_addr_t)dev_read_addr_ptr(dev);
-
-	crypto_base = priv->reg;
-
 	return 0;
 exit:
 	if (priv->clocks)
@@ -1375,23 +1380,20 @@ exit:
 	return ret;
 }
 
-static int rockchip_crypto_probe(struct udevice *dev)
+static int rk_crypto_set_clk(struct rockchip_crypto_priv *priv)
 {
-	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
-	struct rk_crypto_soc_data *sdata;
-	int i, ret = 0;
+	int i, ret;
 	u32* clocks;
 
-	sdata = (struct rk_crypto_soc_data *)dev_get_driver_data(dev);
-	priv->soc_data = sdata;
+	if (!priv->clocks && priv->nclocks == 0)
+		return 0;
 
-	priv->hw_ctx = memalign(LLI_ADDR_ALIGN_SIZE,
-				sizeof(struct rk_hash_ctx));
-	if (!priv->hw_ctx)
-		return -ENOMEM;
-
+#ifdef CONFIG_CLK_SCMI
+	ret = rockchip_get_scmi_clk(&priv->clk.dev);
+#else
 	ret = rockchip_get_clk(&priv->clk.dev);
-	if (ret) {
+#endif
+	if (priv->nclocks && ret) {
 		printf("Failed to get clk device, ret=%d\n", ret);
 		return ret;
 	}
@@ -1406,6 +1408,27 @@ static int rockchip_crypto_probe(struct udevice *dev)
 			return ret;
 		}
 	}
+
+	return 0;
+}
+
+static int rockchip_crypto_probe(struct udevice *dev)
+{
+	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
+	struct rk_crypto_soc_data *sdata;
+	int ret = 0;
+
+	sdata = (struct rk_crypto_soc_data *)dev_get_driver_data(dev);
+	priv->soc_data = sdata;
+
+	priv->hw_ctx = memalign(LLI_ADDR_ALIGN_SIZE,
+				sizeof(struct rk_hash_ctx));
+	if (!priv->hw_ctx)
+		return -ENOMEM;
+
+	ret = rk_crypto_set_clk(priv);
+	if (ret)
+		return ret;
 
 	hw_crypto_reset();
 
