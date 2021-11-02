@@ -1902,6 +1902,268 @@ U_BOOT_DRIVER(rockchip_rk3588_cru) = {
 	.probe		= rk3588_clk_probe,
 };
 
+#ifdef CONFIG_SPL_BUILD
+#define SCRU_BASE			0xfd7d0000
+#define BUSSCRU_BASE			0xfd7d8000
+#define GPLL_RATE			1188000000
+#define SPLL_RATE			702000000
+
+#ifndef BITS_WITH_WMASK
+#define BITS_WITH_WMASK(bits, msk, shift) \
+	((bits) << (shift)) | ((msk) << ((shift) + 16))
+#endif
+
+#define CLKDIV_6BITS_SHF(div, shift)	BITS_WITH_WMASK(div, 0x3fU, shift)
+#define CLKDIV_5BITS_SHF(div, shift)	BITS_WITH_WMASK(div, 0x1fU, shift)
+
+static ulong rk3588_clk_scmi_get_rate(struct clk *clk)
+{
+	u32 src, div;
+
+	switch (clk->id) {
+	case SCMI_SPLL:
+		src = readl(BUSSCRU_BASE + RK3588_MODE_CON0) & 0x3;
+		if (src == 0)
+			return OSC_HZ;
+		else if (src == 1)
+			return 702 * MHz;
+		else
+			return 32768;
+	case SCMI_CCLK_SD:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(3)) & 0x3000;
+		src = src >> 12;
+		div = readl(SCRU_BASE + RK3588_CLKSEL_CON(3)) & 0x0fc0;
+		div = div >> 6;
+		if (src == 1)
+			return SPLL_RATE / (div + 1);
+		else if (src == 2)
+			return OSC_HZ / (div + 1);
+		else
+			return GPLL_RATE / (div + 1);
+	case SCMI_DCLK_SD:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(3)) & 0x0020;
+		div = readl(SCRU_BASE + RK3588_CLKSEL_CON(3)) & 0x001f;
+		if (src)
+			return SPLL_RATE / (div + 1);
+		else
+			return GPLL_RATE / (div + 1);
+	case SCMI_CRYPTO_RNG:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(1)) & 0xc000;
+		src = src >> 14;
+		if (src == 0)
+			return 175 * MHz;
+		else if (src == 1)
+			return 116 * MHz;
+		else if (src == 2)
+			return 58 * MHz;
+		else
+			return OSC_HZ;
+	case SCMI_CRYPTO_CORE:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(1)) & 0x0c00;
+		src = src >> 10;
+		if (src == 0)
+			return 350 * MHz;
+		else if (src == 1)
+			return 233 * MHz;
+		else if (src == 2)
+			return 116 * MHz;
+		else
+			return OSC_HZ;
+	case SCMI_CRYPTO_PKA:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(1)) & 0x3000;
+		src = src >> 12;
+		if (src == 0)
+			return 350 * MHz;
+		else if (src == 1)
+			return 233 * MHz;
+		else if (src == 2)
+			return 116 * MHz;
+		else
+			return OSC_HZ;
+	case SCMI_KEYLADDER_CORE:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(2)) & 0x00c0;
+		src = src >> 6;
+		if (src == 0)
+			return 350 * MHz;
+		else if (src == 1)
+			return 233 * MHz;
+		else if (src == 2)
+			return 116 * MHz;
+		else
+			return OSC_HZ;
+	case SCMI_KEYLADDER_RNG:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(2)) & 0x0300;
+		src = src >> 8;
+		if (src == 0)
+			return 175 * MHz;
+		else if (src == 1)
+			return 116 * MHz;
+		else if (src == 2)
+			return 58 * MHz;
+		else
+			return OSC_HZ;
+	case SCMI_TCLK_WDT:
+		return OSC_HZ;
+	case SCMI_HCLK_SD:
+	case SCMI_HCLK_SECURE_NS:
+		src = readl(SCRU_BASE + RK3588_CLKSEL_CON(1)) & 0x000c;
+		src = src >> 2;
+		if (src == 0)
+			return 150 * MHz;
+		else if (src == 1)
+			return 100 * MHz;
+		else if (src == 2)
+			return 50 * MHz;
+		else
+			return OSC_HZ;
+	default:
+		return -ENOENT;
+	}
+};
+
+static ulong rk3588_clk_scmi_set_rate(struct clk *clk, ulong rate)
+{
+	u32 src, div;
+
+	switch (clk->id) {
+	case SCMI_SPLL:
+		if (rate >= 700 * MHz)
+			src = 1;
+		else
+			src = 0;
+		writel(BITS_WITH_WMASK(src, 0x3U, 0),
+		       BUSSCRU_BASE + RK3588_MODE_CON0);
+		break;
+	case SCMI_CCLK_SD:
+		if ((OSC_HZ % rate) == 0) {
+			div = DIV_ROUND_UP(OSC_HZ, rate);
+			writel(CLKDIV_6BITS_SHF(div - 1, 6) |
+			       BITS_WITH_WMASK(2U, 0x3U, 12),
+			       SCRU_BASE + RK3588_CLKSEL_CON(3));
+		} else if ((SPLL_RATE % rate) == 0) {
+			div = DIV_ROUND_UP(SPLL_RATE, rate);
+			writel(CLKDIV_6BITS_SHF(div - 1, 6) |
+			       BITS_WITH_WMASK(1U, 0x3U, 12),
+			       SCRU_BASE + RK3588_CLKSEL_CON(3));
+		} else {
+			div = DIV_ROUND_UP(GPLL_RATE, rate);
+			writel(CLKDIV_6BITS_SHF(div - 1, 6) |
+			       BITS_WITH_WMASK(0U, 0x3U, 12),
+			       SCRU_BASE + RK3588_CLKSEL_CON(3));
+		}
+		break;
+	case SCMI_DCLK_SD:
+		if ((SPLL_RATE % rate) == 0) {
+			div = DIV_ROUND_UP(SPLL_RATE, rate);
+			writel(CLKDIV_5BITS_SHF(div - 1, 0) |
+			       BITS_WITH_WMASK(1U, 0x1U, 5),
+			       SCRU_BASE + RK3588_CLKSEL_CON(3));
+		} else {
+			div = DIV_ROUND_UP(GPLL_RATE, rate);
+			writel(CLKDIV_5BITS_SHF(div - 1, 0) |
+			       BITS_WITH_WMASK(0U, 0x1U, 5),
+			       SCRU_BASE + RK3588_CLKSEL_CON(3));
+		}
+		break;
+	case SCMI_CRYPTO_RNG:
+		if (rate >= 175 * MHz)
+			src = 0;
+		else if (rate >= 116 * MHz)
+			src = 1;
+		else if (rate >= 58 * MHz)
+			src = 2;
+		else
+			src = 3;
+
+		writel(BITS_WITH_WMASK(src, 0x3U, 14),
+		       SCRU_BASE + RK3588_CLKSEL_CON(1));
+		break;
+	case SCMI_CRYPTO_CORE:
+		if (rate >= 350 * MHz)
+			src = 0;
+		else if (rate >= 233 * MHz)
+			src = 1;
+		else if (rate >= 116 * MHz)
+			src = 2;
+		else
+			src = 3;
+
+		writel(BITS_WITH_WMASK(src, 0x3U, 10),
+		       SCRU_BASE + RK3588_CLKSEL_CON(1));
+		break;
+	case SCMI_CRYPTO_PKA:
+		if (rate >= 350 * MHz)
+			src = 0;
+		else if (rate >= 233 * MHz)
+			src = 1;
+		else if (rate >= 116 * MHz)
+			src = 2;
+		else
+			src = 3;
+
+		writel(BITS_WITH_WMASK(src, 0x3U, 12),
+		       SCRU_BASE + RK3588_CLKSEL_CON(1));
+		break;
+	case SCMI_KEYLADDER_CORE:
+		if (rate >= 350 * MHz)
+			src = 0;
+		else if (rate >= 233 * MHz)
+			src = 1;
+		else if (rate >= 116 * MHz)
+			src = 2;
+		else
+			src = 3;
+
+		writel(BITS_WITH_WMASK(src, 0x3U, 6),
+		       SCRU_BASE + RK3588_CLKSEL_CON(2));
+		break;
+	case SCMI_KEYLADDER_RNG:
+		if (rate >= 175 * MHz)
+			src = 0;
+		else if (rate >= 116 * MHz)
+			src = 1;
+		else if (rate >= 58 * MHz)
+			src = 2;
+		else
+			src = 3;
+
+		writel(BITS_WITH_WMASK(src, 0x3U, 8),
+		       SCRU_BASE + RK3588_CLKSEL_CON(2));
+		break;
+	case SCMI_TCLK_WDT:
+		break;
+	case SCMI_HCLK_SD:
+	case SCMI_HCLK_SECURE_NS:
+		if (rate >= 150 * MHz)
+			src = 0;
+		else if (rate >= 100 * MHz)
+			src = 1;
+		else if (rate >= 50 * MHz)
+			src = 2;
+		else
+			src = 3;
+		writel(BITS_WITH_WMASK(src, 0x3U, 2),
+		       SCRU_BASE + RK3588_CLKSEL_CON(1));
+		break;
+	default:
+		return -ENOENT;
+	}
+	return 0;
+};
+
+/* A fake scmi driver for SPL/TPL where smccc agent is not available. */
+static const struct clk_ops scmi_clk_ops = {
+	.get_rate = rk3588_clk_scmi_get_rate,
+	.set_rate = rk3588_clk_scmi_set_rate,
+};
+
+U_BOOT_DRIVER(scmi_clock) = {
+	.name = "scmi_clk",
+	.id = UCLASS_CLK,
+	.ops = &scmi_clk_ops,
+};
+#endif
+
 #ifndef CONFIG_SPL_BUILD
 /**
  * soc_clk_dump() - Print clock frequencies
