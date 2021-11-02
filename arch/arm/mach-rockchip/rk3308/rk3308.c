@@ -277,7 +277,7 @@ int rk_board_init_f(void)
 		(GPIO3B3_SEL_SRC_CTRL_SEL_PLUS << GPIO3B3_SEL_SRC_CTRL_SHIFT);
 
 	if (get_bootdev_by_brom_bootsource() == BOOT_TYPE_NAND) {
-		if (soc_is_rk3308b())
+		if (soc_is_rk3308b() || soc_is_rk3308bs())
 			rk_clrsetreg(&grf->soc_con15, mask, value);
 	}
 
