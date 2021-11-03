@@ -6,9 +6,9 @@
 
 obj-$(CONFIG_$(SPL_TPL_)SYSRESET) += sysreset-uclass.o
 
-ifndef CONFIG_SPL_BUILD
-obj-$(CONFIG_SYSRESET) += sysreset-syscon-reboot.o
-obj-$(CONFIG_SYSRESET_PSCI) += sysreset_psci.o
+ifndef CONFIG_SUPPORT_USBPLUG
+obj-$(CONFIG_$(SPL_TPL_)SYSRESET_SYSCON_REBOOT) += sysreset-syscon-reboot.o
+obj-$(CONFIG_$(SPL_TPL_)SYSRESET_PSCI) += sysreset_psci.o
 endif
 
 obj-$(CONFIG_SYSRESET_SYSCON) += sysreset_syscon.o

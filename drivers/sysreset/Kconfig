@@ -50,6 +50,12 @@ config SYSRESET_SYSCON
 	help
 	  Reboot support for generic SYSCON mapped register reset.
 
+config SYSRESET_SYSCON_REBOOT
+	bool "Enable support for syscon reboot mode driver"
+	default y if ARCH_ROCKCHIP
+	help
+	  Reboot mode command, like: reboot bootloader, etc.
+
 config SYSRESET_WATCHDOG
 	bool "Enable support for watchdog reboot driver"
 	select WDT
