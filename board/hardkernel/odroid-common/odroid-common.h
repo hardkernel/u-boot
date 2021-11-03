@@ -37,6 +37,8 @@ int board_is_odroidc4(void);
 int board_is_odroidhc4(void);
 #elif defined(CONFIG_ODROID_GO4)
 int board_is_odroidgo4(void);
+#elif defined(CONFIG_ODROID_GOU)
+int board_is_odroidgou(void);
 #endif
 
 /*

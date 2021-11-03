@@ -569,7 +569,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		lcd_mipi_dsi_init_table_check_bsp(pconf->lcd_control.mipi_config, 0);
 
 		if (ext_lcd->lcd_spc_val9 == Rsv_val)
-			pconf->lcd_control.mipi_config->extern_init = 0xff;
+			pconf->lcd_control.mipi_config->extern_init = 0;
 		else
 			pconf->lcd_control.mipi_config->extern_init = ext_lcd->lcd_spc_val9;
 	}

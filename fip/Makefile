@@ -128,6 +128,19 @@ endif
 	$(call encrypt_step, --bl2sig \
 			--input $(buildtree)/fip/bl2_new.bin \
 			--output $(buildtree)/fip/bl2.n.bin.sig)
+
+ifeq ($(CONFIG_ODROID_GOU),y)
+	$(call encrypt_step,--bootmk $(FIP_BL32_PROCESS) $(V3_PROCESS_FLAG) \
+			--bl2 $(buildtree)/fip/bl2.n.bin.sig \
+			--bl30 $(buildtree)/fip/bl30_new.bin.enc \
+			--bl31 $(buildtree)/fip/bl31.$(BL3X_SUFFIX).enc \
+			--bl33 $(buildtree)/fip/bl33.bin.enc \
+			--ddrfw1 $(buildsrc)/fip/$(SOC)/lpddr4_1d.fw \
+			--ddrfw2 $(buildsrc)/fip/$(SOC)/lpddr4_2d.fw \
+			--ddrfw4 $(buildsrc)/fip/$(SOC)/piei.fw \
+			--ddrfw8 $(buildsrc)/fip/$(SOC)/$(DDR_FW_NAME) \
+			--output $(FUSING_FOLDER)/u-boot.bin)
+else
 	$(call encrypt_step,--bootmk $(FIP_BL32_PROCESS) $(V3_PROCESS_FLAG) \
 			--bl2 $(buildtree)/fip/bl2.n.bin.sig \
 			--bl30 $(buildtree)/fip/bl30_new.bin.enc \
@@ -138,6 +151,8 @@ endif
 			--ddrfw4 $(buildsrc)/fip/$(SOC)/piei.fw \
 			--ddrfw8 $(buildsrc)/fip/$(SOC)/$(DDR_FW_NAME) \
 			--output $(FUSING_FOLDER)/u-boot.bin)
+endif
+
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT),y)
 	$(call encrypt_step, --efsgen --amluserkey $(AML_USER_KEY) \
 			--output $(buildtree)/fip/u-boot.bin.encrypt.efuse $(V3_PROCESS_FLAG))

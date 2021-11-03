@@ -1443,6 +1443,10 @@ static int aml_lcd_extern_add_mipi(struct aml_lcd_extern_driver_s *ext_drv)
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_TL050FHV02CT
 		ret = aml_lcd_extern_mipi_tl050fhv02ct_probe(ext_drv);
 #endif
+	} else if (strcmp(ext_drv->config->name, "mipi_kd50t048a") == 0) {
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_KD50T048A
+		ret = aml_lcd_extern_mipi_kd50t048a_probe(ext_drv);
+#endif
 	} else {
 		EXTERR("invalid driver name: %s\n", ext_drv->config->name);
 	}
@@ -1619,6 +1623,12 @@ static int aml_lcd_extern_add_driver_default(int index,
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_TL050FHV02CT
 	if (strcmp(ext_drv->config->name, "mipi_TL050FHV02CT") == 0) {
 		ret = aml_lcd_extern_mipi_tl050fhv02ct_probe(ext_drv);
+		goto add_driver_default_end;
+	}
+#endif
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_KD50T048A
+	if (strcmp(ext_drv->config->name, "mipi_kd50t048a") == 0) {
+		ret = aml_lcd_extern_mipi_kd50t048a_probe(ext_drv);
 		goto add_driver_default_end;
 	}
 #endif
