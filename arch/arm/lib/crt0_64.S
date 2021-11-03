@@ -79,7 +79,9 @@ ENTRY(_main)
 3:	mrs	x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0
-	msr	daifclr, #4			/* SCR_EL3.EA=1 was already set in start.S */
+#ifndef CONFIG_SUPPORT_USBPLUG
+	msr	daifclr, #4			/* Enable SError. SCR_EL3.EA=1 was already set in start.S */
+#endif
 	b	0f
 2:	mrs	x0, sctlr_el2
 	orr	x0, x0, x1
