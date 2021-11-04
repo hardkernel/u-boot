@@ -301,20 +301,14 @@ static int rk8xx_shutdown(struct udevice *dev)
 		return -EINVAL;
 	}
 
-	ret = dm_i2c_read(dev, devctrl_reg, &val, 1);
-	if (ret) {
-		printf("%s: read reg 0x%02x failed, ret=%d\n",
-		       __func__, devctrl_reg, ret);
+	ret = rk8xx_read(dev, devctrl_reg, &val, 1);
+	if (ret)
 		return ret;
-	}
 
 	val |= dev_off;
-	ret = dm_i2c_write(dev, devctrl_reg, &val, 1);
-	if (ret) {
-		printf("%s: write reg 0x%02x failed, ret=%d\n",
-		       __func__, devctrl_reg, ret);
+	ret = rk8xx_write(dev, devctrl_reg, &val, 1);
+	if (ret)
 		return ret;
-	}
 
 	return 0;
 }
@@ -486,6 +480,7 @@ static int rk8xx_probe(struct udevice *dev)
 	uint8_t on_source = 0, off_source = 0;
 	uint8_t pwron_key = 0, lp_off_msk = 0, lp_act_msk = 0;
 	uint8_t power_en0, power_en1, power_en2, power_en3;
+	uint8_t on, off;
 	uint8_t value;
 
 	/* read Chip variant */
@@ -545,15 +540,24 @@ static int rk8xx_probe(struct udevice *dev)
 		/* judge whether save the PMIC_POWER_EN register */
 		if (priv->not_save_power_en)
 			break;
-		power_en0 = pmic_reg_read(dev, RK817_POWER_EN0);
-		power_en1 = pmic_reg_read(dev, RK817_POWER_EN1);
-		power_en2 = pmic_reg_read(dev, RK817_POWER_EN2);
-		power_en3 = pmic_reg_read(dev, RK817_POWER_EN3);
+
+		ret = rk8xx_read(dev, RK817_POWER_EN0, &power_en0, 1);
+		if (ret)
+			return ret;
+		ret = rk8xx_read(dev, RK817_POWER_EN1, &power_en1, 1);
+		if (ret)
+			return ret;
+		ret = rk8xx_read(dev, RK817_POWER_EN2, &power_en2, 1);
+		if (ret)
+			return ret;
+		ret = rk8xx_read(dev, RK817_POWER_EN3, &power_en3, 1);
+		if (ret)
+			return ret;
 
 		value = (power_en0 & 0x0f) | ((power_en1 & 0x0f) << 4);
-		pmic_reg_write(dev, RK817_POWER_EN_SAVE0, value);
+		rk8xx_write(dev, RK817_POWER_EN_SAVE0, &value, 1);
 		value = (power_en2 & 0x0f) | ((power_en3 & 0x0f) << 4);
-		pmic_reg_write(dev, RK817_POWER_EN_SAVE1, value);
+		rk8xx_write(dev, RK817_POWER_EN_SAVE1, &value, 1);
 		break;
 	default:
 		printf("Unknown PMIC: RK%x!!\n", priv->variant);
@@ -586,20 +590,23 @@ static int rk8xx_probe(struct udevice *dev)
 
 	printf("PMIC:  RK%x ", show_variant);
 
-	if (on_source && off_source)
-		printf("(on=0x%02x, off=0x%02x)",
-		       pmic_reg_read(dev, on_source),
-		       pmic_reg_read(dev, off_source));
+	if (on_source && off_source) {
+		rk8xx_read(dev, on_source, &on, 1);
+		rk8xx_read(dev, off_source, &off, 1);
+		printf("(on=0x%02x, off=0x%02x)", on, off);
+	}
 	printf("\n");
 
 	if (pwron_key) {
-		value = pmic_reg_read(dev, pwron_key);
+		ret = rk8xx_read(dev, pwron_key, &value, 1);
+		if (ret)
+			return ret;
 		value &= ~(lp_off_msk | lp_act_msk);
 		if (lp_off_msk)
 			value |= priv->lp_off_time;
 		if (lp_act_msk)
 			value |= priv->lp_action;
-		pmic_reg_write(dev, pwron_key, value);
+		rk8xx_write(dev, pwron_key, &value, 1);
 	}
 
 	ret = rk8xx_irq_chip_init(dev);
