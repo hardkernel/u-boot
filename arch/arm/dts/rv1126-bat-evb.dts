@@ -14,7 +14,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &emmc;
+		u-boot,spl-boot-order = &spi_nor, &emmc;
 	};
 
 	adc-keys {
@@ -86,6 +86,10 @@
 
 &sdmmc {
 	status = "disabled";
+};
+
+&spi_nor {
+	spi-max-frequency = <148500000>;
 };
 
 &stmmac_axi_setup {
