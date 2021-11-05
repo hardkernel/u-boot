@@ -631,7 +631,7 @@ config TPL_ROCKCHIP_EARLYRETURN_TO_BROM
 	  to allow multiple entries.
 
 config SPL_MMC_SUPPORT
-	default y if !SPL_ROCKCHIP_BACK_TO_BROM
+	default y if !SPL_ROCKCHIP_BACK_TO_BROM && MMC
 
 config RKIMG_BOOTLOADER
 	bool "Support for Rockchip platform features"
