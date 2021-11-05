@@ -112,15 +112,7 @@ int fdt_fixup_memory(void *blob, u64 start, u64 size);
  *			property will be left untouched.
  * @return 0 if ok, or -1 or -FDT_ERR_... on error
  */
-#ifdef CONFIG_ARCH_FIXUP_FDT_MEMORY
 int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks);
-#else
-static inline int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[],
-					 int banks)
-{
-	return 0;
-}
-#endif
 
 int fdt_update_reserved_memory(void *blob, char *name, u64 start, u64 size);
 

@@ -461,7 +461,6 @@ void do_fixup_by_compat_u32(void *fdt, const char *compat,
 	do_fixup_by_compat(fdt, compat, prop, &tmp, 4, create);
 }
 
-#ifdef CONFIG_ARCH_FIXUP_FDT_MEMORY
 /*
  * fdt_pack_reg - pack address and size array into the "reg"-suitable stream
  */
@@ -534,6 +533,8 @@ int fdt_record_loadable(void *blob, u32 index, const char *name,
 #else
 #define MEMORY_BANKS_MAX 4
 #endif
+
+#ifdef CONFIG_ARCH_FIXUP_FDT_MEMORY
 int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
 {
 	int err, nodeoffset;
@@ -556,7 +557,7 @@ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
 	/* find or create "/memory" node. */
 	nodeoffset = fdt_find_or_add_subnode(blob, 0, "memory");
 	if (nodeoffset < 0)
-			return nodeoffset;
+		return nodeoffset;
 
 	err = fdt_setprop(blob, nodeoffset, "device_type", "memory",
 			sizeof("memory"));
@@ -579,6 +580,30 @@ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
 	}
 	return 0;
 }
+#else
+int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
+{
+	struct fdt_resource res;
+	int i, nodeoffset;
+
+	/* show memory */
+	nodeoffset = fdt_subnode_offset(blob, 0, "memory");
+	if (nodeoffset > 0) {
+		for (i = 0; i < MEMORY_BANKS_MAX; i++) {
+			if (fdt_get_resource(blob, nodeoffset, "reg", i, &res))
+				break;
+			res.end += 1;
+			if (!res.start && !res.end)
+				break;
+			printf("fixed bank: 0x%08llx - 0x%08llx (size: 0x%08llx)\n",
+			       (u64)res.start, (u64)res.end, (u64)res.end - (u64)res.start);
+		}
+	}
+
+	return 0;
+}
+
+#endif
 
 int fdt_fixup_memory(void *blob, u64 start, u64 size)
 {
@@ -607,7 +632,6 @@ int fdt_update_reserved_memory(void *blob, char *name, u64 start, u64 size)
 
 	return nodeoffset;
 }
-#endif
 
 void fdt_fixup_ethernet(void *fdt)
 {
