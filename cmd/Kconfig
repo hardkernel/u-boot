@@ -1060,6 +1060,11 @@ config CMD_ITEST
 	help
 	  Return true/false on integer compare.
 
+config CMD_SCRIPT_UPDATE
+	bool "sd_update/usb_update/tftp_update"
+	help
+	  Auto run sd_update/usb_update/tftp_update.txt from sd/udisk/tftp.
+
 config CMD_SOURCE
 	bool "source"
 	default y
