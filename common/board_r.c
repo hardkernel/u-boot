@@ -892,9 +892,10 @@ static init_fnc_t init_sequence_r[] = {
 #if defined(CONFIG_ARM) || defined(CONFIG_NDS32) || defined(CONFIG_RISCV)
 	board_init,	/* Setup chipselects */
 #endif
-
 #if defined(CONFIG_USING_KERNEL_DTB) && !defined(CONFIG_ENV_IS_NOWHERE)
 	initr_env_switch,
+#elif defined(CONFIG_ENVF)
+	env_load,
 #endif
 
 	/*

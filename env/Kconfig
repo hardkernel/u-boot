@@ -40,6 +40,20 @@ config ENV_IS_NOWHERE
 	  stored. U-Boot will therefore always start up with a default
 	  environment.
 
+config ENVF
+	bool "Environment fragment is store in envf partition"
+	depends on ENV_IS_NOWHERE
+	help
+	  Use this if you want to add a env fragment partition to overlay/store
+	  some specific environments.
+
+config ENVF_LIST
+	string "Specific environments list of env fragment"
+	depends on ENVF
+	default ""
+	help
+	  The environment white list.
+
 config ENV_IS_IN_EEPROM
 	bool "Environment in EEPROM"
 	depends on !CHAIN_OF_TRUST
