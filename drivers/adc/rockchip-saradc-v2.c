@@ -11,6 +11,7 @@
 #include <dm.h>
 #include <errno.h>
 #include <asm/io.h>
+#include <reset.h>
 
 #define SARADC2_EN_END_INT		BIT(0)
 #define SARADC2_START			BIT(4)
@@ -97,6 +98,7 @@ struct rockchip_saradc_priv {
 	struct rockchip_saradc_regs		*regs;
 	int					active_channel;
 	const struct rockchip_saradc_data	*data;
+	struct reset_ctl			rst;
 };
 
 static int rockchip_saradc_channel_data(struct udevice *dev, int channel,
@@ -104,7 +106,6 @@ static int rockchip_saradc_channel_data(struct udevice *dev, int channel,
 {
 	struct rockchip_saradc_priv *priv = dev_get_priv(dev);
 	struct adc_uclass_platdata *uc_pdata = dev_get_uclass_platdata(dev);
-	int offset;
 
 	if (channel != priv->active_channel) {
 		pr_err("Requested channel is not active!");
@@ -112,11 +113,9 @@ static int rockchip_saradc_channel_data(struct udevice *dev, int channel,
 	}
 
 	/* Clear irq */
-	writel(0x1, priv->regs->end_int_st);
+	writel(0x1, &priv->regs->end_int_st);
 
-	offset = priv->active_channel * 0x4;
-
-	*data = readl(priv->regs->data0 + offset);
+	*data = readl(&priv->regs->data0 + priv->active_channel);
 	*data &= uc_pdata->data_mask;
 
 	return 0;
@@ -132,10 +131,19 @@ static int rockchip_saradc_start_channel(struct udevice *dev, int channel)
 		return -EINVAL;
 	}
 
+#if CONFIG_IS_ENABLED(DM_RESET)
+	reset_assert(&priv->rst);
+	udelay(10);
+	reset_deassert(&priv->rst);
+#endif
+	writel(0x20, &priv->regs->t_pd_soc);
+	writel(0xc, &priv->regs->t_das_soc);
 	val = SARADC2_EN_END_INT << 16 | SARADC2_EN_END_INT;
-	writel(val, priv->regs->end_int_en);
+	writel(val, &priv->regs->end_int_en);
 	val = SARADC2_START | SARADC2_SINGLE_MODE | channel;
-	writel(val << 16 | val, priv->regs->conv_con);
+	writel(val << 16 | val, &priv->regs->conv_con);
+
+	udelay(100);
 
 	priv->active_channel = channel;
 
@@ -156,6 +164,14 @@ static int rockchip_saradc_probe(struct udevice *dev)
 	struct rockchip_saradc_priv *priv = dev_get_priv(dev);
 	struct clk clk;
 	int ret;
+
+#if CONFIG_IS_ENABLED(DM_RESET)
+	ret = reset_get_by_name(dev, "saradc-apb", &priv->rst);
+	if (ret) {
+		debug("reset_get_by_name() failed: %d\n", ret);
+		return ret;
+	}
+#endif
 
 	ret = clk_get_by_index(dev, 0, &clk);
 	if (ret)
@@ -205,7 +221,7 @@ static const struct rockchip_saradc_data rk3588_saradc_data = {
 };
 
 static const struct udevice_id rockchip_saradc_ids[] = {
-	{ .compatible = "rockchip,saradc-3588",
+	{ .compatible = "rockchip,rk3588-saradc",
 	  .data = (ulong)&rk3588_saradc_data },
 	{ }
 };
