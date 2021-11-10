@@ -18,7 +18,7 @@ SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
 SIG_RECOVERY="${FIT_DIR}/recovery.data2sign"
 # offs
-OFFS_DATA="0xE00"
+OFFS_DATA="0x1000"
 # file
 CHIP_FILE="arch/arm/lib/.asm-offsets.s.cmd"
 # placeholder address
