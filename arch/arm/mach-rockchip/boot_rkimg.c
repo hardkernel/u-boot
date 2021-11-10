@@ -535,7 +535,7 @@ int rockchip_read_dtb_file(void *fdt_addr)
 {
 	int hash_size = 0;
 	int ret = -1;
-	u32 fdt_size;
+	u32 fdt_size = 0;
 	char *hash;
 
 	/* init from storage if resource list is empty */
