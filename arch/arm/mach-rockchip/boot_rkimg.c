@@ -545,6 +545,7 @@ int rockchip_read_dtb_file(void *fdt_addr)
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
 	ret = rockchip_read_distro_dtb(fdt_addr);
 	if (!ret) {
+		fdt_size = fdt_totalsize(fdt_addr);
 		if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
 		     ALIGN(fdt_size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
 			return -ENOMEM;
