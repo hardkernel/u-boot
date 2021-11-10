@@ -1043,6 +1043,7 @@ char *board_fdt_chosen_bootargs(void *fdt)
 	const char *bootargs;
 	int nodeoffset;
 	int i, dump;
+	char *msg = "kernel";
 
 	/* debug */
 	hotkey_run(HK_INITCALL);
@@ -1059,9 +1060,17 @@ char *board_fdt_chosen_bootargs(void *fdt)
 		bootargs = fdt_getprop(fdt, nodeoffset, arr_bootargs[i], NULL);
 		if (!bootargs)
 			continue;
+#ifdef CONFIG_ENVF
+		/* Allow "bootargs_envf" to replace "bootargs" */
+		if (!strcmp("bootargs", arr_bootargs[i]) &&
+		    env_get("bootargs_envf")) {
+			bootargs = env_get("bootargs_envf");
+			msg = "envf";
+		}
+#endif
 		if (dump)
-			printf("## bootargs(kernel-%s): %s\n\n",
-			       arr_bootargs[i], bootargs);
+			printf("## bootargs(%s-%s): %s\n\n",
+			       msg, arr_bootargs[i], bootargs);
 		/*
 		 * Append kernel bootargs
 		 * If use AB system, delete default "root=" which route
