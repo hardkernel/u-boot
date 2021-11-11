@@ -174,6 +174,25 @@ int generic_phy_validate(struct phy *phy, enum phy_mode mode, int submode,
 	return ops->validate ? ops->validate(phy, mode, submode, opts) : 0;
 }
 
+int generic_phy_set_mode_ext(struct phy *phy, enum phy_mode mode, int submode)
+{
+	struct phy_ops const *ops;
+	int ret;
+
+	if (!generic_phy_valid(phy))
+		return 0;
+	ops = phy_dev_ops(phy->dev);
+
+	if (!ops->set_mode)
+		return 0;
+
+	ret = ops->set_mode(phy, mode, submode);
+	if (!ret)
+		phy->attrs.mode = mode;
+
+	return ret;
+}
+
 UCLASS_DRIVER(phy) = {
 	.id		= UCLASS_PHY,
 	.name		= "phy",
