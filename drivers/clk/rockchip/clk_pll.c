@@ -464,6 +464,10 @@ static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(5),
 			     pll->mode_mask << 14,
 			     2 << 14);
+
+	if (pll_id == 3)
+		rk_clrsetreg(base + 0x84c, 0x1 << 1, 0);
+
 	debug("PLL at %p: con0=%x con1= %x con2= %x mode= %x\n",
 	      pll, readl(base + pll->con_offset),
 	      readl(base + pll->con_offset + 0x4),
