@@ -786,6 +786,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	int ret = -EINVAL;
 	int i;
 
+	printf("Trying fit image at 0x%lx sector\n", sector_offs);
 	for (i = 0; i < CONFIG_SPL_FIT_IMAGE_MULTIPLE; i++) {
 		if (i > 0) {
 			sector_offs +=
