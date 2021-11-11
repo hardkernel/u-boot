@@ -256,6 +256,9 @@ int usb_control_msg(struct usb_device *dev, unsigned int pipe,
 	if (dev->status)
 		return -1;
 
+	if(dev->descriptor.idVendor == 0x058f && dev->descriptor.idProduct == 0x6387)
+		udelay(200);
+
 	return dev->act_len;
 
 }
