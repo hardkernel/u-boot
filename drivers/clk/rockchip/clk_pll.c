@@ -403,6 +403,9 @@ static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 	 * When power on or changing PLL setting,
 	 * we must force PLL into slow mode to ensure output stable clock.
 	 */
+	if (pll_id == 3)
+		rk_clrsetreg(base + 0x84c, 0x1 << 1, 0x1 << 1);
+
 	rk_clrsetreg(base + pll->mode_offset,
 		     pll->mode_mask << pll->mode_shift,
 		     RKCLK_PLL_MODE_SLOW << pll->mode_shift);
