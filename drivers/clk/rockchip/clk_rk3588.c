@@ -772,6 +772,16 @@ static ulong rk3588_mmc_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 		else
 			prate = OSC_HZ;
 		return DIV_TO_RATE(prate, div);
+	case DCLK_DECOM:
+		con = readl(&cru->clksel_con[62]);
+		div = (con & DCLK_DECOM_DIV_MASK) >> DCLK_DECOM_DIV_SHIFT;
+		sel = (con & DCLK_DECOM_SEL_MASK) >>
+		      DCLK_DECOM_SEL_SHIFT;
+		if (sel == DCLK_DECOM_SEL_SPLL)
+			prate = 702 * MHz;
+		else
+			prate = priv->gpll_hz;
+		return DIV_TO_RATE(prate, div);
 	default:
 		return -ENOENT;
 	}
@@ -807,6 +817,15 @@ static ulong rk3588_mmc_set_clk(struct rk3588_clk_priv *priv,
 			div = DIV_ROUND_UP(priv->gpll_hz, rate);
 		}
 		break;
+	case DCLK_DECOM:
+		if (!(702 * MHz % rate)) {
+			src_clk = DCLK_DECOM_SEL_SPLL;
+			div = DIV_ROUND_UP(702 * MHz, rate);
+		} else {
+			src_clk = DCLK_DECOM_SEL_GPLL;
+			div = DIV_ROUND_UP(priv->gpll_hz, rate);
+		}
+		break;
 	default:
 		return -ENOENT;
 	}
@@ -839,6 +858,13 @@ static ulong rk3588_mmc_set_clk(struct rk3588_clk_priv *priv,
 			     SCLK_SFC_SEL_MASK,
 			     (src_clk << SCLK_SFC_SEL_SHIFT) |
 			     (div - 1) << SCLK_SFC_DIV_SHIFT);
+		break;
+	case DCLK_DECOM:
+		rk_clrsetreg(&cru->clksel_con[62],
+			     DCLK_DECOM_DIV_MASK |
+			     DCLK_DECOM_SEL_MASK,
+			     (src_clk << DCLK_DECOM_SEL_SHIFT) |
+			     (div - 1) << DCLK_DECOM_DIV_SHIFT);
 		break;
 	default:
 		return -ENOENT;
@@ -1393,6 +1419,7 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 	case CCLK_EMMC:
 	case BCLK_EMMC:
 	case SCLK_SFC:
+	case DCLK_DECOM:
 		rate = rk3588_mmc_get_clk(priv, clk->id);
 		break;
 #ifndef CONFIG_SPL_BUILD
@@ -1522,6 +1549,7 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	case CCLK_EMMC:
 	case BCLK_EMMC:
 	case SCLK_SFC:
+	case DCLK_DECOM:
 		ret = rk3588_mmc_set_clk(priv, clk->id, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
