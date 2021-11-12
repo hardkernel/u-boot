@@ -94,7 +94,7 @@ struct rockchip_crypto_priv {
 #define phys_to_virt(addr, area)	((unsigned long)addr)
 
 #define align_malloc(bytes, alignment)	memalign(alignment, bytes)
-#define align_free(addr)		free(addr)
+#define align_free(addr)		do {if (addr) free(addr);} while (0)
 
 #define ROUNDUP(size, alignment)	round_up(size, alignment)
 #define cache_op_inner(type, addr, size) \
