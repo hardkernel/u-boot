@@ -69,6 +69,14 @@ config CLK_SCMI
 	  by a SCMI agent based on SCMI clock protocol communication
 	  with a SCMI server.
 
+config SPL_CLK_SCMI
+	bool "Enable SCMI clock driver in SPL"
+	depends on SPL_SCMI_FIRMWARE
+	help
+	  Enable this option in SPL if you want to support clock devices exposed
+	  by a SCMI agent based on SCMI clock protocol communication
+	  with a SCMI server.
+
 source "drivers/clk/tegra/Kconfig"
 source "drivers/clk/uniphier/Kconfig"
 source "drivers/clk/exynos/Kconfig"

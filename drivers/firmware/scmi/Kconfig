@@ -17,3 +17,11 @@ config SCMI_FIRMWARE
 	  based on message exchange. Messages can be exchange over tranport
 	  channels as a mailbox device or an Arm SMCCC service with some
 	  piece of identified shared memory.
+
+config SPL_SCMI_FIRMWARE
+	bool "Enable SPL SCMI support"
+	select FIRMWARE
+	select OF_TRANSLATE
+	depends on SANDBOX || DM_MAILBOX || ARM_SMCCC
+	help
+	  Ditto as SCMI_FIRMWARE.

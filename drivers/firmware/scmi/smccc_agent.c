@@ -27,6 +27,7 @@ struct scmi_smccc_channel {
 	struct scmi_smt smt;
 };
 
+#ifndef CONFIG_SPL_BUILD
 static int scmi_smccc_process_msg(struct udevice *dev, struct scmi_msg *msg)
 {
 	struct scmi_smccc_channel *chan = dev_get_priv(dev);
@@ -71,13 +72,14 @@ static int scmi_smccc_probe(struct udevice *dev)
 	return 0;
 }
 
+static const struct scmi_agent_ops scmi_smccc_ops = {
+	.process_msg = scmi_smccc_process_msg,
+};
+#endif
+
 static const struct udevice_id scmi_smccc_ids[] = {
 	{ .compatible = "arm,scmi-smc" },
 	{ }
-};
-
-static const struct scmi_agent_ops scmi_smccc_ops = {
-	.process_msg = scmi_smccc_process_msg,
 };
 
 U_BOOT_DRIVER(scmi_smccc) = {
@@ -85,6 +87,8 @@ U_BOOT_DRIVER(scmi_smccc) = {
 	.id		= UCLASS_SCMI_AGENT,
 	.of_match	= scmi_smccc_ids,
 	.priv_auto_alloc_size = sizeof(struct scmi_smccc_channel),
+#ifndef CONFIG_SPL_BUILD
 	.probe		= scmi_smccc_probe,
 	.ops		= &scmi_smccc_ops,
+#endif
 };

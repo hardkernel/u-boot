@@ -9,7 +9,9 @@ obj-$(CONFIG_$(SPL_TPL_)CLK) += clk-uclass.o clk_fixed_rate.o
 obj-$(CONFIG_ARCH_ROCKCHIP) += rockchip/
 obj-$(CONFIG_SANDBOX) += clk_sandbox.o
 obj-$(CONFIG_SANDBOX) += clk_sandbox_test.o
+ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_CLK_SCMI) += clk_scmi.o
+endif
 obj-$(CONFIG_MACH_PIC32) += clk_pic32.o
 obj-$(CONFIG_CLK_RENESAS) += renesas/
 obj-$(CONFIG_CLK_ZYNQ) += clk_zynq.o
