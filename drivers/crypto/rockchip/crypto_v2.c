@@ -311,7 +311,7 @@ static int rk_hash_init(void *hw_ctx, u32 algo)
 	crypto_write(reg_ctrl | CRYPTO_WRITE_MASK_ALL, CRYPTO_FIFO_CTL);
 
 	/* enable src_item_done interrupt */
-	crypto_write(CRYPTO_SRC_ITEM_INT_EN, CRYPTO_DMA_INT_EN);
+	crypto_write(0, CRYPTO_DMA_INT_EN);
 
 	tmp_ctx->magic = RK_HASH_CTX_MAGIC;
 
@@ -813,8 +813,7 @@ static int hw_cipher_init(u32 chn, const u8 *key, const u8 *twk_key,
 
 	/* din_swap set 1, dout_swap set 1, default 1. */
 	crypto_write(0x00030003, CRYPTO_FIFO_CTL);
-	crypto_write(CRYPTO_LIST_DONE_INT_EN | CRYPTO_DST_ITEM_DONE_INT_EN,
-		     CRYPTO_DMA_INT_EN);
+	crypto_write(0, CRYPTO_DMA_INT_EN);
 
 	crypto_write(reg_ctrl | CRYPTO_WRITE_MASK_ALL, CRYPTO_BC_CTL);
 
@@ -958,8 +957,7 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 
 	/* din_swap set 1, dout_swap set 1, default 1. */
 	crypto_write(0x00030003, CRYPTO_FIFO_CTL);
-	crypto_write(CRYPTO_DST_ITEM_DONE_INT_EN | CRYPTO_LIST_DONE_INT_EN,
-		     CRYPTO_DMA_INT_EN);
+	crypto_write(0, CRYPTO_DMA_INT_EN);
 
 	reg_ctrl = crypto_read(CRYPTO_BC_CTL) | CRYPTO_BC_ENABLE;
 	crypto_write(reg_ctrl | CRYPTO_WRITE_MASK_ALL, CRYPTO_BC_CTL);
