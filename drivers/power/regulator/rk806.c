@@ -266,7 +266,6 @@ static int _buck_set_ramp_delay(struct udevice *pmic, int buck, u32 ramp_delay)
 	switch (priv->variant) {
 	case RK806_ID:
 		switch (ramp_delay) {
-		ramp_value = RK806_RAMP_RATE_1LSB_PER_32CLK;
 		case 1 ... 390:
 			ramp_value = RK806_RAMP_RATE_1LSB_PER_32CLK;
 			break;
