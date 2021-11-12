@@ -247,7 +247,7 @@ static int rockchip_decom_probe(struct udevice *dev)
 	}
 #endif
 
-	ret = clk_get_by_name(dev, "dclk", &priv->dclk);
+	ret = clk_get_by_index(dev, 1, &priv->dclk);
 	if (ret < 0)
 		return ret;
 
