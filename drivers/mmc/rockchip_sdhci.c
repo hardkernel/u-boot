@@ -40,6 +40,12 @@ DECLARE_GLOBAL_DATA_PTR;
 	PHYCTRL_DLLRDY_DONE)
 
 /* Rockchip specific Registers */
+#define DWCMSHC_CTRL_HS400		0x7
+#define DWCMSHC_CARD_IS_EMMC		BIT(0)
+#define DWCMSHC_ENHANCED_STROBE		BIT(8)
+
+#define DWCMSHC_HOST_CTRL3		0x508
+#define DWCMSHC_EMMC_CONTROL		0x52c
 #define DWCMSHC_EMMC_DLL_CTRL		0x800
 #define DWCMSHC_EMMC_DLL_CTRL_RESET	BIT(1)
 #define DWCMSHC_EMMC_DLL_RXCLK		0x804
@@ -55,10 +61,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DWCMSHC_EMMC_DLL_INC_VALUE	2
 #define DWCMSHC_EMMC_DLL_INC		8
 #define DWCMSHC_EMMC_DLL_DLYENA		BIT(27)
-#define DLL_TXCLK_TAPNUM_DEFAULT	0x10
+#define DLL_TXCLK_TAPNUM_DEFAULT	0x8
 #define DLL_TXCLK_TAPNUM_90_DEGREES	0x8
 #define DLL_STRBIN_TAPNUM_DEFAULT	0x3
 #define DLL_TXCLK_TAPNUM_FROM_SW	BIT(24)
+#define DLL_TXCLK_NO_INVERTER		BIT(29)
 #define DWCMSHC_EMMC_DLL_LOCKED		BIT(8)
 #define DWCMSHC_EMMC_DLL_TIMEOUT	BIT(9)
 #define DLL_RXCLK_NO_INVERTER		1
@@ -66,6 +73,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DLL_CMDOUT_TAPNUM_90_DEGREES	0x8
 #define DLL_CMDOUT_TAPNUM_FROM_SW	BIT(24)
 #define DLL_CMDOUT_SRC_CLK_NEG		BIT(28)
+#define DLL_CMDOUT_EN_SRC_CLK_NEG	BIT(29)
 
 #define DWCMSHC_ENHANCED_STROBE		BIT(8)
 #define DLL_LOCK_WO_TMOUT(x) \
@@ -97,6 +105,7 @@ struct rockchip_sdhc {
 
 struct sdhci_data {
 	int (*emmc_set_clock)(struct sdhci_host *host, unsigned int clock);
+	void (*set_ios_post)(struct sdhci_host *host);
 	int (*get_phy)(struct udevice *dev);
 	u32 flags;
 #define RK_DLL_CMD_OUT		BIT(1)
@@ -314,7 +323,7 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 {
 	struct rockchip_sdhc *priv = container_of(host, struct rockchip_sdhc, host);
 	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
-	u32 txclk_tapnum = DLL_TXCLK_TAPNUM_DEFAULT, extra;
+	u32 txclk_tapnum = DLL_TXCLK_TAPNUM_90_DEGREES, extra;
 	int timeout = 500, ret;
 
 	ret = rockchip_emmc_set_clock(host, clock);
@@ -344,28 +353,22 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 			extra |= DLL_RXCLK_NO_INVERTER << DWCMSHC_EMMC_DLL_RXCLK_SRCSEL;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
 
-		if ((data->flags & RK_DLL_CMD_OUT) &&
-		   (host->mmc->timing == MMC_TIMING_MMC_HS400 ||
-		    host->mmc->timing == MMC_TIMING_MMC_HS400ES)) {
-
-			txclk_tapnum = DLL_TXCLK_TAPNUM_90_DEGREES;
-
-			extra = DWCMSHC_EMMC_DLL_DLYENA |
-				DLL_CMDOUT_TAPNUM_90_DEGREES |
-				DLL_CMDOUT_TAPNUM_FROM_SW |
-				DLL_CMDOUT_SRC_CLK_NEG;
-			sdhci_writel(host, extra, DECMSHC_EMMC_DLL_CMDOUT);
-		}
-
 		extra = DWCMSHC_EMMC_DLL_DLYENA |
 			DLL_TXCLK_TAPNUM_FROM_SW |
+			DLL_TXCLK_NO_INVERTER|
 			txclk_tapnum;
+
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_TXCLK);
 
 		extra = DWCMSHC_EMMC_DLL_DLYENA |
 			DLL_STRBIN_TAPNUM_DEFAULT;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_STRBIN);
 	} else {
+		/* Disable cmd conflict check */
+		extra = sdhci_readl(host, DWCMSHC_HOST_CTRL3);
+		extra &= ~BIT(0);
+		sdhci_writel(host, extra, DWCMSHC_HOST_CTRL3);
+
 		/* reset the clock phase when the frequency is lower than 100MHz */
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_CTRL);
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_RXCLK);
@@ -373,8 +376,30 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_STRBIN);
 		sdhci_writel(host, 0, DECMSHC_EMMC_DLL_CMDOUT);
 	}
-
 	return ret;
+}
+
+static void dwcmshc_sdhci_set_ios_post(struct sdhci_host *host)
+{
+	u16 ctrl;
+	u32 extra;
+	u32 timing = host->mmc->timing;
+
+	if (timing == MMC_TIMING_MMC_HS400 || timing == MMC_TIMING_MMC_HS400ES) {
+		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
+		ctrl &= ~SDHCI_CTRL_UHS_MASK;
+		ctrl |= DWCMSHC_CTRL_HS400;
+		sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
+
+		/* set CARD_IS_EMMC bit to enable Data Strobe for HS400 */
+		ctrl = sdhci_readw(host, DWCMSHC_EMMC_CONTROL);
+		ctrl |= DWCMSHC_CARD_IS_EMMC;
+		sdhci_writew(host, ctrl, DWCMSHC_EMMC_CONTROL);
+
+		extra = DLL_CMDOUT_SRC_CLK_NEG |
+			DLL_CMDOUT_EN_SRC_CLK_NEG;
+		sdhci_writel(host, extra, DECMSHC_EMMC_DLL_CMDOUT);
+	}
 }
 
 static int dwcmshc_emmc_get_phy(struct udevice *dev)
@@ -393,8 +418,19 @@ static int rockchip_sdhci_set_clock(struct sdhci_host *host, unsigned int clock)
 	return data->emmc_set_clock(host, clock);
 }
 
+static void rockchip_sdhci_set_ios_post(struct sdhci_host *host)
+{
+	struct rockchip_sdhc *priv =
+			container_of(host, struct rockchip_sdhc, host);
+	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
+
+	if (data && data->set_ios_post)
+		data->set_ios_post(host);
+}
+
 static struct sdhci_ops rockchip_sdhci_ops = {
 	.set_clock	= rockchip_sdhci_set_clock,
+	.set_ios_post	= rockchip_sdhci_set_ios_post,
 };
 
 static int rockchip_sdhci_probe(struct udevice *dev)
@@ -500,6 +536,7 @@ static const struct sdhci_data rk3568_data = {
 static const struct sdhci_data rk3588_data = {
 	.emmc_set_clock = dwcmshc_sdhci_emmc_set_clock,
 	.get_phy = dwcmshc_emmc_get_phy,
+	.set_ios_post = dwcmshc_sdhci_set_ios_post,
 	.flags = RK_DLL_CMD_OUT,
 };
 
