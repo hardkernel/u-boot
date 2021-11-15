@@ -938,7 +938,7 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 }
 #endif
 
-#ifdef CONFIG_CLK_SCMI
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 #include <dm.h>
 /*
  * armclk: 1104M:
