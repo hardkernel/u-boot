@@ -47,8 +47,8 @@ struct rockchip_spi_priv {
 	u8 n_bytes;
 	unsigned int speed_hz;
 	unsigned int last_speed_hz;
-	unsigned int tmode;
 	uint input_rate;
+	uint cr0;
 };
 
 #define SPI_FIFO_DEPTH		32
@@ -267,7 +267,6 @@ static int rockchip_spi_probe(struct udevice *bus)
 	priv->input_rate = ret;
 	debug("%s: rate = %u\n", __func__, priv->input_rate);
 	priv->bits_per_word = 8;
-	priv->tmode = TMOD_TR; /* Tx & Rx */
 
 	return 0;
 }
@@ -336,9 +335,26 @@ static int rockchip_spi_claim_bus(struct udevice *dev)
 	/* Frame Format */
 	ctrlr0 |= FRF_SPI << FRF_SHIFT;
 
-	/* Tx and Rx mode */
-	ctrlr0 |= (priv->tmode & TMOD_MASK) << TMOD_SHIFT;
+	/* Save static configuration */
+	priv->cr0 = ctrlr0;
 
+	writel(ctrlr0, &regs->ctrlr0);
+
+	return 0;
+}
+
+static int rockchip_spi_config(struct rockchip_spi_priv *priv, const void *dout)
+{
+	struct rockchip_spi *regs = priv->regs;
+	uint ctrlr0 = priv->cr0;
+	u32 tmod;
+
+	if (dout)
+		tmod = TMOD_TR;
+	else
+		tmod = TMOD_RO;
+
+	ctrlr0 |= (tmod & TMOD_MASK) << TMOD_SHIFT;
 	writel(ctrlr0, &regs->ctrlr0);
 
 	return 0;
@@ -366,6 +382,8 @@ static int rockchip_spi_xfer(struct udevice *dev, unsigned int bitlen,
 	u8 *in = din;
 	int toread, towrite;
 	int ret;
+
+	rockchip_spi_config(priv, dout);
 
 	debug("%s: dout=%p, din=%p, len=%x, flags=%lx\n", __func__, dout, din,
 	      len, flags);
