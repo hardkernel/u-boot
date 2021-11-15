@@ -148,5 +148,6 @@
 #endif /* CONFIG_SPL_BUILD */
 
 #define CONFIG_DISPLAY_BOARDINFO_LATE
+#define CONFIG_SYS_AUTOLOAD	"no"
 
 #endif /* _ROCKCHIP_COMMON_H_ */
