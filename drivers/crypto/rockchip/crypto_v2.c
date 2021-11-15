@@ -1386,7 +1386,7 @@ static int rk_crypto_set_clk(struct rockchip_crypto_priv *priv)
 	if (!priv->clocks && priv->nclocks == 0)
 		return 0;
 
-#ifdef CONFIG_CLK_SCMI
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 	ret = rockchip_get_scmi_clk(&priv->clk.dev);
 #else
 	ret = rockchip_get_clk(&priv->clk.dev);
