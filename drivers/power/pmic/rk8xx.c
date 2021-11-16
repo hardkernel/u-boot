@@ -31,8 +31,8 @@ static struct virq_chip rk805_irq_chip = {
 	.status_base		= RK805_INT_STS_REG,
 	.mask_base		= RK805_INT_MSK_REG,
 	.num_regs		= 1,
-	.i2c_read		= pmic_reg_read,
-	.i2c_write		= pmic_reg_write,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
 	.irqs			= rk805_irqs,
 	.num_irqs		= ARRAY_SIZE(rk805_irqs),
 };
@@ -50,8 +50,8 @@ static struct virq_chip rk808_irq_chip = {
 	.mask_base		= RK808_INT_MSK_REG1,
 	.irq_reg_stride		= 2,
 	.num_regs		= 2,
-	.i2c_read		= pmic_reg_read,
-	.i2c_write		= pmic_reg_write,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
 	.irqs			= rk808_irqs,
 	.num_irqs		= ARRAY_SIZE(rk808_irqs),
 };
@@ -83,8 +83,8 @@ static struct virq_chip rk816_irq_chip = {
 	.irq_unalign_reg_stride	= 3,
 	.irq_reg_stride		= 2,	/* idx > 1, stride = 2 */
 	.num_regs		= 3,
-	.i2c_read		= pmic_reg_read,
-	.i2c_write		= pmic_reg_write,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
 	.irqs			= rk816_irqs,
 	.num_irqs		= ARRAY_SIZE(rk816_irqs),
 };
@@ -106,8 +106,8 @@ static struct virq_chip rk818_irq_chip = {
 	.mask_base		= RK818_INT_MSK_REG1,
 	.irq_reg_stride		= 2,
 	.num_regs		= 2,
-	.i2c_read		= pmic_reg_read,
-	.i2c_write		= pmic_reg_write,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
 	.irqs			= rk818_irqs,
 	.num_irqs		= ARRAY_SIZE(rk818_irqs),
 };
@@ -137,8 +137,8 @@ static struct virq_chip rk817_irq_chip = {
 	.mask_base		= RK817_INT_MSK_REG0,
 	.irq_reg_stride		= 2,
 	.num_regs		= 3,
-	.i2c_read		= pmic_reg_read,
-	.i2c_write		= pmic_reg_write,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
 	.irqs			= rk817_irqs,
 	.num_irqs		= ARRAY_SIZE(rk817_irqs),
 };
