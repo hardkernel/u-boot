@@ -386,7 +386,16 @@ static int rk860x_regulator_probe(struct udevice *dev)
 
 static const struct udevice_id rk860x_id[] = {
 	{
-		.compatible = "rockchip,rk860x",
+		.compatible = "rockchip,rk8600",
+	},
+	{
+		.compatible = "rockchip,rk8601",
+	},
+	{
+		.compatible = "rockchip,rk8602",
+	},
+	{
+		.compatible = "rockchip,rk8603",
 	},
 	{ },
 };
