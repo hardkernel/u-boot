@@ -67,8 +67,8 @@ struct irq_chip {
 /*
  * Virtual irq chip structure
  */
-typedef int(virq_i2c_write_t)(struct udevice *dev, uint reg, uint value);
-typedef int(virq_i2c_read_t)(struct udevice *dev, uint reg);
+typedef int(virq_write_t)(struct udevice *dev, uint reg, uint value);
+typedef int(virq_read_t)(struct udevice *dev, uint reg);
 
 struct virq_reg {
 	uint reg_offset;
@@ -84,8 +84,8 @@ struct virq_chip {
 	int num_regs;
 	const struct virq_reg *irqs;
 	int num_irqs;
-	virq_i2c_read_t *i2c_read;
-	virq_i2c_write_t *i2c_write;
+	virq_read_t *read;
+	virq_write_t *write;
 };
 
 /* APIs for irqs */

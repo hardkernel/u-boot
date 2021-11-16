@@ -208,7 +208,7 @@ void virq_chip_generic_handler(int pirq, void *pdata)
 	/* Read all status register */
 	for (i = 0; i < chip->num_regs; i++) {
 		status_reg = reg_base_get(desc, chip->status_base, i);
-		desc->status_buf[i] = chip->i2c_read(parent, status_reg);
+		desc->status_buf[i] = chip->read(parent, status_reg);
 		if (desc->status_buf[i] < 0) {
 			printf("%s: Read status register 0x%x failed, ret=%d\n",
 			       __func__, status_reg, desc->status_buf[i]);
@@ -232,7 +232,7 @@ void virq_chip_generic_handler(int pirq, void *pdata)
 	/* Clear all status register */
 	for (i = 0; i < chip->num_regs; i++) {
 		status_reg = reg_base_get(desc, chip->status_base, i);
-		ret = chip->i2c_write(parent, status_reg, ~0U);
+		ret = chip->write(parent, status_reg, ~0U);
 		if (ret)
 			printf("%s: Clear status register 0x%x failed, ret=%d\n",
 			       __func__, status_reg, ret);
@@ -288,7 +288,7 @@ int virq_add_chip(struct udevice *dev, struct virq_chip *chip, int irq)
 	/* Mask all register */
 	for (i = 0; i < chip->num_regs; i++) {
 		mask_reg = reg_base_get(desc, chip->mask_base, i);
-		ret = chip->i2c_write(dev, mask_reg, ~0U);
+		ret = chip->write(dev, mask_reg, ~0U);
 		if (ret)
 			printf("%s: Set mask register 0x%x failed, ret=%d\n",
 			       __func__, mask_reg, ret);
@@ -297,7 +297,7 @@ int virq_add_chip(struct udevice *dev, struct virq_chip *chip, int irq)
 	/* Clear all status */
 	for (i = 0; i < chip->num_regs; i++) {
 		status_reg = reg_base_get(desc, chip->status_base, i);
-		ret = chip->i2c_write(dev, status_reg, ~0U);
+		ret = chip->write(dev, status_reg, ~0U);
 		if (ret)
 			printf("%s: Clear status register 0x%x failed, ret=%d\n",
 			       __func__, status_reg, ret);
@@ -346,13 +346,13 @@ static int __virq_enable(int irq, int enable)
 	mask_val = chip->irqs[virq].mask;
 	mask_reg = reg_base_get(desc, chip->mask_base,
 				chip->irqs[virq].reg_offset);
-	reg_val = chip->i2c_read(desc->parent, mask_reg);
+	reg_val = chip->read(desc->parent, mask_reg);
 	if (enable)
 		reg_val &= ~mask_val;
 	else
 		reg_val |= mask_val;
 
-	ret = chip->i2c_write(desc->parent, mask_reg, reg_val);
+	ret = chip->write(desc->parent, mask_reg, reg_val);
 	if (ret) {
 		printf("%s: Clear status register 0x%x failed, ret=%d\n",
 		       __func__, mask_reg, ret);
