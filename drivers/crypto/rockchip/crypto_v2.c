@@ -49,7 +49,6 @@ struct rk_crypto_soc_data {
 
 struct rockchip_crypto_priv {
 	fdt_addr_t			reg;
-	struct clk			clk;
 	u32				frequency;
 	char				*clocks;
 	u32				*frequencies;
@@ -1378,31 +1377,25 @@ exit:
 	return ret;
 }
 
-static int rk_crypto_set_clk(struct rockchip_crypto_priv *priv)
+static int rk_crypto_set_clk(struct udevice *dev)
 {
+	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
+	struct clk clk;
 	int i, ret;
-	u32* clocks;
 
 	if (!priv->clocks && priv->nclocks == 0)
 		return 0;
 
-#if CONFIG_IS_ENABLED(CLK_SCMI)
-	ret = rockchip_get_scmi_clk(&priv->clk.dev);
-#else
-	ret = rockchip_get_clk(&priv->clk.dev);
-#endif
-	if (priv->nclocks && ret) {
-		printf("Failed to get clk device, ret=%d\n", ret);
-		return ret;
-	}
-
-	clocks = (u32 *)priv->clocks;
 	for (i = 0; i < priv->nclocks; i++) {
-		priv->clk.id = clocks[i * 2 + 1];
-		ret = clk_set_rate(&priv->clk, priv->frequencies[i]);
+		ret = clk_get_by_index(dev, i, &clk);
+		if (ret < 0) {
+			printf("Failed to get clk index %d, ret=%d\n", i, ret);
+			return ret;
+		}
+		ret = clk_set_rate(&clk, priv->frequencies[i]);
 		if (ret < 0) {
 			printf("%s: Failed to set clk(%ld): ret=%d\n",
-			       __func__, priv->clk.id, ret);
+			       __func__, clk.id, ret);
 			return ret;
 		}
 	}
@@ -1424,7 +1417,7 @@ static int rockchip_crypto_probe(struct udevice *dev)
 	if (!priv->hw_ctx)
 		return -ENOMEM;
 
-	ret = rk_crypto_set_clk(priv);
+	ret = rk_crypto_set_clk(dev);
 	if (ret)
 		return ret;
 
