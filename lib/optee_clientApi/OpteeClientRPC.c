@@ -346,11 +346,7 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 				break;
 			}
 
-			if (EfiStatus != 0) {
-				TeecResult = TEEC_ERROR_GENERIC;
-				break;
-			}
-
+			TeecResult = TEEC_SUCCESS;
 			break;
 		}
 
