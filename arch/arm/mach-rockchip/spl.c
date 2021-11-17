@@ -422,7 +422,7 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 	int ret = 0;
 
 	*otp_index = 0;
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V1)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP)
 	struct udevice *dev;
 	u32 index, i, otp_version;
 	u32 bit_count;
@@ -451,7 +451,7 @@ int fit_read_otp_rollback_index(uint32_t fit_index, uint32_t *otp_index)
 
 static int fit_write_otp_rollback_index(u32 fit_index)
 {
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2) || defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V1)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP)
 	struct udevice *dev;
 	u32 index, i, otp_index;
 

@@ -189,8 +189,7 @@ int fit_board_verify_required_sigs(void)
 	uint8_t vboot = 0;
 
 #ifdef CONFIG_SPL_BUILD
-#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V1) || \
-    defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP_V2)
+#if defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP)
 	struct udevice *dev;
 
 	dev = misc_otp_get_device(OTP_S);
