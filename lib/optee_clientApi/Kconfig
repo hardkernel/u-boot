@@ -31,3 +31,9 @@ config OPTEE_ALWAYS_USE_SECURITY_PARTITION
 	  U-boot can secure store data to security partition
 	  for nand or emmc, do not to store data to rpmb.
 
+config OPTEE_SECURITY_LEVEL
+	int "Support select security level for OPTEE"
+	depends on OPTEE_CLIENT
+	default 0
+	help
+	  U-boot can select security level for OPTEE.
