@@ -173,7 +173,7 @@ static int misc_decompress_finish(struct udevice *dev, u32 comp)
 
 	while (!misc_decompress_is_complete(dev)) {
 		if (timeout < 0)
-			return -EIO;
+			return -ETIMEDOUT;
 		timeout--;
 		udelay(10);
 	}
