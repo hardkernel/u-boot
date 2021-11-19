@@ -461,6 +461,8 @@ static int rk3588_combphy_cfg(struct rockchip_combphy_priv *priv)
 		return -EINVAL;
 	}
 
+	/* 100MHz refclock signal is good */
+	clk_set_rate(&priv->ref_clk, 100000000);
 	param_write(priv->phy_grf, &cfg->pipe_clk_100m, true);
 
 	return 0;
