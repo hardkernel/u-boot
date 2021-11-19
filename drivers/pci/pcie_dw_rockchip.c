@@ -36,6 +36,7 @@ struct rk_pcie {
 	struct pci_region	io;
 	struct pci_region	mem;
 	bool		is_bifurcation;
+	u32 gen;
 };
 
 enum {
@@ -607,7 +608,7 @@ static int rockchip_pcie_init_port(struct udevice *dev)
 	rk_pcie_writel_apb(priv, 0x0, 0xf00040);
 	rk_pcie_setup_host(priv);
 
-	ret = rk_pcie_link_up(priv, LINK_SPEED_GEN_3);
+	ret = rk_pcie_link_up(priv, priv->gen);
 	if (ret < 0)
 		goto err_link_up;
 
@@ -626,6 +627,7 @@ err_exit_phy:
 static int rockchip_pcie_parse_dt(struct udevice *dev)
 {
 	struct rk_pcie *priv = dev_get_priv(dev);
+	u32 max_link_speed;
 	int ret;
 
 	priv->dbi_base = (void *)dev_read_addr_index(dev, 0);
@@ -674,6 +676,12 @@ static int rockchip_pcie_parse_dt(struct udevice *dev)
 
 	if (dev_read_bool(dev, "rockchip,bifurcation"))
 		priv->is_bifurcation = true;
+
+	ret = ofnode_read_u32(dev->node, "max-link-speed", &max_link_speed);
+	if (ret < 0 || max_link_speed > 4)
+		priv->gen = 0;
+	else
+		priv->gen = max_link_speed;
 
 	return 0;
 }
