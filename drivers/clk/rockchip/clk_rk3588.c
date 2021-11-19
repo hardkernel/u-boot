@@ -1329,6 +1329,85 @@ static ulong rk3588_uart_set_rate(struct rk3588_clk_priv *priv,
 
 	return rk3588_uart_get_rate(priv, clk_id);
 }
+
+static ulong rk3588_pciephy_get_rate(struct rk3588_clk_priv *priv, ulong clk_id)
+{
+	struct rk3588_cru *cru = priv->cru;
+	u32 con, div, src;
+
+	switch (clk_id) {
+	case CLK_REF_PIPE_PHY0:
+		con = readl(&cru->clksel_con[177]);
+		src = (con & CLK_PCIE_PHY0_REF_SEL_MASK) >> CLK_PCIE_PHY0_REF_SEL_SHIFT;
+		con = readl(&cru->clksel_con[176]);
+		div = (con & CLK_PCIE_PHY0_PLL_DIV_MASK) >> CLK_PCIE_PHY0_PLL_DIV_SHIFT;
+		break;
+	case CLK_REF_PIPE_PHY1:
+		con = readl(&cru->clksel_con[177]);
+		src = (con & CLK_PCIE_PHY1_REF_SEL_MASK) >> CLK_PCIE_PHY1_REF_SEL_SHIFT;
+		con = readl(&cru->clksel_con[176]);
+		div = (con & CLK_PCIE_PHY1_PLL_DIV_MASK) >> CLK_PCIE_PHY1_PLL_DIV_SHIFT;
+		break;
+	case CLK_REF_PIPE_PHY2:
+		con = readl(&cru->clksel_con[177]);
+		src = (con & CLK_PCIE_PHY2_REF_SEL_MASK) >> CLK_PCIE_PHY2_REF_SEL_SHIFT;
+		div = (con & CLK_PCIE_PHY2_PLL_DIV_MASK) >> CLK_PCIE_PHY2_PLL_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	if (src == CLK_PCIE_PHY_REF_SEL_PPLL) {
+		return DIV_TO_RATE(priv->ppll_hz, div);
+	} else {
+		return OSC_HZ;
+	}
+}
+
+static ulong rk3588_pciephy_set_rate(struct rk3588_clk_priv *priv,
+				  ulong clk_id, ulong rate)
+{
+	struct rk3588_cru *cru = priv->cru;
+	u32 clk_src, div;
+
+	if (rate == OSC_HZ) {
+		clk_src = CLK_PCIE_PHY_REF_SEL_24M;
+		div = 1;
+	} else {
+		clk_src = CLK_PCIE_PHY_REF_SEL_PPLL;
+		div = DIV_ROUND_UP(priv->ppll_hz, rate);
+	}
+
+	switch (clk_id) {
+	case CLK_REF_PIPE_PHY0:
+		rk_clrsetreg(&cru->clksel_con[177],
+		     CLK_PCIE_PHY0_REF_SEL_MASK,
+		     (clk_src << CLK_PCIE_PHY0_REF_SEL_SHIFT));
+		rk_clrsetreg(&cru->clksel_con[176],
+		     CLK_PCIE_PHY0_PLL_DIV_MASK,
+		     ((div - 1) << CLK_PCIE_PHY0_PLL_DIV_SHIFT));
+		break;
+	case CLK_REF_PIPE_PHY1:
+		rk_clrsetreg(&cru->clksel_con[177],
+		     CLK_PCIE_PHY1_REF_SEL_MASK,
+		     (clk_src << CLK_PCIE_PHY1_REF_SEL_SHIFT));
+		rk_clrsetreg(&cru->clksel_con[176],
+		     CLK_PCIE_PHY1_PLL_DIV_MASK,
+		     ((div - 1) << CLK_PCIE_PHY1_PLL_DIV_SHIFT));
+		break;
+	case CLK_REF_PIPE_PHY2:
+		rk_clrsetreg(&cru->clksel_con[177],
+		     CLK_PCIE_PHY2_REF_SEL_MASK |
+		     CLK_PCIE_PHY2_PLL_DIV_MASK,
+		     (clk_src << CLK_PCIE_PHY2_REF_SEL_SHIFT) |
+		     ((div - 1) << CLK_PCIE_PHY2_PLL_DIV_SHIFT));
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return rk3588_pciephy_get_rate(priv, clk_id);
+}
 #endif
 
 static ulong rk3588_clk_get_rate(struct clk *clk)
@@ -1339,6 +1418,11 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 	if (!priv->gpll_hz) {
 		printf("%s gpll=%lu\n", __func__, priv->gpll_hz);
 		return -ENOENT;
+	}
+
+	if (!priv->ppll_hz) {
+		priv->ppll_hz = rockchip_pll_get_rate(&rk3588_pll_clks[PPLL],
+						      priv->cru, PPLL);
 	}
 
 	switch (clk->id) {
@@ -1455,6 +1539,11 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 	case SCLK_UART9:
 		rate = rk3588_uart_get_rate(priv, clk->id);
 		break;
+	case CLK_REF_PIPE_PHY0:
+	case CLK_REF_PIPE_PHY1:
+	case CLK_REF_PIPE_PHY2:
+		rate = rk3588_pciephy_get_rate(priv, clk->id);
+		break;
 #endif
 	default:
 		return -ENOENT;
@@ -1471,6 +1560,11 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	if (!priv->gpll_hz) {
 		printf("%s gpll=%lu\n", __func__, priv->gpll_hz);
 		return -ENOENT;
+	}
+
+	if (!priv->ppll_hz) {
+		priv->ppll_hz = rockchip_pll_get_rate(&rk3588_pll_clks[PPLL],
+						      priv->cru, PPLL);
 	}
 
 	switch (clk->id) {
@@ -1584,6 +1678,11 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_UART8:
 	case SCLK_UART9:
 		ret = rk3588_uart_set_rate(priv, clk->id, rate);
+		break;
+	case CLK_REF_PIPE_PHY0:
+	case CLK_REF_PIPE_PHY1:
+	case CLK_REF_PIPE_PHY2:
+		ret = rk3588_pciephy_set_rate(priv, clk->id, rate);
 		break;
 #endif
 	default:
