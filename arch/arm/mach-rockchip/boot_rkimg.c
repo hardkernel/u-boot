@@ -71,6 +71,7 @@ static void boot_devtype_init(void)
 #ifdef CONFIG_NVME
 	struct udevice *udev;
 
+	pci_init();
 	ret = nvme_scan_namespace();
 	if (!ret) {
 		ret = blk_get_device(IF_TYPE_NVME, 0, &udev);
