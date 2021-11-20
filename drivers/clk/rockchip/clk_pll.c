@@ -383,6 +383,11 @@ static ulong rk3036_pll_get_rate(struct rockchip_pll_clock *pll,
 #define RK3588_B0PLL_CLKSEL_CON(i)	((i) * 0x4 + 0x50000 + 0x300)
 #define RK3588_B1PLL_CLKSEL_CON(i)	((i) * 0x4 + 0x52000 + 0x300)
 #define RK3588_LPLL_CLKSEL_CON(i)	((i) * 0x4 + 0x58000 + 0x300)
+#define RK3588_CORE_DIV_MASK		0x1f
+#define RK3588_CORE_L02_DIV_SHIFT	0
+#define RK3588_CORE_L13_DIV_SHIFT	7
+#define RK3588_CORE_B02_DIV_SHIFT	8
+#define RK3588_CORE_B13_DIV_SHIFT	0
 
 static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 			       void __iomem *base, ulong pll_id,
@@ -452,18 +457,43 @@ static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 
 	rk_clrsetreg(base + pll->mode_offset, pll->mode_mask << pll->mode_shift,
 		     RKCLK_PLL_MODE_NORMAL << pll->mode_shift);
-	if (pll_id == 0)
+	if (pll_id == 0) {
 		rk_clrsetreg(base + RK3588_B0PLL_CLKSEL_CON(0),
 			     pll->mode_mask << 6,
 			     2 << 6);
-	else if (pll_id == 1)
 		rk_clrsetreg(base + RK3588_B0PLL_CLKSEL_CON(0),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_B02_DIV_SHIFT,
+			     0 << RK3588_CORE_B02_DIV_SHIFT);
+		rk_clrsetreg(base + RK3588_B0PLL_CLKSEL_CON(1),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_B13_DIV_SHIFT,
+			     0 << RK3588_CORE_B13_DIV_SHIFT);
+	} else if (pll_id == 1) {
+		rk_clrsetreg(base + RK3588_B1PLL_CLKSEL_CON(0),
 			     pll->mode_mask << 6,
 			     2 << 6);
-	else if (pll_id == 2)
+		rk_clrsetreg(base + RK3588_B1PLL_CLKSEL_CON(0),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_B02_DIV_SHIFT,
+			     0 << RK3588_CORE_B02_DIV_SHIFT);
+		rk_clrsetreg(base + RK3588_B1PLL_CLKSEL_CON(1),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_B13_DIV_SHIFT,
+			     0 << RK3588_CORE_B13_DIV_SHIFT);
+	} else if (pll_id == 2) {
 		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(5),
 			     pll->mode_mask << 14,
 			     2 << 14);
+		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(6),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_L13_DIV_SHIFT,
+			     0 << RK3588_CORE_L13_DIV_SHIFT);
+		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(6),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_L02_DIV_SHIFT,
+			     0 << RK3588_CORE_L02_DIV_SHIFT);
+		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(7),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_L13_DIV_SHIFT,
+			     0 << RK3588_CORE_L13_DIV_SHIFT);
+		rk_clrsetreg(base + RK3588_LPLL_CLKSEL_CON(7),
+			     RK3588_CORE_DIV_MASK << RK3588_CORE_L02_DIV_SHIFT,
+			     0 << RK3588_CORE_L02_DIV_SHIFT);
+	}
 
 	if (pll_id == 3)
 		rk_clrsetreg(base + 0x84c, 0x1 << 1, 0);
