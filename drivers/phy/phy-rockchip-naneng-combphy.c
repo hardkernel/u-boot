@@ -234,6 +234,7 @@ static int rockchip_combphy_parse_dt(struct udevice *dev,
 {
 	struct udevice *syscon;
 	int ret;
+	u32 vals[4];
 
 	ret = uclass_get_device_by_phandle(UCLASS_SYSCON, dev, "rockchip,pipe-grf", &syscon);
 	if (ret) {
@@ -260,6 +261,11 @@ static int rockchip_combphy_parse_dt(struct udevice *dev,
 		dev_err(dev, "no phy reset control specified\n");
 		return ret;
 	}
+
+	if (!dev_read_u32_array(dev, "rockchip,pcie1ln-sel-bits",
+				vals, ARRAY_SIZE(vals)))
+		regmap_write(priv->pipe_grf, vals[0],
+			     (GENMASK(vals[2], vals[1]) << 16) | vals[3]);
 
 	return 0;
 }
