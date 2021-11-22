@@ -741,7 +741,7 @@ int arch_cpu_init(void)
 #endif
 
 #ifdef CONFIG_SPL_BUILD
-int spl_fit_standalone_release(uintptr_t entry_point)
+int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
 	/*
 	 * Fix mcu does not work probabilistically through reset the
