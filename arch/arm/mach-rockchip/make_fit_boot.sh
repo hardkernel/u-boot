@@ -6,7 +6,7 @@
 #
 
 # Process args and auto set variables
-source ./${srctree}/arch/arm/mach-rockchip/make_fit_args.sh
+source ./${srctree}/arch/arm/mach-rockchip/fit_args.sh
 
 if [ ! -f ${srctree}/images/ramdisk ]; then
 	touch ${srctree}/images/ramdisk
