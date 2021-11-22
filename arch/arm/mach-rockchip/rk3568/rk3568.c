@@ -923,7 +923,7 @@ int arch_cpu_init(void)
 }
 
 #ifdef CONFIG_SPL_BUILD
-int spl_fit_standalone_release(uintptr_t entry_point)
+int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
 	/* Reset the scr1 */
 	writel(0x04000400, CRU_BASE + CRU_SOFTRST_CON26);
