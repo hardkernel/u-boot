@@ -559,18 +559,51 @@ function pack_uboot_itb_image()
 		TEE_ARG="-t ${TEE_OFFSET}"
 	fi
 
-	# MCU
-	MCU_ENABLED=`awk -F"," '/MCU=/ { printf $3 }' ${INI} | tr -d ' '`
-	if [ "${MCU_ENABLED}" == "enabled" -o "${MCU_ENABLED}" == "okay" ]; then
-		MCU=`awk -F"," '/MCU=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 5-`
-		cp ${RKBIN}/${MCU} mcu.bin
-		MCU_OFFSET=`awk -F"," '/MCU=/ { printf $2 }' ${INI} | tr -d ' '`
-		if [ -z ${MCU_OFFSET} ]; then
-			echo "ERROR: No mcu address in ${INI}"
-			exit 1
+	# MCUs
+	for ((i=0; i<5; i++))
+	do
+		MCU_BIN="mcu${i}.bin"
+		MCU_IDX="MCU${i}"
+
+		# compatible: use "MCU" to replace "MCU0" if "MCU" is present.
+		ENABLED=`awk -F"," '/MCU=/  { printf $3 }' ${INI} | tr -d ' '`
+		if [ ${i} -eq 0 ]; then
+			ENABLED=`awk -F"," '/MCU=/  { printf $3 }' ${INI} | tr -d ' '`
+			if [ ! -z ${ENABLED} ]; then
+				MCU_IDX="MCU"
+			fi
 		fi
-		MCU_ARG="-m ${MCU_OFFSET}"
-	fi
+
+		ENABLED=`awk -F "," '/'${MCU_IDX}'=/  { printf $3 }' ${INI} | tr -d ' '`
+		if [ "${ENABLED}" == "enabled" -o "${ENABLED}" == "okay" ]; then
+			NAME=`awk -F "," '/'${MCU_IDX}'=/ { printf $1 }' ${INI} | tr -d ' ' | awk -F "=" '{ print $2 }'`
+			OFFS=`awk -F "," '/'${MCU_IDX}'=/ { printf $2 }' ${INI} | tr -d ' '`
+			cp ${RKBIN}/${NAME} ${MCU_BIN}
+			if [ -z ${OFFS} ]; then
+				echo "ERROR: No ${MCU_BIN} address in ${INI}"
+				exit 1
+			fi
+			MCU_ARG=${MCU_ARG}" -m${i} ${OFFS}"
+		fi
+	done
+
+	# Loadables
+	for ((i=0; i<5; i++))
+	do
+		LOAD_BIN="load${i}.bin"
+		LOAD_IDX="LOAD${i}"
+		ENABLED=`awk -F "," '/'${LOAD_IDX}'=/  { printf $3 }' ${INI} | tr -d ' '`
+		if [ "${ENABLED}" == "enabled" -o "${ENABLED}" == "okay" ]; then
+			NAME=`awk -F "," '/'${LOAD_IDX}'=/ { printf $1 }' ${INI} | tr -d ' ' | awk -F "=" '{ print $2 }'`
+			OFFS=`awk -F "," '/'${LOAD_IDX}'=/ { printf $2 }' ${INI} | tr -d ' '`
+			cp ${RKBIN}/${NAME} ${LOAD_BIN}
+			if [ -z ${OFFS} ]; then
+				echo "ERROR: No ${LOAD_BIN} address in ${INI}"
+				exit 1
+			fi
+			LOAD_ARG=${LOAD_ARG}" -l${i} ${OFFS}"
+		fi
+	done
 
 	# COMPRESSION
 	COMPRESSION=`awk -F"," '/COMPRESSION=/  { printf $1 }' ${INI} | tr -d ' ' | cut -c 13-`
@@ -591,7 +624,7 @@ function pack_uboot_itb_image()
 		if [[ ${SPL_FIT_GENERATOR} == *.py ]]; then
 			${SPL_FIT_GENERATOR} u-boot.dtb > u-boot.its
 		else
-			${SPL_FIT_GENERATOR} ${TEE_ARG} ${COMPRESSION_ARG} ${MCU_ARG} > u-boot.its
+			${SPL_FIT_GENERATOR} ${TEE_ARG} ${COMPRESSION_ARG} ${MCU_ARG} ${LOAD_ARG} > u-boot.its
 		fi
 	fi
 
