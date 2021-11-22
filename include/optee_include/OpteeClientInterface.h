@@ -39,6 +39,8 @@ uint32_t trusty_write_oem_huk(uint32_t *buf, uint32_t length);
 void trusty_select_security_level(void);
 uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes);
 uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes);
+uint32_t trusty_write_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t byte_len);
+uint32_t trusty_read_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t byte_len);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca
