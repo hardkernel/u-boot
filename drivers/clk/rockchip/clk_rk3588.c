@@ -1923,6 +1923,18 @@ static int rk3588_clk_probe(struct udevice *dev)
 {
 	struct rk3588_clk_priv *priv = dev_get_priv(dev);
 	int ret;
+	struct clk clk;
+
+	ret = rockchip_get_scmi_clk(&clk.dev);
+	if (ret) {
+		printf("Failed to get scmi clk dev\n");
+		return ret;
+	}
+	clk.id = SCMI_SPLL;
+	ret = clk_set_rate(&clk, 702000000);
+	if (ret < 0) {
+		printf("Failed to set spll\n");
+	}
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 	if (IS_ERR(priv->grf))
