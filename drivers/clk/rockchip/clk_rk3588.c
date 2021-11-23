@@ -2124,12 +2124,25 @@ static ulong rk3588_clk_scmi_set_rate(struct clk *clk, ulong rate)
 {
 	u32 src, div;
 
+	if ((readl(BUSSCRU_BASE + RK3588_PLL_CON(137)) & 0x01c0) == 0xc0) {
+		writel(BITS_WITH_WMASK(0, 0x3U, 0),
+			BUSSCRU_BASE + RK3588_MODE_CON0);
+		writel(BITS_WITH_WMASK(2, 0x7U, 6),
+			BUSSCRU_BASE + RK3588_PLL_CON(137));
+		writel(BITS_WITH_WMASK(1, 0x3U, 0),
+		       BUSSCRU_BASE + RK3588_MODE_CON0);
+	}
+
 	switch (clk->id) {
 	case SCMI_SPLL:
 		if (rate >= 700 * MHz)
 			src = 1;
 		else
 			src = 0;
+		writel(BITS_WITH_WMASK(0, 0x3U, 0),
+			BUSSCRU_BASE + RK3588_MODE_CON0);
+		writel(BITS_WITH_WMASK(2, 0x7U, 6),
+			BUSSCRU_BASE + RK3588_PLL_CON(137));
 		writel(BITS_WITH_WMASK(src, 0x3U, 0),
 		       BUSSCRU_BASE + RK3588_MODE_CON0);
 		break;
