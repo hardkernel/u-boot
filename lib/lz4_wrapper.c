@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <compiler.h>
+#include <misc.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <asm/unaligned.h>
@@ -57,6 +58,18 @@ int ulz4fn(const void *src, size_t srcn, void *dst, size_t *dstn)
 	int ret;
 	*dstn = 0;
 
+#if defined(CONFIG_MISC_DECOMPRESS) && !defined(CONFIG_SPL_BUILD)
+	u64 len;
+
+	ret = misc_decompress_process((ulong)dst, (ulong)src, (ulong)srcn,
+				      DECOM_LZ4, false, &len, 0);
+	if (!ret) {
+		*dstn = len;
+		return 0;
+	}
+
+	printf("hw ulz4fn failed(%d), fallback to soft ulz4fn\n", ret);
+#endif
 	{ /* With in-place decompression the header may become invalid later. */
 		const struct lz4_frame_header *h = in;
 
