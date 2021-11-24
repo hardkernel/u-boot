@@ -7,8 +7,10 @@
 #include <common.h>
 #include <asm/gpio.h>
 #include <dm/device.h>
+#include <dm/uclass.h>
 #include <power/fuel_gauge.h>
 #include <power/pmic.h>
+#include <power/power_delivery/power_delivery.h>
 #include <linux/usb/phy-rockchip-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -54,10 +56,9 @@ enum bq25700_table_ids {
 
 struct bq25700 {
 	struct udevice *dev;
-	struct gpio_desc typec0_enable_gpio;
-	struct gpio_desc typec1_enable_gpio;
 	u32 ichg;
 	u32 chip_id;
+	struct udevice *pd;
 };
 
 struct bq25700_range {
@@ -95,7 +96,6 @@ static int bq25700_write(struct bq25700 *charger, uint reg, u16 val)
 	return 0;
 }
 
-#if defined(CONFIG_POWER_FUSB302)
 static const union {
 	struct bq25700_range  rt;
 } bq25700_tables[] = {
@@ -130,50 +130,25 @@ static u32 bq25700_find_idx(u32 value, enum bq25700_table_ids id)
 
 	return idx - 1;
 }
-#endif
 
 static bool bq25700_charger_status(struct bq25700 *charger)
 {
-#if defined(CONFIG_POWER_FUSB302)
-	static u16 charge_flag;
-#endif
 	int state_of_charger;
 	u16 value;
 
 	value = bq25700_read(charger, BQ25700_CHARGERSTAUS_REG);
 	state_of_charger = value >> 15;
 
-#if defined(CONFIG_POWER_FUSB302)
-	if (state_of_charger) {
-		charge_flag = 1;
-	} else if (!state_of_charger && charge_flag == 1) {
-		typec_discharge();
-		charge_flag = 0;
-	}
-#endif
-
 	return state_of_charger;
 }
 
 static bool bq25703_charger_status(struct bq25700 *charger)
 {
-#if defined(CONFIG_POWER_FUSB302)
-	static u16 charge_flag;
-#endif
 	int state_of_charger;
 	u16 value;
 
 	value = bq25700_read(charger, BQ25703_CHARGERSTAUS_REG);
 	state_of_charger = value >> 15;
-
-#if defined(CONFIG_POWER_FUSB302)
-	if (state_of_charger) {
-		charge_flag = 1;
-	} else if (!state_of_charger && charge_flag == 1) {
-		typec_discharge();
-		charge_flag = 0;
-	}
-#endif
 
 	return state_of_charger;
 }
@@ -202,44 +177,62 @@ static int bq25700_get_usb_type(void)
 #endif
 }
 
+static int bq25700_get_pd_output_val(struct bq25700 *charger,
+				     int *vol, int *cur)
+{
+	struct power_delivery_data pd_data;
+
+	if (!charger->pd)
+		return -1;
+
+	memset(&pd_data, 0, sizeof(pd_data));
+	if (!power_delivery_get_data(charger->pd, &pd_data))
+		return -1;
+	if (!pd_data.online || !pd_data.voltage || !pd_data.current)
+		return -1;
+
+	*vol = pd_data.voltage;
+	*cur = pd_data.current;
+
+	return 0;
+}
+
 static void bq25700_charger_current_init(struct bq25700 *charger)
 {
 	u16 charge_current = BQ25700_CHARGE_CURRENT_1500MA;
 	u16 sdp_inputcurrent = BQ25700_SDP_INPUT_CURRENT_500MA;
 	u16 dcp_inputcurrent = BQ25700_DCP_INPUT_CURRENT_1500MA;
-	u32 pd_inputcurrent = 0;
-#if defined(CONFIG_POWER_FUSB302)
-	u16 vol_idx, cur_idx, pd_inputvol;
-#endif
+	int pd_inputvol, pd_inputcurrent;
+	u16 vol_idx = 0, cur_idx;
 	u16 temp;
 
 	temp = bq25700_read(charger, BQ25700_CHARGEOPTION0_REG);
 	temp &= (~WATCHDOG_ENSABLE);
 	bq25700_write(charger, BQ25700_CHARGEOPTION0_REG, temp);
 
-#if defined(CONFIG_POWER_FUSB302)
-	if (!get_pd_output_val(&pd_inputvol, &pd_inputcurrent)) {
-		printf("%s pd charge input vol:%dmv current:%dma\n",
+	if (!bq25700_get_pd_output_val(charger, &pd_inputvol,
+				       &pd_inputcurrent)) {
+		printf("%s pd charge input vol:%duv current:%dua\n",
 		       __func__, pd_inputvol, pd_inputcurrent);
-		vol_idx = bq25700_find_idx((pd_inputvol - 1280) * 1000,
-					   TBL_INPUTVOL);
-		cur_idx = bq25700_find_idx(pd_inputcurrent * 1000,
+		if (pd_inputvol > 5000000) {
+			vol_idx = bq25700_find_idx((pd_inputvol - 1280000 - 3200000),
+						   TBL_INPUTVOL);
+			vol_idx = vol_idx << 6;
+		}
+		cur_idx = bq25700_find_idx(pd_inputcurrent,
 					   TBL_INPUTCUR);
 		cur_idx  = cur_idx << 8;
-		vol_idx = vol_idx << 6;
 		if (pd_inputcurrent != 0) {
 			bq25700_write(charger, BQ25700_INPUTCURREN_REG,
 				      cur_idx);
-			bq25700_write(charger, BQ25700_INPUTVOLTAGE_REG,
-				      vol_idx);
-			charge_current = bq25700_find_idx(charger.ichg,
+			if (vol_idx)
+				bq25700_write(charger, BQ25700_INPUTVOLTAGE_REG,
+					      vol_idx);
+			charge_current = bq25700_find_idx(charger->ichg,
 							  TBL_ICHG);
 			charge_current = charge_current << 8;
 		}
-	}
-#endif
-
-	if (pd_inputcurrent == 0) {
+	} else {
 		if (bq25700_get_usb_type() > 1)
 			bq25700_write(charger, BQ25700_INPUTCURREN_REG,
 				      dcp_inputcurrent);
@@ -258,39 +251,37 @@ static void bq25703_charger_current_init(struct bq25700 *charger)
 	u16 charge_current = BQ25700_CHARGE_CURRENT_1500MA;
 	u16 sdp_inputcurrent = BQ25700_SDP_INPUT_CURRENT_500MA;
 	u16 dcp_inputcurrent = BQ25700_DCP_INPUT_CURRENT_1500MA;
-	u32 pd_inputcurrent = 0;
-#if defined(CONFIG_POWER_FUSB302)
-	u16 vol_idx, cur_idx, pd_inputvol;
-#endif
+	int pd_inputvol,  pd_inputcurrent;
+	u16 vol_idx = 0, cur_idx;
 	u16 temp;
 
 	temp = bq25700_read(charger, BQ25703_CHARGEOPTION0_REG);
 	temp &= (~WATCHDOG_ENSABLE);
 	bq25700_write(charger, BQ25703_CHARGEOPTION0_REG, temp);
 
-#if defined(CONFIG_POWER_FUSB302)
-	if (!get_pd_output_val(&pd_inputvol, &pd_inputcurrent)) {
-		printf("%s pd charge input vol:%dmv current:%dma\n",
+	if (!bq25700_get_pd_output_val(charger, &pd_inputvol,
+				       &pd_inputcurrent)) {
+		printf("%s pd charge input vol:%duv current:%dua\n",
 		       __func__, pd_inputvol, pd_inputcurrent);
-		vol_idx = bq25700_find_idx((pd_inputvol - 1280) * 1000,
-					   TBL_INPUTVOL);
-		cur_idx = bq25700_find_idx(pd_inputcurrent * 1000,
+		if (pd_inputvol > 5000000) {
+			vol_idx = bq25700_find_idx(pd_inputvol - 1280000 - 3200000,
+						   TBL_INPUTVOL);
+			vol_idx = vol_idx << 6;
+		}
+		cur_idx = bq25700_find_idx(pd_inputcurrent,
 					   TBL_INPUTCUR);
 		cur_idx  = cur_idx << 8;
-		vol_idx = vol_idx << 6;
 		if (pd_inputcurrent != 0) {
 			bq25700_write(charger, BQ25703_INPUTCURREN_REG,
 				      cur_idx);
-			bq25700_write(charger, BQ25703_INPUTVOLTAGE_REG,
-				      vol_idx);
-			charge_current = bq25700_find_idx(charger.ichg,
+			if (vol_idx)
+				bq25700_write(charger, BQ25703_INPUTVOLTAGE_REG,
+					      vol_idx);
+			charge_current = bq25700_find_idx(charger->ichg,
 							  TBL_ICHG);
 			charge_current = charge_current << 8;
 		}
-	}
-#endif
-
-	if (pd_inputcurrent == 0) {
+	} else {
 		if (bq25700_get_usb_type() > 1)
 			bq25700_write(charger, BQ25703_INPUTCURREN_REG,
 				      dcp_inputcurrent);
@@ -309,9 +300,6 @@ static int bq25700_ofdata_to_platdata(struct udevice *dev)
 	struct bq25700 *charger = dev_get_priv(dev);
 	const void *blob = gd->fdt_blob;
 	int node, node1;
-#if defined(CONFIG_POWER_FUSB302)
-	int port_num;
-#endif
 
 	charger->dev = dev;
 
@@ -331,34 +319,23 @@ static int bq25700_ofdata_to_platdata(struct udevice *dev)
 
 	charger->ichg = fdtdec_get_int(blob, node, "ti,charge-current", 0);
 
-#if defined(CONFIG_POWER_FUSB302)
-	gpio_request_by_name(dev, "typec0-enable-gpios", 0,
-			     &charger.typec0_enable_gpio);
-	gpio_request_by_name(dev, "typec1-enable-gpios", 0,
-			     &charger.typec1_enable_gpio);
-
-	if (dm_gpio_is_valid(charger.typec1_enable_gpio.gpio) &&
-	    dm_gpio_is_valid(charger.typec0_enable_gpio.gpio)) {
-		port_num = get_pd_port_num();
-		if (port_num == 0) {
-			printf("fusb0 charge typec0:1 typec1:0\n");
-			dm_gpio_set_value(&charger.typec0_enable_gpio.gpio, 1);
-			dm_gpio_set_value(&charger.typec1_enable_gpio.gpio, 0);
-		} else if (port_num == 1) {
-			printf("fusb1 charge typec0:0 typec1:1\n");
-			dm_gpio_set_value(&charger.typec0_enable_gpio.gpio, 0);
-			dm_gpio_set_value(&charger.typec1_enable_gpio.gpio, 1);
-		}
-		udelay(1000 * 200);
-	}
-#endif
-
 	return 0;
 }
 
 static int bq25700_probe(struct udevice *dev)
 {
 	struct bq25700 *charger = dev_get_priv(dev);
+	int ret;
+
+	ret = uclass_get_device(UCLASS_PD, 0, &charger->pd);
+	if (ret) {
+		if (ret == -ENODEV)
+			printf("Can't find PMIC\n");
+		else
+			printf("Get UCLASS PMIC failed: %d\n", ret);
+
+		charger->pd = NULL;
+	}
 
 	if (charger->chip_id == BQ25700_ID)
 		bq25700_charger_current_init(charger);

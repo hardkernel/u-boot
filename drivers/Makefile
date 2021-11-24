@@ -35,6 +35,7 @@ obj-$(CONFIG_SPL_POWER_SUPPORT) += power/
 obj-$(CONFIG_SPL_DM_PMIC) += power/pmic/
 obj-$(CONFIG_SPL_DM_REGULATOR) += power/regulator/
 obj-$(CONFIG_SPL_DM_FUEL_GAUGE) += power/fuel_gauge/
+obj-$(CONFIG_SPL_DM_FUEL_GAUGE) += power/charge/
 obj-$(CONFIG_SPL_PWM_SUPPORT) += pwm/
 obj-$(CONFIG_SPL_MTD_SUPPORT) += mtd/
 obj-$(CONFIG_SPL_ONENAND_SUPPORT) += mtd/onenand/
