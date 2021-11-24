@@ -1002,6 +1002,9 @@ static int mmc_select_hs400(struct mmc *mmc)
 {
 	int ret;
 
+	/* Reduce frequency to HS frequency */
+	mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
+
 	/* Switch card to HS mode */
 	ret = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
 			   EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS, false);
@@ -1010,9 +1013,6 @@ static int mmc_select_hs400(struct mmc *mmc)
 
 	/* Set host controller to HS timing */
 	mmc_set_timing(mmc, MMC_TIMING_MMC_HS);
-
-	/* Reduce frequency to HS frequency */
-	mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
 
 	ret = mmc_send_status(mmc, 1000);
 	if (ret)
