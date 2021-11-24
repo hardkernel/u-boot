@@ -809,3 +809,23 @@ int rk_avb_read_perm_attr(u16 id, void *pbuf, u16 size)
 	return ret;
 }
 
+int rk_avb_update_stored_rollback_indexes_for_slot(AvbOps* ops, AvbSlotVerifyData* slot_data)
+{
+	uint64_t rollback_index = slot_data->rollback_indexes[0];
+	uint64_t current_stored_rollback_index;
+	AvbIOResult io_ret;
+
+	if (rollback_index > 0) {
+		io_ret = ops->read_rollback_index(ops, 0, &current_stored_rollback_index);
+		if (io_ret != AVB_IO_RESULT_OK)
+			return -1;
+
+		if (rollback_index > current_stored_rollback_index) {
+			io_ret = ops->write_rollback_index(ops, 0, rollback_index);
+			if (io_ret != AVB_IO_RESULT_OK)
+				return -1;
+		}
+	}
+
+	return 0;
+}

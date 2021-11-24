@@ -336,6 +336,11 @@ int rk_avb_read_perm_attr(uint16_t id, void *pbuf, uint16_t size);
  */
 bool rk_avb_ab_have_bootable_slot(void);
 
+/**
+ * update rollback index
+ */
+int rk_avb_update_stored_rollback_indexes_for_slot(AvbOps* ops, AvbSlotVerifyData* slot_data);
+
 #ifdef __cplusplus
 }
 #endif
