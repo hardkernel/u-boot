@@ -206,9 +206,10 @@ static uint32_t write_key(keymaster_algorithm_t key_type,
 
 	snprintf(key_file, STORAGE_ID_LENGTH_MAX, "%s.%s", key_name,
 		 get_keyslot_str(key_type));
-	write_to_keymaster((uint8_t *)key_file, strlen(key_file),
+	TEEC_Result ret=write_to_keymaster((uint8_t *)key_file, strlen(key_file),
 				(uint8_t *)key, key_size);
-	return 0;
+	printf("write_key key_file=%s ret=%d\n",key_file,ret);
+	return ret;
 }
 
 /* write cert to security storage. */
@@ -462,16 +463,16 @@ atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
 	printf("\n algorithm: %d\n", algorithm);
 	/* read rsa key and certchain */
 	read_key_data(&key_buf, key_data, &key_data_length);
-	printf("write attestation key: RSA\n");
-	write_key(KM_ALGORITHM_RSA, key_name, key_data, key_data_length);
+	TEEC_Result ret_rsa=write_key(KM_ALGORITHM_RSA, key_name, key_data, key_data_length);
+	printf("write attestation key: RSA ret_rsa=%d\n",ret_rsa);
 
 	/* read algorithm(EC) from keybuf */
 	copy_uint32_from_buf(&key_buf, &algorithm);
 	printf("\n algorithm: %d\n", algorithm);
 	/* read ec key and certchain */
 	read_key_data(&key_buf, key_data, &key_data_length);
-	printf("write attestation key: EC\n");
-	write_key(KM_ALGORITHM_EC, key_name, key_data, key_data_length);
+	TEEC_Result ret_ec=write_key(KM_ALGORITHM_EC, key_name, key_data, key_data_length);
+	printf("write attestation key: EC ret_ec=%d\n",ret_ec);
 
 	memset(keybuf, 0, sizeof(keybuf));
 	free(key_data);
