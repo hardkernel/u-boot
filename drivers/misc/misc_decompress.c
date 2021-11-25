@@ -71,6 +71,14 @@ static u32 misc_get_data_size(unsigned long src, unsigned long len, u32 comp)
 	return 0;
 }
 
+static void misc_setup_default_sync(u32 comp)
+{
+	if (comp == DECOM_GZIP)
+		misc_decompress_sync(IH_COMP_GZIP);
+	else if (comp == DECOM_LZ4)
+		misc_decompress_sync(IH_COMP_LZ4);
+}
+
 static struct udevice *misc_decompress_get_device(u32 comp)
 {
 	return misc_get_device_by_capability(comp);
@@ -232,6 +240,16 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 				       (const char *)dst, dst_size);
 		}
 	} else {
+		/*
+		 * setup cleanup sync flags by default if this is a sync request,
+		 * unless misc_decompress_async() is called by manual.
+		 *
+		 * This avoid caller to forget to setup cleanup sync flags when
+		 * they use a async operation, otherwise cpu jump to kernel
+		 * before decompress done.
+		 */
+		misc_setup_default_sync(comp);
+
 		if (size)
 			*size = misc_get_data_size(src, src_len, comp);
 	}
