@@ -63,12 +63,40 @@ static int misc_gzip_parse_header(const unsigned char *src, unsigned long len)
 	return i;
 }
 
-static u32 misc_get_data_size(unsigned long src, unsigned long len, u32 comp)
+static int misc_lz4_header_is_valid(const unsigned char *h)
 {
-	if (comp == DECOM_GZIP)
-		return *(u32 *)(src + len - 4);
+	const struct lz4_frame_header *hdr  = (const struct lz4_frame_header *)h;
+	/* We assume there's always only a single, standard frame. */
+	if (le32_to_cpu(hdr->magic) != LZ4F_MAGIC || hdr->version != 1)
+		return 0;        /* unknown format */
+	if (hdr->reserved0 || hdr->reserved1 || hdr->reserved2)
+		return 0; /* reserved must be zero */
+	if (!hdr->independent_blocks)
+		return 0; /* we can't support this yet */
 
-	return 0;
+	return 1;
+}
+
+static u64 misc_get_data_size(unsigned long src, unsigned long len, u32 comp)
+{
+	u64 size = 0;
+
+	if (comp == DECOM_GZIP) {
+		size = *(u32 *)(src + len - 4);
+	} else if (comp == DECOM_LZ4) {
+		const struct lz4_frame_header *hdr =
+			(const struct lz4_frame_header *)src;
+		/*
+		 * Here is the way to add size information in image:
+		 *
+		 * 1. lz4 command use arg: --content-size.
+		 * 2. append u32 size at the end of image as kernel does.
+		 */
+		size = hdr->has_content_size ?
+			*(u64 *)(src + sizeof(*hdr)) : *(u32 *)(src + len - 4);
+	}
+
+	return size;
 }
 
 static void misc_setup_default_sync(u32 comp)
@@ -95,6 +123,8 @@ static int misc_decompress_start(struct udevice *dev, unsigned long dst,
 	param.flags = flags;
 	if (misc_gzip_parse_header((unsigned char *)src, 0xffff) > 0) {
 		param.mode = DECOM_GZIP;
+	} else if (misc_lz4_header_is_valid((void *)src)) {
+		param.mode = DECOM_LZ4;
 	} else {
 		printf("Unsupported decompression format.\n");
 		return -EPERM;
