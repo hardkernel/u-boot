@@ -82,7 +82,7 @@ int gunzip(void *dst, int dstlen, unsigned char *src, unsigned long *lenp)
 	int ret;
 
 	ret = misc_decompress_process((ulong)dst, (ulong)src, *lenp,
-				      DECOM_GZIP, true, (u64 *)lenp, 0);
+				      DECOM_GZIP, false, (u64 *)lenp, 0);
 	if (!ret)
 		return 0;
 
