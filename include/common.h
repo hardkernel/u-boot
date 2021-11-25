@@ -681,9 +681,7 @@ int gzwrite(unsigned char *src, int len,
 	    u64 startoffs,
 	    u64 szexpected);
 
-/* lib/lz4_wrapper.c */
-bool lz4_is_valid_header(const unsigned char *h);
-int ulz4fn(const void *src, size_t srcn, void *dst, size_t *dstn);
+#include <u-boot/lz4.h>
 
 /* lib/qsort.c */
 void qsort(void *base, size_t nmemb, size_t size,
