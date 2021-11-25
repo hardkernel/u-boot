@@ -63,17 +63,17 @@ static int misc_gzip_parse_header(const unsigned char *src, unsigned long len)
 	return i;
 }
 
-static u32 misc_get_data_size(unsigned long src, unsigned long len, u32 cap)
+static u32 misc_get_data_size(unsigned long src, unsigned long len, u32 comp)
 {
-	if (cap == DECOM_GZIP)
+	if (comp == DECOM_GZIP)
 		return *(u32 *)(src + len - 4);
 
 	return 0;
 }
 
-static struct udevice *misc_decompress_get_device(u32 capability)
+static struct udevice *misc_decompress_get_device(u32 comp)
 {
-	return misc_get_device_by_capability(capability);
+	return misc_get_device_by_capability(comp);
 }
 
 static int misc_decompress_start(struct udevice *dev, unsigned long dst,
@@ -114,12 +114,12 @@ static bool misc_decompress_is_complete(struct udevice *dev)
 		return true;
 }
 
-static int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 cap)
+static int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 comp)
 {
 	struct decom_param param;
 	int ret;
 
-	param.mode = cap;
+	param.mode = comp;
 	param.size_dst = 0; /* clear */
 
 	ret = misc_ioctl(dev, IOCTL_REQ_DATA_SIZE, &param);
@@ -129,7 +129,7 @@ static int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 cap)
 	return ret;
 }
 
-static int misc_decompress_finish(struct udevice *dev, u32 cap)
+static int misc_decompress_finish(struct udevice *dev, u32 comp)
 {
 	int timeout = 20000;
 
@@ -149,7 +149,7 @@ int misc_decompress_cleanup(void)
 	struct udevice *dev;
 	struct uclass *uc;
 	int ret;
-	u32 cap;
+	u32 comp;
 
 	ret = uclass_get(UCLASS_MISC, &uc);
 	if (ret)
@@ -162,13 +162,13 @@ int misc_decompress_cleanup(void)
 		ops = device_get_ops(dev);
 		if (!ops || !ops->ioctl)
 			continue;
-		else if (ops->ioctl(dev, IOCTL_REQ_CAPABILITY, &cap))
+		else if (ops->ioctl(dev, IOCTL_REQ_CAPABILITY, &comp))
 			continue;
-		else if (misc_decomp_async & cap)
+		else if (misc_decomp_async & comp)
 			continue;
 
-		if (misc_decomp_sync & cap) {
-			ret = misc_decompress_finish(dev, cap);
+		if (misc_decomp_sync & comp) {
+			ret = misc_decompress_finish(dev, comp);
 			if (ret) {
 				printf("Failed to stop decompress: %s, ret=%d\n",
 				       dev->name, ret);
@@ -181,7 +181,7 @@ int misc_decompress_cleanup(void)
 }
 
 int misc_decompress_process(unsigned long dst, unsigned long src,
-			    unsigned long src_len, u32 cap, bool sync,
+			    unsigned long src_len, u32 comp, bool sync,
 			    u64 *size, u32 flags)
 {
 	struct udevice *dev;
@@ -189,12 +189,12 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 	u64 dst_size = 0;
 	int ret;
 
-	dev = misc_decompress_get_device(cap);
+	dev = misc_decompress_get_device(comp);
 	if (!dev)
 		return -ENODEV;
 
 	/* Wait last finish */
-	ret = misc_decompress_finish(dev, cap);
+	ret = misc_decompress_finish(dev, comp);
 	if (ret)
 		return ret;
 
@@ -219,12 +219,12 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 	 * otherwise return from compressed file information.
 	 */
 	if (sync) {
-		ret = misc_decompress_finish(dev, cap);
+		ret = misc_decompress_finish(dev, comp);
 		if (ret)
 			return ret;
 
 		if (size || (dst != dst_org)) {
-			ret = misc_decompress_data_size(dev, &dst_size, cap);
+			ret = misc_decompress_data_size(dev, &dst_size, comp);
 			if (size)
 				*size = dst_size;
 			if (dst != dst_org)
@@ -233,7 +233,7 @@ int misc_decompress_process(unsigned long dst, unsigned long src,
 		}
 	} else {
 		if (size)
-			*size = misc_get_data_size(src, src_len, cap);
+			*size = misc_get_data_size(src, src_len, comp);
 	}
 
 	return ret;
