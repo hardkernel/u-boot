@@ -49,9 +49,11 @@ struct rockchip_spi_priv {
 	unsigned int last_speed_hz;
 	uint input_rate;
 	uint cr0;
+	u32 rsd;			/* Rx sample delay cycles */
 };
 
 #define SPI_FIFO_DEPTH		32
+#define SPI_CR0_RSD_MAX		0x3
 
 static void rkspi_dump_regs(struct rockchip_spi *regs)
 {
@@ -182,6 +184,7 @@ static int rockchip_spi_ofdata_to_platdata(struct udevice *bus)
 #if !CONFIG_IS_ENABLED(OF_PLATDATA)
 	struct rockchip_spi_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_spi_priv *priv = dev_get_priv(bus);
+	u32 rsd_nsecs;
 	int ret;
 
 	plat->base = dev_read_addr(bus);
@@ -200,9 +203,26 @@ static int rockchip_spi_ofdata_to_platdata(struct udevice *bus)
 	plat->activate_delay_us =
 		dev_read_u32_default(bus, "spi-activate-delay", 0);
 
-	debug("%s: base=%x, max-frequency=%d, deactivate_delay=%d\n",
+	rsd_nsecs = dev_read_u32_default(bus, "rx-sample-delay-ns", 0);
+	if (rsd_nsecs > 0) {
+		u32 spi_clk, rsd;
+
+		spi_clk = clk_get_rate(&priv->clk);
+		/* rx sample delay is expressed in parent clock cycles (max 3) */
+		rsd = DIV_ROUND_CLOSEST(rsd_nsecs * (spi_clk >> 8), 1000000000 >> 8);
+		if (!rsd) {
+			pr_err("SPI spi_clk %dHz are too slow to express %u ns delay\n", spi_clk, rsd_nsecs);
+		} else if (rsd > SPI_CR0_RSD_MAX) {
+			rsd = SPI_CR0_RSD_MAX;
+			pr_err("SPI spi_clk %dHz are too fast to express %u ns delay, clamping at %u ns\n",
+			       spi_clk, rsd_nsecs, SPI_CR0_RSD_MAX * 1000000000U / spi_clk);
+		}
+		priv->rsd = rsd;
+	}
+
+	debug("%s: base=%x, max-frequency=%d, deactivate_delay=%d rsd=%d\n",
 	      __func__, (uint)plat->base, plat->frequency,
-	      plat->deactivate_delay_us);
+	      plat->deactivate_delay_us, priv->rsd);
 #endif
 
 	return 0;
@@ -330,7 +350,7 @@ static int rockchip_spi_claim_bus(struct udevice *dev)
 	ctrlr0 |= spi_tf << HALF_WORD_TX_SHIFT;
 
 	/* Rxd Sample Delay */
-	ctrlr0 |= 0 << RXDSD_SHIFT;
+	ctrlr0 |= priv->rsd << RXDSD_SHIFT;
 
 	/* Frame Format */
 	ctrlr0 |= FRF_SPI << FRF_SHIFT;
