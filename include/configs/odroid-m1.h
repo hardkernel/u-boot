@@ -9,6 +9,8 @@
 
 #include <configs/rk3568_common.h>
 
+#define CONFIG_MISC_INIT_R
+
 #undef RKIMG_BOOTCOMMAND
 
 #ifndef CONFIG_SPL_BUILD
@@ -49,9 +51,16 @@
 
 #define ENV_MEM_LAYOUT_SETTINGS1 \
 	"cramfsaddr=0x0c000000\0" \
+	"splashimage=0x05000000\0" \
 	"loadaddr=0x02000000\0"
 
 #define CONFIG_ENV_SECT_SIZE	0x10000
+
+#define CONFIG_BMP_16BPP
+#define CONFIG_BMP_24BPP
+#define CONFIG_BMP_32BPP
+#define CONFIG_VIDEO_BMP_GZIP
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	((1920 * 1080 * 4) + 54)
 
 #endif
 #endif
