@@ -13,6 +13,11 @@ static int adc_key_ofdata_to_platdata(struct udevice *dev)
 	struct dm_key_uclass_platdata *uc_key;
 	u32 chn[2], mV;
 	int vref, ret;
+#ifdef CONFIG_SARADC_ROCKCHIP_V2
+	int range = 4096;
+#else
+	int range = 1024;
+#endif
 
 	uc_key = dev_get_uclass_platdata(dev);
 	if (!uc_key)
@@ -50,7 +55,7 @@ static int adc_key_ofdata_to_platdata(struct udevice *dev)
 	}
 
 	uc_key->channel = chn[1];
-	uc_key->adcval = mV / (vref / 1024);
+	uc_key->adcval = mV / (vref / range);
 
 	return 0;
 }
