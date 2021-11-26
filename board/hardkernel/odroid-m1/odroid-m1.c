@@ -10,6 +10,14 @@
 #include <usb.h>
 #include <mmc.h>
 #include <mtd_blk.h>
+#include <malloc.h>
+#include <mapmem.h>
+#include <lcd.h>
+#include "../../../drivers/video/drm/rockchip_display.h"
+
+extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
+extern void *get_display_buffer(int size);
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -86,3 +94,92 @@ int board_read_dtb_file(void *fdt_addr)
 
 	return fdt_check_header(fdt_addr);
 }
+
+#ifdef CONFIG_MISC_INIT_R
+static int set_bmp_logo(const char *bmp_name, void *addr, int flip)
+{
+	struct logo_info *logo;
+	struct rockchip_logo_cache *logo_cache;
+	struct bmp_image *bmp = (struct bmp_image *)map_sysmem((ulong)addr, 0);
+	struct bmp_header *header = (struct bmp_header *)bmp;
+	void *src;
+	void *dst;
+	int stride;
+	int i;
+
+	if (!bmp_name || !addr)
+		return -EINVAL;
+
+	if (!((bmp->header.signature[0]=='B') &&
+	      (bmp->header.signature[1]=='M')))
+		return -EINVAL;
+
+	logo_cache = find_or_alloc_logo_cache(bmp_name);
+	if (!logo_cache)
+		return -ENOMEM;
+
+	logo = &logo_cache->logo;
+	logo->bpp = get_unaligned_le16(&header->bit_count);
+	if (logo->bpp != 24) {
+		printf("Unsupported bpp=%d\n", logo->bpp);
+		return -EINVAL;
+	}
+
+	logo->width = get_unaligned_le32(&header->width);
+	logo->height = get_unaligned_le32(&header->height);
+	logo->offset = get_unaligned_le32(&header->data_offset);
+	logo->ymirror = 0;
+
+	logo->mem = get_display_buffer(get_unaligned_le32(&header->file_size));
+	if (!logo->mem)
+		return -ENOMEM;
+
+	src = addr + logo->offset;
+	dst = logo->mem + logo->offset;
+	stride = ALIGN(logo->width * 3, 4);
+
+	if (flip)
+		src += stride * (logo->height - 1);
+
+	for (i = 0; i < logo->height; i++) {
+		memcpy(dst, src, 3 * logo->width);
+		dst += stride;
+		src += stride;
+
+		if (flip)
+			src -= stride * 2;
+	}
+
+	flush_dcache_range((ulong)logo->mem,
+			ALIGN((ulong)logo->mem
+				+ (logo->width * logo->height * logo->bpp >> 3),
+				CONFIG_SYS_CACHELINE_SIZE));
+
+	return 0;
+}
+
+int misc_init_r(void)
+{
+	void *decomp;
+	struct bmp_image *bmp;
+	unsigned int loadaddr = (unsigned int)env_get_ulong("loadaddr", 16, 0);
+	unsigned long len = 0x100000;
+	char str[80];
+	int ret;
+
+	snprintf(str, sizeof(str),
+			"mtd read nor0 0x%08x 0x300000 0x%08x",
+			loadaddr, (unsigned int)len);
+	ret = run_command(str, 0);
+	if (ret)
+		return 1;
+
+	bmp = gunzip_bmp(loadaddr, &len, &decomp);
+	if (bmp)
+		set_bmp_logo("logo.bmp", bmp, 1);
+
+	free(decomp);
+
+	return 0;
+}
+#endif
