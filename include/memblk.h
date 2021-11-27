@@ -7,7 +7,7 @@
 #define _MEMBLK_H
 
 #define ALIAS_COUNT_MAX		2
-#define MEM_RESV_COUNT		3
+#define MEM_RESV_COUNT		10
 
 enum memblk_id {
 	MEM_UNK,
