@@ -278,7 +278,7 @@ function select_toolchain()
 		TOOLCHAIN_ADDR2LINE=${CROSS_COMPILE_ARM32}addr2line
 	fi
 
-	if ! which ${TOOLCHAIN}gcc ; then
+	if [ ! `which ${TOOLCHAIN}gcc` ]; then
 		echo "ERROR: No find ${TOOLCHAIN}gcc"
 		exit 1
 	fi
@@ -762,4 +762,5 @@ clean_files
 make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN} all --jobs=${JOB}
 pack_images
 finish
+echo ${TOOLCHAIN}
 date
