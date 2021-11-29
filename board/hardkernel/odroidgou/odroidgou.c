@@ -40,6 +40,7 @@
 #endif
 
 #include <odroid-common.h>
+#include "display.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -220,21 +221,21 @@ int board_mmc_init(bd_t	*bis)
 
 #ifdef CONFIG_SYS_I2C_AML
 struct aml_i2c_platform g_aml_i2c_plat[] = {
-{
-	.wait_count         = 1000000,
-	.wait_ack_interval  = 5,
-	.wait_read_interval = 5,
-	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
-	.use_pio            = 0,
-	.master_i2c_speed   = AML_I2C_SPPED_400K,
-	.master_ao_pinmux = {
-		.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_2_REG,
-		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_2_BIT,
-		.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_3_REG,
-		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_3_BIT,
+	{
+		.wait_count         = 1000000,
+		.wait_ack_interval  = 5,
+		.wait_read_interval = 5,
+		.wait_xfer_interval = 5,
+		.master_no          = AML_I2C_MASTER_AO,
+		.use_pio            = 0,
+		.master_i2c_speed   = AML_I2C_SPPED_400K,
+		.master_ao_pinmux = {
+			.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_2_REG,
+			.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_2_BIT,
+			.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_3_REG,
+			.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_3_BIT,
+		},
 	},
-},
 };
 
 static void board_i2c_init(void)
@@ -405,10 +406,14 @@ int board_late_init(void)
 		setenv("bootcmd", "run boot_spi");
 	}
 
-	/* boot logo display - 1080p60hz */
-	run_command("showlogo", 0);
 	usbhost_early_poweron();
 
+	/* boot logo display - 1080p60hz */
+#ifdef CONFIG_AML_LCD
+	gou_display_env_init();
+	gou_bmp_display(DISP_LOGO);
+	udelay(500000);
+#endif
 	return 0;
 }
 #endif

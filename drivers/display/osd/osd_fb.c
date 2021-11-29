@@ -601,7 +601,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	unsigned long pheight = info->width;
 	unsigned long pwidth = info->height;
 #endif
-	unsigned colors, bpix, bmp_bpix;
+	unsigned bpix, bmp_bpix;
 	int lcd_line_length = (pwidth * NBITS(info->vl_bpix)) / 8;
 	int osd_index = -1;
 
@@ -617,7 +617,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	width = g_pic_info.pic_width;
 	height = g_pic_info.pic_height;
 	bmp_bpix = g_pic_info.bpp;
-	colors = 1 << bmp_bpix;
 	uchar *buffer_rgb = NULL;
 	bpix = NBITS(info->vl_bpix);
 	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) &&
@@ -634,8 +633,8 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		return 1;
 	}*/
 
-	osd_logd("Display-bmp: %d x %d  with %d colors\n",
-		 (int)width, (int)height, (int)colors);
+	osd_logd("Display-bmp: %d x %d  with bmp_bpix = %d, bpix = %d\n",
+		 (int)width, (int)height, (int)bmp_bpix, (int)bpix);
 
 	if ((x == -1) && (y == -1)) {
 		/* use MIDDLE_MODE */

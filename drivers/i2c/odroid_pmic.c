@@ -72,6 +72,10 @@ static int rk817_i2c_write(int32_t command, uint8_t val)
 void odroid_pmic_init(void)
 {
 	printf("enter odroid_pmic_init.\n");
+
+	/* RK817 BUCK2(VDDCPU_B) default : 1.0375V */
+	rk817_i2c_write(0xbe, 0x2B);
+	rk817_i2c_write(0xbf, 0x2B);
 	
 	/* RK817 LDO8 default : 3.0V */
 	rk817_i2c_write(0xda, 0x60);
@@ -86,5 +90,8 @@ void odroid_pmic_init(void)
 
 	/* RK818 LDO6 */
 	rk818_i2c_write(0x45, 0x1f);
+
+	/* RK818 BUCK4 */
+	rk818_i2c_write(0x38, 0x0C);
 	//rk818_i2c_write(0x24, 0x50);
 }

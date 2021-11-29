@@ -38,6 +38,7 @@ static struct lcd_power_step_s lcd_power_off_step_KD50T048A[] = {
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
+	"GPIOH_5", /* BL_PWM */
 	"invalid", /* ending flag */
 };
 
@@ -45,7 +46,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/* kd50t048a*/
 	"lcd_0",LCD_MIPI,8,
 	/* basic timing */
-	480,854,542,884,12,12,0,8,4,0,
+	480,854,542,884,12,12,0,4,8,0,
 	/* clk_attr */
 	0,0,1,28747680,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
@@ -54,8 +55,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step_KD50T048A, lcd_power_off_step_KD50T048A,
 	/* backlight */
 	200,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
-	BL_PWM_NEGATIVE,BL_PWM_F,180,100,50,1,1,
+	BL_CTRL_PWM,0xff,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_F,180,100,50,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
@@ -185,7 +186,7 @@ static struct lcd_power_ctrl_s lcd_power_ctrl = {
 struct lcd_config_s lcd_config_dft = {
 	.lcd_mode = LCD_MODE_TABLET,
 	.lcd_key_valid = 0,
-	.lcd_clk_path = 0,
+	.lcd_clk_path = 1,
 	.lcd_basic = {
 		.model_name = "kd50t048a",
 		.lcd_type = LCD_TYPE_MAX,
@@ -195,8 +196,8 @@ struct lcd_config_s lcd_config_dft = {
 		.h_period = 542,
 		.v_period = 884,
 
-		.screen_width   = 69,
-		.screen_height  = 139,
+		.screen_width   = 7,
+		.screen_height  = 14,
 	},
 
 	.lcd_timing = {

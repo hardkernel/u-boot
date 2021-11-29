@@ -20,6 +20,9 @@ static struct odroid_resolution {
 	int display_width;
 	int display_height;
 } odroid_res_list[] = {
+#ifdef CONFIG_ODROID_GOU
+	{"panel", 480, 854},
+#endif
 	{"480cvbs", 720, 480},
 	{"576cvbs", 720, 576},
 	{"480p60hz", 720, 480},
@@ -111,7 +114,11 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 	ret = run_command(str, 0);
 	if (!ret)	goto display_logo;
 #endif
+#ifdef CONFIG_ODROID_GOU
+	sprintf(str, "load mmc %d ${bootlogo_addr} res/logo.bmp", bootdev);
+#else
 	sprintf(str, "load mmc %d ${bootlogo_addr} boot-logo.bmp", bootdev);
+#endif
 	ret = run_command(str, 0);
 	if (!ret)	goto display_logo;
 
@@ -129,10 +136,17 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 display_logo:
 	/* for video_hw_init in osd_fb.c */
 	setenv("fb_addr", "0x3d800000");
+#ifdef CONFIG_ODROID_GOU
+	setenv("display_bpp", "32");
+	setenv("display_color_index", "32");
+	setenv("display_layer", "osd0");
+	setenv("display_color_fg", "0xffffff");
+#else
 	setenv("display_bpp", "24");
 	setenv("display_color_index", "24");
 	setenv("display_layer", "osd1");
 	setenv("display_color_fg", "0xffff");
+#endif
 	setenv("display_color_bg", "0");
 	setenv("cvbsmode", "576cvbs");
 	setenv("hdmimode", mode);
@@ -143,7 +157,11 @@ display_logo:
 	setenv("fb_height", bmp_height);
 
 	run_command("osd open; osd clear", 0);
+#ifdef CONFIG_ODROID_GOU
+	run_command("vout output ${outputmode}", 0);
+#else
 	run_command("vout output ${outputmode}; hdmitx output ${outputmode}", 0);
+#endif
 	run_command("bmp display ${bootlogo_addr}", 0);
 	run_command("bmp scale", 0);
 
@@ -153,6 +171,9 @@ display_logo:
 static int do_showlogo(cmd_tbl_t *cmdtp, int flag, int argc,
 		char *const argv[])
 {
+#ifdef CONFIG_ODROID_GOU
+	display_logo("panel", "480", "854");
+#else
 	char *mode;
 
 	if (argc <= 1) {
@@ -164,7 +185,7 @@ static int do_showlogo(cmd_tbl_t *cmdtp, int flag, int argc,
 	} else {
 		display_logo(argv[1], "1280", "720");
 	}
-
+#endif
 	return 0;
 }
 
