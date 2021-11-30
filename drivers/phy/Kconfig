@@ -108,6 +108,14 @@ config PHY_ROCKCHIP_SNPS_PCIE3
 	help
 	  Support for Rockchip PCIe3 PHY with Synopsys IP block.
 
+config PHY_ROCKCHIP_USBDP
+	tristate "Rockchip USBDP COMBO PHY Driver"
+	depends on ARCH_ROCKCHIP
+	select PHY
+	help
+	  Enable this to support the Rockchip USB3.0/DP
+	  combo PHY with Samsung IP block.
+
 config PHY_ROCKCHIP_TYPEC
 	bool "Support Rockchip TYPEC PHY Driver"
 	depends on ARCH_ROCKCHIP
