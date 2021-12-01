@@ -88,12 +88,6 @@
 	ROCKCHIP_DEVICE_SETTINGS \
 	RKIMG_DET_BOOTDEV \
 	BOOTENV
-
-#undef RKIMG_BOOTCOMMAND
-#define RKIMG_BOOTCOMMAND		\
-	"boot_fit;"			\
-	"boot_android ${devtype} ${devnum};" \
-	"run distro_bootcmd;"
 #endif
 
 /* rockchip ohci host driver */
