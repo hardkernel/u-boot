@@ -31,12 +31,23 @@ void *image_get_host_blob(void)
 }
 #endif
 
+static const uint8_t sha1_der_prefix_data[SHA1_DER_LEN] = {
+	0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e,
+	0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14
+};
+
+static const uint8_t sha256_der_prefix_data[SHA256_DER_LEN] = {
+	0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
+	0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
+	0x00, 0x04, 0x20
+};
+
 struct checksum_algo checksum_algos[] = {
 	{
 		.name = "sha1",
 		.checksum_len = SHA1_SUM_LEN,
 		.der_len = SHA1_DER_LEN,
-		.der_prefix = sha1_der_prefix,
+		.der_prefix = sha1_der_prefix_data,
 #if IMAGE_ENABLE_SIGN
 		.calculate_sign = EVP_sha1,
 #endif
@@ -46,7 +57,7 @@ struct checksum_algo checksum_algos[] = {
 		.name = "sha256",
 		.checksum_len = SHA256_SUM_LEN,
 		.der_len = SHA256_DER_LEN,
-		.der_prefix = sha256_der_prefix,
+		.der_prefix = sha256_der_prefix_data,
 #if IMAGE_ENABLE_SIGN
 		.calculate_sign = EVP_sha256,
 #endif
