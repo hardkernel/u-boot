@@ -541,6 +541,8 @@ uint32_t trusty_read_vbootkey_enable_flag(uint8_t *flag)
 	uint32_t bootflag;
 	TEEC_Result TeecResult;
 
+	*flag = 0;
+
 	TeecResult = trusty_base_efuse_or_otp_operation(STORAGE_CMD_READ_ENABLE_FLAG,
 							false, &bootflag, 1);
 
