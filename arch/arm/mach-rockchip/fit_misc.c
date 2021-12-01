@@ -186,6 +186,7 @@ int fit_rollback_index_verify(const void *fit, uint32_t rollback_fd,
  */
 int fit_board_verify_required_sigs(void)
 {
+	static int showed = 0;
 	uint8_t vboot = 0;
 
 #ifdef CONFIG_SPL_BUILD
@@ -215,7 +216,10 @@ int fit_board_verify_required_sigs(void)
 #endif
 #endif /* CONFIG_SPL_BUILD*/
 
-	printf("## Verified-boot: %d\n", vboot);
+	if (!showed) {
+		printf("## Verified-boot: %d\n", vboot);
+		showed = 1;
+	}
 
 	return vboot;
 }
