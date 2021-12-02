@@ -1095,6 +1095,9 @@ static ulong rk3588_dclk_vop_set_clk(struct rk3588_clk_priv *priv,
 			case DCLK_VOP_SRC_SEL_AUPLL:
 				pll_rate = priv->aupll_hz;
 				break;
+			case DCLK_VOP_SRC_SEL_V0PLL:
+				pll_rate = 0;
+				break;
 			default:
 				printf("do not support this vop pll sel\n");
 				return -EINVAL;
