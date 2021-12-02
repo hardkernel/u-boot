@@ -29,6 +29,8 @@
 #error CONFIG_DEVICE_PRODUCT is missing!!
 #endif
 
+#define CONFIG_GOU_REV2		1
+
 /*
  * platform power init config
  */

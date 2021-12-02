@@ -35,4 +35,3 @@ obj-$(CONFIG_SYS_I2C_ZYNQ) += zynq_i2c.o
 obj-$(CONFIG_SYS_I2C_AML) += aml_i2c.o
 obj-$(CONFIG_SYS_I2C_AML_IS31F123XX) += aml_is31fl32xx.o
 obj-$(CONFIG_SYS_I2C_MESON) += meson_i2c.o
-obj-$(CONFIG_ODROID_PMIC) += odroid_pmic.o

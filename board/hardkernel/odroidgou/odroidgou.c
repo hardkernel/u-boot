@@ -17,7 +17,6 @@
 #ifdef CONFIG_SYS_I2C_AML
 #include <amlogic/i2c.h>
 #include <aml_i2c.h>
-#include <amlogic/odroid_pmic.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -41,6 +40,7 @@
 
 #include <odroid-common.h>
 #include "display.h"
+#include "odroid_pmic.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -234,6 +234,21 @@ struct aml_i2c_platform g_aml_i2c_plat[] = {
 			.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_2_BIT,
 			.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_3_REG,
 			.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_3_BIT,
+		},
+	},
+	{
+		.wait_count         = 1000000,
+		.wait_ack_interval  = 5,
+		.wait_read_interval = 5,
+		.wait_xfer_interval = 5,
+		.master_no          = AML_I2C_MASTER_D,
+		.use_pio            = 0,
+		.master_i2c_speed   = AML_I2C_SPPED_400K,
+		.master_ao_pinmux = {
+			.scl_reg    = (unsigned long)MESON_I2C_MASTER_D_GPIOA_15_REG,
+			.scl_bit    = MESON_I2C_MASTER_D_GPIOA_15_BIT,
+			.sda_reg    = (unsigned long)MESON_I2C_MASTER_D_GPIOA_14_REG,
+			.sda_bit    = MESON_I2C_MASTER_D_GPIOA_14_BIT,
 		},
 	},
 };

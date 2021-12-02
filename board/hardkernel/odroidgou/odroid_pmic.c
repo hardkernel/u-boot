@@ -1,5 +1,5 @@
 /*
- * drivers/i2c/odroid_pmic.c
+ * board/hardkernel/odroidgou/odroid_pmic.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -25,7 +25,7 @@
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
 #endif
-#include <amlogic/odroid_pmic.h>
+#include "odroid_pmic.h"
 
 static int rk818_i2c_write(int32_t command, uint8_t val)
 {
