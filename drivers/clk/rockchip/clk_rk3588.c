@@ -1062,7 +1062,7 @@ static ulong rk3588_dclk_vop_set_clk(struct rk3588_clk_priv *priv,
 		sel = (con & DCLK2_VOP_SRC_SEL_MASK) >> DCLK2_VOP_SRC_SEL_SHIFT;
 		mask = DCLK2_VOP_SRC_SEL_MASK | DCLK2_VOP_SRC_DIV_MASK;
 		div_shift = DCLK2_VOP_SRC_DIV_SHIFT;
-		sel_shift = DCLK1_VOP_SRC_SEL_SHIFT;
+		sel_shift = DCLK2_VOP_SRC_SEL_SHIFT;
 		break;
 	case DCLK_VOP3:
 		conid = 113;
@@ -1080,6 +1080,7 @@ static ulong rk3588_dclk_vop_set_clk(struct rk3588_clk_priv *priv,
 		div = DIV_ROUND_UP(RK3588_VOP_PLL_LIMIT_FREQ, rate);
 		rk_clrsetreg(&cru->clksel_con[conid],
 			     mask,
+			     DCLK_VOP_SRC_SEL_V0PLL << sel_shift |
 			     ((div - 1) << div_shift));
 		rockchip_pll_set_rate(&rk3588_pll_clks[V0PLL],
 				      priv->cru, V0PLL, div * rate);
