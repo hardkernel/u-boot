@@ -82,11 +82,6 @@ static void announce_and_cleanup(bootm_headers_t *images, int fake)
 {
 	ulong us;
 
-	us = (get_ticks() - gd->sys_start_tick) / (COUNTER_FREQUENCY / 1000000);
-	printf("Total: %ld.%ld ms\n", us / 1000, us % 1000);
-
-	printf("\nStarting kernel ...%s\n\n", fake ?
-		"(fake run for tracing)" : "");
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
 #ifdef CONFIG_BOOTSTAGE_FDT
 	bootstage_fdt_add_report();
@@ -112,6 +107,12 @@ static void announce_and_cleanup(bootm_headers_t *images, int fake)
 	dm_remove_devices_flags(DM_REMOVE_ACTIVE_ALL);
 
 	cleanup_before_linux();
+
+	us = (get_ticks() - gd->sys_start_tick) / (COUNTER_FREQUENCY / 1000000);
+	printf("Total: %ld.%ld ms\n", us / 1000, us % 1000);
+
+	printf("\nStarting kernel ...%s\n\n", fake ?
+		"(fake run for tracing)" : "");
 }
 
 static void setup_start_tag (bd_t *bd)
