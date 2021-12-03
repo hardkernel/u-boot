@@ -21,6 +21,10 @@ __attribute__((weak))
 unsigned long do_go_exec(ulong (*entry)(int, char * const []), int argc,
 				 char * const argv[])
 {
+#ifdef CONFIG_CPU_V7
+	ulong addr = (ulong)entry | 1;
+	entry = (void *)addr;
+#endif
 	return entry (argc, argv);
 }
 
