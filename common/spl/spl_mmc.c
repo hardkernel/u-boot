@@ -184,12 +184,7 @@ static int mmc_load_image_raw_partition(struct spl_image_info *spl_image,
 		return -1;
 	}
 
-#ifdef CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
-	return mmc_load_image_raw_sector(spl_image, mmc,
-			info.start + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR);
-#else
 	return mmc_load_image_raw_sector(spl_image, mmc, info.start);
-#endif
 }
 #endif
 
