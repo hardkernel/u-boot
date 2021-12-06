@@ -34,20 +34,19 @@ static struct rockchip_pll_rate_table rockchip_auto_table;
 
 #define MHZ		1000000
 #define KHZ		1000
-enum {
-	OSC_HZ			= 24 * 1000000,
-	VCO_MAX_HZ	= 3200U * 1000000,
-	VCO_MIN_HZ	= 800 * 1000000,
-	OUTPUT_MAX_HZ	= 3200U * 1000000,
-	OUTPUT_MIN_HZ	= 24 * 1000000,
-	RK3588_VCO_MIN_HZ = 2250U * 1000000,
-	RK3588_VCO_MAX_HZ = 4500U * 1000000,
-	RK3588_FOUT_MIN_HZ = 37U * 1000000,
-	RK3588_FOUT_MAX_HZ = 4500U * 1000000,
-};
 
-#define MIN_FOUTVCO_FREQ	(800 * MHZ)
-#define MAX_FOUTVCO_FREQ	(2000 * MHZ)
+#define OSC_HZ			(24UL * MHZ)
+#define VCO_MAX_HZ		(3200UL * MHZ)
+#define VCO_MIN_HZ		(800UL * MHZ)
+#define OUTPUT_MAX_HZ		(3200UL * MHZ)
+#define OUTPUT_MIN_HZ		(24UL * MHZ)
+#define MIN_FOUTVCO_FREQ	(800UL * MHZ)
+#define MAX_FOUTVCO_FREQ	(2000UL * MHZ)
+
+#define RK3588_VCO_MIN_HZ	(2250UL * MHZ)
+#define RK3588_VCO_MAX_HZ	(4500UL * MHZ)
+#define RK3588_FOUT_MIN_HZ	(37UL * MHZ)
+#define RK3588_FOUT_MAX_HZ	(4500UL * MHZ)
 
 int gcd(int m, int n)
 {
