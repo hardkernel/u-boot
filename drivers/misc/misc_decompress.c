@@ -169,7 +169,7 @@ static int misc_decompress_data_size(struct udevice *dev, u64 *size, u32 comp)
 
 static int misc_decompress_finish(struct udevice *dev, u32 comp)
 {
-	int timeout = 20000;
+	int timeout = 200000;	/* 2s */
 
 	while (!misc_decompress_is_complete(dev)) {
 		if (timeout < 0)
