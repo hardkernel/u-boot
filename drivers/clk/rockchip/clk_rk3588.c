@@ -1174,6 +1174,7 @@ static ulong rk3588_gmac_set_clk(struct rk3588_clk_priv *priv,
 			     CLK_GMAC1_PTP_SEL_CPLL << CLK_GMAC1_PTP_SEL_SHIFT |
 			     (div - 1) << CLK_GMAC1_PTP_DIV_SHIFT);
 		break;
+
 	case CLK_GMAC_125M:
 		rk_clrsetreg(&cru->clksel_con[83],
 			     CLK_GMAC_125M_DIV_MASK | CLK_GMAC_125M_SEL_MASK,
@@ -1666,7 +1667,7 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_GMAC1_PTP_REF:
 	case CLK_GMAC_125M:
 	case CLK_GMAC_50M:
-		ret = rk3588_gmac_set_clk(priv, 0, rate);
+		ret = rk3588_gmac_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_UART1:
 	case SCLK_UART2:
