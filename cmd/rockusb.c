@@ -72,8 +72,8 @@ static void rkusb_fini(void)
 		free((void *)g_rkusb->ums[i].name);
 	free(g_rkusb->ums);
 	g_rkusb->ums = NULL;
-	g_rkusb = NULL;
 	g_rkusb->ums_cnt = 0;
+	g_rkusb = NULL;
 }
 
 #define RKUSB_NAME_LEN 16
