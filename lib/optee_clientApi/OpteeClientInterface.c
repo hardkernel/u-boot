@@ -27,6 +27,7 @@
 #define STORAGE_CMD_WRITE_OEM_NS_OTP		12
 #define STORAGE_CMD_READ_OEM_NS_OTP		13
 #define STORAGE_CMD_WRITE_OEM_HR_OTP		14
+#define STORAGE_CMD_SET_OEM_HR_OTP_READ_LOCK	15
 
 static uint8_t b2hs_add_base(uint8_t in)
 {
@@ -787,6 +788,57 @@ uint32_t trusty_write_oem_hr_otp(enum RK_OEM_HR_OTP_KEYID key_id,
 
 exit:
 	TEEC_ReleaseSharedMemory(&SharedMem);
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+
+	return TeecResult;
+}
+
+uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_HR_OTP_KEYID key_id)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+
+	TEEC_UUID tempuuid = { 0x2d26d8a8, 0x5134, 0x4dd8,
+			{ 0xb3, 0x2f, 0xb3, 0x4b, 0xce, 0xeb, 0xc4, 0x71 } };
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
+
+	TeecOperation.params[0].value.a = key_id;
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						    TEEC_NONE,
+						    TEEC_NONE,
+						    TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					STORAGE_CMD_SET_OEM_HR_OTP_READ_LOCK,
+					&TeecOperation,
+					&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		goto exit;
+
+exit:
 	TEEC_CloseSession(&TeecSession);
 	TEEC_FinalizeContext(&TeecContext);
 
