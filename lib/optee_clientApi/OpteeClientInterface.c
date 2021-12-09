@@ -29,6 +29,11 @@
 #define STORAGE_CMD_WRITE_OEM_HR_OTP		14
 #define STORAGE_CMD_SET_OEM_HR_OTP_READ_LOCK	15
 
+#define CRYPTO_SERVICE_CMD_KEYLAD_CIPHER	0x00000001
+
+#define RK_CRYPTO_SERVICE_UUID	{ 0x0cacdb5d, 0x4fea, 0x466c, \
+		{ 0x97, 0x16, 0x3d, 0x54, 0x16, 0x52, 0x83, 0x0f } }
+
 static uint8_t b2hs_add_base(uint8_t in)
 {
 	if (in > 9)
@@ -844,6 +849,101 @@ exit:
 	TEEC_CloseSession(&TeecSession);
 	TEEC_FinalizeContext(&TeecContext);
 
+	return TeecResult;
+}
+
+uint32_t trusty_keylad_cipher(enum RK_OEM_HR_OTP_KEYID key_id,
+			      rk_cipher_config *config,
+			      uint8_t *src, uint8_t *dest, uint32_t len)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	TEEC_Operation TeecOperation = {0};
+	uint32_t ErrorOrigin;
+	TEEC_UUID uuid = RK_CRYPTO_SERVICE_UUID;
+	TEEC_SharedMemory SharedMem_config = {0};
+	TEEC_SharedMemory SharedMem_inout = {0};
+
+	if (key_id >= RK_OEM_HR_OTP_KEYMAX)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (!config || !src || !dest)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (config->algo != RK_ALGO_AES && config->algo != RK_ALGO_SM4)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (config->mode >= RK_CIPHER_MODE_XTS)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (config->operation != RK_MODE_ENCRYPT &&
+	    config->operation != RK_MODE_DECRYPT)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (config->key_len != 16 &&
+	    config->key_len != 24 &&
+	    config->key_len != 32)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (len % AES_BLOCK_SIZE ||
+	    len > RK_CRYPTO_MAX_DATA_LEN ||
+	    len == 0)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				      &TeecSession,
+				      &uuid,
+				      TEEC_LOGIN_PUBLIC,
+				      NULL,
+				      NULL,
+				      &ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		goto exit;
+
+	SharedMem_config.size = sizeof(rk_cipher_config);
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem_config);
+	if (TeecResult != TEEC_SUCCESS)
+		goto exit;
+
+	SharedMem_inout.size = len;
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem_inout);
+	if (TeecResult != TEEC_SUCCESS)
+		goto exit;
+
+	memcpy(SharedMem_config.buffer, config, sizeof(rk_cipher_config));
+	memcpy(SharedMem_inout.buffer, src, len);
+	TeecOperation.params[0].value.a       = key_id;
+	TeecOperation.params[1].tmpref.buffer = SharedMem_config.buffer;
+	TeecOperation.params[1].tmpref.size   = SharedMem_config.size;
+	TeecOperation.params[2].tmpref.buffer = SharedMem_inout.buffer;
+	TeecOperation.params[2].tmpref.size   = SharedMem_inout.size;
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						    TEEC_MEMREF_TEMP_INPUT,
+						    TEEC_MEMREF_TEMP_INOUT,
+						    TEEC_NONE);
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					CRYPTO_SERVICE_CMD_KEYLAD_CIPHER,
+					&TeecOperation,
+					&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		goto exit;
+
+	memcpy(dest, SharedMem_inout.buffer, SharedMem_inout.size);
+
+exit:
+	TEEC_ReleaseSharedMemory(&SharedMem_config);
+	TEEC_ReleaseSharedMemory(&SharedMem_inout);
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
 	return TeecResult;
 }
 

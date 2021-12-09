@@ -17,6 +17,49 @@ enum RK_OEM_HR_OTP_KEYID {
 	RK_OEM_HR_OTP_KEYMAX
 };
 
+/* Crypto mode */
+enum RK_CIPIHER_MODE {
+	RK_CIPHER_MODE_ECB = 0,
+	RK_CIPHER_MODE_CBC = 1,
+	RK_CIPHER_MODE_CTS = 2,
+	RK_CIPHER_MODE_CTR = 3,
+	RK_CIPHER_MODE_CFB = 4,
+	RK_CIPHER_MODE_OFB = 5,
+	RK_CIPHER_MODE_XTS = 6,
+	RK_CIPHER_MODE_CCM = 7,
+	RK_CIPHER_MODE_GCM = 8,
+	RK_CIPHER_MODE_CMAC = 9,
+	RK_CIPHER_MODE_CBC_MAC = 10,
+	RK_CIPHER_MODE_MAX
+};
+
+/* Crypto algorithm */
+enum RK_CRYPTO_ALGO {
+	RK_ALGO_AES = 1,
+	RK_ALGO_DES,
+	RK_ALGO_TDES,
+	RK_ALGO_SM4,
+	RK_ALGO_ALGO_MAX
+};
+
+typedef struct {
+	uint32_t	algo;
+	uint32_t	mode;
+	uint32_t	operation;
+	uint8_t		key[64];
+	uint32_t	key_len;
+	uint8_t		iv[16];
+	void		*reserved;
+} rk_cipher_config;
+
+/* Crypto operation */
+#define RK_MODE_ENCRYPT			1
+#define RK_MODE_DECRYPT			0
+
+#define AES_BLOCK_SIZE			16
+#define SM4_BLOCK_SIZE			16
+#define RK_CRYPTO_MAX_DATA_LEN		(1 * 1024 * 1024)
+
 #define ATAP_HEX_UUID_LEN 32
 #define ATTEST_DH_SIZE     8
 #define ATTEST_UUID_SIZE     (ATAP_HEX_UUID_LEN+1)
@@ -52,6 +95,9 @@ uint32_t trusty_read_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t b
 uint32_t trusty_write_oem_hr_otp(enum RK_OEM_HR_OTP_KEYID key_id,
 				 uint8_t *byte_buf, uint32_t byte_len);
 uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_HR_OTP_KEYID key_id);
+uint32_t trusty_keylad_cipher(enum RK_OEM_HR_OTP_KEYID key_id,
+			      rk_cipher_config *config,
+			      uint8_t *src, uint8_t *dest, uint32_t len);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca
