@@ -310,7 +310,7 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	return 0;
 }
 
-#if defined(CONFIG_DM_CRYPTO) && defined(CONFIG_ANDROID_BOOT_IMAGE_HASH)
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
 static void print_hash(const char *label, u8 *hash, int len)
 {
 	int i;
@@ -333,6 +333,10 @@ typedef enum {
 	IMG_BOOTCONFIG,
 	IMG_MAX,
 } img_t;
+
+#if defined(CONFIG_ANDROID_BOOT_IMAGE_HASH) && !defined(CONFIG_DM_CRYPTO)
+static sha1_context sha1_ctx;
+#endif
 
 static int image_load(img_t img, struct andr_img_hdr *hdr,
 		      ulong blkstart, void *ram_base,
@@ -528,17 +532,20 @@ static int image_load(img_t img, struct andr_img_hdr *hdr,
 		memmove((char *)memmove_dst, buffer, length);
 
 crypto_calc:
-	/* sha1 */
-#ifdef CONFIG_DM_CRYPTO
-	if (crypto) {
-		if (img == IMG_KERNEL) {
-			buffer += pgsz;
-			length -= pgsz;
-		}
-
-		crypto_sha_update(crypto, (u32 *)buffer, length);
-		crypto_sha_update(crypto, (u32 *)&length, typesz);
+	if (img == IMG_KERNEL) {
+		buffer += pgsz;
+		length -= pgsz;
 	}
+
+	/* sha1 */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+#ifdef CONFIG_DM_CRYPTO
+	crypto_sha_update(crypto, (u32 *)buffer, length);
+	crypto_sha_update(crypto, (u32 *)&length, typesz);
+#else
+	sha1_update(&sha1_ctx, (void *)buffer, length);
+	sha1_update(&sha1_ctx, (void *)&length, typesz);
+#endif
 #endif
 
 	return 0;
@@ -596,11 +603,12 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	if (image_load(IMG_RK_DTB, hdr, bstart, ram_base, NULL))
 		return -1;
 
-#if defined(CONFIG_DM_CRYPTO) && defined(CONFIG_ANDROID_BOOT_IMAGE_HASH)
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
 	if (hdr->header_version < 3) {
-		struct udevice *dev;
-		sha_context ctx;
+		struct udevice *dev = NULL;
 		uchar hash[20];
+#ifdef CONFIG_DM_CRYPTO
+		sha_context ctx;
 
 		ctx.length = 0;
 		ctx.algo = CRYPTO_SHA1;
@@ -619,13 +627,19 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 						sizeof(hdr->recovery_dtbo_size);
 		if (hdr->header_version > 1)
 			ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
-
 		crypto_sha_init(dev, &ctx);
+#else
+		sha1_starts(&sha1_ctx);
+#endif
 		ret = images_load_verify(hdr, bstart, ram_base, dev);
 		if (ret)
 			return ret;
-		crypto_sha_final(dev, &ctx, hash);
 
+#ifdef CONFIG_DM_CRYPTO
+		crypto_sha_final(dev, &ctx, hash);
+#else
+		sha1_finish(&sha1_ctx, hash);
+#endif
 		if (memcmp(hash, hdr->id, 20)) {
 			print_hash("Hash from header", (u8 *)hdr->id, 20);
 			print_hash("Hash real", (u8 *)hash, 20);
