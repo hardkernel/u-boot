@@ -20,8 +20,9 @@ int dm_mmc_send_cmd(struct udevice *dev, struct mmc_cmd *cmd,
 {
 	struct mmc *mmc = mmc_get_mmc_dev(dev);
 	struct dm_mmc_ops *ops = mmc_get_ops(dev);
-	int ret;
+	int ret, retry_time = 3;
 
+retry:
 	mmmc_trace_before_send(mmc, cmd);
 	if (ops->send_cmd)
 		ret = ops->send_cmd(dev, cmd, data);
@@ -30,8 +31,11 @@ int dm_mmc_send_cmd(struct udevice *dev, struct mmc_cmd *cmd,
 	mmmc_trace_after_send(mmc, cmd, ret);
 
 	if (ret && cmd->cmdidx != SD_CMD_SEND_IF_COND
-	    && cmd->cmdidx != MMC_CMD_APP_CMD)
-		printf("MMC error: The cmd index is %d, ret is %d\n", cmd->cmdidx, ret);
+	    && cmd->cmdidx != MMC_CMD_APP_CMD) {
+		if (retry_time-- > 0)
+			goto retry;
+		printf("MMC error: The cmd index is %d, ret is %d.....\n", cmd->cmdidx, ret);
+	}
 
 	return ret;
 }
