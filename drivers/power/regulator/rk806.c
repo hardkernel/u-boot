@@ -51,6 +51,10 @@
 #define RK806_RAMP_RATE_1LSB_PER_13CLK	0x06/* LDO 1.9mV/uS buck 961mV/us */
 #define RK806_RAMP_RATE_1LSB_PER_32CLK	0x07/* LDO 0.78mV/uS buck 0.39mV/us */
 
+#define RK806_PLDO0_2_MSK(pldo)		(BIT(pldo + 5))
+#define RK806_PLDO0_2_SET(pldo)		(BIT(pldo + 1) | RK806_PLDO0_2_MSK(pldo))
+#define RK806_PLDO0_2_CLR(pldo)		RK806_PLDO0_2_MSK(pldo)
+
 struct rk8xx_reg_info {
 	uint min_uv;
 	uint step_uv;
@@ -385,7 +389,7 @@ static int _ldo_get_enable(struct udevice *pmic, int ldo)
 			ret = pmic_reg_read(pmic, RK806_NLDO_EN(ldo / 4));
 		} else {
 			mask = 1 << 2;
-			 ret = pmic_reg_read(pmic, RK806_NLDO_EN(2));
+			ret = pmic_reg_read(pmic, RK806_NLDO_EN(2));
 		}
 		break;
 	default:
@@ -429,7 +433,7 @@ static int _ldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 	return ret;
 }
 
-static int _pldo_get_enable(struct udevice *pmic, int ldo)
+static int _pldo_get_enable(struct udevice *pmic, int pldo)
 {
 	struct rk8xx_priv *priv = dev_get_priv(pmic);
 	uint mask = 0, en_reg;
@@ -437,10 +441,22 @@ static int _pldo_get_enable(struct udevice *pmic, int ldo)
 
 	switch (priv->variant) {
 	case RK806_ID:
-		en_reg = RK806_PLDO_EN(ldo / 4);
-		mask = 1 << ldo % 4;
-		ret = pmic_reg_read(pmic, en_reg);
+		if ((pldo < 3) || (pldo == 5)) {
+			en_reg = RK806_PLDO_EN(0);
+			mask = RK806_PLDO0_2_SET(pldo);
+			if (pldo == 5)
+				mask = (1 << 0);
+			ret = pmic_reg_read(pmic, en_reg);
+		} else if ((pldo == 3) || (pldo == 4)) {
+			en_reg = RK806_PLDO_EN(1);
+			if (pldo == 3)
+				mask = (1 << 0);
+			else
+				mask = (1 << 1);
+			ret = pmic_reg_read(pmic, en_reg);
+		}
 		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -451,7 +467,7 @@ static int _pldo_get_enable(struct udevice *pmic, int ldo)
 	return ret & mask ? true : false;
 }
 
-static int _pldo_set_enable(struct udevice *pmic, int ldo, bool enable)
+static int _pldo_set_enable(struct udevice *pmic, int pldo, bool enable)
 {
 	struct rk8xx_priv *priv = dev_get_priv(pmic);
 	uint value, en_reg;
@@ -459,12 +475,36 @@ static int _pldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 
 	switch (priv->variant) {
 	case RK806_ID:
-		en_reg = RK806_PLDO_EN(ldo / 4);
-		if (enable)
-			value = ((1 << ldo % 4) | (1 << (ldo % 4 + 4)));
-		else
-			value = ((0 << ldo % 4) | (1 << (ldo % 4 + 4)));
-		ret = pmic_reg_write(pmic, en_reg, value);
+		if (pldo < 3) {
+			en_reg = RK806_PLDO_EN(0);
+			if (enable)
+				value = RK806_PLDO0_2_SET(pldo);
+			else
+				value = RK806_PLDO0_2_CLR(pldo);
+			ret = pmic_reg_write(pmic, en_reg, value);
+		} else if (pldo == 3) {
+			en_reg = RK806_PLDO_EN(1);
+			if (enable)
+				value = ((1 << 0) | (1 << 4));
+			else
+				value = (1 << 4);
+			ret = pmic_reg_write(pmic, en_reg, value);
+		} else if (pldo == 4) {
+			en_reg = RK806_PLDO_EN(1);
+			if (enable)
+				value = ((1 << 1) | (1 << 5));
+			else
+				value = ((0 << 1) | (1 << 5));
+			ret = pmic_reg_write(pmic, en_reg, value);
+		} else if (pldo == 5) {
+			en_reg = RK806_PLDO_EN(0);
+			if (enable)
+				value = ((1 << 0) | (1 << 4));
+			else
+				value = ((0 << 0) | (1 << 4));
+			ret = pmic_reg_write(pmic, en_reg, value);
+		}
+
 		break;
 	default:
 		return -EINVAL;
