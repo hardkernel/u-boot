@@ -54,7 +54,7 @@ int rk_board_late_init(void)
 	if (strcmp(env_get("skip_spiboot"), "true")) {
 		dev_desc = rockchip_get_bootdev();
 		if (dev_desc && (dev_desc->if_type == IF_TYPE_MTD
-					&& dev_desc->devnum == 2))
+					&& dev_desc->devnum == 3))
 			snprintf(buf, sizeof(buf),
 					"cramfsload $scriptaddr boot.scr;"
 					"source $scriptaddr;"
@@ -168,7 +168,7 @@ int misc_init_r(void)
 	int ret;
 
 	snprintf(str, sizeof(str),
-			"mtd read nor0 0x%08x 0x300000 0x%08x",
+			"sf read 0x%08x 0x300000 0x%08x",
 			loadaddr, (unsigned int)len);
 	ret = run_command(str, 0);
 	if (ret)

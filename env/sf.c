@@ -19,6 +19,10 @@
 #include <errno.h>
 #include <dm/device-internal.h>
 
+#if defined(CONFIG_TARGET_ODROID_M1)
+#undef CONFIG_DM_SPI_FLASH
+#endif
+
 #ifndef CONFIG_ENV_SPI_BUS
 # define CONFIG_ENV_SPI_BUS	CONFIG_SF_DEFAULT_BUS
 #endif
