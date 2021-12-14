@@ -4,6 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <mmc.h>
+#include <spl.h>
 #include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
@@ -779,6 +781,32 @@ void rockchip_stimer_init(void)
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 0x14);
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 0x18);
 	writel(0x1, CONFIG_ROCKCHIP_STIMER_BASE + 0x4);
+}
+
+void spl_board_storages_fixup(struct spl_image_loader *loader)
+{
+	int ret = 0;
+
+	if (!loader)
+		return;
+
+	if (loader->boot_device == BOOT_DEVICE_MMC2) {
+		struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
+		struct rk3588_pmu1_ioc * const pmu1_ioc = (void *)PMU1_IOC_BASE;
+		struct mmc *mmc = NULL;
+		bool no_card;
+
+		ret = spl_mmc_find_device(&mmc, BOOT_DEVICE_MMC2);
+		if (ret)
+			return;
+
+		no_card = mmc_getcd(mmc) == 0;
+		if (no_card) {
+			writel(0xffff00aa, &bus_ioc->gpio4d_iomux_sel_l);
+			writel(0xffff0000, &bus_ioc->gpio4d_iomux_sel_h);
+			writel(0xffff0000, &pmu1_ioc->gpio0a_iomux_sel_h);
+		}
+	}
 }
 #endif
 
