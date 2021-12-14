@@ -1257,7 +1257,7 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
-				.phy_sus	= { 0x000c, 11, 11, 0, 0 },
+				.phy_sus	= { 0x000c, 11, 11, 0, 1 },
 				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
 				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
 				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
@@ -1265,10 +1265,10 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 			}
 		},
 		.chg_det = {
-			.opmode		= { 0x0008, 2, 2, 0, 1 },
+			.opmode		= { 0x0008, 2, 2, 1, 0 },
 			.cp_det		= { 0x00c0, 0, 0, 0, 1 },
 			.dcp_det	= { 0x00c0, 0, 0, 0, 1 },
-			.dp_det		= { 0x00c0, 1, 1, 0, 1 },
+			.dp_det		= { 0x00c0, 1, 1, 1, 0 },
 			.idm_sink_en	= { 0x0008, 5, 5, 1, 0 },
 			.idp_sink_en	= { 0x0008, 5, 5, 0, 1 },
 			.idp_src_en	= { 0x0008, 14, 14, 0, 1 },
