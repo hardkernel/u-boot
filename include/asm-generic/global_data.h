@@ -88,12 +88,10 @@ typedef struct global_data {
 	unsigned long fdt_size;		/* Space reserved for relocated FDT */
 #ifdef CONFIG_OF_LIVE
 	struct device_node *of_root;
-#ifdef CONFIG_USING_KERNEL_DTB
-	const void *ufdt_blob;		/* Our U-Boot device tree, NULL if none */
-	const void *fdt_blob_kern;	/* Kernel dtb at the tail of u-boot.bin */
 	struct device_node *of_root_f;  /* U-Boot of-root instance */
 #endif
-#endif
+	const void *ufdt_blob;		/* Our U-Boot device tree, NULL if none */
+	const void *fdt_blob_kern;	/* Kernel dtb at the tail of u-boot.bin */
 	struct jt_funcs *jt;		/* jump table */
 	char env_buf[32];		/* buffer for env_get() before reloc. */
 #ifdef CONFIG_TRACE
