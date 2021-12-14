@@ -163,22 +163,35 @@ int misc_init_r(void)
 	void *decomp;
 	struct bmp_image *bmp;
 	unsigned int loadaddr = (unsigned int)env_get_ulong("loadaddr", 16, 0);
-	unsigned long len = 0x100000;
+	unsigned long len;
 	char str[80];
 	int ret;
 
+	/* Try to load splash image from SPI flash memory */
 	snprintf(str, sizeof(str),
-			"sf read 0x%08x 0x300000 0x%08x",
-			loadaddr, (unsigned int)len);
+			"sf read 0x%08x 0x300000 0x100000", loadaddr);
 	ret = run_command(str, 0);
-	if (ret)
-		return 1;
+	if (ret) {
+		/* Try to load splash image from CRAMFS */
+		snprintf(str, sizeof(str),
+				"cramfsload 0x%08x boot-logo.bmp.gz", loadaddr);
+		ret = run_command(str, 0);
+		if (ret)
+			return 0;
+	}
 
-	bmp = gunzip_bmp(loadaddr, &len, &decomp);
+	bmp = (struct bmp_image *)map_sysmem(loadaddr, 0);
+
+	/* Check if splash image is uncompressed */
+	if (!((bmp->header.signature[0] == 'B')
+				&& (bmp->header.signature[1] == 'M')))
+		bmp = gunzip_bmp(loadaddr, &len, &decomp);
+
 	if (bmp)
 		set_bmp_logo("logo.bmp", bmp, 1);
 
-	free(decomp);
+	if (decomp)
+		free(decomp);
 
 	return 0;
 }
