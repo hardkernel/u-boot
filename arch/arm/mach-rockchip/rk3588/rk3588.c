@@ -14,26 +14,47 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #include <asm/armv8/mmu.h>
 
-#define FIREWALL_DDR_BASE	0xfe030000
-#define FW_DDR_MST5_REG		0x54
-#define FW_DDR_MST13_REG	0x74
-#define FW_DDR_MST21_REG	0x94
-#define FW_DDR_MST26_REG	0xa8
-#define FW_DDR_MST27_REG	0xac
-#define FIREWALL_SYSMEM_BASE	0xfe038000
-#define FW_SYSM_MST5_REG	0x54
-#define FW_SYSM_MST13_REG	0x74
-#define FW_SYSM_MST21_REG	0x94
-#define FW_SYSM_MST26_REG	0xa8
-#define FW_SYSM_MST27_REG	0xac
-#define SYS_GRF_BASE		0xfd58c000
-#define SYS_GRF_SOC_CON6	0x0318
-#define USBGRF_BASE		0xfd5ac000
-#define USB_GRF_USB3OTG0_CON1	0x001c
-#define BUS_SGRF_BASE		0xfd586000
-#define BUS_SGRF_FIREWALL_CON18	0x288
-#define PMU_BASE		0xfd8d0000
-#define PMU_PWR_GATE_SFTCON1	0x8150
+#define FIREWALL_DDR_BASE		0xfe030000
+#define FW_DDR_MST5_REG			0x54
+#define FW_DDR_MST13_REG		0x74
+#define FW_DDR_MST21_REG		0x94
+#define FW_DDR_MST26_REG		0xa8
+#define FW_DDR_MST27_REG		0xac
+#define FIREWALL_SYSMEM_BASE		0xfe038000
+#define FW_SYSM_MST5_REG		0x54
+#define FW_SYSM_MST13_REG		0x74
+#define FW_SYSM_MST21_REG		0x94
+#define FW_SYSM_MST26_REG		0xa8
+#define FW_SYSM_MST27_REG		0xac
+#define SYS_GRF_BASE			0xfd58c000
+#define SYS_GRF_SOC_CON6		0x0318
+#define USBGRF_BASE			0xfd5ac000
+#define USB_GRF_USB3OTG0_CON1		0x001c
+#define BUS_SGRF_BASE			0xfd586000
+#define BUS_SGRF_FIREWALL_CON18		0x288
+#define PMU_BASE			0xfd8d0000
+#define PMU_PWR_GATE_SFTCON1		0x8150
+
+#define PMU1_IOC_BASE			0xfd5f0000
+#define PMU2_IOC_BASE			0xfd5f4000
+
+#define BUS_IOC_BASE			0xfd5f8000
+#define BUS_IOC_GPIO2B_IOMUX_SEL_L	0x48
+#define BUS_IOC_GPIO2D_IOMUX_SEL_L	0x58
+#define BUS_IOC_GPIO3A_IOMUX_SEL_L	0x60
+
+#define VCCIO3_5_IOC_BASE		0xfd5fa000
+#define IOC_VCCIO3_5_GPIO2A_DS_H	0x44
+#define IOC_VCCIO3_5_GPIO2B_DS_L	0x48
+#define IOC_VCCIO3_5_GPIO2B_DS_H	0x4c
+#define IOC_VCCIO3_5_GPIO3A_DS_L	0x60
+#define IOC_VCCIO3_5_GPIO3A_DS_H	0x64
+#define IOC_VCCIO3_5_GPIO3C_DS_H	0x74
+
+#define EMMC_IOC_BASE			0xfd5fd000
+#define EMMC_IOC_GPIO2A_DS_L		0x40
+#define EMMC_IOC_GPIO2D_DS_L		0x58
+#define EMMC_IOC_GPIO2D_DS_H		0x5c
 
 static struct mm_region rk3588_mem_map[] = {
 	{
@@ -392,10 +413,6 @@ enum {
 	GPIO4D5_MASK		= GENMASK(7, 4),
 	GPIO4D5_UART5_TX_M0	= 10,
 };
-
-#define PMU1_IOC_BASE	0xfd5f0000
-#define PMU2_IOC_BASE	0xfd5f4000
-#define BUS_IOC_BASE	0xfd5f8000
 
 void board_debug_uart_init(void)
 {
@@ -804,6 +821,20 @@ int arch_cpu_init(void)
 
 	/* Select clk_tx source as default for i2s2/i2s3 */
 	writel(0x03400340, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
+
+	if (readl(BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L) == 0x2222) {
+		writel(0x00070002, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
+		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
+		writel(0x07000200, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
+	} else if ((readl(BUS_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_L) & 0xf0ff) == 0x3033) {
+		writel(0x33002200, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2A_DS_H);
+		writel(0x30332022, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_L);
+		writel(0x00030002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_H);
+	} else if (readl(BUS_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_L) == 0x5555) {
+		writel(0x77772222, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_L);
+		writel(0x00700020, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_H);
+		writel(0x00070002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3C_DS_H);
+	}
 #endif
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
 	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
