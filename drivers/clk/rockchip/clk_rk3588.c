@@ -1905,10 +1905,6 @@ static void rk3588_clk_init(struct rk3588_clk_priv *priv)
 			rockchip_pll_get_rate(&rk3588_pll_clks[LPLL],
 					      priv->cru, LPLL);
 		priv->armclk_init_hz = priv->armclk_enter_hz;
-		ret = rockchip_pll_set_rate(&rk3588_pll_clks[B0PLL], priv->cru,
-					    B0PLL, LPLL_HZ);
-		ret = rockchip_pll_set_rate(&rk3588_pll_clks[B1PLL], priv->cru,
-					    B1PLL, LPLL_HZ);
 	}
 
 	div = DIV_ROUND_UP(GPLL_HZ, 300 * MHz);
@@ -1953,6 +1949,15 @@ static int rk3588_clk_probe(struct udevice *dev)
 	if (ret < 0) {
 		printf("Failed to set spll\n");
 	}
+
+	clk.id = SCMI_CLK_CPUB01;
+	ret = clk_set_rate(&clk, LPLL_HZ);
+	if (ret < 0)
+		printf("Failed to set cpub01\n");
+	clk.id = SCMI_CLK_CPUB23;
+	ret = clk_set_rate(&clk, LPLL_HZ);
+	if (ret < 0)
+		printf("Failed to set cpub23\n");
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 	if (IS_ERR(priv->grf))
