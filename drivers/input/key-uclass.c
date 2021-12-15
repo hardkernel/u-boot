@@ -255,9 +255,12 @@ int key_bind_children(struct udevice *dev, const char *drv_name)
 static int key_post_probe(struct udevice *dev)
 {
 	struct dm_key_uclass_platdata *uc_key;
-	int margin = 30;
 	int ret;
-
+#ifdef CONFIG_SARADC_ROCKCHIP_V2
+	int margin = 120;
+#else
+	int margin = 30;
+#endif
 	uc_key = dev_get_uclass_platdata(dev);
 	if (!uc_key)
 		return -ENXIO;

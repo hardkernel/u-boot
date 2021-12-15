@@ -17,10 +17,17 @@ int key_read(int code)
 	int cd, channel, adc;
 	int ret, vref, mv;
 	int min, max;
-	int margin = 30;
+	int margin;
+	int range;
 	uint val;
 	u32 chn[2];
-
+#ifdef CONFIG_SARADC_ROCKCHIP_V2
+	range = 4096;	/* 12-bit adc */
+	margin = 120;
+#else
+	range = 1024;	/* 10-bit adc */
+	margin = 30;
+#endif
 	adc_node = fdt_node_offset_by_compatible(fdt_blob, 0, "adc-keys");
 	if (adc_node < 0) {
 		debug("No 'adc-keys' node, ret=%d\n", adc_node);
@@ -55,7 +62,7 @@ int key_read(int code)
 				return 0;
 			}
 
-			adc = mv / (vref / 1024); /* 10-bit adc */
+			adc = mv / (vref / range);
 			max = adc + margin;
 			min = adc > margin ? adc - margin : 0;
 			ret = adc_channel_single_shot("saradc", channel, &val);

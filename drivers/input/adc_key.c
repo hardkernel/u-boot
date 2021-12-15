@@ -14,9 +14,9 @@ static int adc_key_ofdata_to_platdata(struct udevice *dev)
 	u32 chn[2], mV;
 	int vref, ret;
 #ifdef CONFIG_SARADC_ROCKCHIP_V2
-	int range = 4096;
+	int range = 4096;	/* 12-bit adc */
 #else
-	int range = 1024;
+	int range = 1024;	/* 10-bit adc */
 #endif
 
 	uc_key = dev_get_uclass_platdata(dev);
