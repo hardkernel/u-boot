@@ -37,6 +37,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+__weak int rk_board_early_fdt_fixup(void *blob)
+{
+	return 0;
+}
+
 static void boot_devtype_init(void)
 {
 	const char *devtype_num_set = "run rkimg_bootdev";
@@ -577,6 +582,8 @@ int rockchip_read_dtb_file(void *fdt_addr)
 			       ALIGN(fdt_size, RK_BLK_SIZE) +
 			       CONFIG_SYS_FDT_PAD))
 		return -ENOMEM;
+
+	rk_board_early_fdt_fixup(fdt_addr);
 
 #if defined(CONFIG_ANDROID_BOOT_IMAGE) && defined(CONFIG_OF_LIBFDT_OVERLAY)
 	android_fdt_overlay_apply((void *)fdt_addr);
