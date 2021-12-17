@@ -22,10 +22,17 @@
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
-#ifdef CONFIG_SYS_I2C_AML
-#include <aml_i2c.h>
-#endif
+
 #include "odroid_pmic.h"
+
+void i2c_check_bus(unsigned int master_num)
+{
+	extern unsigned int i2c_get_bus_num(void);
+	extern int i2c_set_bus_num(unsigned int busnum);
+
+	if (master_num != i2c_get_bus_num())
+		i2c_set_bus_num(master_num);
+}
 
 static int rk818_i2c_write(int32_t command, uint8_t val)
 {
@@ -33,7 +40,9 @@ static int rk818_i2c_write(int32_t command, uint8_t val)
 	uint8_t buf[2] = {0};
 	struct i2c_msg msg;
 
-	msg.addr = RK818_ADDR;
+	i2c_check_bus(RK818_I2C_BUS);
+
+	msg.addr = RK818_CHIP_ADDR;
 	msg.flags = 0;
 	msg.len = sizeof(buf);
 	msg.buf = buf;
@@ -54,7 +63,9 @@ static int rk817_i2c_write(int32_t command, uint8_t val)
 	uint8_t buf[2] = {0};
 	struct i2c_msg msg;
 
-	msg.addr = RK817_ADDR;
+	i2c_check_bus(RK817_I2C_BUS);
+
+	msg.addr = RK817_CHIP_ADDR;
 	msg.flags = 0;
 	msg.len = sizeof(buf);
 	msg.buf = buf;
@@ -69,29 +80,38 @@ static int rk817_i2c_write(int32_t command, uint8_t val)
 	return ret;
 }
 
+/* Set default buck, ldo voltage */
 void odroid_pmic_init(void)
 {
 	printf("enter odroid_pmic_init.\n");
 
-	/* RK817 BUCK2(VDDCPU_B) default : 1.0375V */
-	rk817_i2c_write(0xbe, 0x2B);
-	rk817_i2c_write(0xbf, 0x2B);
-	
-	/* RK817 LDO8 default : 3.0V */
-	rk817_i2c_write(0xda, 0x60);
-	rk817_i2c_write(0xdb, 0x60);
-	
-	/* RK817 LDO8 ON */
-	rk817_i2c_write(0xb3, 0x88);
+	/* RK818 BUCK4(vddao_3v3) : 3.3V */
+	rk818_i2c_write(RK818_BUCK4_ON_VSEL, 0x0c);
 
-	//rk817_i2c_write(0xb2, 0x74);
-	//rk817_i2c_write(0xb2, 0x74);
-	//rk817_i2c_write(0xb2, 0x74);
+	/* RK818 BUCK1(vddcpu_a) : 1.0375V */
+	rk818_i2c_write(RK818_BUCK1_ON_VSEL, 0x1a);
+	/* RK818 BUCK2(vdd_ee) : 0.875V */
+	rk818_i2c_write(RK818_BUCK2_ON_VSEL, 0x0d);
 
-	/* RK818 LDO6 */
-	rk818_i2c_write(0x45, 0x1f);
+	/* RK818 LDO7,LDO5 enable */
+	/* RK818 LDO1,LDO2,LDO3,LDO4,LDO6,LDO8 disable */
+	rk818_i2c_write(RK818_LDO_EN_REG, 0x50);
 
-	/* RK818 BUCK4 */
-	rk818_i2c_write(0x38, 0x0C);
-	//rk818_i2c_write(0x24, 0x50);
+	/* RK817 BUCK2(vddcpu_b) : 1.0375V */
+	rk817_i2c_write(RK817_BUCK2_ON_VSEL, 0x2b);
+	/* RK817 BUCK3 default : 2.4V */
+	rk817_i2c_write(RK817_BUCK3_ON_VSEL, 0x59);
+
+	/* RK817 LDO8(vdd_lcd) : 3.3V */
+	rk817_i2c_write(RK817_LDO8_ON_VSEL, 0x6c);
+
+	/* RK817 LDO4,LDO8 enable */
+	rk817_i2c_write(RK817_POWER_EN2, 0x88);
+	/* RK817 LDO1,LDO2,LDO3 disable */
+	/* RK817 LDO5,LDO6,LDO7 disable */
+	rk817_i2c_write(RK817_POWER_EN1, 0x88);
+	/* RK817 BUCK2,BUCK3 enable */
+	rk817_i2c_write(RK817_POWER_EN0, 0x66);
+
+	printf("leave odroid_pmic_init.\n");
 }
