@@ -443,7 +443,7 @@ bool filter_elf(uint32_t index, uint8_t *pMeta, uint32_t *pMetaNum,
 				pEntry->size = (uint32_t) pElfProgram64->p_filesz;
 				pEntry->offset = (uint32_t) pElfProgram64->p_offset;
 				pEntry->align_size = DO_ALIGN(pEntry->size, ENTRY_ALIGN);
-				pEntry->addr = (uint32_t) pElfProgram64->p_vaddr;
+				pEntry->addr = (uint32_t) pElfProgram64->p_paddr;
 				if (pEntry->align_size > BL3X_FILESIZE_MAX) {
 					LOGE("elf_file %s too large,segment=%d.\n", pEntry->path, i);
 					goto exit_fileter_elf;
@@ -466,7 +466,7 @@ bool filter_elf(uint32_t index, uint8_t *pMeta, uint32_t *pMetaNum,
 				pEntry->size = pElfProgram32->p_filesz;
 				pEntry->offset = pElfProgram32->p_offset;
 				pEntry->align_size = DO_ALIGN(pEntry->size, ENTRY_ALIGN);
-				pEntry->addr = pElfProgram32->p_vaddr;
+				pEntry->addr = pElfProgram32->p_paddr;
 				if (pEntry->align_size > BL3X_FILESIZE_MAX) {
 					LOGE("elf_file %s too large,segment=%d.\n", pEntry->path, i);
 					goto exit_fileter_elf;
