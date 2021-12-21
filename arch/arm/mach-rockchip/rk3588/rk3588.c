@@ -12,8 +12,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#include <asm/armv8/mmu.h>
-
 #define FIREWALL_DDR_BASE		0xfe030000
 #define FW_DDR_MST5_REG			0x54
 #define FW_DDR_MST13_REG		0x74
@@ -59,6 +57,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_BASE			0xfd7c0000
 #define CRU_SOFTRST_CON77		0x0b34
 
+#ifdef CONFIG_ARM64
+#include <asm/armv8/mmu.h>
+
 static struct mm_region rk3588_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -87,6 +88,7 @@ static struct mm_region rk3588_mem_map[] = {
 };
 
 struct mm_region *mem_map = rk3588_mem_map;
+#endif
 
 /* GPIO0B_IOMUX_SEL_L */
 enum {
