@@ -33,7 +33,8 @@ CHECK_SIGN="./tools/fit_check_sign"
 # key
 KEY_DIR="keys/"
 RSA_PRI_KEY="keys/dev.key"
-RSA_PUB_KEY="keys/dev.crt"
+RSA_PUB_KEY="keys/dev.pubkey"
+RSA_CRT_KEY="keys/dev.crt"
 SIGNATURE_KEY_NODE="/signature/key-dev"
 SPL_DTB="spl/u-boot-spl.dtb"
 UBOOT_DTB="u-boot.dtb"
@@ -93,6 +94,20 @@ function check_its()
 			exit 1
 		fi
 	done
+}
+
+function check_rsa_keys()
+{
+	if [ ! -f ${RSA_PRI_KEY} ]; then
+		echo "ERROR: No ${RSA_PRI_KEY} "
+		exit 1
+	elif [ ! -f ${RSA_PUB_KEY} ]; then
+		echo "ERROR: No ${RSA_PUB_KEY} "
+		exit 1
+	elif [ ! -f ${RSA_CRT_KEY} ]; then
+		echo "ERROR: No ${RSA_CRT_KEY} "
+		exit 1
+	fi
 }
 
 function validate_arg()
@@ -228,13 +243,7 @@ function fit_gen_uboot_itb()
 			./make.sh loader ${ARG_INI_LOADER}
 		fi
 	else
-		if [ ! -f ${RSA_PRI_KEY} ]; then
-			echo "ERROR: No ${RSA_PRI_KEY} "
-			exit 1
-		elif [ ! -f ${RSA_PUB_KEY} ]; then
-			echo "ERROR: No ${RSA_PUB_KEY} "
-			exit 1
-		fi
+		check_rsa_keys
 
 		if ! grep -q '^CONFIG_SPL_FIT_SIGNATURE=y' .config ; then
 			echo "ERROR: CONFIG_SPL_FIT_SIGNATURE is disabled"
@@ -368,13 +377,7 @@ function fit_gen_boot_itb()
 	if [ "${ARG_SIGN}" != "y" ]; then
 		${MKIMAGE} -f ${ITS_BOOT} -E -p ${OFFS_DATA} ${ITB_BOOT} -v ${ARG_VER_BOOT}
 	else
-		if [ ! -f ${RSA_PRI_KEY}  ]; then
-			echo "ERROR: No ${RSA_PRI_KEY}"
-			exit 1
-		elif [ ! -f ${RSA_PUB_KEY}  ]; then
-			echo "ERROR: No ${RSA_PUB_KEY}"
-			exit 1
-		fi
+		check_rsa_keys
 
 		if ! grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
 			echo "ERROR: CONFIG_FIT_SIGNATURE is disabled"
@@ -456,13 +459,7 @@ function fit_gen_recovery_itb()
 	if [ "${ARG_SIGN}" != "y" ]; then
 		${MKIMAGE} -f ${ITS_RECOVERY} -E -p ${OFFS_DATA} ${ITB_RECOVERY} -v ${ARG_VER_RECOVERY}
 	else
-		if [ ! -f ${RSA_PRI_KEY}  ]; then
-			echo "ERROR: No ${RSA_PRI_KEY}"
-			exit 1
-		elif [ ! -f ${RSA_PUB_KEY}  ]; then
-			echo "ERROR: No ${RSA_PUB_KEY}"
-			exit 1
-		fi
+		check_rsa_keys
 
 		if ! grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
 			echo "ERROR: CONFIG_FIT_SIGNATURE is disabled"
@@ -587,7 +584,11 @@ function fit_gen_loader()
 {
 	if grep -Eq '^CONFIG_FIT_SIGNATURE=y' .config ; then
 		${RK_SIGN_TOOL} cc --chip ${ARG_CHIP: 2: 6}
-		${RK_SIGN_TOOL} sl --key ./keys/dev.key --pubkey ./keys/dev.pubkey --loader *_loader_*.bin
+		${RK_SIGN_TOOL} sl --key ${RSA_PRI_KEY} --pubkey ${RSA_PUB_KEY} --loader *_loader_*.bin
+		if [ $? -ne 0 ]; then
+			echo "ERROR: ${RK_SIGN_TOOL} failed to sign loader"
+			exit 1
+		fi
 	fi
 }
 
