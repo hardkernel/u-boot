@@ -419,6 +419,8 @@ enum {
 
 void board_debug_uart_init(void)
 {
+	__maybe_unused static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
+
 /* UART 0 */
 #if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfd890000)
 
@@ -444,7 +446,6 @@ void board_debug_uart_init(void)
 
 #elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 2)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
 
 	/* UART0_M2 Switch iomux */
 	rk_clrsetreg(&bus_ioc->gpio4a_iomux_sel_h,
@@ -458,8 +459,6 @@ void board_debug_uart_init(void)
 
 /* UART 1 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb40000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -499,8 +498,6 @@ void board_debug_uart_init(void)
 
 /* UART 2 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb50000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -540,8 +537,6 @@ void board_debug_uart_init(void)
 
 /* UART 3 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb60000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -573,8 +568,6 @@ void board_debug_uart_init(void)
 
 /* UART 4 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb70000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -606,8 +599,6 @@ void board_debug_uart_init(void)
 
 /* UART 5 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb80000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -639,8 +630,6 @@ void board_debug_uart_init(void)
 
 /* UART 6 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeb90000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -672,8 +661,6 @@ void board_debug_uart_init(void)
 
 /* UART 7 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfeba0000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -705,8 +692,6 @@ void board_debug_uart_init(void)
 
 /* UART 8 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfebb0000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
@@ -729,8 +714,6 @@ void board_debug_uart_init(void)
 
 /* UART 9 */
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xfebc0000)
-	static struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
-
 #if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
 	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
 
