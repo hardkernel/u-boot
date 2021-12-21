@@ -444,9 +444,11 @@ int fit_image_init_resource(void)
 		return conf_noffset;
 
 	printf("%s: ", fdt_get_name(fit, conf_noffset, NULL));
-	if (fit_config_verify(fit, conf_noffset))
-		return -EACCES;
-
+	if (fit_config_verify(fit, conf_noffset)) {
+		puts("\n");
+		run_command("download", 0);
+		hang();
+	}
 	puts("\n");
 #endif
 
