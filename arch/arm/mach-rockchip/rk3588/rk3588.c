@@ -56,6 +56,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define EMMC_IOC_GPIO2D_DS_L		0x58
 #define EMMC_IOC_GPIO2D_DS_H		0x5c
 
+#define CRU_BASE			0xfd7c0000
+#define CRU_SOFTRST_CON77		0x0b34
+
 static struct mm_region rk3588_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -835,6 +838,12 @@ int arch_cpu_init(void)
 		writel(0x00700020, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_H);
 		writel(0x00070002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3C_DS_H);
 	}
+
+	/*
+	 * Assert reset the pipephy0, pipephy1 and pipephy2,
+	 * and de-assert reset them in Kernel combphy driver.
+	 */
+	writel(0x01c001c0, CRU_BASE + CRU_SOFTRST_CON77);
 #endif
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
 	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
