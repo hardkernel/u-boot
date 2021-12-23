@@ -17,6 +17,7 @@
 #include <debug_uart.h>
 #include <dm.h>
 #include <dvfs.h>
+#include <fdt_support.h>
 #include <io-domain.h>
 #include <image.h>
 #include <key.h>
