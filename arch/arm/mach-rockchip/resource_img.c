@@ -188,6 +188,7 @@ int resource_replace_entry(const char *f_name, uint32_t base,
 		file = list_entry(node, struct resource_file, link);
 		if (!strcmp(file->name, entry->name)) {
 			list_del(&file->link);
+			list_del(&file->dtbs);
 			free(file);
 			break;
 		}
