@@ -1888,7 +1888,10 @@ void dw_hdmi_set_sample_rate(struct dw_hdmi *hdmi, unsigned int rate)
 
 static int dw_hdmi_hdcp_load_key(struct dw_hdmi *hdmi)
 {
-	int i, j, ret, val;
+	int i, j, val;
+#if defined(CONFIG_ROCKCHIP_VENDOR_PARTITION)
+	int ret;
+#endif
 	struct hdcp_keys *hdcp_keys;
 
 	val = sizeof(*hdcp_keys);
@@ -1898,12 +1901,14 @@ static int dw_hdmi_hdcp_load_key(struct dw_hdmi *hdmi)
 
 	memset(hdcp_keys, 0, val);
 
+#if defined(CONFIG_ROCKCHIP_VENDOR_PARTITION)
 	ret = vendor_storage_read(HDMI_HDCP1X_ID, hdcp_keys, val);
 	if (ret < val) {
 		printf("HDCP: read size %d\n", ret);
 		free(hdcp_keys);
 		return -EINVAL;
 	}
+#endif
 
 	if (hdcp_keys->KSV[0] == 0x00 &&
 	    hdcp_keys->KSV[1] == 0x00 &&
