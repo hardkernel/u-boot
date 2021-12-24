@@ -580,6 +580,10 @@ static ulong rk3588_pwm_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 		con = readl(&cru->clksel_con[60]);
 		sel = (con & CLK_PWM3_SEL_MASK) >> CLK_PWM3_SEL_SHIFT;
 		break;
+	case CLK_PMU1PWM:
+		con = readl(&cru->pmuclksel_con[2]);
+		sel = (con & CLK_PMU1PWM_SEL_MASK) >> CLK_PMU1PWM_SEL_SHIFT;
+		break;
 	default:
 		return -ENOENT;
 	}
@@ -624,6 +628,11 @@ static ulong rk3588_pwm_set_clk(struct rk3588_clk_priv *priv,
 		rk_clrsetreg(&cru->clksel_con[60],
 			     CLK_PWM3_SEL_MASK,
 			     src_clk << CLK_PWM3_SEL_SHIFT);
+		break;
+	case CLK_PMU1PWM:
+		rk_clrsetreg(&cru->pmuclksel_con[2],
+			     CLK_PMU1PWM_SEL_MASK,
+			     src_clk << CLK_PMU1PWM_SEL_SHIFT);
 		break;
 	default:
 		return -ENOENT;
@@ -1501,6 +1510,7 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 	case CLK_PWM1:
 	case CLK_PWM2:
 	case CLK_PWM3:
+	case CLK_PMU1PWM:
 		rate = rk3588_pwm_get_clk(priv, clk->id);
 		break;
 	case CLK_SARADC:
@@ -1641,6 +1651,7 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_PWM1:
 	case CLK_PWM2:
 	case CLK_PWM3:
+	case CLK_PMU1PWM:
 		ret = rk3588_pwm_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_SARADC:
