@@ -182,7 +182,7 @@ SECTIONS
 		*(.__efi_runtime_rel_stop)
 	}
 
-	. = ALIGN(4);
+	. = ALIGN(8);
 
 	.image_copy_end :
 	{
@@ -205,6 +205,7 @@ SECTIONS
 
 	.end :
 	{
+		. = ALIGN(8);
 		*(.__end)
 	}
 
