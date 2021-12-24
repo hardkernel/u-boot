@@ -108,7 +108,13 @@ fi
 # Base
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
 UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${srctree}/include/autoconf.mk|tr -d '\r'`
+
+# ARCH
+U_ARCH="arm"
 if grep -q '^CONFIG_ARM64=y' .config ; then
+	ARCH="arm64"
+	U_ARCH="arm64"
+elif grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
 	ARCH="arm64"
 else
 	ARCH="arm"

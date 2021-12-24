@@ -24,7 +24,7 @@ function gen_uboot_node()
 			description = \"U-Boot\";
 			data = /incbin/(\"./u-boot-nodtb.bin${SUFFIX}\");
 			type = \"standalone\";
-			arch = \"${ARCH}\";
+			arch = \"${U_ARCH}\";
 			os = \"U-Boot\";
 			compression = \"${COMPRESSION}\";
 			load = <"${UBOOT_LOAD_ADDR}">;
@@ -53,7 +53,7 @@ function gen_fdt_node()
 			description = \"U-Boot dtb\";
 			data = /incbin/(\"./u-boot.dtb\");
 			type = \"flat_dt\";
-			arch = \"${ARCH}\";
+			arch = \"${U_ARCH}\";
 			compression = \"none\";
 			hash {
 				algo = \"sha256\";
@@ -75,7 +75,7 @@ function gen_kfdt_node()
 			description = \"${KERN_DTB}\";
 			data = /incbin/(\"${KERN_DTB}\");
 			type = \"flat_dt\";
-			arch = \"${ARCH}\";
+			arch = \"${U_ARCH}\";
 			compression = \"none\";
 			hash {
 				algo = \"sha256\";
@@ -142,7 +142,10 @@ function gen_bl32_node()
 	fi
 
 	if [ "${ARCH}" == "arm" ]; then
-		ENTRY="entry = <0x${TEE_LOAD_ADDR}>;"
+		# If not AArch32 mode
+		if ! grep  -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
+			ENTRY="entry = <0x${TEE_LOAD_ADDR}>;"
+		fi
 	fi
 	echo "		optee {
 			description = \"OP-TEE\";
