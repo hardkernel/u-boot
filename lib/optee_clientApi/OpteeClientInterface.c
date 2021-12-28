@@ -26,10 +26,10 @@
 #define STORAGE_CMD_WRITE_OEM_HUK		11
 #define STORAGE_CMD_WRITE_OEM_NS_OTP		12
 #define STORAGE_CMD_READ_OEM_NS_OTP		13
-#define STORAGE_CMD_WRITE_OEM_HR_OTP		14
+#define STORAGE_CMD_WRITE_OEM_OTP_KEY		14
 #define STORAGE_CMD_SET_OEM_HR_OTP_READ_LOCK	15
 
-#define CRYPTO_SERVICE_CMD_KEYLAD_CIPHER	0x00000001
+#define CRYPTO_SERVICE_CMD_OEM_OTP_KEY_CIPHER	0x00000001
 
 #define RK_CRYPTO_SERVICE_UUID	{ 0x0cacdb5d, 0x4fea, 0x466c, \
 		{ 0x97, 0x16, 0x3d, 0x54, 0x16, 0x52, 0x83, 0x0f } }
@@ -735,8 +735,8 @@ exit:
 	return TeecResult;
 }
 
-uint32_t trusty_write_oem_hr_otp(enum RK_OEM_HR_OTP_KEYID key_id,
-				 uint8_t *byte_buf, uint32_t byte_len)
+uint32_t trusty_write_oem_otp_key(enum RK_OEM_OTP_KEYID key_id,
+				  uint8_t *byte_buf, uint32_t byte_len)
 {
 	TEEC_Result TeecResult;
 	TEEC_Context TeecContext;
@@ -787,7 +787,7 @@ uint32_t trusty_write_oem_hr_otp(enum RK_OEM_HR_OTP_KEYID key_id,
 						    TEEC_NONE);
 
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					STORAGE_CMD_WRITE_OEM_HR_OTP,
+					STORAGE_CMD_WRITE_OEM_OTP_KEY,
 					&TeecOperation,
 					&ErrorOrigin);
 	if (TeecResult != TEEC_SUCCESS)
@@ -801,7 +801,7 @@ exit:
 	return TeecResult;
 }
 
-uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_HR_OTP_KEYID key_id)
+uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_OTP_KEYID key_id)
 {
 	TEEC_Result TeecResult;
 	TEEC_Context TeecContext;
@@ -852,9 +852,9 @@ exit:
 	return TeecResult;
 }
 
-uint32_t trusty_keylad_cipher(enum RK_OEM_HR_OTP_KEYID key_id,
-			      rk_cipher_config *config,
-			      uint8_t *src, uint8_t *dest, uint32_t len)
+uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
+				   rk_cipher_config *config,
+				   uint8_t *src, uint8_t *dest, uint32_t len)
 {
 	TEEC_Result TeecResult;
 	TEEC_Context TeecContext;
@@ -865,7 +865,7 @@ uint32_t trusty_keylad_cipher(enum RK_OEM_HR_OTP_KEYID key_id,
 	TEEC_SharedMemory SharedMem_config = {0};
 	TEEC_SharedMemory SharedMem_inout = {0};
 
-	if (key_id >= RK_OEM_HR_OTP_KEYMAX)
+	if (key_id >= RK_OEM_OTP_KEYMAX)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
 	if (!config || !src || !dest)
@@ -931,7 +931,7 @@ uint32_t trusty_keylad_cipher(enum RK_OEM_HR_OTP_KEYID key_id,
 						    TEEC_MEMREF_TEMP_INOUT,
 						    TEEC_NONE);
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					CRYPTO_SERVICE_CMD_KEYLAD_CIPHER,
+					CRYPTO_SERVICE_CMD_OEM_OTP_KEY_CIPHER,
 					&TeecOperation,
 					&ErrorOrigin);
 	if (TeecResult != TEEC_SUCCESS)
