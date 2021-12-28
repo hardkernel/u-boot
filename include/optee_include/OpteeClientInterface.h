@@ -14,6 +14,7 @@ enum RK_OEM_OTP_KEYID {
 	RK_OEM_OTP_KEY1 = 1,
 	RK_OEM_OTP_KEY2 = 2,
 	RK_OEM_OTP_KEY3 = 3,
+	RK_OEM_OTP_KEY_FW = 10,	//keyid of fw_encryption_key
 	RK_OEM_OTP_KEYMAX
 };
 
@@ -95,9 +96,9 @@ uint32_t trusty_read_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t b
 uint32_t trusty_write_oem_otp_key(enum RK_OEM_OTP_KEYID key_id,
 				  uint8_t *byte_buf, uint32_t byte_len);
 uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_OTP_KEYID key_id);
-uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
-				   rk_cipher_config *config,
-				   uint8_t *src, uint8_t *dest, uint32_t len);
+uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id, rk_cipher_config *config,
+				   uint32_t src_phys_addr, uint32_t dst_phys_addr,
+				   uint32_t len);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca

@@ -29,7 +29,7 @@
 #define STORAGE_CMD_WRITE_OEM_OTP_KEY		14
 #define STORAGE_CMD_SET_OEM_HR_OTP_READ_LOCK	15
 
-#define CRYPTO_SERVICE_CMD_OEM_OTP_KEY_CIPHER	0x00000001
+#define CRYPTO_SERVICE_CMD_OEM_OTP_KEY_PHYS_CIPHER	0x00000002
 
 #define RK_CRYPTO_SERVICE_UUID	{ 0x0cacdb5d, 0x4fea, 0x466c, \
 		{ 0x97, 0x16, 0x3d, 0x54, 0x16, 0x52, 0x83, 0x0f } }
@@ -56,6 +56,20 @@ static uint32_t b2hs(uint8_t *b, uint8_t *hs, uint32_t blen, uint32_t hslen)
 	hs[blen * 2] = 0;
 
 	return blen * 2;
+}
+
+static void crypto_flush_cacheline(uint32_t addr, uint32_t size)
+{
+	ulong alignment = CONFIG_SYS_CACHELINE_SIZE;
+	ulong aligned_input, aligned_len;
+
+	if (!addr || !size)
+		return;
+
+	/* Must flush dcache before crypto DMA fetch data region */
+	aligned_input = round_down(addr, alignment);
+	aligned_len = round_up(size + (addr - aligned_input), alignment);
+	flush_cache(aligned_input, aligned_len);
 }
 
 static uint32_t trusty_base_write_security_data(char *filename,
@@ -852,9 +866,9 @@ exit:
 	return TeecResult;
 }
 
-uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
-				   rk_cipher_config *config,
-				   uint8_t *src, uint8_t *dest, uint32_t len)
+uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id, rk_cipher_config *config,
+				   uint32_t src_phys_addr, uint32_t dst_phys_addr,
+				   uint32_t len)
 {
 	TEEC_Result TeecResult;
 	TEEC_Context TeecContext;
@@ -863,12 +877,15 @@ uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
 	uint32_t ErrorOrigin;
 	TEEC_UUID uuid = RK_CRYPTO_SERVICE_UUID;
 	TEEC_SharedMemory SharedMem_config = {0};
-	TEEC_SharedMemory SharedMem_inout = {0};
 
-	if (key_id >= RK_OEM_OTP_KEYMAX)
+	if (key_id != RK_OEM_OTP_KEY0 &&
+	    key_id != RK_OEM_OTP_KEY1 &&
+	    key_id != RK_OEM_OTP_KEY2 &&
+	    key_id != RK_OEM_OTP_KEY3 &&
+	    key_id != RK_OEM_OTP_KEY_FW)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	if (!config || !src || !dest)
+	if (!config)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
 	if (config->algo != RK_ALGO_AES && config->algo != RK_ALGO_SM4)
@@ -886,9 +903,19 @@ uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
 	    config->key_len != 32)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
+	if (key_id == RK_OEM_OTP_KEY_FW && config->key_len != 16)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+#if defined(CONFIG_ROCKCHIP_RV1126)
+	if (config->key_len == 24)
+		return TEEC_ERROR_BAD_PARAMETERS;
+#endif
+
 	if (len % AES_BLOCK_SIZE ||
-	    len > RK_CRYPTO_MAX_DATA_LEN ||
 	    len == 0)
+		return TEEC_ERROR_BAD_PARAMETERS;
+
+	if (!src_phys_addr || !dst_phys_addr)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
 	TeecResult = OpteeClientApiLibInitialize();
@@ -914,34 +941,28 @@ uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id,
 	if (TeecResult != TEEC_SUCCESS)
 		goto exit;
 
-	SharedMem_inout.size = len;
-	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem_inout);
-	if (TeecResult != TEEC_SUCCESS)
-		goto exit;
-
 	memcpy(SharedMem_config.buffer, config, sizeof(rk_cipher_config));
-	memcpy(SharedMem_inout.buffer, src, len);
 	TeecOperation.params[0].value.a       = key_id;
 	TeecOperation.params[1].tmpref.buffer = SharedMem_config.buffer;
 	TeecOperation.params[1].tmpref.size   = SharedMem_config.size;
-	TeecOperation.params[2].tmpref.buffer = SharedMem_inout.buffer;
-	TeecOperation.params[2].tmpref.size   = SharedMem_inout.size;
+	TeecOperation.params[2].value.a       = src_phys_addr;
+	TeecOperation.params[2].value.b       = len;
+	TeecOperation.params[3].value.a       = dst_phys_addr;
 	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 						    TEEC_MEMREF_TEMP_INPUT,
-						    TEEC_MEMREF_TEMP_INOUT,
-						    TEEC_NONE);
+						    TEEC_VALUE_INPUT,
+						    TEEC_VALUE_INPUT);
+
+	crypto_flush_cacheline(src_phys_addr, len);
+	crypto_flush_cacheline(dst_phys_addr, len);
+
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					CRYPTO_SERVICE_CMD_OEM_OTP_KEY_CIPHER,
+					CRYPTO_SERVICE_CMD_OEM_OTP_KEY_PHYS_CIPHER,
 					&TeecOperation,
 					&ErrorOrigin);
-	if (TeecResult != TEEC_SUCCESS)
-		goto exit;
-
-	memcpy(dest, SharedMem_inout.buffer, SharedMem_inout.size);
 
 exit:
 	TEEC_ReleaseSharedMemory(&SharedMem_config);
-	TEEC_ReleaseSharedMemory(&SharedMem_inout);
 	TEEC_CloseSession(&TeecSession);
 	TEEC_FinalizeContext(&TeecContext);
 	return TeecResult;
