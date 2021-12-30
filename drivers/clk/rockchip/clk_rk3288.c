@@ -193,6 +193,13 @@ enum {
 	CLK_HEVC_CABAC_DIV_CON_SHIFT	= 0,
 	CLK_HEVC_CABAC_DIV_CON_MASK	= 0x1f << CLK_HEVC_CABAC_DIV_CON_SHIFT,
 
+	/* MISC */
+	CLK_TEST_SRC_SEL_SHIFT		= 8,
+	CLK_TEST_SRC_SEL_MASK		= 0xf << CLK_TEST_SRC_SEL_SHIFT,
+	CLK_TEST_SRC_SEL_24M		= 8,
+	CLK_TEST_SRC_SEL_27M,
+	CLK_TEST_SRC_SEL_32k,
+
 	SOCSTS_DPLL_LOCK	= 1 << 5,
 	SOCSTS_APLL_LOCK	= 1 << 6,
 	SOCSTS_CPLL_LOCK	= 1 << 7,
@@ -1024,6 +1031,48 @@ static ulong rk3288_alive_get_clk(struct rk3288_cru *cru, uint gclk_rate)
 	parent = gclk_rate;
 	return DIV_TO_RATE(parent, div);
 }
+
+static ulong rockchip_test_get_clk(struct rk3288_cru *cru, int id)
+{
+	u32 src, val;
+
+	val = readl(&cru->cru_misc_con);
+	src = (val & CLK_TEST_SRC_SEL_MASK) >> CLK_TEST_SRC_SEL_SHIFT;
+	switch (src) {
+	case CLK_TEST_SRC_SEL_24M:
+		return 24000000;
+	case CLK_TEST_SRC_SEL_27M:
+		return 27000000;
+	case CLK_TEST_SRC_SEL_32k:
+		return 32768;
+	default:
+		return -ENOENT;
+	}
+}
+
+static ulong rockchip_test_set_clk(struct rk3288_cru *cru, int id, uint hz)
+{
+	int src = 0;
+
+	switch (hz) {
+	case 24000000:
+		src = 8;
+		break;
+	case 27000000:
+		src = 9;
+		break;
+	case 32768:
+		src = 10;
+		break;
+	default:
+		return -EINVAL;
+	}
+	rk_clrsetreg(&cru->cru_misc_con,
+		     CLK_TEST_SRC_SEL_MASK,
+		     src << CLK_TEST_SRC_SEL_SHIFT);
+
+	return rockchip_test_get_clk(cru, id);
+}
 #endif
 
 static ulong rk3288_clk_get_rate(struct clk *clk)
@@ -1085,6 +1134,10 @@ static ulong rk3288_clk_get_rate(struct clk *clk)
 		break;
 	case PCLK_WDT:
 		new_rate = rk3288_alive_get_clk(priv->cru, gclk_rate);
+		break;
+	case SCLK_TESTOUT_SRC:
+	case SCLK_TESTOUT:
+		new_rate = rockchip_test_get_clk(priv->cru, clk->id);
 		break;
 #endif
 	default:
@@ -1157,6 +1210,10 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case SCLK_CRYPTO:
 		new_rate = rockchip_crypto_set_clk(priv->cru, rate);
+		break;
+	case SCLK_TESTOUT_SRC:
+	case SCLK_TESTOUT:
+		new_rate = rockchip_test_set_clk(priv->cru, clk->id, rate);
 		break;
 #endif
 	case SCLK_SARADC:
