@@ -13,6 +13,8 @@
 #include <asm/io.h>
 #include <asm/arch/rockchip_smccc.h>
 
+DECLARE_GLOBAL_DATA_PTR;
+
 /*
  * [Design Principles]
  *
@@ -42,6 +44,7 @@
 #define AMP_PART	"amp"
 #define gicd_readl(offset)	readl((void *)GICD_BASE + (offset))
 #define gicd_writel(v, offset)	writel(v, (void *)GICD_BASE + (offset))
+#define LINXU_AMP_NODES		"/rockchip-amp/amp-cpus"
 
 typedef struct boot_args {
 	ulong arg0;
@@ -58,6 +61,7 @@ typedef struct boot_cpu {
 } boot_cpu_t;
 
 static boot_cpu_t g_bootcpu;
+static u32 g_cpus_boot_by_linux[8];
 
 static u32 fit_get_u32_default(const void *fit, int noffset,
 			       const char *prop, u32 def)
@@ -69,6 +73,28 @@ static u32 fit_get_u32_default(const void *fit, int noffset,
 		return def;
 
 	return fdt32_to_cpu(*val);
+}
+
+static int parse_cpus_boot_by_linux(void)
+{
+	const void *fdt = gd->fdt_blob;
+	int noffset, cpu;
+	int mpidr, i = 0;
+
+	memset(g_cpus_boot_by_linux, 0xff, sizeof(g_cpus_boot_by_linux));
+	noffset = fdt_path_offset(fdt, LINXU_AMP_NODES);
+	if (noffset < 0)
+		return 0;
+
+	fdt_for_each_subnode(cpu, fdt, noffset) {
+		mpidr = fdtdec_get_uint(fdt, cpu, "id", 0xffffffff);
+		if (mpidr == 0xffffffff)
+			continue;
+		g_cpus_boot_by_linux[i++] = mpidr;
+		printf("CPU[0x%x] is required boot by Linux\n", mpidr);
+	}
+
+	return 0;
 }
 
 static int load_linux_for_nonboot_cpu(u32 cpu, u32 aarch64, u32 load,
@@ -186,8 +212,9 @@ static int brought_up_amp(void *fit, int noffset,
 	u32 cpu, aarch64, hyp;
 	u32 load, thumb, us;
 	u32 pe_state, entry;
+	int boot_on;
 	int data_size;
-	int ret;
+	int i, ret;
 	u8  arch = -ENODATA;
 
 	desc = fdt_getprop(fit, noffset, "description", NULL);
@@ -196,6 +223,7 @@ static int brought_up_amp(void *fit, int noffset,
 	thumb = fit_get_u32_default(fit, noffset, "thumb", 0);
 	load = fit_get_u32_default(fit, noffset, "load", -ENODATA);
 	us = fit_get_u32_default(fit, noffset, "udelay", 0);
+	boot_on = fit_get_u32_default(fit, noffset, "boot-on", 1);
 	fit_image_get_arch(fit, noffset, &arch);
 	fit_image_get_data_size(fit, noffset, &data_size);
 	memset(&args, 0, sizeof(args));
@@ -220,6 +248,7 @@ static int brought_up_amp(void *fit, int noffset,
 	AMP_I("   linux-os: %d\n\n", is_linux);
 #endif
 
+	/* this cpu is boot cpu ? */
 	if ((read_mpidr() & 0x0fff) == cpu) {
 		bootcpu->arch = arch;
 		bootcpu->entry = entry;
@@ -248,7 +277,18 @@ static int brought_up_amp(void *fit, int noffset,
 			return -ENXIO;
 	}
 
-	/* wakeup */
+	/* If linux assign the boot-on state, use it */
+	for (i = 0; i < ARRAY_SIZE(g_cpus_boot_by_linux); i++) {
+		if (cpu == g_cpus_boot_by_linux[i]) {
+			boot_on = 0;
+			break;
+		}
+	}
+
+	if (!boot_on)
+		return 0;
+
+	/* boot now */
 	ret = smc_cpu_on(cpu, pe_state, entry, &args, is_linux);
 	if (ret)
 		return ret;
@@ -346,6 +386,9 @@ int amp_cpus_on(void)
 		ret = -EINVAL;
 		goto out;
 	}
+
+	/* prase linux info */
+	parse_cpus_boot_by_linux();
 
 	/* Load loadables */
 	memset(&images, 0, sizeof(images));
