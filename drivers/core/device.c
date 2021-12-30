@@ -57,16 +57,6 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 		if (drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND ||
 		    drv->id == UCLASS_SPI_FLASH || drv->id == UCLASS_MTD ||
 		    drv->id == UCLASS_PCI || drv->id == UCLASS_AHCI) {
-			/*
-			 * Reject all mmc device from kernel.
-			 *
-			 * - we always follow the rule: use mmc device from U-Boot
-			 * - avoid alias id on defferent device between U-Boot and kernel
-			 */
-			if ((gd->flags & GD_FLG_KDTB_READY) &&
-			     (drv->id == UCLASS_MMC))
-				return 0;
-
 			list_for_each_entry(dev, &uc->dev_head, uclass_node) {
 				if (!strcmp(name, dev->name)) {
 					debug("%s do not bind dev already in list %s\n",

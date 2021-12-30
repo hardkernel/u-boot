@@ -773,10 +773,6 @@ static void of_alias_add(struct alias_prop *ap, struct device_node *np,
 	mutex_lock(&of_mutex);
 	list_for_each_entry(oldap, &aliases_lookup, link) {
 		if (stem && !strcmp(stem, oldap->alias) && (id == oldap->id)) {
-			/* Always use from U-Boot aliase */
-			if (strcmp(stem, "mmc"))
-				continue;
-
 			list_del(&oldap->link);
 			break;
 		}
