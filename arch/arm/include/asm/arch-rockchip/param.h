@@ -48,4 +48,18 @@ struct memblock param_parse_common_resv_mem(void);
  */
 int param_parse_bootdev(char **devtype, char **devtnum);
 
+/**
+ * param_parse_pre_serial() - Parse and Init serial according to pre-loader serial.
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int param_parse_pre_serial(void);
+
+/**
+ * param_parse_pubkey_fuse_programmed() - Parse and pass fuse programmed state.
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int param_parse_pubkey_fuse_programmed(void);
+
 #endif
