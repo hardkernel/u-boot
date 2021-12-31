@@ -346,7 +346,7 @@ static int rockchip_nandc_probe(struct udevice *dev)
 	    id[1] == 0xDA || id[1] == 0xAC ||
 	    id[1] == 0xDC || id[1] == 0xA3 ||
 	    id[1] == 0xD3 || id[1] == 0x95 ||
-	    id[1] == 0x48) {
+	    id[1] == 0x48 || id[1] == 0xD7) {
 		nand_page_size = 2048;
 		nand_page_num = 64;
 		nand_block_num = 1024;
@@ -375,8 +375,11 @@ static int rockchip_nandc_probe(struct udevice *dev)
 				nand_page_size = 4096;
 				nand_block_num = 4096;
 			}
+		} else if (id[1] == 0xd7 && id[3] == 0x32) { /* TC58NVG5H2HTAI0 */
+			nand_page_size = 8192;
+			nand_page_num = 128;
+			nand_block_num = 4096;
 		}
-
 		g_rk_nand->chipnr = 1;
 		g_rk_nand->databuf = kzalloc(nand_page_size, GFP_KERNEL);
 		if (!g_rk_nand)
@@ -499,7 +502,7 @@ void board_nand_init(void)
 	    g_rk_nand->id[1] == 0xDA || g_rk_nand->id[1] == 0xAC ||
 	    g_rk_nand->id[1] == 0xDC || g_rk_nand->id[1] == 0xA3 ||
 	    g_rk_nand->id[1] == 0xD3 || g_rk_nand->id[1] == 0x95 ||
-	    g_rk_nand->id[1] == 0x48) {
+	    g_rk_nand->id[1] == 0x48 || g_rk_nand->id[1] == 0xD7) {
 		g_rk_nand->chipnr = 1;
 		return;
 	}
