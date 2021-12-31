@@ -280,6 +280,11 @@ struct memblock *param_parse_ddr_mem(int *out_count)
 
 	t = atags_get_tag(ATAG_DDR_MEM);
 	if (t && t->u.ddr_mem.count) {
+		/* extend top ram size */
+		if (t->u.ddr_mem.flags & DDR_MEM_FLG_EXT_TOP)
+			gd->ram_top_ext_size = t->u.ddr_mem.data[0];
+
+		/* normal ram size */
 		count = t->u.ddr_mem.count;
 		mem = calloc(count + MEM_RESV_COUNT, sizeof(*mem));
 		if (!mem) {

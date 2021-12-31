@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <sysmem.h>
 #include <asm/io.h>
+#include <asm/arch/rk_atags.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -140,8 +141,9 @@ void bidram_gen_gd_bi_dram(void)
 	 * Here handle that: there is the only one dram bank available.
 	 */
 	if (rsv_cnt == 1 && !res_rgn[0].base && !res_rgn[0].size) {
-		gd->bd->bi_dram[0].start = mem_rgn[0].base;
-		gd->bd->bi_dram[0].size = mem_rgn[0].size;
+		gd->bd->bi_dram[idx].start = mem_rgn[0].base;
+		gd->bd->bi_dram[idx].size = mem_rgn[0].size;
+		idx++;
 		goto done;
 	}
 
@@ -169,8 +171,23 @@ void bidram_gen_gd_bi_dram(void)
 					    gd->bd->bi_dram[idx].start;
 	}
 done:
-	/* Append 4GB+ memory blocks */
+	/* Append 4GB+ memory blocks and extend ram top */
 	if (bidram->fixup) {
+		/* extend ram top */
+		if (gd->ram_top_ext_size) {
+		        int pos = idx - 1;
+			ulong top;
+
+			if (gd->bd->bi_dram[pos].start +
+			    gd->bd->bi_dram[pos].size == gd->ram_top) {
+				top = gd->bd->bi_dram[pos].start + gd->bd->bi_dram[pos].size;
+				gd->bd->bi_dram[pos].size += gd->ram_top_ext_size;
+				printf("Extend top: 0x%08lx -> 0x%08lx\n",
+				       top, top + (ulong)gd->ram_top_ext_size);
+			}
+		}
+
+		/* append 4GB+ */
 		for (i = 0; i < MEM_RESV_COUNT; i++) {
 			if (!bidram->size_u64[i])
 				continue;
@@ -209,6 +226,9 @@ u64 bidram_append_size(void)
 	/* 4GB+ */
 	for (i = 0; i < MEM_RESV_COUNT; i++)
 		size += bidram->size_u64[i];
+
+	if (gd->ram_top_ext_size)
+		size += gd->ram_top_ext_size;
 
 	return size;
 }

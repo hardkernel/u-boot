@@ -101,8 +101,9 @@ static void atags_print_tag(struct tag *t)
 		printf("   version = 0x%x\n", t->u.ddr_mem.version);
 		for (i = 0; i < ARRAY_SIZE(t->u.ddr_mem.bank); i++)
 			printf("  bank[%d] = 0x%llx\n", i, t->u.ddr_mem.bank[i]);
-		for (i = 0; i < ARRAY_SIZE(t->u.ddr_mem.reserved); i++)
-			printf("    res[%d] = 0x%x\n", i, t->u.ddr_mem.reserved[i]);
+		printf("     flags = 0x%x\n", t->u.ddr_mem.flags);
+		for (i = 0; i < ARRAY_SIZE(t->u.ddr_mem.data); i++)
+			printf("  data[%d] = 0x%x\n", i, t->u.ddr_mem.data[i]);
 		printf("      hash = 0x%x\n", t->u.ddr_mem.hash);
 		break;
 	case ATAG_RAM_PARTITION:

@@ -73,6 +73,9 @@
  */
 #define B1P2_BOOT_CPU_MASK	0x00000fff
 
+/* tag_ddr_mem.flags */
+#define DDR_MEM_FLG_EXT_TOP	1
+
 struct tag_serial {
 	u32 version;
 	u32 enable;
@@ -98,7 +101,8 @@ struct tag_ddr_mem {
 	u32 count;
 	u32 version;
 	u64 bank[20];
-	u32 reserved[3];
+	u32 flags;
+	u32 data[2];
 	u32 hash;
 } __packed;
 
