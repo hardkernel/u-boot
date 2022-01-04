@@ -67,6 +67,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NANDC_V9_FL_XFER_COUNT	BIT(5)
 #define NANDC_V9_FL_ACORRECT	BIT(10)
 #define NANDC_V9_FL_XFER_READY	BIT(20)
+#define NANDC_V9_FL_ASYNC_TOG_MIX	BIT(29)
 
 /* BCHCTL */
 #define NAND_V9_BCH_MODE_S	25
@@ -253,7 +254,7 @@ static void rockchip_nand_pio_xfer_start(struct rk_nand *rknand,
 
 	reg = (dir << NANDC_V9_FL_DIR_S) | (st_buf << NANDC_V9_FL_ST_BUF_S) |
 	      NANDC_V9_FL_XFER_EN | NANDC_V9_FL_XFER_COUNT |
-	      NANDC_V9_FL_ACORRECT;
+	      NANDC_V9_FL_ACORRECT | NANDC_V9_FL_ASYNC_TOG_MIX;
 	writel(reg, rknand->regs + NANDC_REG_V9_FLCTL);
 
 	reg |= NANDC_V9_FL_XFER_START;
