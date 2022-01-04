@@ -33,6 +33,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_BASE			0xfd8d0000
 #define PMU_PWR_GATE_SFTCON1		0x8150
 
+#define USB2PHY1_GRF_BASE		0xfd5d4000
+#define USB2PHY2_GRF_BASE		0xfd5d8000
+#define USB2PHY3_GRF_BASE		0xfd5dc000
+#define USB2PHY_GRF_CON2		0x0008
+
 #define PMU1_IOC_BASE			0xfd5f0000
 #define PMU2_IOC_BASE			0xfd5f4000
 
@@ -829,6 +834,15 @@ int arch_cpu_init(void)
 	 * and de-assert reset them in Kernel combphy driver.
 	 */
 	writel(0x01c001c0, CRU_BASE + CRU_SOFTRST_CON77);
+
+	/*
+	 * Assert SIDDQ for USB 2.0 PHY1, PHY2 and PHY3 to
+	 * power down all analog block to save power. And
+	 * PHY0 for OTG0 interface still in normal mode.
+	 */
+	writel(0x20002000, USB2PHY1_GRF_BASE + USB2PHY_GRF_CON2);
+	writel(0x20002000, USB2PHY2_GRF_BASE + USB2PHY_GRF_CON2);
+	writel(0x20002000, USB2PHY3_GRF_BASE + USB2PHY_GRF_CON2);
 #endif
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
 	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
