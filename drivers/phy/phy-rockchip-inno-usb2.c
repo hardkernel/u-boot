@@ -15,6 +15,7 @@
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
+#include <reset-uclass.h>
 
 #include "../usb/gadget/dwc2_udc_otg_priv.h"
 
@@ -148,6 +149,7 @@ struct rockchip_usb2phy_cfg {
  *		     primary stage.
  * @grf: General Register Files register base.
  * @usbgrf_base : USB General Register Files register base.
+ * @phy_rst: phy reset control.
  * @phy_cfg: phy register configuration, assigned by driver data.
  */
 struct rockchip_usb2phy {
@@ -156,6 +158,7 @@ struct rockchip_usb2phy {
 	struct regmap	*grf_base;
 	struct regmap	*usbgrf_base;
 	struct udevice	*vbus_supply[USB2PHY_NUM_PORTS];
+	struct reset_ctl phy_rst;
 	const struct rockchip_usb2phy_cfg	*phy_cfg;
 };
 
@@ -411,6 +414,31 @@ static struct udevice *rockchip_usb2phy_check_vbus(struct phy *phy)
 	return vbus;
 }
 
+static int rockchip_usb2phy_reset(struct rockchip_usb2phy *rphy)
+{
+	int ret;
+
+	if (rphy->phy_rst.dev) {
+		ret = reset_assert(&rphy->phy_rst);
+		if (ret < 0) {
+			pr_err("u2phy assert reset failed: %d", ret);
+			return ret;
+		}
+
+		udelay(20);
+
+		ret = reset_deassert(&rphy->phy_rst);
+		if (ret < 0) {
+			pr_err("u2phy deassert reset failed: %d", ret);
+			return ret;
+		}
+
+		udelay(100);
+	}
+
+	return 0;
+}
+
 static int rockchip_usb2phy_init(struct phy *phy)
 {
 	struct udevice *parent = phy->dev->parent;
@@ -599,6 +627,10 @@ static int rockchip_usb2phy_probe(struct udevice *dev)
 		return -EINVAL;
 	}
 
+	ret = reset_get_by_name(dev, "phy", &rphy->phy_rst);
+	if (ret)
+		dev_dbg(dev, "no u2phy reset control specified\n");
+
 	phy_cfgs =
 		(const struct rockchip_usb2phy_cfg *)dev_get_driver_data(dev);
 	if (!phy_cfgs) {
@@ -704,6 +736,34 @@ static int rk3308_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 		if (ret)
 			return ret;
 	}
+
+	return 0;
+}
+
+static int rk3588_usb2phy_tuning(struct rockchip_usb2phy *rphy)
+{
+	struct regmap *base = get_reg_base(rphy);
+	int ret;
+
+	/* Deassert SIDDQ to power on analog block */
+	ret = regmap_write(base, 0x0008, GENMASK(29, 29) | 0x0000);
+	if (ret)
+		return ret;
+
+	/* Do reset after exit IDDQ mode */
+	ret = rockchip_usb2phy_reset(rphy);
+	if (ret)
+		return ret;
+
+	/* HS DC Voltage Level Adjustment 4'b1001 : +5.89% */
+	ret = regmap_write(base, 0x0004, GENMASK(27, 24) | 0x0900);
+	if (ret)
+		return ret;
+
+	/* HS Transmitter Pre-Emphasis Current Control 2'b10 : 2x */
+	ret = regmap_write(base, 0x0008, GENMASK(20, 19) | 0x0010);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -1254,6 +1314,7 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 	{
 		.reg = 0x0000,
 		.num_ports	= 1,
+		.phy_tuning	= rk3588_usb2phy_tuning,
 		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
@@ -1280,6 +1341,7 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 	{
 		.reg = 0x4000,
 		.num_ports	= 1,
+		.phy_tuning	= rk3588_usb2phy_tuning,
 		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
 		.port_cfgs	= {
 			/* Select suspend control from controller */
@@ -1295,6 +1357,7 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 	{
 		.reg = 0x8000,
 		.num_ports	= 1,
+		.phy_tuning	= rk3588_usb2phy_tuning,
 		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_HOST] = {
@@ -1309,6 +1372,7 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 	{
 		.reg = 0xc000,
 		.num_ports	= 1,
+		.phy_tuning	= rk3588_usb2phy_tuning,
 		.clkout_ctl	= { 0x0000, 0, 0, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_HOST] = {
