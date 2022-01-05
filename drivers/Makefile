@@ -90,6 +90,7 @@ obj-$(CONFIG_NVME) += nvme/
 obj-$(CONFIG_RKNAND) += rknand/
 obj-$(CONFIG_RKFLASH) += rkflash/
 obj-y += pcmcia/
+obj-$(CONFIG_DM_POWER_DELIVERY) += power/power_delivery/
 obj-y += dfu/
 obj-$(CONFIG_X86) += pch/
 obj-y += phy/marvell/

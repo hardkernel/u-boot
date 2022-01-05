@@ -8,6 +8,8 @@ source "drivers/power/io-domain/Kconfig"
 
 source "drivers/power/pmic/Kconfig"
 
+source "drivers/power/power_delivery/Kconfig"
+
 source "drivers/power/regulator/Kconfig"
 
 source "drivers/power/dvfs/Kconfig"
