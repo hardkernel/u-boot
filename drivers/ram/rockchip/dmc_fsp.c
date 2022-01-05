@@ -24,6 +24,7 @@
 
 #define DTS_PAR_OFFSET				(4096)
 #define PARAMS_INVALID_VAL			(0xff00aa99)
+#define PARAMS_IGNORE_THIS			(0)
 
 #define PMUGRF_OS_REG(n)			(0x200 + (n) * 4)
 
@@ -132,8 +133,8 @@ static char *ddr_params_v1[] = {
 	/* if need, add parameter after and change the minor version. */
 };
 
-/* the version V1.01 will add skew info */
-static char *rk3326_dts_de_skew[] = {
+/* the expanded version V1.00 add skew info */
+static char *ddr_params_exp_v1[] = {
 	"ddr3a1_ddr4a9_de-skew",
 	"ddr3a0_ddr4a10_de-skew",
 	"ddr3a3_ddr4a6_de-skew",
@@ -362,10 +363,12 @@ static int dmc_fsp_probe(struct udevice *dev)
 	int *p = NULL;
 	char *phandle_name = NULL;
 	char **ddr_params;
+	char **ddr_params_exp;
 	int ddr_params_version;
+	int expanded_version;
 	u32 dram_type, os_reg2_val, os_reg3_val;
-	u32 i = 0, count = 0, size = 0;
 	u32 phy_de_skew_en;
+	u32 i = 0, count = 0, size = 0, count_exp = 0;
 	ulong atf_version_limit;
 
 	atf_version_limit = dev_get_driver_data(dev);
@@ -413,23 +416,34 @@ static int dmc_fsp_probe(struct udevice *dev)
 	}
 
 	if ((ddr_params_version & 0xff00) == 0x100 &&
-	    (ddr_params_version & 0xffff) <= 0x100) {
+	    (ddr_params_version & 0xffff) <= 0x101) {
 		count = ARRAY_SIZE(ddr_params_v1);
-		ddr_params = ddr_params_v1;
-	} else if ((ddr_params_version & 0xff00) == 0x100 &&
-		   (ddr_params_version & 0xffff) <= 0x101) {
-		count = ARRAY_SIZE(ddr_params_v1) + ARRAY_SIZE(rk3326_dts_de_skew);
 		ddr_params = ddr_params_v1;
 	} else {
 		printf("%s: ddr_params_version=0x%x unsupported\n", __func__, ddr_params_version);
 		return -EINVAL;
 	}
+
+	expanded_version = ofnode_read_u32_default(np_to_ofnode(np_params),
+						   "expanded_version", 0);
+	if (expanded_version != PARAMS_IGNORE_THIS) {
+		if ((expanded_version & 0xff00) == 0x100 &&
+		    (expanded_version & 0xffff) <= 0x100) {
+			count_exp = ARRAY_SIZE(ddr_params_exp_v1);
+			ddr_params_exp = ddr_params_exp_v1;
+		} else {
+			printf("expanded_version=0x%x unsupported\n",
+			       expanded_version);
+			return -1;
+		}
+	} else if ((ddr_params_version & 0xffff) == 0x101) {
+		count_exp = ARRAY_SIZE(ddr_params_exp_v1);
+	}
 	/*
 	 * page 0 is used for share param
-	 * page 1~N is uesd for dmc_fsp param
-	 * page N + 1 is uesd for de-skew param
+	 * page 1~N is used for dmc_fsp and ddr_params_exp param
 	 */
-	size = count * 4 + 4096;
+	size = ((count + count_exp) * 4 + 4096);
 	res = sip_smc_request_share_mem(DIV_ROUND_UP(size, 4096) + 1, SHARE_PAGE_TYPE_DDRFSP);
 	if (res.a0 != 0) {
 		printf("%s:no share memory for init\n", __func__);
@@ -448,16 +462,42 @@ static int dmc_fsp_probe(struct udevice *dev)
 		p[i] = ofnode_read_u32_default(np_to_ofnode(np_params), ddr_params[i],
 					       PARAMS_INVALID_VAL);
 	}
-	if (phy_de_skew_en) {
+
+	if (expanded_version != PARAMS_IGNORE_THIS) {
+		if ((expanded_version & 0xff00) == 0x100 &&
+		    (expanded_version & 0xffff) <= 0x100) {
+			phandle_name = "ddr_timing";
+			np_tim =
+			of_parse_phandle(ofnode_to_np(dev_ofnode(dev)),
+					 phandle_name, 0);
+			if (!np_tim) {
+				printf("%s: of_parse_phandle %s error!\n",
+				       __func__, phandle_name);
+				return -EINVAL;
+			}
+			for (i = count; i < (count + count_exp); i++) {
+				p[i] =
+				ofnode_read_u32_default(np_to_ofnode(np_tim),
+							ddr_params_exp[i -
+							count],
+							PARAMS_INVALID_VAL);
+			}
+			/* expanded_version and start point */
+			p[1] = (p[1] & 0xffff) | (count << 16);
+		}
+	} else if (phy_de_skew_en && (phy_de_skew_en != PARAMS_INVALID_VAL)) {
 		phandle_name = "ddr_timing";
 		np_tim = of_parse_phandle(ofnode_to_np(dev_ofnode(dev)), phandle_name, 0);
 		if (!np_tim) {
 			printf("%s: of_parse_phandle %s error!\n", __func__, phandle_name);
 			return -EINVAL;
 		}
-		for (i = ARRAY_SIZE(ddr_params_v1); i < count; i++) {
-			p[i] = ofnode_read_u32_default(np_to_ofnode(np_tim), rk3326_dts_de_skew[i - ARRAY_SIZE(ddr_params_v1)],
-						       PARAMS_INVALID_VAL);
+		for (i = count;
+		     i < (count + ARRAY_SIZE(ddr_params_exp_v1)); i++) {
+			p[i] =
+			ofnode_read_u32_default(np_to_ofnode(np_tim),
+						ddr_params_exp_v1[i - count],
+						PARAMS_INVALID_VAL);
 		}
 	}
 
