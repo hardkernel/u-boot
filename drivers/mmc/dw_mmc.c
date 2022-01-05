@@ -804,6 +804,7 @@ static int dwmci_get_cd(struct udevice *dev)
 	}
 
 	ret = !dm_gpio_get_value(&detect);
+	dm_gpio_free(dev, &detect);
 #endif
 	return ret;
 }
