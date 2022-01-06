@@ -112,6 +112,7 @@ enum uclass_id {
 	UCLASS_EINK_DISPLAY,	/* EINK screen display driver */
 	UCLASS_RNG,		/* Random Number Generator */
 	UCLASS_DMC,		/* Dynamic Memory Interface */
+	UCLASS_PD,		/* power delivery */
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,
 };
