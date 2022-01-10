@@ -24,10 +24,52 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK806_CMD_LEN_MSK		0x0f
 #define RK806_REG_H			0x00
 
+#define RK806_SYS_CFG1			0x5f
+#define RK806_SYS_CFG3			0x72
+#define RK806_PWRON_KEY			0x76
+#define RK806_INT_STS0			0x77
+#define RK806_INT_MSK0			0x78
+#define RK806_INT_STS1			0x79
+#define RK806_INT_MSK1			0x7A
+#define RK806_GPIO_INT_CONFIG		0x7B
+#define RK806_IRQ_PWRON_FALL_MSK	BIT(0)
+#define RK806_IRQ_PWRON_RISE_MSK	BIT(1)
+#define RK806_DEV_OFF			BIT(0)
+#define VERSION_AB			0x01
+
+#if CONFIG_IS_ENABLED(IRQ)
+/* RK805 */
+static const struct virq_reg rk806_irqs[] = {
+	[RK8XX_IRQ_PWRON_FALL] = {
+		.mask = RK806_IRQ_PWRON_FALL_MSK,
+		.reg_offset = 0,
+	},
+	[RK8XX_IRQ_PWRON_RISE] = {
+		.mask = RK806_IRQ_PWRON_RISE_MSK,
+		.reg_offset = 0,
+	},
+};
+
+static struct virq_chip rk806_irq_chip = {
+	.status_base		= RK806_INT_STS0,
+	.mask_base		= RK806_INT_MSK0,
+	.num_regs		= 1,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
+	.irqs			= rk806_irqs,
+	.num_irqs		= ARRAY_SIZE(rk806_irqs),
+};
+#endif
+
 static const struct pmic_child_info pmic_children_info[] = {
 	{ .prefix = "DCDC", .driver = "rk8xx_spi_buck"},
 	{ .prefix = "NLDO", .driver = "rk8xx_spi_ldo"},
 	{ .prefix = "PLDO", .driver = "rk8xx_spi_pldo"},
+	{ },
+};
+
+static const struct pmic_child_info power_key_info[] = {
+	{ .prefix = "pwrkey", .driver = "rk8xx_pwrkey"},
 	{ },
 };
 
@@ -125,6 +167,76 @@ static int rk8xx_spi_bind(struct udevice *dev)
 	if (!children)
 		debug("%s: %s - no child found\n", __func__, dev->name);
 
+	children = pmic_bind_children(dev, dev->node, power_key_info);
+	if (!children)
+		debug("%s: %s - no child found\n", __func__, dev->name);
+
+	return 0;
+}
+#endif
+#if CONFIG_IS_ENABLED(IRQ)
+static int rk8xx_spi_ofdata_to_platdata(struct udevice *dev)
+{
+	struct rk8xx_priv *rk8xx = dev_get_priv(dev);
+	u32 interrupt, phandle;
+	int ret;
+
+	phandle = dev_read_u32_default(dev, "interrupt-parent", -ENODATA);
+	if (phandle == -ENODATA) {
+		printf("Read 'interrupt-parent' failed, ret=%d\n", phandle);
+		return phandle;
+	}
+
+	ret = dev_read_u32_array(dev, "interrupts", &interrupt, 1);
+	if (ret) {
+		printf("Read 'interrupts' failed, ret=%d\n", ret);
+		return ret;
+	}
+
+	rk8xx->irq = phandle_gpio_to_irq(phandle, interrupt);
+	if (rk8xx->irq < 0)
+		printf("Failed to request rk8xx irq, ret=%d\n", rk8xx->irq);
+
+	return 0;
+}
+
+static int rk8xx_spi_irq_chip_init(struct udevice *dev)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev);
+	struct virq_chip *irq_chip = NULL;
+	u8 value;
+	int ret;
+
+	value = 0xff;
+	rk806_spi_write(dev, RK806_INT_STS0, &value, 1);
+	rk806_spi_write(dev, RK806_INT_STS1, &value, 1);
+	rk806_spi_write(dev, RK806_INT_MSK0, &value, 1);
+	rk806_spi_write(dev, RK806_INT_MSK1, &value, 1);
+	value = 0x00;
+	rk806_spi_write(dev, RK806_GPIO_INT_CONFIG, &value, 1);
+
+	irq_chip = &rk806_irq_chip;
+
+	if (irq_chip && priv->irq > 0) {
+		ret = virq_add_chip(dev, irq_chip, priv->irq);
+		if (ret) {
+			printf("Failed to add irqchip(irq=%d), ret=%d\n",
+			       priv->irq, ret);
+			return ret;
+		}
+		priv->irq_chip = irq_chip;
+	}
+
+	return 0;
+}
+#else
+static inline int rk8xx_spi_ofdata_to_platdata(struct udevice *dev)
+{
+	return 0;
+}
+
+static inline int rk8xx_spi_irq_chip_init(struct udevice *dev)
+{
 	return 0;
 }
 #endif
@@ -135,7 +247,7 @@ static int rk8xx_spi_probe(struct udevice *dev)
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	struct udevice *spi = dev_get_parent(dev);
 	struct spi_slave *slave = NULL;
-	u8 msb, lsb;
+	u8 msb, lsb, value;
 	int ret;
 
 	if (spi->seq < 0) {
@@ -151,19 +263,53 @@ static int rk8xx_spi_probe(struct udevice *dev)
 
 	/* read Chip variant */
 	ret = rk806_spi_read(dev, RK806_CHIP_NAME, &msb, 1);
-	if (msb < 0) {
+	if (ret) {
 		dev_err(dev, "rk806 name read error: %d\n", ret);
 		return ret;
 	}
 
 	ret = rk806_spi_read(dev, RK806_CHIP_VER, &lsb, 1);
-	if (lsb < 0) {
+	if (ret) {
 		dev_err(dev, "rk806 version read error: %d\n", ret);
 		return ret;
 	}
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
 	printf("spi%d: RK%x%x: %d\n", spi->seq, msb, (lsb >> 4), lsb & 0x0f);
+
+	if ((lsb & 0x0f) == VERSION_AB) {
+		ret = rk806_spi_read(dev, RK806_SYS_CFG1, &value, 1);
+		if (ret) {
+			dev_err(dev, "rk806 RK806_SYS_CFG1 read error: %d\n", ret);
+			return ret;
+		}
+		value |= 0x80;
+		rk806_spi_write(dev, RK806_SYS_CFG1, &value, 1);
+	}
+
+	rk8xx_spi_irq_chip_init(dev);
+
+	return 0;
+}
+
+static int rk8xx_spi_shutdown(struct udevice *dev)
+{
+	u8 dev_off;
+	int ret = 0;
+
+	ret = rk806_spi_read(dev, RK806_SYS_CFG3, &dev_off, 1);
+	if (ret)
+		return ret;
+
+	dev_off |= RK806_DEV_OFF;
+	ret = rk806_spi_write(dev, RK806_SYS_CFG3, &dev_off, 1);
+	if (ret) {
+		dev_err(dev, "rk806 shutdown error: %d\n", ret);
+		return ret;
+	}
+
+	while (1)
+		;
 
 	return 0;
 }
@@ -172,6 +318,7 @@ static struct dm_pmic_ops rk8xx_spi_ops = {
 	.reg_count = rk8xx_spi_reg_count,
 	.read = rk806_spi_read,
 	.write = rk806_spi_write,
+	.shutdown = rk8xx_spi_shutdown,
 };
 
 static const struct udevice_id rk8xx_spi_ids[] = {
@@ -186,6 +333,7 @@ U_BOOT_DRIVER(pmic_rk8xx_spi) = {
 #if CONFIG_IS_ENABLED(PMIC_CHILDREN)
 	.bind = rk8xx_spi_bind,
 #endif
+	.ofdata_to_platdata = rk8xx_spi_ofdata_to_platdata,
 	.priv_auto_alloc_size = sizeof(struct rk8xx_priv),
 	.probe = rk8xx_spi_probe,
 	.ops = &rk8xx_spi_ops,

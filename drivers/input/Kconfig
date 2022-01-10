@@ -94,8 +94,8 @@ config I8042_KEYB
 	  handled by the keyboard itself.
 
 config RK8XX_PWRKEY
-	bool "Enable RK805/816/817 pwrkey support"
-	depends on DM_KEY && PMIC_RK8XX && IRQ
+	bool "Enable RK805/rk806/816/817 pwrkey support"
+	depends on DM_KEY && (PMIC_RK8XX || PMIC_SPI_RK8XX) && IRQ
 	help
 	  This adds a driver for the RK805/816/817 pwrkey support.
 
