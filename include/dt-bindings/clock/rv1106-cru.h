@@ -292,8 +292,10 @@
 #define SCLK_EMMC_SAMPLE	286
 #define SCLK_SDMMC_DRV		287
 #define SCLK_SDMMC_SAMPLE	288
+#define SCLK_SDIO_DRV		289
+#define SCLK_SDIO_SAMPLE	290
 
-#define CLK_NR_CLKS		(SCLK_SDMMC_SAMPLE + 1)
+#define CLK_NR_CLKS		(SCLK_SDIO_SAMPLE + 1)
 
 /********Name=PMUSOFTRST_CON00,Offset=0xA00********/
 #define SRST_P_I2C1		3

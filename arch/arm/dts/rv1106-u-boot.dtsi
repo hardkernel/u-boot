@@ -1,0 +1,34 @@
+/*
+ * (C) Copyright 2022 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/ {
+	aliases {
+		mmc1 = &sdmmc;
+		mmc0 = &emmc;
+	};
+
+	chosen {
+		stdout-path = &uart2;
+		u-boot,spl-boot-order = &sdmmc, &emmc;
+	};
+};
+
+
+&emmc {
+	mmc-ecsd = <0x0020f000>;
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&cru {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&sdmmc {
+	u-boot,dm-spl;
+	status = "okay";
+};

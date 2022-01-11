@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2021 Fuzhou Rockchip Electronics Co., Ltd.
+ */
+
+/dts-v1/;
+
+#include "rv1106.dtsi"
+#include "rv1106-u-boot.dtsi"
+
+/ {
+	model = "Rockchip RV1106 EVB Board";
+	compatible = "rockchip,rv1106-evb", "rockchip,rv1106";
+
+};
+
