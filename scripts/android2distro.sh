@@ -66,7 +66,8 @@ function android2distro()
 	echo "    append ${BOOTARGS}" >> boot/extlinux/extlinux.conf
 
 	SIZE_KB=`ls -lh ${BOOT_IMG} | awk '{ print $5 }' | tr -d 'M'`
-	SIZE_KB=`expr ${SIZE_KB} + 2`
+	SIZE_KB=`echo "scale=0;$SIZE_KB/1"|bc -l` # for align down integer
+	SIZE_KB=`expr ${SIZE_KB} + 2 + 1`
 	SIZE_BYTE=$((${SIZE_KB}*1024))
 	genext2fs -b ${SIZE_BYTE} -B 1024 -d boot/ -i 8192 -U ${DISTRO_IMG}
 
