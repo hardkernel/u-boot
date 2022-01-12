@@ -77,6 +77,7 @@ config LIB_RAND
 
 config SPL_TINY_MEMSET
 	bool "Use a very small memset() in SPL"
+	depends on SPL
 	help
 	  The faster memset() is the arch-specific one (if available) enabled
 	  by CONFIG_USE_ARCH_MEMSET. If that is not enabled, we can still get
