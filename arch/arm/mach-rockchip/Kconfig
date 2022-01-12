@@ -496,9 +496,9 @@ endif
 config ROCKCHIP_RV1126
 	bool "Support Rockchip RV1126"
 	select CPU_V7
-	select SUPPORT_TPL
-	select SUPPORT_SPL
-	select TPL_TINY_FRAMEWORK if TPL
+	imply SUPPORT_TPL
+	imply SUPPORT_SPL
+	imply TPL_TINY_FRAMEWORK if TPL
 	select DEBUG_UART_BOARD_INIT
 	imply TPL
 	imply SPL
