@@ -330,12 +330,7 @@ static int read_dtb_from_android(struct blk_desc *dev_desc,
 	 * we don't need to verify DTB hash from resource.img file entry.
 	 */
 	dtb_offset = DIV_ROUND_UP(dtb_offset, dev_desc->blksz);
-#ifndef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (replace_resource_entry(DEFAULT_DTB_FILE, rsce_base, dtb_offset, dtb_size))
-		printf("Failed to load dtb from v2 dtb position\n");
-	else
-#endif
-		env_update("bootargs", "androidboot.dtb_idx=0");
+	env_update("bootargs", "androidboot.dtb_idx=0");
 
 	return 0;
 }
@@ -577,62 +572,6 @@ int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 	printf("DTB: %s\n", file->name);
 
 	return 0;
-}
-
-int resource_populate_dtb(void *img, void *fdt)
-{
-	struct blk_desc *dev_desc;
-	int format;
-	int ret;
-
-	format = (genimg_get_format(img));
-#ifdef CONFIG_ANDROID_BOOT_IMAGE
-	if (format == IMAGE_FORMAT_ANDROID) {
-		struct andr_img_hdr *hdr = img;
-		ulong offset;
-
-		dev_desc = rockchip_get_bootdev();
-		if (!dev_desc)
-			return -ENODEV;
-
-		offset = hdr->page_size + ALIGN(hdr->kernel_size, hdr->page_size) +
-			ALIGN(hdr->ramdisk_size, hdr->page_size);
-		ret = resource_create_ram_list(dev_desc, (void *)hdr + offset);
-		if (ret)
-			return ret;
-
-		return rockchip_read_dtb_file((void *)fdt);
-	}
-#endif
-#if IMAGE_ENABLE_FIT
-	if (format == IMAGE_FORMAT_FIT) {
-		const void *data;
-		size_t size;
-		int noffset;
-
-		noffset = fdt_path_offset(img, "/images/resource");
-		if (noffset < 0)
-			return noffset;
-
-		ret = fit_image_get_data(img, noffset, &data, &size);
-		if (ret < 0)
-			return ret;
-
-		dev_desc = rockchip_get_bootdev();
-		if (!dev_desc)
-			return -ENODEV;
-
-		ret = resource_create_ram_list(dev_desc, (void *)data);
-		if (ret) {
-			printf("resource_create_ram_list fail, ret=%d\n", ret);
-			return ret;
-		}
-
-		return rockchip_read_dtb_file((void *)fdt);
-	}
-#endif
-
-	return -EINVAL;
 }
 
 int resource_traverse_init_list(void)

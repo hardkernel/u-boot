@@ -97,11 +97,6 @@ struct resource_file *resource_read_hwid_dtb(void);
 int resource_is_empty(void);
 
 /*
- * resource_populate_dtb() - read fdt from this image: android/fit.
- */
-int resource_populate_dtb(void *img, void *fdt);
-
-/*
  * resource_traverse_init_list() - traverse all image(android/fit/uimage)
  */
 int resource_traverse_init_list(void);

@@ -841,7 +841,7 @@ int bootm_image_populate_dtb(void *img)
 	else
 		gd->fdt_blob = (void *)env_get_ulong("fdt_addr_r", 16, 0);
 
-	return resource_populate_dtb(img, (void *)gd->fdt_blob);
+	return rockchip_ram_read_dtb_file(img, (void *)gd->fdt_blob);
 }
 
 /*
@@ -890,7 +890,7 @@ int board_do_bootm(int argc, char * const argv[])
 
 		ret = bootm_image_populate_dtb(img);
 		if (ret) {
-			printf("bootm can't read dtb\n");
+			printf("bootm can't read dtb, ret=%d\n", ret);
 			return ret;
 		}
 
@@ -914,7 +914,7 @@ int board_do_bootm(int argc, char * const argv[])
 
 		ret = bootm_image_populate_dtb(img);
 		if (ret) {
-			printf("bootm can't read dtb\n");
+			printf("bootm can't read dtb, ret=%d\n", ret);
 			return ret;
 		}
 		snprintf(boot_cmd, sizeof(boot_cmd), "boot_fit %s", argv[1]);

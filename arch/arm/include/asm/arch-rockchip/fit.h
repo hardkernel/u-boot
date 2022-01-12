@@ -15,5 +15,6 @@ void *fit_image_load_bootables(ulong *size);
 int fit_image_pre_process(const void *fit);
 int fit_image_fail_process(const void *fit);
 int fit_image_init_resource(void);
+int fit_image_read_dtb(void *fdt_addr);
 
 #endif
