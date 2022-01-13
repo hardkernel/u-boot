@@ -10,6 +10,7 @@
 #ifdef CONFIG_SPL_BUILD
 #include <spl.h>
 #endif
+#include <lzma/LzmaTools.h>
 #include <optee_include/OpteeClientInterface.h>
 #include <optee_include/tee_api_defines.h>
 
@@ -43,21 +44,17 @@ static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
 	return 0;
 }
 
-static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
+static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 			    ulong **src_addr, size_t *src_len, void *spec)
 {
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
-	const void *prop;
-	u32 flags = 0;
-#endif
 	u64 len = *src_len;
-	int ret;
+	int ret = -ENOSYS;
 	u8 comp;
 
 	if (fit_image_get_comp(fit, node, &comp))
 		return 0;
 
-	if (comp != IH_COMP_GZIP)
+	if (comp != IH_COMP_GZIP && comp != IH_COMP_LZMA)
 		return 0;
 
 #ifndef CONFIG_SPL_BUILD
@@ -86,18 +83,44 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 		}
 	}
 #endif
-	/*
-	 * For smaller spl size, we don't use misc_decompress_process()
-	 * inside the gunzip().
-	 */
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
-	ret = misc_decompress_process((ulong)(*load_addr),
-				      (ulong)(*src_addr), (ulong)(*src_len),
-				      DECOM_GZIP, true, &len, flags);
-#else
-	ret = gunzip((void *)(*load_addr), ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
-		     (void *)(*src_addr), (void *)(&len));
+	if (comp == IH_COMP_LZMA) {
+#if CONFIG_IS_ENABLED(LZMA)
+		SizeT lzma_len = ALIGN(len, FIT_MAX_SPL_IMAGE_SZ);
+		SizeT src_lenp;
+		const fdt32_t *val;
+
+		val = fdt_getprop(fit, node, "raw-size", NULL);
+		if (!val)
+			return -ENOENT;
+		src_lenp = fdt32_to_cpu(*val);
+		ret = lzmaBuffToBuffDecompress((uchar *)(*load_addr), &lzma_len,
+					       (uchar *)(*src_addr), src_lenp);
+		len = lzma_len;
 #endif
+	} else if (comp == IH_COMP_GZIP) {
+		/*
+		 * For smaller spl size, we don't use misc_decompress_process()
+		 * inside the gunzip().
+		 */
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
+		const void *prop;
+		u32 flags = 0;
+
+		ret = misc_decompress_process((ulong)(*load_addr),
+					      (ulong)(*src_addr), (ulong)(*src_len),
+					      DECOM_GZIP, true, &len, flags);
+		/* mark for misc_decompress_cleanup() */
+		prop = fdt_getprop(fit, node, "decomp-async", NULL);
+		if (prop)
+			misc_decompress_async(comp);
+		else
+			misc_decompress_sync(comp);
+#else
+		ret = gunzip((void *)(*load_addr), ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
+			     (void *)(*src_addr), (void *)(&len));
+#endif
+	}
+
 	if (ret) {
 		printf("%s: decompress error, ret=%d\n",
 		       fdt_get_name(fit, node, NULL), ret);
@@ -114,15 +137,6 @@ static int fit_gunzip_image(void *fit, int node, ulong *load_addr,
 	*src_addr = (ulong *)*load_addr;
 	*src_len = len;
 
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
-	/* mark for misc_decompress_cleanup() */
-	prop = fdt_getprop(fit, node, "decomp-async", NULL);
-	if (prop)
-		misc_decompress_async(comp);
-	else
-		misc_decompress_sync(comp);
-#endif
-
 	return 0;
 }
 #endif
@@ -131,7 +145,7 @@ void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 				  ulong **src_addr, size_t *src_len, void *spec)
 {
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
-	fit_gunzip_image(fit, node, load_addr, src_addr, src_len, spec);
+	fit_decomp_image(fit, node, load_addr, src_addr, src_len, spec);
 #endif
 
 #if CONFIG_IS_ENABLED(USING_KERNEL_DTB)
@@ -147,7 +161,6 @@ void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 #endif
 }
 #endif /* FIT_IMAGE_POST_PROCESS */
-
 /*
  * Override __weak fit_rollback_index_verify() for SPL & U-Boot proper.
  */
