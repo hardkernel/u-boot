@@ -229,6 +229,14 @@ config LZMA
 	  ratio and fairly fast decompression speed. See also
 	  CONFIG_CMD_LZMADEC which provides a decode command.
 
+config SPL_LZMA
+	bool "Enable LZMA decompression support in SPL"
+	depends on SPL
+	help
+	  This enables support for LZMA (Lempel-Ziv-Markov chain algorithm),
+	  a dictionary compression algorithm that provides a high compression
+	  ratio and fairly fast decompression speed. See also
+
 config LZO
 	bool "Enable LZO decompression support"
 	help

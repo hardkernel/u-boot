@@ -22,7 +22,7 @@
 #include <common.h>
 #include <watchdog.h>
 
-#ifdef CONFIG_LZMA
+#if CONFIG_IS_ENABLED(LZMA)
 
 #define LZMA_PROPERTIES_OFFSET 0
 #define LZMA_SIZE_OFFSET       LZMA_PROPS_SIZE
