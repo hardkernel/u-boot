@@ -13,6 +13,9 @@ rm -f ${srctree}/*.digest ${srctree}/*.bin.gz ${srctree}/bl31_0x*.bin
 if [ "${COMPRESSION}" == "gzip" ]; then
 	SUFFIX=".gz"
 	CMD="gzip"
+elif [ "${COMPRESSION}" == "lzma" ]; then
+	SUFFIX=".lzma"
+	CMD="lzma"
 else
 	COMPRESSION="none"
 	SUFFIX=
