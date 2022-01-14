@@ -66,6 +66,11 @@ struct mm_region *mem_map = px30_mem_map;
 
 #define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
 
+#define GRF_GPIO1A_DS2			0x0090
+#define GRF_GPIO1B_DS2			0x0094
+#define GRF_GPIO1A_E			0x00F0
+#define GRF_GPIO1B_E			0x00F4
+
 /* GRF_GPIO1CL_IOMUX */
 enum {
 	GPIO1C1_SHIFT		= 4,
@@ -196,6 +201,16 @@ int arch_cpu_init(void)
 	/* We do some SoC one time setting here. */
 	/* Disable the ddr secure region setting to make it non-secure */
 	writel(0x0, FW_DDR_CON_REG);
+
+	if (soc_is_px30s()) {
+		/* set the emmc data(GPIO1A0-A7) drive strength to 14.2ma */
+		writel(0xFFFF0000, GRF_BASE + GRF_GPIO1A_DS2);
+		writel(0xFFFFFFFF, GRF_BASE + GRF_GPIO1A_E);
+		/* set the emmc clock(GPIO1B1) drive strength to 23.7ma */
+		/* set the emmc cmd(GPIO1B2) drive strength to 14.2ma */
+		writel(0x00060002, GRF_BASE + GRF_GPIO1B_DS2);
+		writel(0x003C0038, GRF_BASE + GRF_GPIO1B_E);
+	}
 #endif
 	/* Enable PD_VO (default disable at reset) */
 	rk_clrreg(PMU_PWRDN_CON, 1 << 13);
