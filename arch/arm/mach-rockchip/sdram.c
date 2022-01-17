@@ -171,14 +171,21 @@ unsigned int get_ddr_bw(void)
 #if defined(CONFIG_SPL_FRAMEWORK) || !defined(CONFIG_SPL_OF_PLATDATA)
 int dram_init_banksize(void)
 {
+#ifdef CONFIG_BIDRAM
 	bidram_gen_gd_bi_dram();
-
+#else
+	param_simple_parse_ddr_mem(1);
+#endif
 	return 0;
 }
 
 int dram_init(void)
 {
+#ifdef CONFIG_BIDRAM
 	gd->ram_size = bidram_get_ram_size();
+#else
+	gd->ram_size = param_simple_parse_ddr_mem(0);
+#endif
 	if (!gd->ram_size)
 		return -ENOMEM;
 
