@@ -345,6 +345,46 @@ struct memblock *param_parse_ddr_mem(int *out_count)
 	return mem;
 }
 
+#ifndef CONFIG_BIDRAM
+/*
+ * init_bank=0: called from dram_init_banksize()
+ * init_bank=0: called from dram_init()
+ */
+phys_size_t param_simple_parse_ddr_mem(int init_bank)
+{
+	struct memblock *list;
+	int i, count;
+
+	list = param_parse_ddr_mem(&count);
+	if (!list) {
+		printf("Can't get dram banks\n");
+		return 0;
+	}
+
+	if (count > CONFIG_NR_DRAM_BANKS) {
+		printf("Dram banks num=%d, over %d\n", count, CONFIG_NR_DRAM_BANKS);
+		return 0;
+	}
+
+	if (!init_bank) {
+		i = count - 1;
+		return ddr_mem_get_usable_size(list[i].base, list[i].size);
+	}
+
+	for (i = 0; i < count; i++) {
+		gd->bd->bi_dram[i].start = list[i].base;
+		gd->bd->bi_dram[i].size =
+			ddr_mem_get_usable_size(list[i].base, list[i].size);
+		debug("bank[%d]: 0x%08lx - 0x%08lx\n", i,
+		      (ulong)gd->bd->bi_dram[i].start,
+		      (ulong)gd->bd->bi_dram[i].start +
+		      (ulong)gd->bd->bi_dram[i].size);
+	}
+
+	return 0;
+}
+#endif
+
 int param_parse_pre_serial(void)
 {
 #if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \

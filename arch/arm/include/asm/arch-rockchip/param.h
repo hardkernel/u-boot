@@ -18,6 +18,13 @@
 struct memblock *param_parse_ddr_mem(int *out_count);
 
 /**
+ * param_simple_parse_ddr_mem() - Simple parse ddr memory region
+ */
+#ifndef CONFIG_BIDRAM
+phys_size_t param_simple_parse_ddr_mem(int init_bank);
+#endif
+
+/**
  * param_parse_atf_mem() - Parse atf memory region
  *
  * @return memblock structure which contains base and size info.
