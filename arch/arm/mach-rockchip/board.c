@@ -81,6 +81,7 @@ __weak int rk_board_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_ROCKCHIP_SET_ETHADDR
 /*
  * define serialno max length, the max length is 512 Bytes
  * The remaining bytes are used to ensure that the first 512 bytes
@@ -140,7 +141,9 @@ static int rockchip_set_ethaddr(void)
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_ROCKCHIP_SET_SN
 static int rockchip_set_serialno(void)
 {
 	u8 low[CPUID_LEN / 2], high[CPUID_LEN / 2];
@@ -214,6 +217,8 @@ static int rockchip_set_serialno(void)
 
 	return ret;
 }
+#endif
+
 
 #if defined(CONFIG_USB_FUNCTION_FASTBOOT)
 int fb_set_reboot_flag(void)
@@ -362,8 +367,12 @@ static void cmdline_handle(void)
 
 int board_late_init(void)
 {
+#ifdef CONFIG_ROCKCHIP_SET_ETHADDR
 	rockchip_set_ethaddr();
+#endif
+#ifdef CONFIG_ROCKCHIP_SET_SN
 	rockchip_set_serialno();
+#endif
 	setup_download_mode();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();

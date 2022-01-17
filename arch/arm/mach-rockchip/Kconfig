@@ -881,6 +881,14 @@ config ROCKCHIP_SFC_IOMUX
 	help
 	  This enable U-Boot to config SFC iomux.
 
+config ROCKCHIP_SET_SN
+	bool "Rockchip set serial number"
+	default y
+
+config ROCKCHIP_SET_ETHADDR
+	bool "Rockchip set eth address"
+	default y
+
 config BASE_DEFCONFIG
 	string "Base defconfig of config fragment"
 	default ""
