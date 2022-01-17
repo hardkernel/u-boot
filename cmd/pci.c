@@ -442,7 +442,7 @@ static const struct pci_flag_info {
 
 static void pci_show_regions(struct udevice *bus)
 {
-	struct pci_controller *hose = dev_get_uclass_priv(bus);
+	struct pci_controller *hose = dev_get_uclass_priv(pci_get_controller(bus));
 	const struct pci_region *reg;
 	int i, j;
 
@@ -451,6 +451,7 @@ static void pci_show_regions(struct udevice *bus)
 		return;
 	}
 
+	printf("Buses %02x-%02x\n", hose->first_busno, hose->last_busno);
 	printf("#   %-18s %-18s %-18s  %s\n", "Bus start", "Phys start", "Size",
 	       "Flags");
 	for (i = 0, reg = hose->regions; i < hose->region_count; i++, reg++) {
@@ -485,6 +486,7 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	pci_dev_t bdf = 0;
 	char cmd = 's';
 	int ret = 0;
+	char *endp;
 
 	if (argc > 1)
 		cmd = argv[1][0];
@@ -519,8 +521,35 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				value = 0;
 				argc--;
 			}
-			if (argc > 1)
-				busnum = simple_strtoul(argv[1], NULL, 16);
+			if (argc > 2 || (argc > 1 && cmd != 'r' && argv[1][0] != 's')) {
+				if (argv[argc - 1][0] != '*') {
+					busnum = simple_strtoul(argv[argc - 1], &endp, 16);
+					if (*endp)
+						goto usage;
+				}
+				argc--;
+			}
+			if (cmd == 'r' && argc > 2)
+				goto usage;
+			else if (cmd != 'r' && (argc > 2 || (argc == 2 && argv[1][0] != 's')))
+				goto usage;
+		}
+		if (busnum == -1) {
+			if (cmd != 'r') {
+				for (busnum = 0;
+				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
+				     busnum++)
+					pciinfo(bus, value, true);
+			} else {
+				for (busnum = 0;
+				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
+				     busnum++) {
+					/* Regions are controller specific so skip non-root buses */
+					if (device_is_on_pci_bus(bus))
+						continue;
+					pci_show_regions(bus);
+				}
+			}
 		}
 		ret = uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus);
 		if (ret) {
@@ -585,7 +614,7 @@ static char pci_help_text[] =
 	"    - show header of PCI device 'bus.device.function'\n"
 	"pci bar b.d.f\n"
 	"    - show BARs base and size for device b.d.f'\n"
-	"pci regions\n"
+	"pci regions [bus]\n"
 	"    - show PCI regions\n"
 	"pci display[.b, .w, .l] b.d.f [address] [# of objects]\n"
 	"    - display PCI configuration space (CFG)\n"
