@@ -1142,7 +1142,7 @@ config ARCH_ROCKCHIP
 	select SYS_MALLOC_F
 	select SYS_THUMB_BUILD if !ARM64
 	select SPL_SYS_MALLOC_SIMPLE if SPL
-	select DM_GPIO
+	imply DM_GPIO
 	select DM_SERIAL
 	select DM_SPI
 	select DM_SPI_FLASH
