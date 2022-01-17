@@ -394,7 +394,7 @@ function sub_commands()
 		elf|nm)
 			if [ "${CMD}" == "nm" ]; then
 				echo -e "\n${ELF}:     file format elf\n"
-				${TOOLCHAIN_NM} -r --size ${ELF} | less
+				${TOOLCHAIN_NM} -r --size ${ELF} | grep -iv 'b' | less
 			else
 				if [ "${CMD}" == "elf" -a "${ARG}" == "elf" ]; then
 					ARG=D # default
