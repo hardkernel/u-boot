@@ -657,6 +657,7 @@ int board_bidram_reserve(struct bidram *bidram)
 	return 0;
 }
 
+#ifdef CONFIG_SYSMEM
 int board_sysmem_reserve(struct sysmem *sysmem)
 {
 #ifdef CONFIG_SKIP_RELOCATE_UBOOT
@@ -668,6 +669,7 @@ int board_sysmem_reserve(struct sysmem *sysmem)
 #endif
 	return 0;
 }
+#endif
 
 parse_fn_t board_bidram_parse_fn(void)
 {
