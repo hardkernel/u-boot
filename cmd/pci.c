@@ -522,34 +522,13 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				argc--;
 			}
 			if (argc > 2 || (argc > 1 && cmd != 'r' && argv[1][0] != 's')) {
-				if (argv[argc - 1][0] != '*') {
-					busnum = simple_strtoul(argv[argc - 1], &endp, 16);
-					if (*endp)
-						goto usage;
-				}
+				busnum = simple_strtoul(argv[argc - 1], NULL, 16);
 				argc--;
 			}
 			if (cmd == 'r' && argc > 2)
 				goto usage;
 			else if (cmd != 'r' && (argc > 2 || (argc == 2 && argv[1][0] != 's')))
 				goto usage;
-		}
-		if (busnum == -1) {
-			if (cmd != 'r') {
-				for (busnum = 0;
-				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
-				     busnum++)
-					pciinfo(bus, value, true);
-			} else {
-				for (busnum = 0;
-				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
-				     busnum++) {
-					/* Regions are controller specific so skip non-root buses */
-					if (device_is_on_pci_bus(bus))
-						continue;
-					pci_show_regions(bus);
-				}
-			}
 		}
 		ret = uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus);
 		if (ret) {
