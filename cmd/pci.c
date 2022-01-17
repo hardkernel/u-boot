@@ -256,10 +256,8 @@ static void pci_header_show(struct udevice *dev)
     }
 }
 
-static void pciinfo_header(int busnum, bool short_listing)
+static void pciinfo_header(bool short_listing)
 {
-	printf("Scanning PCI devices on bus %d\n", busnum);
-
 	if (short_listing) {
 		printf("BusDevFun  VendorId   DeviceId   Device Class       Sub-Class\n");
 		printf("_____________________________________________________________\n");
@@ -288,11 +286,15 @@ static void pci_header_show_brief(struct udevice *dev)
 	       pci_class_str(class), subclass);
 }
 
-static void pciinfo(struct udevice *bus, bool short_listing)
+static void pciinfo(struct udevice *bus, bool short_listing, bool multi)
 {
 	struct udevice *dev;
 
-	pciinfo_header(bus->seq, short_listing);
+	if (!multi)
+		printf("Scanning PCI devices on bus %d\n", bus->seq);
+
+	if (!multi || bus->seq == 0)
+		pciinfo_header(short_listing);
 
 	for (device_find_first_child(bus, &dev);
 	     dev;
@@ -482,7 +484,7 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong addr = 0, value = 0, cmd_size = 0;
 	enum pci_size_t size = PCI_SIZE_32;
 	struct udevice *dev, *bus;
-	int busnum = 0;
+	int busnum = -1;
 	pci_dev_t bdf = 0;
 	char cmd = 's';
 	int ret = 0;
@@ -522,13 +524,35 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				argc--;
 			}
 			if (argc > 2 || (argc > 1 && cmd != 'r' && argv[1][0] != 's')) {
-				busnum = simple_strtoul(argv[argc - 1], NULL, 16);
+				if (argv[argc - 1][0] != '*') {
+					busnum = simple_strtoul(argv[argc - 1], &endp, 16);
+					if (*endp)
+						goto usage;
+				}
 				argc--;
 			}
 			if (cmd == 'r' && argc > 2)
 				goto usage;
 			else if (cmd != 'r' && (argc > 2 || (argc == 2 && argv[1][0] != 's')))
 				goto usage;
+		}
+		if (busnum == -1) {
+			if (cmd != 'r') {
+				for (busnum = 0;
+				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
+				     busnum++)
+					pciinfo(bus, value, true);
+			} else {
+				for (busnum = 0;
+				     uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus) == 0;
+				     busnum++) {
+					/* Regions are controller specific so skip non-root buses */
+					if (device_is_on_pci_bus(bus))
+						continue;
+					pci_show_regions(bus);
+				}
+			}
+			return 0;
 		}
 		ret = uclass_get_device_by_seq(UCLASS_PCI, busnum, &bus);
 		if (ret) {
@@ -538,7 +562,7 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (cmd == 'r')
 			pci_show_regions(bus);
 		else
-			pciinfo(bus, value);
+			pciinfo(bus, value, false);
 		return 0;
 	}
 
@@ -585,7 +609,7 @@ static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 #ifdef CONFIG_SYS_LONGHELP
 static char pci_help_text[] =
-	"[bus] [long]\n"
+	"[bus|*] [long]\n"
 	"    - short or long list of PCI devices on bus 'bus'\n"
 	"pci enum\n"
 	"    - Enumerate PCI buses\n"
@@ -593,7 +617,7 @@ static char pci_help_text[] =
 	"    - show header of PCI device 'bus.device.function'\n"
 	"pci bar b.d.f\n"
 	"    - show BARs base and size for device b.d.f'\n"
-	"pci regions [bus]\n"
+	"pci regions [bus|*]\n"
 	"    - show PCI regions\n"
 	"pci display[.b, .w, .l] b.d.f [address] [# of objects]\n"
 	"    - display PCI configuration space (CFG)\n"
