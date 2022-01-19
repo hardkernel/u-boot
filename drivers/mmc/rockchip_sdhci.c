@@ -485,7 +485,6 @@ static int rockchip_sdhci_probe(struct udevice *dev)
 
 	host->ops = &rockchip_sdhci_ops;
 
-	host->quirks = SDHCI_QUIRK_WAIT_SEND_CMD;
 	host->max_clk = max_frequency;
 
 	if (dev_read_bool(dev, "mmc-hs200-1_8v"))
