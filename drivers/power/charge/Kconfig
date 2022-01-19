@@ -4,3 +4,8 @@ config CHARGER_BQ25700
 	help
 	  This adds support for BQ25700 charger support.
 
+config CHARGER_BQ25890
+	bool "BQ25890 charger support"
+	depends on DM_FUEL_GAUGE
+	help
+	  This adds support for BQ25890 charger support.
