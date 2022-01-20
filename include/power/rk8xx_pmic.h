@@ -285,6 +285,7 @@ struct rk8xx_priv {
 	int lp_off_time;
 	int lp_action;
 	uint8_t sleep_pin;
+	uint8_t rst_fun;
 	int not_save_power_en;
 };
 

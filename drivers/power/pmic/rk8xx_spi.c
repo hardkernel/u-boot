@@ -35,6 +35,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK806_IRQ_PWRON_FALL_MSK	BIT(0)
 #define RK806_IRQ_PWRON_RISE_MSK	BIT(1)
 #define RK806_DEV_OFF			BIT(0)
+#define RK806_RST_MODE1			0x01
+#define RK806_RST_MODE2			0x02
 #define VERSION_AB			0x01
 
 #if CONFIG_IS_ENABLED(IRQ)
@@ -181,6 +183,8 @@ static int rk8xx_spi_ofdata_to_platdata(struct udevice *dev)
 	u32 interrupt, phandle;
 	int ret;
 
+	rk8xx->rst_fun = dev_read_u32_default(dev, "pmic-reset-func", 0);
+
 	phandle = dev_read_u32_default(dev, "interrupt-parent", -ENODATA);
 	if (phandle == -ENODATA) {
 		printf("Read 'interrupt-parent' failed, ret=%d\n", phandle);
@@ -285,6 +289,18 @@ static int rk8xx_spi_probe(struct udevice *dev)
 		}
 		value |= 0x80;
 		rk806_spi_write(dev, RK806_SYS_CFG1, &value, 1);
+	}
+
+	if (priv->rst_fun) {
+		rk806_spi_read(dev, RK806_SYS_CFG3, &value, 1);
+		value &= 0x3f;
+		if (priv->rst_fun == RK806_RST_MODE1) {
+			value |= (RK806_RST_MODE1 << 6);
+			rk806_spi_write(dev, RK806_SYS_CFG3, &value, 1);
+		} else if (priv->rst_fun == RK806_RST_MODE2) {
+			value |= (RK806_RST_MODE2 << 6);
+			rk806_spi_write(dev, RK806_SYS_CFG3, &value, 1);
+		}
 	}
 
 	rk8xx_spi_irq_chip_init(dev);
