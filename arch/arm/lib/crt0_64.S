@@ -71,9 +71,9 @@ ENTRY(_main)
 	 * data access alignment checks and SError.
 	 */
 #ifdef CONFIG_SPL_BUILD
-	mov x1, #(CR_SA | CR_I)
+	mov x1, #CR_I
 #else
-	mov x1, #(CR_SA)
+	mov x1, #0
 #endif
 	switch_el x2, 3f, 2f, 1f
 3:	mrs	x0, sctlr_el3
