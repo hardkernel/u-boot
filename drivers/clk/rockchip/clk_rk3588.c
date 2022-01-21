@@ -893,6 +893,7 @@ static ulong rk3588_aclk_vop_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 
 	switch (clk_id) {
 	case ACLK_VOP_ROOT:
+	case ACLK_VOP:
 		con = readl(&cru->clksel_con[110]);
 		div = (con & ACLK_VOP_ROOT_DIV_MASK) >> ACLK_VOP_ROOT_DIV_SHIFT;
 		sel = (con & ACLK_VOP_ROOT_SEL_MASK) >> ACLK_VOP_ROOT_SEL_SHIFT;
@@ -943,7 +944,17 @@ static ulong rk3588_aclk_vop_set_clk(struct rk3588_clk_priv *priv,
 
 	switch (clk_id) {
 	case ACLK_VOP_ROOT:
-		if (!(priv->cpll_hz % rate)) {
+	case ACLK_VOP:
+		if (rate >= 850 * MHz) {
+			src_clk = ACLK_VOP_ROOT_SEL_NPLL;
+			div = 1;
+		} else if (rate >= 750 * MHz) {
+			src_clk = ACLK_VOP_ROOT_SEL_CPLL;
+			div = 2;
+		} else if (rate >= 700 * MHz) {
+			src_clk = ACLK_VOP_ROOT_SEL_SPLL;
+			div = 1;
+		} else if (!(priv->cpll_hz % rate)) {
 			src_clk = ACLK_VOP_ROOT_SEL_CPLL;
 			div = DIV_ROUND_UP(priv->cpll_hz, rate);
 		} else {
@@ -1526,6 +1537,7 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case ACLK_VOP_ROOT:
+	case ACLK_VOP:
 	case ACLK_VOP_LOW_ROOT:
 	case HCLK_VOP_ROOT:
 		rate = rk3588_aclk_vop_get_clk(priv, clk->id);
@@ -1667,6 +1679,7 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case ACLK_VOP_ROOT:
+	case ACLK_VOP:
 	case ACLK_VOP_LOW_ROOT:
 	case HCLK_VOP_ROOT:
 		ret = rk3588_aclk_vop_set_clk(priv, clk->id, rate);
