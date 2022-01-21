@@ -690,6 +690,8 @@ int board_init_f_boot_flags(void)
 {
 	int boot_flags = 0;
 
+	arch_fpga_init();
+
 	param_parse_pre_serial();
 
 	if (!gd->serial.enable)
