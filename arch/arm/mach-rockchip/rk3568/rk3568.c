@@ -35,9 +35,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GRF_GPIO1D_DS_1		0x234
 #define GRF_GPIO1D_DS_2		0x238
 #define GRF_SOC_CON4		0x510
-#define EDP_PHY_GRF_BASE	0xfdcb0000
-#define EDP_PHY_GRF_CON0	(EDP_PHY_GRF_BASE + 0x00)
-#define EDP_PHY_GRF_CON10	(EDP_PHY_GRF_BASE + 0x28)
 #define PMU_BASE_ADDR		0xfdd90000
 #define PMU_NOC_AUTO_CON0	(0x70)
 #define PMU_NOC_AUTO_CON1	(0x74)
@@ -863,10 +860,6 @@ int arch_cpu_init(void)
 		writel(0x003f0007, GRF_BASE + GRF_GPIO1D_DS_2);
 	}
 #endif
-
-	/* Disable eDP phy by default */
-	writel(0x00070007, EDP_PHY_GRF_CON10);
-	writel(0x0ff10ff1, EDP_PHY_GRF_CON0);
 
 	/* Set core pvtpll ring length */
 	writel(0x00ff002b, CPU_GRF_BASE + GRF_CORE_PVTPLL_CON0);
