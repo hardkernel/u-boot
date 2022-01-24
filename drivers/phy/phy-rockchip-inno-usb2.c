@@ -740,6 +740,75 @@ static int rk3308_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 	return 0;
 }
 
+static int rk3328_usb2phy_tuning(struct rockchip_usb2phy *rphy)
+{
+	struct regmap *base = get_reg_base(rphy);
+	unsigned int tmp, orig;
+	int ret;
+
+	if (soc_is_px30s()) {
+		/* Enable otg/host port pre-emphasis during non-chirp phase */
+		ret = regmap_read(base, 0x8000, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(2, 0);
+		tmp |= BIT(2) & GENMASK(2, 0);
+		ret = regmap_write(base, 0x8000, tmp);
+		if (ret)
+			return ret;
+
+		/* Set otg port squelch trigger point configure to 100mv */
+		ret = regmap_read(base, 0x8004, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(7, 5);
+		tmp |= 0x40 & GENMASK(7, 5);
+		ret = regmap_write(base, 0x8004, tmp);
+		if (ret)
+			return ret;
+
+		ret = regmap_read(base, 0x8008, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~BIT(0);
+		tmp |= 0x1 & BIT(0);
+		ret = regmap_write(base, 0x8008, tmp);
+		if (ret)
+			return ret;
+
+		/* Enable host port pre-emphasis during non-chirp phase */
+		ret = regmap_read(base, 0x8400, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(2, 0);
+		tmp |= BIT(2) & GENMASK(2, 0);
+		ret = regmap_write(base, 0x8400, tmp);
+		if (ret)
+			return ret;
+
+		/* Set host port squelch trigger point configure to 100mv */
+		ret = regmap_read(base, 0x8404, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~GENMASK(7, 5);
+		tmp |= 0x40 & GENMASK(7, 5);
+		ret = regmap_write(base, 0x8404, tmp);
+		if (ret)
+			return ret;
+
+		ret = regmap_read(base, 0x8408, &orig);
+		if (ret)
+			return ret;
+		tmp = orig & ~BIT(0);
+		tmp |= 0x1 & BIT(0);
+		ret = regmap_write(base, 0x8408, tmp);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int rk3588_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 {
 	struct regmap *base = get_reg_base(rphy);
@@ -1006,6 +1075,7 @@ static const struct rockchip_usb2phy_cfg rk3328_phy_cfgs[] = {
 	{
 		.reg = 0x100,
 		.num_ports	= 2,
+		.phy_tuning = rk3328_usb2phy_tuning,
 		.clkout_ctl	= { 0x108, 4, 4, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
