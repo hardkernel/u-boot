@@ -181,15 +181,17 @@ static int bq25700_get_pd_output_val(struct bq25700 *charger,
 				     int *vol, int *cur)
 {
 	struct power_delivery_data pd_data;
+	int ret;
 
 	if (!charger->pd)
-		return -1;
+		return -EINVAL;
 
 	memset(&pd_data, 0, sizeof(pd_data));
-	if (!power_delivery_get_data(charger->pd, &pd_data))
-		return -1;
+	ret = power_delivery_get_data(charger->pd, &pd_data);
+	if (ret)
+		return ret;
 	if (!pd_data.online || !pd_data.voltage || !pd_data.current)
-		return -1;
+		return -EINVAL;
 
 	*vol = pd_data.voltage;
 	*cur = pd_data.current;
