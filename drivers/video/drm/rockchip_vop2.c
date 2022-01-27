@@ -4571,6 +4571,12 @@ static int rockchip_vop2_fixup_dts(struct display_state *state, void *blob)
 	int vp_id = 0;
 	int cursor_plane_id = -1;
 
+#ifdef CONFIG_TARGET_ODROID_M1
+	int chosen = fdt_path_offset(working_fdt, "/chosen");
+	if (fdt_getprop(working_fdt, chosen, "disable-vop2-fixup", NULL))
+		return 0;
+#endif
+
 	if (vop_fix_dts || vop2->version == VOP_VERSION_RK3528)
 		return 0;
 
