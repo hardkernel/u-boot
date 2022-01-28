@@ -58,6 +58,7 @@ struct bq25890 {
 	u32 ichg;
 	u32 chip_id;
 	struct udevice *pd;
+	bool pd_online;
 };
 
 /* Thermal Regulation Threshold lookup table, in degrees Celsius */
@@ -159,9 +160,18 @@ static bool bq25890_charger_status(struct bq25890 *charger)
 {
 	int state_of_charger;
 	u16 value;
+	int i = 0;
 
+__retry:
 	value = bq25890_read(charger, BQ25890_CHARGERSTAUS_REG);
 	state_of_charger = value & 0x04;
+	if (!state_of_charger && charger->pd_online) {
+		if (i < 3) {
+			i++;
+			mdelay(20);
+			goto __retry;
+		}
+	}
 
 	return state_of_charger;
 }
@@ -205,6 +215,7 @@ static int bq25890_get_pd_output_val(struct bq25890 *charger,
 
 	*vol = pd_data.voltage;
 	*cur = pd_data.current;
+	charger->pd_online = pd_data.online;
 
 	return 0;
 }
