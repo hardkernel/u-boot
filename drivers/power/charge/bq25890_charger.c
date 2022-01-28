@@ -28,6 +28,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define BQ25890_CHARGERSTAUS_REG		0x0B
 #define BQ25890_INPUTVOLTAGE_REG		0x0D
 #define BQ25890_INPUTCURREN_REG			0x00
+#define BQ25890_AUTO_DPDM_REG			0x02
 
 /*
  * Most of the val -> idx conversions can be computed, given the minimum,
@@ -208,6 +209,16 @@ static int bq25890_get_pd_output_val(struct bq25890 *charger,
 	return 0;
 }
 
+static void bq25890_set_auto_dpdm_detect(struct bq25890 *charger, bool enable)
+{
+	u8 value;
+
+	value = bq25890_read(charger, BQ25890_AUTO_DPDM_REG);
+	value &= 0xfe;
+	value |= enable;
+	bq25890_write(charger, BQ25890_AUTO_DPDM_REG, value);
+}
+
 static void bq25890_charger_current_init(struct bq25890 *charger)
 {
 	u8 charge_current =  bq25890_find_idx(BQ25890_CHARGE_CURRENT_1500MA * 1000, TBL_ICHG);
@@ -233,6 +244,7 @@ static void bq25890_charger_current_init(struct bq25890 *charger)
 					   TBL_IINLIM);
 		cur_idx  = cur_idx << 8;
 		if (pd_inputcurrent != 0) {
+			bq25890_set_auto_dpdm_detect(charger, false);
 			bq25890_write(charger, BQ25890_INPUTCURREN_REG,
 				      cur_idx);
 			if (vol_idx)
