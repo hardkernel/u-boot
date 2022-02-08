@@ -14,6 +14,7 @@ obj-$(CONFIG_$(SPL_)DOS_PARTITION)   += part_dos.o
 obj-$(CONFIG_$(SPL_)ISO_PARTITION)   += part_iso.o
 obj-$(CONFIG_$(SPL_)AMIGA_PARTITION) += part_amiga.o
 obj-$(CONFIG_$(SPL_)EFI_PARTITION)   += part_efi.o
+obj-$(CONFIG_$(SPL_)ENV_PARTITION)   += part_env.o
 obj-$(CONFIG_$(SPL_)RKPARM_PARTITION)   += part_rkparm.o
 obj-$(CONFIG_$(SPL_)RKRAM_PARTITION)   += part_rkram.o
 endif

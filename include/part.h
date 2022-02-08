@@ -31,6 +31,7 @@ struct block_drvr {
 #define PART_TYPE_EFI		0x05
 #define PART_TYPE_RKPARM	0x06
 #define PART_TYPE_RKRAM		0x07
+#define PART_TYPE_ENV		0x08
 
 /* maximum number of partition entries supported by search */
 #define DOS_ENTRY_NUMBERS	8
@@ -39,6 +40,7 @@ struct block_drvr {
 #define AMIGA_ENTRY_NUMBERS	8
 #define RKPARM_ENTRY_NUMBERS	128
 #define RKRAM_ENTRY_NUMBERS	6
+#define ENV_ENTRY_NUMBERS	64
 
 /*
  * Type string for U-Boot bootable partitions
@@ -445,5 +447,13 @@ int write_mbr_partition(struct blk_desc *dev_desc, void *buf);
 
 #endif
 
+#if CONFIG_IS_ENABLED(ENV_PARTITION)
+/**
+ * env_part_list_init() - pass partitons list to env part
+ *
+ * @param list - partitons list
+ */
+void env_part_list_init(const char *list);
+#endif
 
 #endif /* _PART_H */
