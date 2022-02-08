@@ -6,6 +6,7 @@
 #
 
 obj-y += common.o env.o
+obj-$(CONFIG_$(SPL_)ENVF) += envf.o
 
 ifndef CONFIG_SPL_BUILD
 obj-y += attr.o
@@ -28,7 +29,9 @@ obj-$(CONFIG_ENV_IS_IN_SPI_FLASH) += sf.o
 obj-$(CONFIG_ENV_IS_IN_REMOTE) += remote.o
 obj-$(CONFIG_ENV_IS_IN_UBI) += ubi.o
 obj-$(CONFIG_ENV_IS_IN_BLK_DEV) += env_blk.o
+ifndef CONFIG_ENVF
 obj-$(CONFIG_ENV_IS_NOWHERE) += nowhere.o
+endif
 endif
 
 ifdef CONFIG_SPL_BUILD
@@ -44,7 +47,11 @@ obj-$(CONFIG_SPL_ENV_SUPPORT) += flags.o
 obj-$(CONFIG_SPL_ENV_SUPPORT) += callback.o
 endif
 ifneq ($(CONFIG_TPL_ENV_SUPPORT)$(CONFIG_SPL_ENV_SUPPORT),)
+ifdef CONFIG_ENVF
+obj-y += envf.o
+else
 obj-$(CONFIG_ENV_IS_NOWHERE) += nowhere.o
+endif
 obj-$(CONFIG_ENV_IS_IN_MMC) += mmc.o
 obj-$(CONFIG_ENV_IS_IN_FAT) += fat.o
 obj-$(CONFIG_ENV_IS_IN_EXT4) += ext4.o
