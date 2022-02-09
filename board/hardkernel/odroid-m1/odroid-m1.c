@@ -13,6 +13,7 @@
 #include <malloc.h>
 #include <mapmem.h>
 #include <lcd.h>
+#include <fs.h>
 #include "../../../drivers/video/drm/rockchip_display.h"
 
 extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
@@ -45,20 +46,16 @@ int board_usb_init(int index, enum usb_init_type init)
 
 int rk_board_late_init(void)
 {
-	struct blk_desc *dev_desc;
 	char buf[1024] = "run distro_bootcmd";
 
 	/* Load SPI firmware when boot device is SPI flash memory
 	 * and environment value 'skip_spiboot' is not 'true'
 	 */
 	if (strcmp(env_get("skip_spiboot"), "true")) {
-		dev_desc = rockchip_get_bootdev();
-		if (dev_desc && (dev_desc->if_type == IF_TYPE_MTD
-					&& dev_desc->devnum == 3))
-			snprintf(buf, sizeof(buf),
-					"cramfsload $scriptaddr boot.scr;"
-					"source $scriptaddr;"
-					"%s", env_get("bootcmd"));
+		snprintf(buf, sizeof(buf),
+				"cramfsload $scriptaddr boot.scr;"
+				"source $scriptaddr;"
+				"%s", env_get("bootcmd"));
 	}
 
 	env_set("bootcmd", buf);
@@ -69,7 +66,24 @@ int rk_board_late_init(void)
 int board_early_init_r(void)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
-	if ((dev_desc->if_type == IF_TYPE_MTD) && (dev_desc->devnum == 2)) {
+	int ret = -EINVAL;
+	char buf[16];
+	int n;
+
+	for (n = 1; n <= 3; n++) {
+		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);
+
+		if (file_exists("mmc", buf, "ODROIDBIOS.BIN", FS_TYPE_ANY)) {
+			char cmd[256];
+			snprintf(cmd, sizeof(cmd),
+					"load mmc %s $cramfsaddr ODROIDBIOS.BIN", buf);
+			ret = run_command(cmd, 0);
+			if (!ret)
+				break;
+		}
+	}
+
+	if (ret) {
 		run_command_list( "sf probe\n"
 				"sf read $cramfsaddr 0x400000 0xc00000",
 				-1, 0);
