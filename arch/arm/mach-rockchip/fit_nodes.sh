@@ -179,6 +179,8 @@ function gen_bl32_node()
 			};
 		};"
 	LOADABLE_OPTEE=", \"optee\""
+	FIRMWARE_OPTEE="firmware = \"optee\";"
+	FIRMWARE_SIGN=", \"firmware\""
 }
 
 function gen_mcu_node()
@@ -342,7 +344,7 @@ echo "	};
 		conf {
 			description = \"${PLATFORM}\";
 			rollback-index = <0x0>;
-			firmware = \"optee\";
+			${FIRMWARE_OPTEE}
 			loadables = \"uboot\"${LOADABLE_OTHER};
 			${STANDALONE_MCU}
 			fdt = \"fdt\"${PROP_KERN_DTB};
@@ -350,7 +352,7 @@ echo "	};
 				algo = \"sha256,rsa2048\";
 				${ALGO_PADDING}
 				key-name-hint = \"dev\";
-				sign-images = \"fdt\", \"firmware\", \"loadables\"${STANDALONE_SIGN};
+				sign-images = \"fdt\", \"loadables\"${FIRMWARE_SIGN}${STANDALONE_SIGN};
 			};
 		};
 	};
