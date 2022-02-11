@@ -636,6 +636,12 @@ config ANDROID_AVB
 	  to verify the boot images. The vbmeta must be matched with images,
 	  if not, verify failed.
 
+config ANDROID_AVB_ROLLBACK_INDEX
+	bool"Support Android Verified Boot Rollback Index"
+	default n
+	help
+	  If enabled, support the android verified boot rollback index.
+
 config ANDROID_KEYMASTER_CA
 	bool "Support Keymaster CA"
 	default y

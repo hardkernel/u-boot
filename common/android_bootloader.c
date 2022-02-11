@@ -568,10 +568,10 @@ retry_verify:
 	    (unlocked & LOCK_MASK)) {
 		int len = 0;
 		char *bootargs, *newbootargs;
-
+#ifdef CONFIG_ANDROID_AVB_ROLLBACK_INDEX
 		if (rk_avb_update_stored_rollback_indexes_for_slot(ops, slot_data[0]))
 			printf("Fail to update the rollback indexes.\n");
-
+#endif
 		if (*slot_data[0]->cmdline) {
 			debug("Kernel command line: %s\n", slot_data[0]->cmdline);
 			len += strlen(slot_data[0]->cmdline);
