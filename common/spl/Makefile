@@ -14,7 +14,11 @@ obj-$(CONFIG_SPL_FRAMEWORK) += spl.o
 endif
 else
 ifdef CONFIG_SPL_BUILD
+ifdef CONFIG_SPL_DECOMP_HEADER
+obj-y += spl_decomp.o
+else
 obj-$(CONFIG_SPL_FRAMEWORK) += spl.o
+endif
 endif
 endif
 

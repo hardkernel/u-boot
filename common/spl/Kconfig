@@ -24,6 +24,12 @@ config SPL_ADC_SUPPORT
 	help
 	  The adc drive can be used to measure voltage in spl if need.
 
+config SPL_DECOMP_HEADER
+        bool "Support SPL DECOMP header"
+        default n
+        help
+          Support to build SPL as decomp header.
+
 config SPL_LDSCRIPT
 	string "Linker script for the SPL stage"
 	default "arch/$(ARCH)/cpu/u-boot-spl.lds"

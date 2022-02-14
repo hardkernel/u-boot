@@ -12,7 +12,9 @@ obj-spl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 obj-tpl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 
 obj-tpl-y += tpl.o
+ifndef CONFIG_SPL_DECOMP_HEADER
 obj-spl-y += spl.o spl-boot-order.o
+endif
 
 ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_$(SPL_)FIT) += fit_misc.o

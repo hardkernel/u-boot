@@ -651,6 +651,7 @@ HAVE_VENDOR_COMMON_LIB = $(if $(wildcard $(srctree)/board/$(VENDOR)/common/Makef
 libs-y += lib/
 libs-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/
 libs-$(CONFIG_OF_EMBED) += dts/
+ifneq ($(CONFIG_SPL_BUILD)$(CONFIG_SPL_DECOMP_HEADER),yy)
 libs-y += fs/
 libs-y += net/
 libs-y += disk/
@@ -700,6 +701,7 @@ libs-y += common/
 libs-y += env/
 libs-$(CONFIG_API) += api/
 libs-$(CONFIG_HAS_POST) += post/
+endif
 libs-y += test/
 libs-y += test/dm/
 libs-$(CONFIG_UT_ENV) += test/env/
