@@ -1847,18 +1847,7 @@ static int __maybe_unused rk3588_dclk_vop_set_parent(struct clk *clk,
 	struct rk3588_clk_priv *priv = dev_get_priv(clk->dev);
 	struct rk3588_cru *cru = priv->cru;
 	u32 sel;
-	const char *clock_output_name;
-	char v0pll_name[] = "v0pll";
-	int ret = 0;
-
-	if (parent->id == PLL_V0PLL) {
-		clock_output_name = v0pll_name;
-	} else {
-		ret = dev_read_string_index(parent->dev, "clock-output-names",
-					    parent->id, &clock_output_name);
-		if (ret < 0)
-			return -ENODATA;
-	}
+	const char *clock_dev_name = parent->dev->name;
 
 	if (parent->id == PLL_V0PLL)
 		sel = 2;
@@ -1887,9 +1876,9 @@ static int __maybe_unused rk3588_dclk_vop_set_parent(struct clk *clk,
 			     sel << DCLK3_VOP_SRC_SEL_SHIFT);
 		break;
 	case DCLK_VOP0:
-		if (!strcmp(clock_output_name, "hdmiphypll0"))
+		if (!strcmp(clock_dev_name, "hdmiphypll_clk0"))
 			sel = 1;
-		else if (!strcmp(clock_output_name, "hdmiphypll1"))
+		else if (!strcmp(clock_dev_name, "hdmiphypll_clk1"))
 			sel = 2;
 		else
 			sel = 0;
@@ -1897,9 +1886,9 @@ static int __maybe_unused rk3588_dclk_vop_set_parent(struct clk *clk,
 			     sel << DCLK0_VOP_SEL_SHIFT);
 		break;
 	case DCLK_VOP1:
-		if (!strcmp(clock_output_name, "hdmiphypll0"))
+		if (!strcmp(clock_dev_name, "hdmiphypll_clk0"))
 			sel = 1;
-		else if (!strcmp(clock_output_name, "hdmiphypll1"))
+		else if (!strcmp(clock_dev_name, "hdmiphypll_clk1"))
 			sel = 2;
 		else
 			sel = 0;
@@ -1907,9 +1896,9 @@ static int __maybe_unused rk3588_dclk_vop_set_parent(struct clk *clk,
 			     sel << DCLK1_VOP_SEL_SHIFT);
 		break;
 	case DCLK_VOP2:
-		if (!strcmp(clock_output_name, "hdmiphypll0"))
+		if (!strcmp(clock_dev_name, "hdmiphypll_clk0"))
 			sel = 1;
-		else if (!strcmp(clock_output_name, "hdmiphypll1"))
+		else if (!strcmp(clock_dev_name, "hdmiphypll_clk1"))
 			sel = 2;
 		else
 			sel = 0;
