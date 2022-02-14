@@ -46,6 +46,7 @@ SCRIPT_TOS="${SRCTREE}/scripts/tos.sh"
 SCRIPT_SPL="${SRCTREE}/scripts/spl.sh"
 SCRIPT_UBOOT="${SRCTREE}/scripts/uboot.sh"
 SCRIPT_LOADER="${SRCTREE}/scripts/loader.sh"
+SCRIPT_DECOMP="${SRCTREE}/scripts/decomp.sh"
 CC_FILE=".cc"
 REP_DIR="./rep"
 #########################################################################################################
@@ -108,6 +109,8 @@ function prepare()
 
 	if grep  -q '^CONFIG_ROCKCHIP_FIT_IMAGE_PACK=y' .config ; then
 		PLAT_TYPE="FIT"
+	elif grep  -q '^CONFIG_SPL_DECOMP_HEADER=y' .config ; then
+		PLAT_TYPE="DECOMP"
 	fi
 }
 
@@ -731,6 +734,8 @@ function pack_images()
 	if [ "${ARG_RAW_COMPILE}" != "y" ]; then
 		if [ "${PLAT_TYPE}" == "FIT" ]; then
 			pack_fit_image ${ARG_LIST_FIT}
+		elif [ "${PLAT_TYPE}" == "DECOMP" ]; then
+			${SCRIPT_DECOMP}
 		else
 			pack_uboot_image
 			pack_trust_image
