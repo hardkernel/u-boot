@@ -381,8 +381,8 @@ static int rk_hash_direct_calc(void *hw_data, const u8 *data,
 	tmp = crypto_read(CRYPTO_DMA_INT_ST);
 	crypto_write(tmp, CRYPTO_DMA_INT_ST);
 
-	if (tmp != CRYPTO_SRC_ITEM_DONE_INT_ST &&
-	    tmp != CRYPTO_ZERO_LEN_INT_ST) {
+	if ((tmp & mask) != CRYPTO_SRC_ITEM_DONE_INT_ST &&
+	    (tmp & mask) != CRYPTO_ZERO_LEN_INT_ST) {
 		debug("[%s] %d: CRYPTO_DMA_INT_ST = 0x%x\n",
 		      __func__, __LINE__, tmp);
 		goto exit;
