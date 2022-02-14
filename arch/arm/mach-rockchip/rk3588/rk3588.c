@@ -778,6 +778,20 @@ void rockchip_stimer_init(void)
 	writel(0x1, CONFIG_ROCKCHIP_STIMER_BASE + 0x4);
 }
 
+static u32 gpio4d_iomux_sel_l = 0xffffffff;
+static u32 gpio4d_iomux_sel_h;
+static u32 gpio0a_iomux_sel_h;
+
+void spl_board_sd_iomux_save(void)
+{
+	struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
+	struct rk3588_pmu1_ioc * const pmu1_ioc = (void *)PMU1_IOC_BASE;
+
+	gpio4d_iomux_sel_l = readl(&bus_ioc->gpio4d_iomux_sel_l);
+	gpio4d_iomux_sel_h = readl(&bus_ioc->gpio4d_iomux_sel_h);
+	gpio0a_iomux_sel_h = readl(&pmu1_ioc->gpio0a_iomux_sel_h);
+}
+
 void spl_board_storages_fixup(struct spl_image_loader *loader)
 {
 	int ret = 0;
@@ -785,7 +799,7 @@ void spl_board_storages_fixup(struct spl_image_loader *loader)
 	if (!loader)
 		return;
 
-	if (loader->boot_device == BOOT_DEVICE_MMC2) {
+	if (loader->boot_device == BOOT_DEVICE_MMC2 && gpio4d_iomux_sel_l != 0xffffffff) {
 		struct rk3588_bus_ioc * const bus_ioc = (void *)BUS_IOC_BASE;
 		struct rk3588_pmu1_ioc * const pmu1_ioc = (void *)PMU1_IOC_BASE;
 		struct mmc *mmc = NULL;
@@ -797,9 +811,9 @@ void spl_board_storages_fixup(struct spl_image_loader *loader)
 
 		no_card = mmc_getcd(mmc) == 0;
 		if (no_card) {
-			writel(0xffff00aa, &bus_ioc->gpio4d_iomux_sel_l);
-			writel(0xffff0000, &bus_ioc->gpio4d_iomux_sel_h);
-			writel(0xffff0000, &pmu1_ioc->gpio0a_iomux_sel_h);
+			writel(0xffffuL << 16 | gpio4d_iomux_sel_l, &bus_ioc->gpio4d_iomux_sel_l);
+			writel(0xffffuL << 16 | gpio4d_iomux_sel_h, &bus_ioc->gpio4d_iomux_sel_h);
+			writel(0xffffuL << 16 | gpio0a_iomux_sel_h, &pmu1_ioc->gpio0a_iomux_sel_h);
 		}
 	}
 }
@@ -888,6 +902,8 @@ int arch_cpu_init(void)
 	/* Assert hdptxphy init,cmn,lane reset */
 	writel(0xb800b800, PMU1CRU_BASE + PMU1CRU_SOFTRST_CON03);
 	writel(0x00030003, PMU1CRU_BASE + PMU1CRU_SOFTRST_CON04);
+
+	spl_board_sd_iomux_save();
 #endif
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
 	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
