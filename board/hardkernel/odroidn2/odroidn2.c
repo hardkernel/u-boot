@@ -15,6 +15,7 @@
 #include <asm/cpu_id.h>
 #include <asm/arch/secure_apb.h>
 #ifdef CONFIG_SYS_I2C_AML
+#include <amlogic/i2c.h>
 #include <aml_i2c.h>
 #endif
 #ifdef CONFIG_AML_VPU
@@ -220,21 +221,32 @@ int board_mmc_init(bd_t	*bis)
 #endif
 
 #ifdef CONFIG_SYS_I2C_AML
-struct aml_i2c_platform g_aml_i2c_plat = {
-	.wait_count         = 1000000,
-	.wait_ack_interval  = 5,
-	.wait_read_interval = 5,
-	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
-	.use_pio            = 0,
-	.master_i2c_speed   = AML_I2C_SPPED_400K,
-	.master_ao_pinmux = {
-		.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_4_REG,
-		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_4_BIT,
-		.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_5_REG,
-		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
-	}
+struct aml_i2c_platform g_aml_i2c_plat[] = {
+	{
+		.wait_count         = 1000000,
+		.wait_ack_interval  = 5,
+		.wait_read_interval = 5,
+		.wait_xfer_interval = 5,
+		.master_no          = AML_I2C_MASTER_B,
+		.use_pio            = 0,
+		.master_i2c_speed   = AML_I2C_SPPED_400K,
+		.master_b_pinmux = {
+			.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOX_11_REG,
+			.scl_bit    = MESON_I2C_MASTER_B_GPIOX_11_BIT,
+			.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOX_10_REG,
+			.sda_bit    = MESON_I2C_MASTER_B_GPIOX_10_BIT,
+		},
+	},
 };
+
+static void board_i2c_init(void)
+{
+	//Amlogic I2C controller initialized
+	//note: it must be call before any I2C operation
+	//aml_i2c_init();
+	extern void aml_i2c_set_ports(struct aml_i2c_platform *i2c_plat);
+	aml_i2c_set_ports(g_aml_i2c_plat);
+}
 #endif
 
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
@@ -387,6 +399,17 @@ int board_late_init(void)
 #ifdef CONFIG_AML_CVBS
 	run_command("cvbs init; cvbs output 480cvbs", 0);
 	board_cvbs_probe();
+#endif
+
+#ifdef CONFIG_SYS_I2C_AML
+	board_i2c_init();
+	if (lt8619c_init() == 0) {
+		setenv("colorattribute", "rgb,8bit");
+		setenv("hdmimode", "1024x600p60hz");
+		setenv("outputmode", "1024x600p60hz");
+	} else {
+		printf(" lt8619c hdmi_to_lcd device not found.!\n");
+	}
 #endif
 
 	setenv("variant", board_is_odroidn2plus() ? "n2_plus" : "n2");
