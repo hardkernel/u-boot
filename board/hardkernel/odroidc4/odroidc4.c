@@ -401,6 +401,13 @@ int board_late_init(void)
 
 #ifdef CONFIG_SYS_I2C_AML
 	board_i2c_init();
+	if (lt8619c_init() == 0) {
+		setenv("colorattribute", "rgb,8bit");
+		setenv("hdmimode", "1024x600p60hz");
+		setenv("outputmode", "1024x600p60hz");
+	} else {
+		printf(" lt8619c hdmi_to_lcd device not found.!\n");
+	}
 #endif
 	setenv("variant", board_is_odroidc4() ? "c4" : "hc4");
 	board_set_dtbfile("meson64_odroid%s.dtb");
