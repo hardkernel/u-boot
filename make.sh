@@ -548,8 +548,7 @@ function pack_uboot_itb_image()
 		elif [ ! -z "${TOS}" ]; then
 			cp ${RKBIN}/${TOS}   tee.bin
 		else
-			echo "ERROR: No tee bin"
-			exit 1
+			echo "WARN: No tee bin"
 		fi
 
 		TEE_OFFSET=`sed -n "/ADDR=/s/ADDR=//p" ${INI} | tr -d '\r'`
