@@ -53,7 +53,7 @@ static int usbhost_gpio_request(void)
 		debug("gpio: requesting pin %u failed\n", CONFIG_USB_HUB_RST_N);
 		return ret;
 	}
-
+#if defined(CONFIG_ODROID_N2)
 	/* usb host hub chip enable */
 	ret = gpio_request(CONFIG_USB_HUB_CHIP_EN, CONFIG_USB_HUB_CHIP_EN_NAME);
 	if (ret && ret != -EBUSY) {
@@ -61,7 +61,7 @@ static int usbhost_gpio_request(void)
 		gpio_free(CONFIG_USB_HUB_RST_N);
 		return ret;
 	}
-
+#endif
 	usbhost_init = true;
 
 	return 0;
@@ -69,7 +69,10 @@ static int usbhost_gpio_request(void)
 
 static int usbhost_gpio_free(void)
 {
+
+#if defined(CONFIG_ODROID_N2)
 	gpio_free(CONFIG_USB_HUB_CHIP_EN);
+#endif
 	gpio_free(CONFIG_USB_HUB_RST_N);
 
 	return 0;
@@ -79,14 +82,19 @@ int usbhost_set_power(int on)
 {
 	if (on) {
 		if (usbhost_gpio_request() == 0) {
+
+#if defined(CONFIG_ODROID_N2)
 			gpio_direction_output(CONFIG_USB_HUB_CHIP_EN, 1);
 			udelay(100);
+#endif
 			gpio_direction_output(CONFIG_USB_HUB_RST_N, 1);
 		}
 	} else {
 		if (usbhost_requested()) {
 			gpio_direction_output(CONFIG_USB_HUB_RST_N, 0);
+#if defined(CONFIG_ODROID_N2)
 			gpio_direction_output(CONFIG_USB_HUB_CHIP_EN, 0);
+#endif
 		}
 
 		usbhost_gpio_free();
