@@ -1667,7 +1667,7 @@ static int do_i2c_show_bus(cmd_tbl_t *cmdtp, int flag, int argc,
  * on error.
  */
 #if defined(CONFIG_SYS_I2C) || defined(CONFIG_I2C_MULTI_BUS) || \
-		defined(CONFIG_DM_I2C)
+		defined(CONFIG_DM_I2C) || defined(CONFIG_SYS_I2C_AML)
 static int do_i2c_bus_num(cmd_tbl_t *cmdtp, int flag, int argc,
 				char * const argv[])
 {
@@ -1809,7 +1809,7 @@ static cmd_tbl_t cmd_i2c_sub[] = {
 	U_BOOT_CMD_MKENT(bus, 1, 1, do_i2c_show_bus, "", ""),
 #endif
 	U_BOOT_CMD_MKENT(crc32, 3, 1, do_i2c_crc, "", ""),
-#if defined(CONFIG_SYS_I2C) || \
+#if defined(CONFIG_SYS_I2C) || defined(CONFIG_SYS_I2C_AML) || \
 	defined(CONFIG_I2C_MULTI_BUS) || defined(CONFIG_DM_I2C)
 	U_BOOT_CMD_MKENT(dev, 1, 1, do_i2c_bus_num, "", ""),
 #endif  /* CONFIG_I2C_MULTI_BUS */
@@ -1872,11 +1872,11 @@ static int do_i2c(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 /***************************************************/
 #ifdef CONFIG_SYS_LONGHELP
 static char i2c_help_text[] =
-#if defined(CONFIG_SYS_I2C)
+#if defined(CONFIG_SYS_I2C) || defined(CONFIG_SYS_I2C_AML)
 	"bus [muxtype:muxaddr:muxchannel] - show I2C bus info\n"
 #endif
 	"crc32 chip address[.0, .1, .2] count - compute CRC32 checksum\n"
-#if defined(CONFIG_SYS_I2C) || \
+#if defined(CONFIG_SYS_I2C) || defined(CONFIG_SYS_I2C_AML) || \
 	defined(CONFIG_I2C_MULTI_BUS) || defined(CONFIG_DM_I2C)
 	"i2c dev [dev] - show or set current I2C bus\n"
 #endif  /* CONFIG_I2C_MULTI_BUS */
