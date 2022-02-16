@@ -16,6 +16,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define RK806_CHIP_NAME			0x5A
 #define RK806_CHIP_VER			0x5B
+#define RK806_HW_VER			0x21
+#define HW_DUAL_PMIC			0x28
+#define HW_SINGLE_PMIC			0xe8
 
 #define RK806_CMD_READ			0
 #define RK806_CMD_WRITE			BIT(7)
@@ -251,7 +254,7 @@ static int rk8xx_spi_probe(struct udevice *dev)
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	struct udevice *spi = dev_get_parent(dev);
 	struct spi_slave *slave = NULL;
-	u8 msb, lsb, value;
+	u8 msb, lsb, value = 0;
 	int ret;
 
 	if (spi->seq < 0) {
@@ -280,6 +283,24 @@ static int rk8xx_spi_probe(struct udevice *dev)
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
 	printf("spi%d: RK%x%x: %d\n", spi->seq, msb, (lsb >> 4), lsb & 0x0f);
+
+	ret = rk806_spi_read(dev, RK806_HW_VER, &value, 1);
+	if (ret)
+		panic("RK806: read RK806_HW_VER error!\n");
+	/* dual rk806 dev name: "rk806master@0", "rk806slave@1"
+	 * single rk806 dev name: " rk806single@0"
+	 */
+	if ((!strcmp(dev->name, "rk806master@0")) || (!strcmp(dev->name, "rk806slave@1"))) {
+		if (value != HW_DUAL_PMIC) {
+			dev_err(dev, "HW single pmic, the firmware dual pmic(0x%x)!\n", value);
+			run_command("download", 0);
+		}
+	} else {
+		if (value != HW_SINGLE_PMIC) {
+			dev_err(dev, "HW dual pmic, the firmware single pmic(0x%x)!\n", value);
+			run_command("download", 0);
+		}
+	}
 
 	if ((lsb & 0x0f) == VERSION_AB) {
 		ret = rk806_spi_read(dev, RK806_SYS_CFG1, &value, 1);
