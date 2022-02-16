@@ -1047,14 +1047,6 @@ char *board_fdt_chosen_bootargs(void *fdt)
 		bootargs = fdt_getprop(fdt, nodeoffset, arr_bootargs[i], NULL);
 		if (!bootargs)
 			continue;
-#ifdef CONFIG_ENVF
-		/* Allow "bootargs_envf" to replace "bootargs" */
-		if (!strcmp("bootargs", arr_bootargs[i]) &&
-		    env_get("bootargs_envf")) {
-			bootargs = env_get("bootargs_envf");
-			msg = "envf";
-		}
-#endif
 		if (dump)
 			printf("## bootargs(%s-%s): %s\n\n",
 			       msg, arr_bootargs[i], bootargs);
@@ -1072,12 +1064,24 @@ char *board_fdt_chosen_bootargs(void *fdt)
 #endif
 	}
 
-#ifdef CONFIG_MTD_BLK
-	char *mtd_par_info = mtd_part_parse(NULL);
+#ifdef CONFIG_ENVF
+	char * sys_bootargs;
 
-	if (mtd_par_info) {
-		if (memcmp(env_get("devtype"), "mtd", 3) == 0)
-			env_update("bootargs", mtd_par_info);
+	sys_bootargs = env_get("sys_bootargs");
+	if (sys_bootargs) {
+		env_update("bootargs", sys_bootargs);
+		if (dump)
+			printf("## sys_bootargs: %s\n\n", sys_bootargs);
+	}
+#endif
+#ifdef CONFIG_MTD_BLK
+	if (!env_get("mtdparts")) {
+		char *mtd_par_info = mtd_part_parse(NULL);
+
+		if (mtd_par_info) {
+			if (memcmp(env_get("devtype"), "mtd", 3) == 0)
+				env_update("bootargs", mtd_par_info);
+		}
 	}
 #endif
 	/*
