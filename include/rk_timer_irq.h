@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Rockchip Electronics Co., Ltd
+ * (C) Copyright 2022 Rockchip Electronics Co., Ltd
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
@@ -59,6 +59,9 @@
 #define TIMER_IRQ		IRQ_TIMER0
 #elif defined(CONFIG_ROCKCHIP_RK1808)
 #define TIMER_BASE		(0xFF700000 + 0x20)	/* TIMER 1 */
+#define TIMER_IRQ		IRQ_TIMER1
+#elif defined(CONFIG_ROCKCHIP_RV1106)
+#define TIMER_BASE		(0xFF660000 + 0x20)	/* TIMER 1 */
 #define TIMER_IRQ		IRQ_TIMER1
 #elif defined(CONFIG_ROCKCHIP_RV1126)
 #define TIMER_BASE		(0xFF660000 + 0x20)	/* TIMER 1 */
