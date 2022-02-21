@@ -952,7 +952,7 @@ static int xhci_submit_root(struct usb_device *udev, unsigned long pipe,
 		case USB_DT_HUB:
 		case USB_DT_SS_HUB:
 			debug("USB_DT_HUB config\n");
-			srcptr = &descriptor.hub;
+			srcptr = &ctrl->hub;
 			srclen = 0x8;
 			break;
 		default:
@@ -1227,6 +1227,8 @@ static int xhci_lowlevel_init(struct xhci_ctrl *ctrl)
 	if (HCC_PPC(reg))
 		put_unaligned(get_unaligned(&descriptor.hub.wHubCharacteristics)
 				| 0x01, &descriptor.hub.wHubCharacteristics);
+
+	memcpy(&ctrl->hub, &descriptor, sizeof(struct usb_hub_descriptor));
 
 	if (xhci_start(hcor)) {
 		xhci_reset(hcor);

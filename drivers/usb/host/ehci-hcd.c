@@ -731,8 +731,8 @@ static int ehci_submit_root(struct usb_device *dev, unsigned long pipe,
 		switch (le16_to_cpu(req->value) >> 8) {
 		case USB_DT_HUB:
 			debug("USB_DT_HUB config\n");
-			srcptr = &descriptor.hub;
-			srclen = descriptor.hub.bLength;
+			srcptr = &ctrl->hub;
+			srclen = ctrl->hub.bLength;
 			break;
 		default:
 			debug("unknown value %x\n", le16_to_cpu(req->value));
@@ -1052,6 +1052,8 @@ static int ehci_common_init(struct ehci_ctrl *ctrl, uint tweaks)
 	if (HCS_PPC(reg))
 		put_unaligned(get_unaligned(&descriptor.hub.wHubCharacteristics)
 				| 0x01, &descriptor.hub.wHubCharacteristics);
+
+	memcpy(&ctrl->hub, &descriptor, sizeof(struct usb_hub_descriptor));
 
 	/* Start the host controller. */
 	cmd = ehci_readl(&ctrl->hcor->or_usbcmd);

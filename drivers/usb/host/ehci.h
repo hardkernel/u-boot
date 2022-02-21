@@ -253,6 +253,7 @@ struct ehci_ctrl {
 	int periodic_schedules;
 	int ntds;
 	struct ehci_ops ops;
+	struct usb_hub_descriptor hub;
 	void *priv;	/* client's private data */
 };
 
