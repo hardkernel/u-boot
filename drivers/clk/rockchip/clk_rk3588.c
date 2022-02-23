@@ -1986,6 +1986,13 @@ static int rk3588_clk_probe(struct udevice *dev)
 	int ret;
 	struct clk clk;
 
+#ifdef CONFIG_SPL_BUILD
+	rockchip_pll_set_rate(&rk3588_pll_clks[B0PLL], priv->cru,
+			      B0PLL, LPLL_HZ);
+	rockchip_pll_set_rate(&rk3588_pll_clks[B1PLL], priv->cru,
+			      B1PLL, LPLL_HZ);
+#endif
+
 	ret = rockchip_get_scmi_clk(&clk.dev);
 	if (ret) {
 		printf("Failed to get scmi clk dev\n");
