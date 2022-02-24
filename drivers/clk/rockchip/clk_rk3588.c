@@ -886,6 +886,55 @@ static ulong rk3588_mmc_set_clk(struct rk3588_clk_priv *priv,
 }
 
 #ifndef CONFIG_SPL_BUILD
+static ulong rk3588_aux16m_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
+{
+	struct rk3588_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	parent = priv->gpll_hz;
+	con = readl(&cru->clksel_con[117]);
+
+	switch (clk_id) {
+	case CLK_AUX16M_0:
+		div = (con & CLK_AUX16MHZ_0_DIV_MASK) >> CLK_AUX16MHZ_0_DIV_SHIFT;
+		return DIV_TO_RATE(parent, div);
+	case CLK_AUX16M_1:
+		div = (con & CLK_AUX16MHZ_1_DIV_MASK) >> CLK_AUX16MHZ_1_DIV_SHIFT;
+		return DIV_TO_RATE(parent, div);
+	default:
+		return -ENOENT;
+	}
+}
+
+static ulong rk3588_aux16m_set_clk(struct rk3588_clk_priv *priv,
+				   ulong clk_id, ulong rate)
+{
+	struct rk3588_cru *cru = priv->cru;
+	u32 div;
+
+	if (!priv->gpll_hz) {
+		printf("%s gpll=%lu\n", __func__, priv->gpll_hz);
+		return -ENOENT;
+	}
+
+	div = DIV_ROUND_UP(priv->gpll_hz, rate);
+
+	switch (clk_id) {
+	case CLK_AUX16M_0:
+		rk_clrsetreg(&cru->clksel_con[117], CLK_AUX16MHZ_0_DIV_MASK,
+			     (div - 1) << CLK_AUX16MHZ_0_DIV_SHIFT);
+		break;
+	case CLK_AUX16M_1:
+		rk_clrsetreg(&cru->clksel_con[117], CLK_AUX16MHZ_1_DIV_MASK,
+			     (div - 1) << CLK_AUX16MHZ_1_DIV_SHIFT);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return rk3588_aux16m_get_clk(priv, clk_id);
+}
+
 static ulong rk3588_aclk_vop_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 {
 	struct rk3588_cru *cru = priv->cru;
@@ -1536,6 +1585,10 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 		rate = rk3588_mmc_get_clk(priv, clk->id);
 		break;
 #ifndef CONFIG_SPL_BUILD
+	case CLK_AUX16M_0:
+	case CLK_AUX16M_1:
+		rk3588_aux16m_get_clk(priv, clk->id);
+		break;
 	case ACLK_VOP_ROOT:
 	case ACLK_VOP:
 	case ACLK_VOP_LOW_ROOT:
@@ -1678,6 +1731,10 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 		ret = rk3588_mmc_set_clk(priv, clk->id, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
+	case CLK_AUX16M_0:
+	case CLK_AUX16M_1:
+		rk3588_aux16m_set_clk(priv, clk->id, rate);
+		break;
 	case ACLK_VOP_ROOT:
 	case ACLK_VOP:
 	case ACLK_VOP_LOW_ROOT:
