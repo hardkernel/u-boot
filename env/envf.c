@@ -23,6 +23,14 @@ static u32 envparam_addr_spinand[] = { 0, SZ_256K };
 
 #ifdef CONFIG_SPL_BUILD
 #ifdef CONFIG_SPL_ENV_PARTITION
+/*
+ * In case of env and env-backup partitions are too large that exceeds the limit
+ * of CONFIG_SPL_SYS_MALLOC_F_LEN. we prefer to use a static address as an env
+ * buffer. The tail of bss section is good choice from experience.
+ */
+static void *env_buffer =
+	(void *)CONFIG_SPL_BSS_START_ADDR + CONFIG_SPL_BSS_MAX_SIZE;
+
 static const char *get_strval(env_t *env, u32 size, const char *str)
 {
 	const char *dp;
@@ -67,30 +75,25 @@ static ulong get_strval_ulong(env_t *env, u32 size,
 	return simple_strtoul(p, NULL, 16);
 }
 
-static int env_do_load(struct blk_desc *desc, u32 offset, u32 size, void **envp)
+static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
+		       void *buf, void **envp)
 {
 	lbaint_t env_size;
 	lbaint_t env_off;
+	env_t *env = buf;
 	u32 blk_cnt;
-	env_t *env;
 
 	env_size = size - ENV_HEADER_SIZE;
 	env_off = BLK_CNT(desc, offset);
 	blk_cnt = BLK_CNT(desc, size);
 
-	env = memalign(ARCH_DMA_MINALIGN, size);
-	if (!env)
-		return -ENOMEM;
-
 	if (blk_dread(desc, env_off, blk_cnt, (void *)env) != blk_cnt) {
 		ENVF_MSG("io error @ 0x%x\n", offset);
-		free(env);
 		return -EIO;
 	}
 
 	if (crc32(0, env->data, env_size) != env->crc) {
 		ENVF_MSG("!bad CRC @ 0x%x\n", offset);
-		free(env);
 		return -EINVAL;
 	}
 
@@ -119,22 +122,24 @@ int envf_load(struct blk_desc *desc)
 		addr = envparam_addr_common;
 
 	envp_blks = BLK_CNT(desc, ENVPARAM_SIZE);
-	read0_fail = env_do_load(desc, addr[0], ENVPARAM_SIZE, &envp0);
-	read1_fail = env_do_load(desc, addr[1], ENVPARAM_SIZE, &envp1);
+	read0_fail = env_do_load(desc, addr[0], ENVPARAM_SIZE,
+				 env_buffer, &envp0);
+	read1_fail = env_do_load(desc, addr[1], ENVPARAM_SIZE,
+				 env_buffer + ENVPARAM_SIZE, &envp1);
 	if (read0_fail && read1_fail) {
 		ENVF_MSG("No valid envparam!\n");
 	} else if (!read0_fail && read1_fail) {
 		env = envp0;
 		ret = blk_dwrite(desc, BLK_CNT(desc, addr[1]),
 				 BLK_CNT(desc, ENVPARAM_SIZE), envp0);
-		printf("Repair backup envparam %s\n",
-		       ret == envp_blks ? "ok" : "fail");
+		ENVF_MSG("Repair backup envparam %s\n",
+			 ret == envp_blks ? "ok" : "fail");
 	} else if (read0_fail && !read1_fail) {
 		env = envp1;
 		ret = blk_dwrite(desc, BLK_CNT(desc, addr[0]),
 				 BLK_CNT(desc, ENVPARAM_SIZE), envp1);
-		printf("Repair primary envparam %s\n",
-		       ret == envp_blks ?  "ok" : "fail");
+		ENVF_MSG("Repair primary envparam %s\n",
+			 ret == envp_blks ?  "ok" : "fail");
 	} else {
 		env = envp0; /* both ok, use primary envparam */
 	}
@@ -144,22 +149,23 @@ int envf_load(struct blk_desc *desc)
 	env_offset = get_strval_ulong(env, ENVPARAM_SIZE, "ENV_OFFSET", 0);
 	env_offset_redund = get_strval_ulong(env, ENVPARAM_SIZE, "ENV_OFFSET_REDUND", 0);
 	if (!env_offset || !env_size) {
-		ENVF_MSG("Invalid env offset/size, use default\n");
+		ENVF_MSG("Using default\n");
 		env_offset = CONFIG_ENV_OFFSET;
 		env_size = CONFIG_ENV_SIZE;
-#if (CONFIG_ENV_OFFSET_REDUND != CONFIG_ENV_OFFSET)
 		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
-#endif
 	}
+	if (env_offset == env_offset_redund)
+		env_offset_redund = 0;
 
-	printf("ENVF: 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
+	ENVF_MSG("Primary 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
 	if (env_offset_redund)
-		printf("ENVF Backup: 0x%08lx - 0x%08lx\n",
-		       env_offset_redund, env_offset_redund + env_size);
+		ENVF_MSG("Backup  0x%08lx - 0x%08lx\n",
+			 env_offset_redund, env_offset_redund + env_size);
 
-	ret = env_do_load(desc, env_offset, env_size, &env);
+	ret = env_do_load(desc, env_offset, env_size, env_buffer, &env);
 	if (ret < 0 && env_offset_redund)
-		ret = env_do_load(desc, env_offset_redund, env_size, &env);
+		ret = env_do_load(desc, env_offset_redund, env_size,
+				  env_buffer + env_size, &env);
 	if (ret < 0) {
 		ENVF_MSG("No valid env data, ret=%d\n", ret);
 		return ret;
@@ -302,13 +308,13 @@ static int envf_load(void)
 	} else if (!read0_fail && read1_fail) {
 		ret = blk_dwrite(desc, BLK_CNT(desc, addr[1]),
 				 BLK_CNT(desc, ENVPARAM_SIZE), envp0);
-		printf("Repair backup envparam %s\n",
-		       ret == envp_blks ? "ok" : "fail");
+		ENVF_MSG("Repair backup envparam %s\n",
+			 ret == envp_blks ? "ok" : "fail");
 	} else if (read0_fail && !read1_fail) {
 		ret = blk_dwrite(desc, BLK_CNT(desc, addr[0]),
 				 BLK_CNT(desc, ENVPARAM_SIZE), envp1);
-		printf("Repair primary envparam %s\n",
-		       ret == envp_blks ?  "ok" : "fail");
+		ENVF_MSG("Repair primary envparam %s\n",
+			 ret == envp_blks ?  "ok" : "fail");
 	}
 
 	if (envp0)
@@ -321,18 +327,18 @@ static int envf_load(void)
 	env_offset = env_get_ulong("ENV_OFFSET", 16, 0);
 	env_offset_redund = env_get_ulong("ENV_OFFSET_REDUND", 16, 0);
 	if (!env_offset || !env_size) {
-		ENVF_MSG("Invalid env offset/size, use default\n");
+		ENVF_MSG("Using default\n");
 		env_offset = CONFIG_ENV_OFFSET;
 		env_size = CONFIG_ENV_SIZE;
-#if (CONFIG_ENV_OFFSET_REDUND != CONFIG_ENV_OFFSET)
 		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
-#endif
 	}
+	if (env_offset == env_offset_redund)
+		env_offset_redund = 0;
 
-	printf("ENVF: 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
+	ENVF_MSG("Primary 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
 	if (env_offset_redund)
-		printf("ENVF Backup: 0x%08lx - 0x%08lx\n",
-		       env_offset_redund, env_offset_redund + env_size);
+		ENVF_MSG("Backup  0x%08lx - 0x%08lx\n",
+			 env_offset_redund, env_offset_redund + env_size);
 
 	envf_extract_list();
 	ret = env_do_load(desc, env_offset, env_size, envf_list, envf_num, NULL);
