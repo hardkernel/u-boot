@@ -14,5 +14,6 @@ obj-y += pinctrl-rockchip-core.o
 #obj-$(CONFIG_ROCKCHIP_RK3399) += pinctrl-rk3399.o
 obj-$(CONFIG_ROCKCHIP_RK3568) += pinctrl-rk3568.o
 obj-$(CONFIG_ROCKCHIP_RK3588) += pinctrl-rk3588.o
+obj-$(CONFIG_ROCKCHIP_RV1106) += pinctrl-rv1106.o
 #obj-$(CONFIG_ROCKCHIP_RV1108) += pinctrl-rv1108.o
 obj-$(CONFIG_ROCKCHIP_RV1126) += pinctrl-rv1126.o
