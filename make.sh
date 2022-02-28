@@ -93,6 +93,11 @@ function help()
 	echo "	./make.sh sym                      --- cat u-boot.sym"
 }
 
+function filt_val()
+{
+	sed -n "/${1}=/s/${1}=//p" $2 | tr -d '\r' | tr -d '"'
+}
+
 function prepare()
 {
 	if [ -d ${RKBIN_TOOLS} ]; then
@@ -227,8 +232,8 @@ function process_args()
 						echo "ERROR: No configs/${ARG_BOARD}_defconfig"
 						exit 1
 					elif [ -f configs/${ARG_BOARD}.config ]; then
-						BASE1_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${ARG_BOARD}.config |tr -d '\r' | tr -d '"'`
-						BASE0_DEFCONFIG=`sed -n "/CONFIG_BASE_DEFCONFIG=/s/CONFIG_BASE_DEFCONFIG=//p" configs/${BASE1_DEFCONFIG} |tr -d '\r' | tr -d '"'`
+						BASE1_DEFCONFIG=`filt_val "CONFIG_BASE_DEFCONFIG" configs/${ARG_BOARD}.config`
+						BASE0_DEFCONFIG=`filt_val "CONFIG_BASE_DEFCONFIG" configs/${BASE1_DEFCONFIG}`
 						MAKE_CMD="make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config -j${JOB}"
 						echo "## ${MAKE_CMD}"
 						make ${BASE0_DEFCONFIG} ${BASE1_DEFCONFIG} ${ARG_BOARD}.config ${OPTION}
@@ -313,7 +318,7 @@ function select_chip_info()
 	RKCHIP=${RKCHIP##*_}
 	RKCHIP_LOADER=${RKCHIP}
 	RKCHIP_TRUST=${RKCHIP}
-	RKCHIP_LABEL=`sed -n "/CONFIG_CHIP_NAME=/s/CONFIG_CHIP_NAME=//p" .config |tr -d '\r' | tr -d '"'`
+	RKCHIP_LABEL=`filt_val "CONFIG_CHIP_NAME" .config`
 	if [ -z "${RKCHIP_LABEL}" ]; then
 		RKCHIP_LABEL=${RKCHIP}
 	fi
@@ -322,12 +327,12 @@ function select_chip_info()
 # Priority: default < CHIP_CFG_FIXUP_TABLE() < make.sh args
 function fixup_platform_configure()
 {
-	U_KB=`sed -n "/CONFIG_UBOOT_SIZE_KB=/s/CONFIG_UBOOT_SIZE_KB=//p" .config |tr -d '\r' | tr -d '"'`
-	U_NUM=`sed -n "/CONFIG_UBOOT_NUM=/s/CONFIG_UBOOT_NUM=//p" .config |tr -d '\r' | tr -d '"'`
-	T_KB=`sed -n "/CONFIG_TRUST_SIZE_KB=/s/CONFIG_TRUST_SIZE_KB=//p" .config |tr -d '\r' | tr -d '"'`
-	T_NUM=`sed -n "/CONFIG_TRUST_NUM=/s/CONFIG_TRUST_NUM=//p" .config |tr -d '\r' | tr -d '"'`
-	SHA=`sed -n "/CONFIG_TRUST_SHA_MODE=/s/CONFIG_TRUST_SHA_MODE=//p" .config |tr -d '\r' | tr -d '"'`
-	RSA=`sed -n "/CONFIG_TRUST_RSA_MODE=/s/CONFIG_TRUST_RSA_MODE=//p" .config |tr -d '\r' | tr -d '"'`
+	U_KB=`filt_val "CONFIG_UBOOT_SIZE_KB" .config`
+	U_NUM=`filt_val "CONFIG_UBOOT_NUM" .config`
+	T_KB=`filt_val "CONFIG_TRUST_SIZE_KB" .config`
+	T_NUM=`filt_val "CONFIG_TRUST_NUM" .config`
+	SHA=`filt_val "CONFIG_TRUST_SHA_MODE" .config`
+	RSA=`filt_val "CONFIG_TRUST_RSA_MODE" .config`
 
 	# .config
 	PLAT_UBOOT_SIZE="--size ${U_KB} ${U_NUM}"
@@ -355,11 +360,11 @@ function select_ini_file()
 	fi
 
 	# defconfig
-	NAME=`sed -n "/CONFIG_LOADER_INI=/s/CONFIG_LOADER_INI=//p" .config |tr -d '\r' | tr -d '"'`
+	NAME=`filt_val "CONFIG_LOADER_INI" .config`
 	if [ ! -z "${NAME}" ]; then
 		INI_LOADER=${RKBIN}/RKBOOT/${NAME}
 	fi
-	NAME=`sed -n "/CONFIG_TRUST_INI=/s/CONFIG_TRUST_INI=//p" .config |tr -d '\r' | tr -d '"'`
+	NAME=`filt_val "CONFIG_TRUST_INI" .config`
 	if [ ! -z "${NAME}" ]; then
 		INI_TRUST=${RKBIN}/RKTRUST/${NAME}
 	fi
@@ -503,8 +508,8 @@ function pack_idblock()
 	PLAT=${COMMON_H%_*}
 
 	# file
-	SPL_BIN=${RKBIN}/`sed -n "/FlashBoot=/s/FlashBoot=//p" ${INI} | tr -d '\r'`
-	TPL_BIN=${RKBIN}/`sed -n "/FlashData=/s/FlashData=//p" ${INI} | tr -d '\r'`
+	SPL_BIN=${RKBIN}/`filt_val "FlashBoot" ${INI}`
+	TPL_BIN=${RKBIN}/`filt_val "FlashData" ${INI}`
 	if [ ! -z "${ARG_SPL_BIN}" ]; then
 		SPL_BIN=${ARG_SPL_BIN}
 	fi
@@ -544,8 +549,8 @@ function pack_uboot_itb_image()
 		fi
 	else
 		# TOS
-		TOS=`sed -n "/TOS=/s/TOS=//p" ${INI} | tr -d '\r'`
-		TOSTA=`sed -n "/TOSTA=/s/TOSTA=//p" ${INI} | tr -d '\r'`
+		TOS=`filt_val "TOS" ${INI}`
+		TOSTA=`filt_val "TOSTA" ${INI}`
 		if [ ! -z "${TOSTA}" ]; then
 			cp ${RKBIN}/${TOSTA} tee.bin
 		elif [ ! -z "${TOS}" ]; then
@@ -554,7 +559,7 @@ function pack_uboot_itb_image()
 			echo "WARN: No tee bin"
 		fi
 
-		TEE_OFFSET=`sed -n "/ADDR=/s/ADDR=//p" ${INI} | tr -d '\r'`
+		TEE_OFFSET=`filt_val "ADDR" ${INI}`
 		if [ "${TEE_OFFSET}" == "" ]; then
 			TEE_OFFSET=0x8400000
 		fi
@@ -617,11 +622,11 @@ function pack_uboot_itb_image()
 		mv ${REP_DIR}/* ./
 	fi
 
-	SPL_FIT_SOURCE=`sed -n "/CONFIG_SPL_FIT_SOURCE=/s/CONFIG_SPL_FIT_SOURCE=//p" .config | tr -d '""'`
+	SPL_FIT_SOURCE=`filt_val "CONFIG_SPL_FIT_SOURCE" .config`
 	if [ ! -z ${SPL_FIT_SOURCE} ]; then
 		cp ${SPL_FIT_SOURCE} u-boot.its
 	else
-		SPL_FIT_GENERATOR=`sed -n "/CONFIG_SPL_FIT_GENERATOR=/s/CONFIG_SPL_FIT_GENERATOR=//p" .config | tr -d '""'`
+		SPL_FIT_GENERATOR=`filt_val "CONFIG_SPL_FIT_GENERATOR" .config`
 		# *.py is the legacy one.
 		if [[ ${SPL_FIT_GENERATOR} == *.py ]]; then
 			${SPL_FIT_GENERATOR} u-boot.dtb > u-boot.its
@@ -682,7 +687,7 @@ function pack_loader_image()
 
 function pack_trust_image()
 {
-	DRAM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" include/autoconf.mk|tr -d '\r'`
+	DRAM_BASE=`filt_val "CONFIG_SYS_SDRAM_BASE" include/autoconf.mk`
 
 	rm trust*.img -f
 	cd ${RKBIN}
