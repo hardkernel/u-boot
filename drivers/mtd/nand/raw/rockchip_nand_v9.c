@@ -520,6 +520,7 @@ static int rockchip_nand_ecc_init(struct mtd_info *mtd,
 	int ret;
 
 	switch (ecc->mode) {
+	case NAND_ECC_HW:
 	case NAND_ECC_HW_SYNDROME:
 		ret = rockchip_nand_hw_ecc_ctrl_init(mtd, ecc);
 		if (ret)
