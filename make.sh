@@ -642,8 +642,10 @@ function pack_uboot_itb_image()
 
 function pack_spl_loader_image()
 {
-	rm *_loader_*.bin -f
+	rm -f *loader*.bin *idblock* *download*
 	cd ${RKBIN}
+	DEF_PATH=${RKBIN}/`filt_val "^PATH" ${INI_LOADER}`
+	IDB_PATH=${RKBIN}/`filt_val "IDB_PATH" ${INI_LOADER}`
 	if [ ! -z "${ARG_SPL_BIN}" -a ! -z "${ARG_TPL_BIN}" ]; then
 		${SCRIPT_SPL} --ini ${INI_LOADER} --tpl ${SRCTREE}/${ARG_TPL_BIN} --spl ${SRCTREE}/${ARG_SPL_BIN}
 	elif [ ! -z "${ARG_TPL_BIN}" ]; then
@@ -652,8 +654,11 @@ function pack_spl_loader_image()
 		${SCRIPT_SPL} --ini ${INI_LOADER} --spl ${SRCTREE}/${ARG_SPL_BIN}
 	fi
 	cd -
-	if [ -f ${RKBIN}/*_loader_*.bin ]; then
-		mv ${RKBIN}/*_loader_*.bin ./
+	if [ -f ${DEF_PATH} ]; then
+		mv ${DEF_PATH} ./
+	fi
+	if [ -f ${IDB_PATH} ]; then
+		mv ${IDB_PATH} ./
 	fi
 }
 
@@ -676,12 +681,17 @@ function pack_uboot_image()
 
 function pack_loader_image()
 {
-	rm *_loader_*.bin -f
+	rm -f *loader*.bin *idblock* *download*
 	cd ${RKBIN}
+	DEF_PATH=${RKBIN}/`filt_val "^PATH" ${INI_LOADER}`
+	IDB_PATH=${RKBIN}/`filt_val "IDB_PATH" ${INI_LOADER}`
 	${SCRIPT_LOADER} --ini ${INI_LOADER}
 	cd -
-	if [ -f ${RKBIN}/*_loader_*.bin ]; then
-		mv ${RKBIN}/*_loader_*.bin ./
+	if [ -f ${DEF_PATH} ]; then
+		mv ${DEF_PATH} ./
+	fi
+	if [ -f ${IDB_PATH} ]; then
+		mv ${IDB_PATH} ./
 	fi
 }
 

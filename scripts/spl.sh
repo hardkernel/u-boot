@@ -100,13 +100,7 @@ else
 	LABEL="SPL"
 fi
 
-rm *_loader_*.bin -f
 ./tools/boot_merger ${TMP_INI}
-
-FNAME=`basename *_loader_*.bin`
-if [[ ${FNAME} != *spl* ]]; then
-	rename 's/loader_/spl_loader_/' *_loader_*.bin
-fi
 rm tmp/ -rf
 
 echo "pack loader(${LABEL}) okay! Input: ${INI}"
