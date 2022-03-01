@@ -642,7 +642,7 @@ function pack_uboot_itb_image()
 
 function pack_spl_loader_image()
 {
-	rm -f *loader*.bin *idblock* *download*
+	rm -f *loader*.bin *download*.bin *idblock*.img
 	cd ${RKBIN}
 	DEF_PATH=${RKBIN}/`filt_val "^PATH" ${INI_LOADER}`
 	IDB_PATH=${RKBIN}/`filt_val "IDB_PATH" ${INI_LOADER}`
@@ -681,7 +681,7 @@ function pack_uboot_image()
 
 function pack_loader_image()
 {
-	rm -f *loader*.bin *idblock* *download*
+	rm -f *loader*.bin *download*.bin *idblock*.img
 	cd ${RKBIN}
 	DEF_PATH=${RKBIN}/`filt_val "^PATH" ${INI_LOADER}`
 	IDB_PATH=${RKBIN}/`filt_val "IDB_PATH" ${INI_LOADER}`

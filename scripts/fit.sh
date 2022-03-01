@@ -584,14 +584,14 @@ function fit_gen_loader()
 	if grep -Eq '^CONFIG_FIT_SIGNATURE=y' .config ; then
 		${RK_SIGN_TOOL} cc --chip ${ARG_CHIP: 2: 6}
 		${RK_SIGN_TOOL} lk --key ${RSA_PRI_KEY} --pubkey ${RSA_PUB_KEY}
-		if ls *loader* >/dev/null 2>&1 ; then
-			${RK_SIGN_TOOL} sl --loader *_loader_*.bin
+		if ls *loader*.bin >/dev/null 2>&1 ; then
+			${RK_SIGN_TOOL} sl --loader *loader*.bin
 		fi
-		if ls *download* >/dev/null 2>&1 ; then
-			${RK_SIGN_TOOL} sl --loader *_download_*.bin
+		if ls *download*.bin >/dev/null 2>&1 ; then
+			${RK_SIGN_TOOL} sl --loader *download*.bin
 		fi
-		if ls *idblock* >/dev/null 2>&1 ; then
-			${RK_SIGN_TOOL} sb --idb *_idblock_*.img
+		if ls *idblock*.img >/dev/null 2>&1 ; then
+			${RK_SIGN_TOOL} sb --idb *idblock*.img
 		fi
 	fi
 }
@@ -666,12 +666,12 @@ function fit_msg_recovery()
 
 function fit_msg_loader()
 {
-	if ls *loader* >/dev/null 2>&1 ; then
+	if ls *loader*.bin >/dev/null 2>&1 ; then
 		LOADER=`ls *loader*.bin`
 	fi
 
-	if ls *idblock* >/dev/null 2>&1 ; then
-		LOADER=`ls *idblock*`
+	if ls *idblock*.img >/dev/null 2>&1 ; then
+		LOADER=`ls *idblock*.img`
 	fi
 
 	if grep -q '^CONFIG_FIT_SIGNATURE=y' .config ; then
