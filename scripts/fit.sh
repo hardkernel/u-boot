@@ -584,7 +584,8 @@ function fit_gen_loader()
 {
 	if grep -Eq '^CONFIG_FIT_SIGNATURE=y' .config ; then
 		${RK_SIGN_TOOL} cc --chip ${ARG_CHIP: 2: 6}
-		${RK_SIGN_TOOL} sl --key ${RSA_PRI_KEY} --pubkey ${RSA_PUB_KEY} --loader *_loader_*.bin
+		${RK_SIGN_TOOL} lk --key ${RSA_PRI_KEY} --pubkey ${RSA_PUB_KEY}
+		${RK_SIGN_TOOL} sl --loader *_loader_*.bin
 		if [ $? -ne 0 ]; then
 			echo "ERROR: ${RK_SIGN_TOOL} failed to sign loader"
 			exit 1
