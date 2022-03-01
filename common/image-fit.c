@@ -1935,8 +1935,13 @@ void fit_conf_print(const void *fit, int noffset, const char *p)
 
 static int fit_image_select(const void *fit, int rd_noffset, int verify)
 {
+#ifdef USE_HOSTCC
 	fit_image_print(fit, rd_noffset, "   ");
-
+#else
+#if CONFIG_IS_ENABLED(FIT_PRINT)
+	fit_image_print(fit, rd_noffset, "   ");
+#endif
+#endif
 	if (verify) {
 		puts("   Verifying Hash Integrity ... ");
 		if (!fit_image_verify(fit, rd_noffset)) {

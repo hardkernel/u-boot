@@ -271,6 +271,13 @@ config FIT_HW_CRYPTO
 	help
 	  Enable hardware crypto for FIT image checksum and rsa verify.
 
+config FIT_PRINT
+	bool "Enable fit image structure and data print"
+	default y
+	help
+	  Say y here if you want to enable fit image structure and data
+	  print.
+
 if SPL
 
 config SPL_FIT
@@ -327,6 +334,13 @@ config SPL_SYS_DCACHE_OFF
 	help
 	  Disable SPL dcache. Please make sure CONFIG_SPL_SYS_MALLOC_F_LEN
 	  is large enough to malloc TLB and bd_t buffer while enabling dcache.
+
+config SPL_FIT_PRINT
+	bool "Enable fit image structure and data print in SPL"
+	default n
+	help
+	  Say y here if you want to enable fit image structure and data
+	  print in SPL.
 
 endif # SPL
 
