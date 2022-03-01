@@ -579,6 +579,15 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 			       images->ep, dst);
 			images->ep = dst;
 		}
+	} else {
+		if (IS_ALIGNED(images->ep, SZ_2M)) {
+			dst = images->ep + 0x80000;
+			memmove((char *)dst, (const char *)images->ep,
+				images->os.image_len);
+			printf("   ** RELOCATE ** Kernel from 0x%08lx to 0x%08lx\n",
+			       images->ep, dst);
+			images->ep = dst;
+		}
 	}
 #endif
 	hotkey_run(HK_CLI_OS_PRE);
