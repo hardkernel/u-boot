@@ -31,6 +31,16 @@ config TPL_SYSRESET
 	  to effect a reset. The uclass will try all available drivers when
 	  reset_walk() is called.
 
+config SYSRESET_REG
+	hex "The sysreset register for the sysreset"
+	depends on !SYSRESET
+	default 0xff490408
+
+config SYSRESET_VAL
+	hex "The sysreset value for the sysreset"
+	depends on !SYSRESET
+	default 0x0000fdb9
+
 if SYSRESET
 
 config SYSRESET_PSCI

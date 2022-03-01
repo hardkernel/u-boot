@@ -46,6 +46,7 @@ struct sysreset_ops {
 
 #define sysreset_get_ops(dev)        ((struct sysreset_ops *)(dev)->driver->ops)
 
+#ifdef CONFIG_SYSRESET
 /**
  * sysreset_request() - request a sysreset
  *
@@ -87,5 +88,19 @@ void reset_cpu(ulong addr);
  * Support the command like: reboot loader/bootloader/recovery, etc.
  */
 void reboot(const char *mode);
+
+#else
+#include <asm/io.h>
+
+inline void reset_cpu(ulong addr)
+{
+	writel(CONFIG_SYSRESET_VAL, CONFIG_SYSRESET_REG);
+	dsb();
+	isb();
+
+	while (1)
+		;
+}
+#endif
 
 #endif
