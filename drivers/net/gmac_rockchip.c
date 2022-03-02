@@ -19,6 +19,7 @@
 #ifdef CONFIG_DWC_ETH_QOS
 #include <asm/arch/grf_rk3568.h>
 #include <asm/arch/grf_rk3588.h>
+#include <asm/arch/grf_rv1106.h>
 #include <asm/arch/grf_rv1126.h>
 #include "dwc_eth_qos.h"
 #else
@@ -553,6 +554,39 @@ static int rk3588_set_rgmii_speed(struct gmac_rockchip_platdata *pdata,
 	}
 
 	rk_clrsetreg(&php_grf->clk_con1, div_mask, div);
+
+	return 0;
+}
+
+static int rv1106_set_rmii_speed(struct gmac_rockchip_platdata *pdata,
+				 struct rockchip_eth_dev *dev)
+{
+	struct eqos_priv *priv = &dev->eqos;
+	struct rv1106_grf *grf;
+	unsigned int div;
+
+	enum {
+		RV1106_GMAC_CLK_RMII_DIV_SHIFT = 2,
+		RV1106_GMAC_CLK_RMII_DIV_MASK = GENMASK(3, 2),
+		RV1106_GMAC_CLK_RMII_DIV2 = BIT(2),
+		RV1106_GMAC_CLK_RMII_DIV20 = 0,
+	};
+
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+	switch (priv->phy->speed) {
+	case 10:
+		div = RV1106_GMAC_CLK_RMII_DIV20;
+		break;
+	case 100:
+		div = RV1106_GMAC_CLK_RMII_DIV2;
+		break;
+	default:
+		debug("Unknown phy speed: %d\n", priv->phy->speed);
+		return -EINVAL;
+	}
+
+	rk_clrsetreg(&grf->gmac_clk_con, RV1106_GMAC_CLK_RMII_DIV_MASK, div);
 
 	return 0;
 }
@@ -1208,6 +1242,54 @@ static void rk3588_set_to_rgmii(struct gmac_rockchip_platdata *pdata)
 	rk_clrsetreg(&php_grf->clk_con1, clk_mode_mask, clk_mode);
 }
 
+static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pdata)
+{
+	struct rv1106_grf *grf;
+	enum {
+		RV1106_MACPHY_ENABLE_MASK = BIT(1),
+		RV1106_MACPHY_DISENABLE = 0,
+		RV1106_MACPHY_ENABLE = BIT(1),
+		RV1106_MACPHY_MODE_MASK = GENMASK(3, 2),
+		RV1106_MACPHY_RMII_MODE = BIT(2),
+		RV1106_MACPHY_XMII_SEL_MASK = GENMASK(6, 5),
+		RV1106_MACPHY_XMII_SEL = BIT(6),
+		RV1106_MACPHY_24M_CLK_SEL_MASK = GENMASK(9, 7),
+		RV1106_MACPHY_24M_CLK_SEL_24M = (BIT(8) | BIT(9)),
+		RV1106_MACPHY_PHY_ID_MASK = GENMASK(14, 10),
+		RV1106_MACPHY_PHY_ID = BIT(11),
+	};
+
+	enum {
+		RV1106_MACPHY_BGS_MASK = GENMASK(3, 0),
+		RV1106_MACPHY_BGS = BIT(1),
+	};
+
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+	reset_assert(&pdata->phy_reset);
+	udelay(20);
+
+	rk_clrsetreg(&grf->macphy_con0,
+		     RV1106_MACPHY_ENABLE_MASK |
+		     RV1106_MACPHY_MODE_MASK |
+		     RV1106_MACPHY_XMII_SEL_MASK |
+		     RV1106_MACPHY_24M_CLK_SEL_MASK |
+		     RV1106_MACPHY_PHY_ID_MASK,
+		     RV1106_MACPHY_ENABLE |
+		     RV1106_MACPHY_RMII_MODE |
+		     RV1106_MACPHY_XMII_SEL |
+		     RV1106_MACPHY_24M_CLK_SEL_24M |
+		     RV1106_MACPHY_PHY_ID);
+
+	rk_clrsetreg(&grf->macphy_con1,
+		     RV1106_MACPHY_BGS_MASK,
+		     RV1106_MACPHY_BGS);
+
+	reset_deassert(&pdata->phy_reset);
+
+	udelay(30 * 1000);
+}
+
 static void rv1126_set_to_rmii(struct gmac_rockchip_platdata *pdata)
 {
 	struct rv1126_grf *grf;
@@ -1571,6 +1653,11 @@ const struct rk_gmac_ops rk3588_gmac_ops = {
 	.set_clock_selection = rk3588_set_clock_selection,
 };
 
+const struct rk_gmac_ops rv1106_gmac_ops = {
+	.fix_mac_speed = rv1106_set_rmii_speed,
+	.integrated_phy_powerup = rv1106_gmac_integrated_phy_powerup,
+};
+
 const struct rk_gmac_ops rv1126_gmac_ops = {
 	.fix_mac_speed = rv1126_set_rgmii_speed,
 	.set_to_rgmii = rv1126_set_to_rgmii,
@@ -1633,6 +1720,11 @@ static const struct udevice_id rockchip_gmac_ids[] = {
 #ifdef CONFIG_ROCKCHIP_RK3588
 	{ .compatible = "rockchip,rk3588-gmac",
 	  .data = (ulong)&rk3588_gmac_ops },
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RV1106
+	{ .compatible = "rockchip,rv1106-gmac",
+	  .data = (ulong)&rv1106_gmac_ops },
 #endif
 
 #ifdef CONFIG_ROCKCHIP_RV1126
