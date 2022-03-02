@@ -50,6 +50,9 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 	u64 len = *src_len;
 	int ret = -ENOSYS;
 	u8 comp;
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
+	u32 flags = 0;
+#endif
 
 	if (fit_image_get_comp(fit, node, &comp))
 		return 0;
@@ -104,7 +107,6 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 		 */
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 		const void *prop;
-		u32 flags = 0;
 
 		ret = misc_decompress_process((ulong)(*load_addr),
 					      (ulong)(*src_addr), (ulong)(*src_len),
