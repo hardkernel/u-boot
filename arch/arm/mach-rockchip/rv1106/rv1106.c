@@ -38,9 +38,276 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CORECRU_BASE			0xff3b8000
 #define CORECRU_CORESOFTRST_CON01	0xa04
 
+#define GPIO1_IOC_BASE			0xFF538000
+#define GPIO2_IOC_BASE			0xFF548000
+#define GPIO3_IOC_BASE			0xFF558000
+#define GPIO4_IOC_BASE			0xFF568000
+
+/* uart0 iomux */
+/* gpio0a0 */
+#define UART0_RX_M0			1
+#define UART0_RX_M0_OFFSET		0
+#define UART0_RX_M0_ADDR		(GPIO1_IOC_BASE)
+/* gpio0a1 */
+#define UART0_TX_M0			1
+#define UART0_TX_M0_OFFSET		4
+#define UART0_TX_M0_ADDR		(GPIO1_IOC_BASE)
+
+/* gpio2b0 */
+#define UART0_RX_M1			1
+#define UART0_RX_M1_OFFSET		0
+#define UART0_RX_M1_ADDR		(GPIO2_IOC_BASE + 0x28)
+/* gpio2b1 */
+#define UART0_TX_M1			1
+#define UART0_TX_M1_OFFSET		4
+#define UART0_TX_M1_ADDR		(GPIO2_IOC_BASE + 0x28)
+
+/* gpio4a0 */
+#define UART0_RX_M2			3
+#define UART0_RX_M2_OFFSET		0
+#define UART0_RX_M2_ADDR		(GPIO4_IOC_BASE)
+/* gpio4a1 */
+#define UART0_TX_M2			3
+#define UART0_TX_M2_OFFSET		4
+#define UART0_TX_M2_ADDR		(GPIO4_IOC_BASE)
+
+/* uart1 iomux */
+/* gpio1a4 */
+#define UART1_RX_M0			1
+#define UART1_RX_M0_OFFSET		0
+#define UART1_RX_M0_ADDR		(GPIO1_IOC_BASE + 0x4)
+/* gpio1a3 */
+#define UART1_TX_M0			1
+#define UART1_TX_M0_OFFSET		12
+#define UART1_TX_M0_ADDR		(GPIO1_IOC_BASE)
+
+/* gpio2a5 */
+#define UART1_RX_M1			4
+#define UART1_RX_M1_OFFSET		4
+#define UART1_RX_M1_ADDR		(GPIO2_IOC_BASE + 0x24)
+/* gpio2a4 */
+#define UART1_TX_M1			4
+#define UART1_TX_M1_OFFSET		0
+#define UART1_TX_M1_ADDR		(GPIO2_IOC_BASE + 0x24)
+
+/* gpio4a7 */
+#define UART1_RX_M2			3
+#define UART1_RX_M2_OFFSET		12
+#define UART1_RX_M2_ADDR		(GPIO4_IOC_BASE + 0x4)
+/* gpio4a5 */
+#define UART1_TX_M2			3
+#define UART1_TX_M2_OFFSET		4
+#define UART1_TX_M2_ADDR		(GPIO4_IOC_BASE + 0x4)
+
+/* uart2 iomux */
+/* gpio3a3 */
+#define UART2_RX_M0			2
+#define UART2_RX_M0_OFFSET		12
+#define UART2_RX_M0_ADDR		(GPIO3_IOC_BASE + 0x40)
+/* gpio3a2 */
+#define UART2_TX_M0			2
+#define UART2_TX_M0_OFFSET		8
+#define UART2_TX_M0_ADDR		(GPIO3_IOC_BASE + 0x40)
+
+/* gpio1b3 */
+#define UART2_RX_M1			2
+#define UART2_RX_M1_OFFSET		12
+#define UART2_RX_M1_ADDR		(GPIO1_IOC_BASE + 0x8)
+/* gpio1b2 */
+#define UART2_TX_M1			2
+#define UART2_TX_M1_OFFSET		8
+#define UART2_TX_M1_ADDR		(GPIO1_IOC_BASE + 0x8)
+
+/* uart3 iomux */
+/* gpio1a1 */
+#define UART3_RX_M0			1
+#define UART3_RX_M0_OFFSET		4
+#define UART3_RX_M0_ADDR		(GPIO1_IOC_BASE)
+/* gpio1a0 */
+#define UART3_TX_M0			1
+#define UART3_TX_M0_OFFSET		0
+#define UART3_TX_M0_ADDR		(GPIO1_IOC_BASE)
+
+/* gpio1d1 */
+#define UART3_RX_M1			5
+#define UART3_RX_M1_OFFSET		4
+#define UART3_RX_M1_ADDR		(GPIO1_IOC_BASE + 0x18)
+/* gpio1d0 */
+#define UART3_TX_M1			5
+#define UART3_TX_M1_OFFSET		0
+#define UART3_TX_M1_ADDR		(GPIO2_IOC_BASE + 0x18)
+
+/* uart4 iomux */
+/* gpio1b0 */
+#define UART4_RX_M0			1
+#define UART4_RX_M0_OFFSET		0
+#define UART4_RX_M0_ADDR		(GPIO1_IOC_BASE + 0x8)
+/* gpio1b1 */
+#define UART4_TX_M0			1
+#define UART4_TX_M0_OFFSET		4
+#define UART4_TX_M0_ADDR		(GPIO1_IOC_BASE + 0x8)
+
+/* gpio1c4 */
+#define UART4_RX_M1			4
+#define UART4_RX_M1_OFFSET		0
+#define UART4_RX_M1_ADDR		(GPIO1_IOC_BASE + 0x14)
+/* gpio1c5 */
+#define UART4_TX_M1			4
+#define UART4_TX_M1_OFFSET		4
+#define UART4_TX_M1_ADDR		(GPIO1_IOC_BASE + 0x14)
+
+/* uart5 iomux */
+/* gpio3a7 */
+#define UART5_RX_M0			2
+#define UART5_RX_M0_OFFSET		11
+#define UART5_RX_M0_ADDR		(GPIO3_IOC_BASE + 0x44)
+/* gpio3a6 */
+#define UART5_TX_M0			1
+#define UART5_TX_M0_OFFSET		8
+#define UART5_TX_M0_ADDR		(GPIO1_IOC_BASE + 0x44)
+
+/* gpio1d2 */
+#define UART5_RX_M1			4
+#define UART5_RX_M1_OFFSET		8
+#define UART5_RX_M1_ADDR		(GPIO1_IOC_BASE + 0x18)
+/* gpio1d3 */
+#define UART5_TX_M1			4
+#define UART5_TX_M1_OFFSET		12
+#define UART5_TX_M1_ADDR		(GPIO1_IOC_BASE + 0x18)
+
+/* gpio3d0 */
+#define UART5_RX_M2			2
+#define UART5_RX_M2_OFFSET		0
+#define UART5_RX_M2_ADDR		(GPIO3_IOC_BASE + 0x58)
+/* gpio3c7 */
+#define UART5_TX_M2			2
+#define UART5_TX_M2_OFFSET		12
+#define UART5_TX_M2_ADDR		(GPIO4_IOC_BASE + 0x54)
+
+#define set_uart_iomux(bits_offset, bits_val, addr) \
+	writel(GENMASK(bits_offset + 19, bits_offset + 16) | (bits_val << bits_offset) , addr)
+
+#define set_uart_iomux_rx(ID, MODE) \
+	set_uart_iomux(UART##ID##_RX_M##MODE##_OFFSET, UART##ID##_RX_M##MODE, UART##ID##_RX_M##MODE##_ADDR);
+#define set_uart_iomux_tx(ID, MODE) \
+	set_uart_iomux(UART##ID##_TX_M##MODE##_OFFSET, UART##ID##_TX_M##MODE, UART##ID##_TX_M##MODE##_ADDR);
+
 void board_debug_uart_init(void)
 {
+/* UART 0 */
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4a0000)
 
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART0_M0 Switch iomux */
+	set_uart_iomux_rx(0, 0);
+	set_uart_iomux_tx(0, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART0_M1 Switch iomux */
+	set_uart_iomux_rx(0, 1);
+	set_uart_iomux_tx(0, 1);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 2)
+
+	/* UART0_M2 Switch iomux */
+	set_uart_iomux_rx(0, 2);
+	set_uart_iomux_tx(0, 2);
+#endif
+
+/* UART 1 */
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4b0000)
+
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART1_M0 Switch iomux */
+	set_uart_iomux_rx(1, 0);
+	set_uart_iomux_tx(1, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART1_M1 Switch iomux */
+	set_uart_iomux_rx(1, 1);
+	set_uart_iomux_tx(1, 1);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 2)
+
+	/* UART1_M2 Switch iomux */
+	set_uart_iomux_rx(1, 2);
+	set_uart_iomux_tx(1, 2);
+#endif
+/* UART 2 */
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4c0000)
+
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART2_M0 Switch iomux */
+	set_uart_iomux_rx(2, 0);
+	set_uart_iomux_tx(2, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART2_M1 Switch iomux */
+	set_uart_iomux_rx(2, 1);
+	set_uart_iomux_tx(2, 1);
+#endif
+
+/* UART 3 */
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4d0000)
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART3_M0 Switch iomux */
+	set_uart_iomux_rx(3, 0);
+	set_uart_iomux_tx(3, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART3_M1 Switch iomux */
+	set_uart_iomux_rx(3, 1);
+	set_uart_iomux_tx(3, 1);
+#endif
+/* UART 4 */
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4e0000)
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART4_M0 Switch iomux */
+	set_uart_iomux_rx(4, 0);
+	set_uart_iomux_tx(4, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART4_M1 Switch iomux */
+	set_uart_iomux_rx(4, 1);
+	set_uart_iomux_tx(4, 1);
+#endif
+/* UART 5 */
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff4f0000)
+#if defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 0)
+
+	/* UART5_M0 Switch iomux */
+	set_uart_iomux_rx(5, 0);
+	set_uart_iomux_tx(5, 0);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 1)
+
+	/* UART5_M1 Switch iomux */
+	set_uart_iomux_rx(5, 1);
+	set_uart_iomux_tx(5, 1);
+#elif defined(CONFIG_ROCKCHIP_UART_MUX_SEL_M) && \
+	(CONFIG_ROCKCHIP_UART_MUX_SEL_M == 2)
+
+	/* UART5_M2 Switch iomux */
+	set_uart_iomux_rx(5, 2);
+	set_uart_iomux_tx(5, 2);
+#endif
+#endif
 }
 
 int arch_cpu_init(void)
