@@ -28,6 +28,26 @@
 	status = "okay";
 };
 
+&gmac {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&grf {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&mdio {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
+&rmii_phy {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
 &sdmmc {
 	u-boot,dm-spl;
 	status = "okay";
