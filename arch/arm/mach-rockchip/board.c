@@ -554,7 +554,6 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 
 #ifdef CONFIG_ARM64
 	u8 *data = (void *)images->ep;
-	ulong dst;
 
 	/*
 	 * Fix kernel 5.10 arm64 boot warning:
@@ -569,25 +568,16 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 	 *   1. this is the common and final path for any boot command.
 	 *   2. don't influence original boot flow, just fix it exactly before
 	 *	jumping kernel.
+	 *
+	 * But relocation is in board_quiesce_devices() until all decompress
+	 * done, mainly for saving boot time.
 	 */
 	if (data[10] == 0x00) {
-		dst = round_down(images->ep, SZ_2M);
-		if (dst != images->ep) {
-			memcpy((char *)dst, (const char *)images->ep,
-			       images->os.image_len);
-			printf("   ** RELOCATE ** Kernel from 0x%08lx to 0x%08lx\n",
-			       images->ep, dst);
-			images->ep = dst;
-		}
+		if (round_down(images->ep, SZ_2M) != images->ep)
+			images->ep = round_down(images->ep, SZ_2M);
 	} else {
-		if (IS_ALIGNED(images->ep, SZ_2M)) {
-			dst = images->ep + 0x80000;
-			memmove((char *)dst, (const char *)images->ep,
-				images->os.image_len);
-			printf("   ** RELOCATE ** Kernel from 0x%08lx to 0x%08lx\n",
-			       images->ep, dst);
-			images->ep = dst;
-		}
+		if (IS_ALIGNED(images->ep, SZ_2M))
+			images->ep += 0x80000;
 	}
 #endif
 	hotkey_run(HK_CLI_OS_PRE);
@@ -1005,18 +995,13 @@ int fit_write_trusty_rollback_index(u32 trusty_index)
 
 void board_quiesce_devices(void *images)
 {
-	hotkey_run(HK_CMDLINE);
-	hotkey_run(HK_CLI_OS_GO);
+	bootm_headers_t *bootm_images = (bootm_headers_t *)images;
+	ulong kernel_addr;
 
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
 #endif
-
-#ifdef CONFIG_ROCKCHIP_REBOOT_TEST
-	do_reset(NULL, 0, 0, NULL);
-#endif
-
 #ifdef CONFIG_FIT_ROLLBACK_PROTECT
 	int ret;
 
@@ -1026,9 +1011,22 @@ void board_quiesce_devices(void *images)
 		      gd->rollback_index, ret);
 	}
 #endif
-
 #ifdef CONFIG_ROCKCHIP_HW_DECOMPRESS
 	misc_decompress_cleanup();
+#endif
+	/* relocate kernel after decompress cleanup */
+	kernel_addr = env_get_ulong("kernel_addr_r", 16, 0);
+	if (kernel_addr != bootm_images->ep) {
+		memmove((char *)bootm_images->ep, (const char *)kernel_addr,
+			bootm_images->os.image_len);
+		printf("== DO RELOCATE == Kernel from 0x%08lx to 0x%08lx\n",
+		       kernel_addr, bootm_images->ep);
+	}
+
+	hotkey_run(HK_CMDLINE);
+	hotkey_run(HK_CLI_OS_GO);
+#ifdef CONFIG_ROCKCHIP_REBOOT_TEST
+	do_reset(NULL, 0, 0, NULL);
 #endif
 }
 
