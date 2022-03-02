@@ -838,6 +838,7 @@ static int mmc_select_bus_width(struct mmc *mmc)
 	return err;
 }
 
+#ifndef CONFIG_MMC_SIMPLE
 static const u8 tuning_blk_pattern_4bit[] = {
 	0xff, 0x0f, 0xff, 0x00, 0xff, 0xcc, 0xc3, 0xcc,
 	0xc3, 0x3c, 0xcc, 0xff, 0xfe, 0xff, 0xfe, 0xef,
@@ -940,6 +941,12 @@ static int mmc_hs200_tuning(struct mmc *mmc)
 	return mmc_execute_tuning(mmc);
 }
 
+#else
+int mmc_send_tuning(struct mmc *mmc, u32 opcode) { return 0; }
+int mmc_execute_tuning(struct mmc *mmc) { return 0; }
+static int mmc_hs200_tuning(struct mmc *mmc) { return 0; }
+#endif
+
 static int mmc_select_hs(struct mmc *mmc)
 {
 	int ret;
@@ -974,6 +981,7 @@ static int mmc_select_hs_ddr(struct mmc *mmc)
 	return 0;
 }
 
+#ifndef CONFIG_MMC_SIMPLE
 static int mmc_select_hs200(struct mmc *mmc)
 {
 	int ret;
@@ -1036,6 +1044,10 @@ static int mmc_select_hs400(struct mmc *mmc)
 
 	return ret;
 }
+#else
+static int mmc_select_hs200(struct mmc *mmc) { return 0; }
+static int mmc_select_hs400(struct mmc *mmc) { return 0; }
+#endif
 
 static u32 mmc_select_card_type(struct mmc *mmc, u8 *ext_csd)
 {

@@ -55,6 +55,11 @@ config SPL_MMC_TINY
 	  operations too, which can remove the need for malloc support in SPL
 	  and thus further reduce footprint.
 
+config MMC_SIMPLE
+	bool "Reduce mmc code size"
+	help
+	  Reduce mmc code size.
+
 config SUPPORT_EMMC_RPMB
 	bool "Support eMMC replay protected memory block (RPMB)"
 	depends on MMC && CMD_MMC

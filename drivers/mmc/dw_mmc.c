@@ -27,7 +27,7 @@
  * to augment the groups of {ldm, stm}.
  */
 #define MAX_STRIDE 64
-#if CONFIG_ARM && CONFIG_CPU_V7
+#if (CONFIG_ARM && CONFIG_CPU_V7 && !defined(CONFIG_MMC_SIMPLE))
 void noinline dwmci_memcpy_fromio(void *buffer, void *fifo_addr)
 {
 	__asm__ __volatile__ (
@@ -81,6 +81,7 @@ void noinline dwmci_memcpy_toio(void *buffer, void *fifo_addr)
 void dwmci_memcpy_fromio(void *buffer, void *fifo_addr) {};
 void dwmci_memcpy_toio(void *buffer, void *fifo_addr) {};
 #endif
+
 static int dwmci_wait_reset(struct dwmci_host *host, u32 value)
 {
 	unsigned long timeout = 1000;
