@@ -124,6 +124,28 @@ struct rockchip_cpu_rate_table {
 	unsigned int pclk_div;
 };
 
+#ifdef CONFIG_ROCKCHIP_IMAGE_TINY
+static inline ulong rockchip_pll_get_rate(struct rockchip_pll_clock *pll,
+					  void __iomem *base,
+					  ulong pll_id)
+{
+	return 0;
+}
+
+static inline int rockchip_pll_set_rate(struct rockchip_pll_clock *pll,
+					void __iomem *base, ulong pll_id,
+					ulong drate)
+{
+	return 0;
+}
+
+static inline const struct rockchip_cpu_rate_table *
+rockchip_get_cpu_settings(struct rockchip_cpu_rate_table *cpu_table,
+			  ulong rate)
+{
+	return NULL;
+}
+#else
 int rockchip_pll_set_rate(struct rockchip_pll_clock *pll,
 			  void __iomem *base, ulong clk_id,
 			  ulong drate);
@@ -132,6 +154,7 @@ ulong rockchip_pll_get_rate(struct rockchip_pll_clock *pll,
 const struct rockchip_cpu_rate_table *
 rockchip_get_cpu_settings(struct rockchip_cpu_rate_table *cpu_table,
 			  ulong rate);
+#endif
 
 static inline int rk_pll_id(enum rk_clk_id clk_id)
 {

@@ -21,6 +21,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define DIV_TO_RATE(input_rate, div)	((input_rate) / ((div) + 1))
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 static struct rockchip_pll_rate_table rv1106_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	RK3036_PLL_RATE(1188000000, 1, 99, 2, 1, 1, 0),
@@ -42,6 +43,7 @@ static struct rockchip_pll_clock rv1106_pll_clks[] = {
 	[GPLL] = PLL(pll_rk3328, PLL_GPLL, RV1106_PLL_CON(24),
 		     RV1106_MODE_CON, 4, 10, 0, rv1106_pll_rates),
 };
+#endif
 
 #ifndef CONFIG_SPL_BUILD
 #define RV1106_CLK_DUMP(_id, _name, _iscru)	\
@@ -52,6 +54,7 @@ static struct rockchip_pll_clock rv1106_pll_clks[] = {
 }
 
 static const struct rv1106_clk_info clks_dump[] = {
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	RV1106_CLK_DUMP(PLL_APLL, "apll", true),
 	RV1106_CLK_DUMP(PLL_DPLL, "dpll", true),
 	RV1106_CLK_DUMP(PLL_GPLL, "gpll", true),
@@ -63,9 +66,11 @@ static const struct rv1106_clk_info clks_dump[] = {
 	RV1106_CLK_DUMP(PCLK_TOP_ROOT, "pclk_top_root", true),
 	RV1106_CLK_DUMP(PCLK_PMU_ROOT, "pclk_pmu_root", true),
 	RV1106_CLK_DUMP(HCLK_PMU_ROOT, "hclk_pmu_root", true),
+#endif
 };
 #endif
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 static ulong rv1106_peri_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 {
 	struct rv1106_cru *cru = priv->cru;
@@ -299,6 +304,7 @@ static ulong rv1106_i2c_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 
 	return rate;
 }
+#endif
 
 static ulong rv1106_crypto_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 {
@@ -496,6 +502,7 @@ static ulong rv1106_mmc_set_clk(struct rv1106_clk_priv *priv,
 	return rv1106_mmc_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 static ulong rv1106_i2c_set_clk(struct rv1106_clk_priv *priv, ulong clk_id,
 				ulong rate)
 {
@@ -546,6 +553,7 @@ static ulong rv1106_i2c_set_clk(struct rv1106_clk_priv *priv, ulong clk_id,
 
 	return rv1106_i2c_get_clk(priv, clk_id);
 }
+#endif
 
 static ulong rv1106_spi_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 {
@@ -607,6 +615,7 @@ static ulong rv1106_spi_set_clk(struct rv1106_clk_priv *priv,
 	return rv1106_spi_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 static ulong rv1106_pwm_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 {
 	struct rv1106_cru *cru = priv->cru;
@@ -676,6 +685,7 @@ static ulong rv1106_pwm_set_clk(struct rv1106_clk_priv *priv,
 
 	return rv1106_pwm_get_clk(priv, clk_id);
 }
+#endif
 
 static ulong rv1106_adc_get_clk(struct rv1106_clk_priv *priv, ulong clk_id)
 {
@@ -738,6 +748,7 @@ static ulong rv1106_adc_set_clk(struct rv1106_clk_priv *priv,
 	return rv1106_adc_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 /*
  *
  * rational_best_approximation(31415, 10000,
@@ -983,6 +994,7 @@ static ulong rv1106_vop_set_clk(struct rv1106_clk_priv *priv,
 
 	return rv1106_vop_get_clk(priv, clk_id);
 }
+#endif
 
 static ulong rv1106_clk_get_rate(struct clk *clk)
 {
@@ -995,6 +1007,7 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 	}
 
 	switch (clk->id) {
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case PLL_APLL:
 		rate = rockchip_pll_get_rate(&rv1106_pll_clks[APLL], priv->cru,
 					     APLL);
@@ -1016,6 +1029,7 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 	case HCLK_PMU_ROOT:
 		rate = rv1106_peri_get_clk(priv, clk->id);
 		break;
+#endif
 	case CLK_CORE_CRYPTO:
 	case CLK_PKA_CRYPTO:
 	case ACLK_CRYPTO:
@@ -1029,6 +1043,7 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 	case HCLK_SFC:
 		rate = rv1106_mmc_get_clk(priv, clk->id);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case CLK_I2C0:
 	case CLK_I2C1:
 	case CLK_I2C2:
@@ -1036,20 +1051,24 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 	case CLK_I2C4:
 		rate = rv1106_i2c_get_clk(priv, clk->id);
 		break;
+#endif
 	case CLK_SPI0:
 	case CLK_SPI1:
 		rate = rv1106_spi_get_clk(priv, clk->id);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case CLK_PWM0_PERI:
 	case CLK_PWM1_PERI:
 	case CLK_PWM2_PERI:
 		rate = rv1106_pwm_get_clk(priv, clk->id);
 		break;
+#endif
 	case CLK_SARADC:
 	case CLK_TSADC_TSEN:
 	case CLK_TSADC:
 		rate = rv1106_adc_get_clk(priv, clk->id);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case SCLK_UART0:
 	case SCLK_UART1:
 	case SCLK_UART2:
@@ -1064,6 +1083,7 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 	case ACLK_VOP:
 		rate = rv1106_vop_get_clk(priv, clk->id);
 		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -1082,6 +1102,7 @@ static ulong rv1106_clk_set_rate(struct clk *clk, ulong rate)
 	}
 
 	switch (clk->id) {
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case PLL_APLL:
 		ret = rockchip_pll_set_rate(&rv1106_pll_clks[APLL], priv->cru,
 					    APLL, rate);
@@ -1103,6 +1124,7 @@ static ulong rv1106_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_PMU_ROOT:
 		ret = rv1106_peri_set_clk(priv, clk->id, rate);
 		break;
+#endif
 	case CLK_CORE_CRYPTO:
 	case CLK_PKA_CRYPTO:
 	case ACLK_CRYPTO:
@@ -1116,6 +1138,7 @@ static ulong rv1106_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_SFC:
 		ret = rv1106_mmc_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case CLK_I2C0:
 	case CLK_I2C1:
 	case CLK_I2C2:
@@ -1123,20 +1146,24 @@ static ulong rv1106_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_I2C4:
 		ret = rv1106_i2c_set_clk(priv, clk->id, rate);
 		break;
+#endif
 	case CLK_SPI0:
 	case CLK_SPI1:
 		ret = rv1106_spi_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case CLK_PWM0_PERI:
 	case CLK_PWM1_PERI:
 	case CLK_PWM2_PERI:
 		ret = rv1106_pwm_set_clk(priv, clk->id, rate);
 		break;
+#endif
 	case CLK_SARADC:
 	case CLK_TSADC_TSEN:
 	case CLK_TSADC:
 		ret = rv1106_adc_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	case SCLK_UART0:
 	case SCLK_UART1:
 	case SCLK_UART2:
@@ -1151,6 +1178,7 @@ static ulong rv1106_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_VOP:
 		rate = rv1106_vop_set_clk(priv, clk->id, rate);
 		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -1298,6 +1326,7 @@ static struct clk_ops rv1106_clk_ops = {
 #endif
 };
 
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 static void rv1106_clk_init(struct rv1106_clk_priv *priv)
 {
 	int ret;
@@ -1324,10 +1353,12 @@ static void rv1106_clk_init(struct rv1106_clk_priv *priv)
 			priv->gpll_hz = GPLL_HZ;
 	}
 }
+#endif
 
 static int rv1106_clk_probe(struct udevice *dev)
 {
 	struct rv1106_clk_priv *priv = dev_get_priv(dev);
+#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	int ret;
 
 	rv1106_clk_init(priv);
@@ -1338,7 +1369,10 @@ static int rv1106_clk_probe(struct udevice *dev)
 		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 	else
 		priv->sync_kernel = true;
-
+#else
+	priv->gpll_hz = GPLL_HZ;
+	priv->cpll_hz = CPLL_HZ;
+#endif
 	return 0;
 }
 
