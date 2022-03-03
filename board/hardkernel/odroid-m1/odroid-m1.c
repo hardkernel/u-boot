@@ -14,6 +14,9 @@
 #include <mapmem.h>
 #include <lcd.h>
 #include <fs.h>
+#if defined(CONFIG_RKSFC_NOR)
+#include <rksfc.h>
+#endif
 #include "../../../drivers/video/drm/rockchip_display.h"
 
 extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
@@ -69,6 +72,11 @@ int board_early_init_r(void)
 	int ret = -EINVAL;
 	char buf[16];
 	int n;
+
+#if defined(CONFIG_RKSFC_NOR)
+	if (dev_desc->if_type == IF_TYPE_MMC)
+		rksfc_scan_namespace();
+#endif
 
 	for (n = 1; n <= 3; n++) {
 		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);

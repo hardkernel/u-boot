@@ -10,6 +10,7 @@
 #include <dm/device-internal.h>
 #include <asm/arch/clock.h>
 #include <rksfc.h>
+#include <spi_flash.h>
 #include <asm/arch/vendor.h>
 
 #include "rkflash_blk.h"
@@ -139,6 +140,7 @@ UCLASS_DRIVER(rksfc) = {
 	.id		= UCLASS_SPI_FLASH,
 	.name		= "rksfc",
 	.flags		= DM_UC_FLAG_SEQ_ALIAS,
+	.per_device_auto_alloc_size = sizeof(struct spi_flash),
 };
 
 static const struct udevice_id rockchip_sfc_ids[] = {
