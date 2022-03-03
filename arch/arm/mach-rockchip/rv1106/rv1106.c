@@ -26,6 +26,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CORE_SGRF_FIREWALL_CON3		0x002c
 #define CORE_SGRF_FIREWALL_CON4		0x0030
 #define CORE_SGRF_CPU_CTRL_CON		0x0040
+#define CORE_SGRF_HPMCU_BOOT_ADDR	0x0044
 
 #define PMU_SGRF_BASE			0xff080000
 
@@ -33,6 +34,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FW_DDR_MST3_REG			0x4c
 #define FW_SHRM_BASE			0xff910000
 #define FW_SHRM_MST1_REG		0x44
+
+#define CORECRU_BASE			0xff3b8000
+#define CORECRU_CORESOFTRST_CON01	0xa04
 
 void board_debug_uart_init(void)
 {
@@ -63,3 +67,17 @@ int arch_cpu_init(void)
 #endif
 	return 0;
 }
+
+#ifdef CONFIG_SPL_BUILD
+int spl_fit_standalone_release(char *id, uintptr_t entry_point)
+{
+	/* Reset the hp mcu */
+	writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+	/* set the mcu addr */
+	writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
+	/* release the mcu */
+	writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+
+	return 0;
+}
+#endif
