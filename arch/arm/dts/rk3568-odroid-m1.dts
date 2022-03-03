@@ -19,7 +19,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &spi_nor, &sdhci, &sdmmc0;
+		u-boot,spl-boot-order = &sdhci, &sdmmc0, &spi_nor;
 	};
 
 	/delete-node/ adc-keys;
