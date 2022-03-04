@@ -17,6 +17,8 @@
 /********************** SPL framework weak ***********************/
 void board_init_f(ulong dummy)
 {
+	/* Mainly to init secure */
+	arch_cpu_init();
 }
 
 ulong spl_relocate_stack_gd(void)
