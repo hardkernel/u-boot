@@ -180,6 +180,25 @@ static int set_bmp_logo(const char *bmp_name, void *addr, int flip)
 	return 0;
 }
 
+static int load_bootsplash_from_mmc(int devnum, unsigned int loadaddr)
+{
+	char buf[16];
+	int n;
+
+	for (n = 1; n <= 2; n++) {
+		snprintf(buf, sizeof(buf), "%d:%d", devnum, n);
+		if (file_exists("mmc", buf, "boot-logo.bmp.gz", FS_TYPE_ANY)) {
+			char cmd[128];
+			snprintf(cmd, sizeof(cmd),
+					"load mmc %s 0x%08x boot-logo.bmp.gz", buf, loadaddr);
+			if (run_command(cmd, 0) == 0)
+				return 0;
+		}
+	}
+
+	return -ENODEV;
+}
+
 int misc_init_r(void)
 {
 	void *decomp;
@@ -187,19 +206,24 @@ int misc_init_r(void)
 	unsigned int loadaddr = (unsigned int)env_get_ulong("loadaddr", 16, 0);
 	unsigned long len;
 	char str[80];
-	int ret;
 
-	/* Try to load splash image from SPI flash memory */
-	snprintf(str, sizeof(str),
-			"sf read 0x%08x 0x300000 0x100000", loadaddr);
-	ret = run_command(str, 0);
-	if (ret) {
-		/* Try to load splash image from CRAMFS */
+	int ret = load_bootsplash_from_mmc(0, loadaddr);	// eMMC
+	if (ret)
+		ret = load_bootsplash_from_mmc(1, loadaddr);	// SD
+
+	if (ret) {	// SPI
+		/* Try to load splash image from SPI flash memory */
 		snprintf(str, sizeof(str),
-				"cramfsload 0x%08x boot-logo.bmp.gz", loadaddr);
+				"sf read 0x%08x 0x300000 0x100000", loadaddr);
 		ret = run_command(str, 0);
-		if (ret)
-			return 0;
+		if (ret) {
+			/* Try to load splash image from CRAMFS */
+			snprintf(str, sizeof(str),
+					"cramfsload 0x%08x boot-logo.bmp.gz", loadaddr);
+			ret = run_command(str, 0);
+			if (ret)
+				return 0;
+		}
 	}
 
 	bmp = (struct bmp_image *)map_sysmem(loadaddr, 0);
