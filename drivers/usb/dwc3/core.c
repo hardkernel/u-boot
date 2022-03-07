@@ -402,7 +402,12 @@ static void dwc3_phy_setup(struct dwc3 *dwc)
 	if (dwc->tx_de_emphasis_quirk)
 		reg |= DWC3_GUSB3PIPECTL_TX_DEEPH(dwc->tx_de_emphasis);
 
-	if (dwc->dis_u3_susphy_quirk)
+	/*
+	 * For some Rokchip SoCs like RK3588, if the USB3 PHY is suspended
+	 * in U-Boot would cause the PHY initialize abortively in Linux Kernel,
+	 * so disable the DWC3_GUSB3PIPECTL_SUSPHY feature here to fix it.
+	 */
+	if (dwc->dis_u3_susphy_quirk || CONFIG_IS_ENABLED(ARCH_ROCKCHIP))
 		reg &= ~DWC3_GUSB3PIPECTL_SUSPHY;
 
 	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
