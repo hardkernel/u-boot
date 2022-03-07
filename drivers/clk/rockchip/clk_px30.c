@@ -1026,7 +1026,6 @@ static ulong px30_peri_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	return px30_peri_get_clk(priv, clk_id);
 }
 
-#ifndef CONFIG_SPL_BUILD
 static ulong px30_crypto_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 {
 	struct px30_cru *cru = priv->cru;
@@ -1084,6 +1083,7 @@ static ulong px30_crypto_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	return px30_crypto_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_SPL_BUILD
 static ulong px30_mac_set_clk(struct clk *clk, uint hz)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -1371,11 +1371,11 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_PERI_PRE:
 		ret = px30_peri_set_clk(priv, clk->id, rate);
 		break;
-#ifndef CONFIG_SPL_BUILD
 	case SCLK_CRYPTO:
 	case SCLK_CRYPTO_APK:
 		ret = px30_crypto_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_SPL_BUILD
 	case SCLK_GMAC:
 	case SCLK_GMAC_SRC:
 		ret = px30_mac_set_clk(clk, rate);
