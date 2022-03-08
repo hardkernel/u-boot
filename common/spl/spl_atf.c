@@ -31,7 +31,8 @@ static struct bl31_params *bl2_to_bl31_params;
  *
  * @return bl31 params structure pointer
  */
-static struct bl31_params *bl2_plat_get_bl31_params(uintptr_t bl32_entry,
+static struct bl31_params *bl2_plat_get_bl31_params(struct spl_image_info *spl_image,
+						    uintptr_t bl32_entry,
 						    uintptr_t bl33_entry)
 {
 	struct entry_point_info *bl32_ep_info;
@@ -80,7 +81,7 @@ bl33_setup:
 	bl33_ep_info->pc = bl33_entry;
 	bl33_ep_info->spsr = SPSR_64(MODE_EL2, MODE_SP_ELX,
 				     DISABLE_ALL_EXECPTIONS);
-#if defined(CONFIG_SPL_KERNEL_BOOT) && defined(CONFIG_ARM64)
+
 	/*
 	 * Reference: arch/arm/lib/bootm.c
 	 * boot_jump_linux(bootm_headers_t *images, int flag)
@@ -90,8 +91,9 @@ bl33_setup:
 	 * 			   images->ep, ES_TO_AARCH64);
 	 * }
 	 */
-	bl33_ep_info->args.arg0 = CONFIG_SPL_FDT_ADDR;
-#endif
+	if (spl_image->next_stage == SPL_NEXT_STAGE_KERNEL)
+		bl33_ep_info->args.arg0 = (unsigned long)spl_image->fdt_addr;
+
 	bl2_to_bl31_params->bl33_image_info = &bl31_params_mem.bl33_image_info;
 	SET_PARAM_HEAD(bl2_to_bl31_params->bl33_image_info,
 		       ATF_PARAM_IMAGE_BINARY, ATF_VERSION_1, 0);
@@ -106,13 +108,14 @@ static inline void raw_write_daif(unsigned int daif)
 
 typedef void (*atf_entry_t)(struct bl31_params *params, void *plat_params);
 
-void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
+void bl31_entry(struct spl_image_info *spl_image,
+		uintptr_t bl31_entry, uintptr_t bl32_entry,
 		uintptr_t bl33_entry, uintptr_t fdt_addr)
 {
 	struct bl31_params *bl31_params;
 	atf_entry_t  atf_entry = (atf_entry_t)bl31_entry;
 
-	bl31_params = bl2_plat_get_bl31_params(bl32_entry, bl33_entry);
+	bl31_params = bl2_plat_get_bl31_params(spl_image, bl32_entry, bl33_entry);
 
 	atf_entry((void *)bl31_params, (void *)fdt_addr);
 }
@@ -200,6 +203,6 @@ void spl_invoke_atf(struct spl_image_info *spl_image)
 	 * We don't provide a BL3-2 entry yet, but this will be possible
 	 * using similar logic.
 	 */
-	bl31_entry(spl_image->entry_point, bl32_entry,
+	bl31_entry(spl_image, spl_image->entry_point, bl32_entry,
 		   bl33_entry, platform_param);
 }

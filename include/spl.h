@@ -293,7 +293,8 @@ void spl_invoke_atf(struct spl_image_info *spl_image);
 /**
  * bl31_entry - Fill bl31_params structure, and jump to bl31
  */
-void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
+void bl31_entry(struct spl_image_info *spl_image,
+		uintptr_t bl31_entry, uintptr_t bl32_entry,
 		uintptr_t bl33_entry, uintptr_t fdt_addr);
 
 /**
