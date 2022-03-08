@@ -31,7 +31,7 @@
 };
 
 &nandc0 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -44,19 +44,19 @@
 };
 
 &pmugrf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &cru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &crypto {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pmucru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &saradc {
@@ -65,41 +65,41 @@
 };
 
 &gpio0 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "disabled";
 };
 
 &gpio1 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "disabled";
 };
 
 &gpio2 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "disabled";
 };
 
 &gpio3 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "disabled";
 };
 
 &usb20_otg {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 };
 
 &usb2phy_grf {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
 &u2phy {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
 &u2phy_otg {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -134,13 +134,13 @@
 };
 
 &nandc0 {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
 	nand@0 {
-		u-boot,dm-spl;
+		u-boot,dm-pre-reloc;
 		reg = <0>;
 		nand-ecc-mode = "hw_syndrome";
 		nand-ecc-strength = <16>;
