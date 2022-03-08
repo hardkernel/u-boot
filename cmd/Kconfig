@@ -1534,6 +1534,11 @@ config CMD_EXT4_WRITE
 	help
 	  Enables EXT4 FS write command
 
+config CMD_EXT4_SPARSE_WRITE
+	depends on CMD_EXT4
+	bool "ext4 sparse write command support"
+	help
+
 config CMD_FAT
 	bool "FAT command support"
 	select FS_FAT
