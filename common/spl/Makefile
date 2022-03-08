@@ -26,7 +26,7 @@ ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_$(SPL_TPL_)BOOTROM_SUPPORT) += spl_bootrom.o
 ifdef CONFIG_SPL_KERNEL_BOOT
 ifdef CONFIG_ARM64
-obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit.o
+obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit_tb_arm64.o
 else
 obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit_tb_arm32.o
 endif
