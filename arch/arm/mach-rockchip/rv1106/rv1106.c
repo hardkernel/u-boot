@@ -38,10 +38,14 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CORECRU_BASE			0xff3b8000
 #define CORECRU_CORESOFTRST_CON01	0xa04
 
+#define GPIO0_IOC_BASE			0xFF388000
 #define GPIO1_IOC_BASE			0xFF538000
 #define GPIO2_IOC_BASE			0xFF548000
 #define GPIO3_IOC_BASE			0xFF558000
 #define GPIO4_IOC_BASE			0xFF568000
+
+#define GPIO3A_IOMUX_SEL_L		0x0040
+#define GPIO3A_IOMUX_SEL_H		0x0044
 
 /* uart0 iomux */
 /* gpio0a0 */
@@ -334,6 +338,12 @@ int arch_cpu_init(void)
 #endif
 	return 0;
 }
+
+#ifdef CONFIG_ROCKCHIP_IMAGE_TINY
+	/* Set sdmmc0 iomux */
+	writel(0xfff01110, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_L);
+	writel(0xffff1111, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_H);
+#endif
 
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
