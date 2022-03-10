@@ -342,6 +342,18 @@ ulong blk_write_devnum(enum if_type if_type, int devnum, lbaint_t start,
 	return blk_dwrite(desc, start, blkcnt, buffer);
 }
 
+ulong blk_erase_devnum(enum if_type if_type, int devnum, lbaint_t start,
+		       lbaint_t blkcnt)
+{
+	struct blk_desc *desc;
+	int ret;
+
+	ret = get_desc(if_type, devnum, &desc);
+	if (ret)
+		return ret;
+	return blk_derase(desc, start, blkcnt);
+}
+
 int blk_select_hwpart(struct udevice *dev, int hwpart)
 {
 	const struct blk_ops *ops = blk_get_ops(dev);
