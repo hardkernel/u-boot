@@ -32,14 +32,13 @@ retry:
 
 	if (ret && cmd->cmdidx != SD_CMD_SEND_IF_COND &&
 	    cmd->cmdidx != MMC_CMD_APP_CMD &&
+	    cmd->cmdidx != MMC_CMD_SEND_OP_COND &&
 	    cmd->cmdidx != MMC_SEND_TUNING_BLOCK_HS200) {
 		/* execute tuning at last retry. */
-		if (ops->execute_tuning && retry_time == 1) {
-			u32 opcode;
-			if (IS_SD(mmc))
-				opcode = MMC_SEND_TUNING_BLOCK;
-			else
-				opcode = MMC_SEND_TUNING_BLOCK_HS200;
+		if (retry_time == 1 &&
+		    mmc->timing == MMC_TIMING_MMC_HS200 &&
+		    ops->execute_tuning) {
+			u32 opcode = MMC_SEND_TUNING_BLOCK_HS200;
 			ops->execute_tuning(mmc->dev, opcode);
 	    	}
 		if (retry_time-- > 0)
