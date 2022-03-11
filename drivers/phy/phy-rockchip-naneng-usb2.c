@@ -205,8 +205,11 @@ int rockchip_chg_get_type(void)
 
 	ret = uclass_get_device_by_name(UCLASS_PHY, "usb2-phy", &udev);
 	if (ret == -ENODEV) {
-		pr_err("%s: get u2phy node failed: %d\n", __func__, ret);
-		return ret;
+		ret = uclass_get_device_by_name(UCLASS_PHY, "usb2phy", &udev);
+		if (ret) {
+			pr_err("%s: get usb2 phy node failed: %d\n", __func__, ret);
+			return ret;
+		}
 	}
 
 	rphy = dev_get_priv(udev);
