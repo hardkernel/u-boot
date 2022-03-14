@@ -491,7 +491,7 @@ static int fdt_fixup_pcfg(const void *blob)
 		return root_node;
 
 	fdt_for_each_subnode(depth1_node, blob, root_node) {
-		debug("depth1: %s\n", fdt_get_name(blob, depth2_node, NULL));
+		debug("depth1: %s\n", fdt_get_name(blob, depth1_node, NULL));
 		fixup_pcfg_drive_strength(blob, depth1_node);
 		fdt_for_each_subnode(depth2_node, blob, depth1_node) {
 			debug("    depth2: %s\n",
@@ -602,6 +602,176 @@ static int fdt_fixup_i2s_soft_reset(const void *blob)
 	return 0;
 }
 
+#define RKPM_SLP_ARMPD			BIT(0)
+#define RKPM_SLP_ARMOFF			BIT(1)
+#define RKPM_SLP_ARMOFF_DDRPD		BIT(2)
+#define RKPM_SLP_ARMOFF_LOGOFF		BIT(3)
+
+static int fdt_fixup_rockchip_suspend(const void *blob)
+{
+	int suspend_node;
+	u32 *data, mode;
+
+	/* Replace opp table */
+	suspend_node = fdt_path_offset(blob, "/rockchip-suspend");
+	if (suspend_node < 0) {
+		printf("Failed to get rockchip-suspend node\n");
+		return -EINVAL;
+	}
+
+	data = (u32 *)fdt_getprop(blob, suspend_node,
+				 "rockchip,sleep-mode-config", NULL);
+	if (!data)
+		return 0;
+
+	mode = fdt32_to_cpu(*data);
+	mode &= ~RKPM_SLP_ARMOFF_LOGOFF;
+	mode |= RKPM_SLP_ARMOFF;
+	*data = cpu_to_fdt32(mode);
+
+	if (fdt_setprop((void *)blob, suspend_node,
+			"rockchip,sleep-mode-config", data, sizeof(*data)))
+		printf("Failed to set rockchip,sleep-mode-config = 0x%x\n", mode);
+	else
+		debug("set rockchip,sleep-mode-config = 0x%x\n", mode);
+
+	return 0;
+}
+
+static void fixup_regulators_px30s(const void *blob, int reg_node)
+{
+	const char *name;
+	int mem_node;
+	int suspend;
+	u32 *min, *max;
+
+	min = (u32 *)fdt_getprop(blob, reg_node,
+				 "regulator-min-microvolt", NULL);
+	max = (u32 *)fdt_getprop(blob, reg_node,
+				 "regulator-max-microvolt", NULL);
+	if (!min || !max)
+		return;
+
+	name = fdt_getprop(blob, reg_node, "regulator-name", NULL);
+
+	debug("%s: name: %s, min %duV, max %duV\n",
+	      name, fdt_get_name(blob, reg_node, NULL),
+	      fdt32_to_cpu(min[0]), fdt32_to_cpu(max[0]));
+
+	/* 1. fixed volt: 1.0v => 0.9v */
+	if (*min == *max && fdt32_to_cpu(min[0]) == 1000000) {
+		mem_node = fdt_subnode_offset(blob, reg_node,
+					      "regulator-state-mem");
+		if (mem_node < 0)
+			return;
+
+		suspend = cpu_to_fdt32(900000);
+		if (fdt_setprop((void *)blob, mem_node,
+				"regulator-suspend-microvolt",
+				&suspend, sizeof(suspend)))
+			printf("Failed to set %s suspend 0.9V\n", name);
+		else
+			debug("%s: set suspend volt 0.9V\n", name);
+
+		min[0] = cpu_to_fdt32(900000);
+		max[0] = cpu_to_fdt32(900000);
+		debug("%s: min/max 1.0v => 0.9v\n",
+		      fdt_get_name(blob, reg_node, NULL));
+	}
+
+	/* 2. vdd_logic suspend: any => 0.85v */
+	if (!strcmp(name, "vdd_logic")) {
+		mem_node = fdt_subnode_offset(blob, reg_node,
+					      "regulator-state-mem");
+		if (mem_node < 0)
+			return;
+
+		suspend = cpu_to_fdt32(850000);
+		if (fdt_setprop((void *)blob, mem_node,
+				"regulator-suspend-microvolt",
+				&suspend, sizeof(suspend)))
+			printf("Failed to set vdd_logic suspend 0.85V\n");
+		else
+			debug("vdd_logic: set suspend volt 0.85V\n");
+	}
+}
+
+static void fixup_regulators_px30(const void *blob, int reg_node)
+{
+	const char *name;
+	int mem_node;
+
+	name = fdt_getprop(blob, reg_node, "regulator-name", NULL);
+	if (!name)
+		return;
+
+	/* regulator-off-in-suspend => regulator-on-in-suspend */
+	if (!strcmp(name, "vdd_logic") ||
+	    !strcmp(name, "vcc_3v0") ||
+	    !strcmp(name, "vcc_1v0") ||
+	    !strcmp(name, "vccio_sd") ||
+	    !strcmp(name, "vcc_sd")) {
+		mem_node = fdt_subnode_offset(blob, reg_node,
+					      "regulator-state-mem");
+		if (mem_node < 0)
+			return;
+
+		fdt_delprop((void *)blob, mem_node, "regulator-off-in-suspend");
+		if (fdt_setprop((void *)blob, mem_node,
+				"regulator-on-in-suspend", NULL, 0))
+			printf("Failed to set regulator(%s) on in suspend\n", name);
+		else
+			debug("set regulator(%s) on in suspend\n", name);
+	}
+}
+
+static void fixup_regulators(const void *blob, int pmic_node)
+{
+	int parent_node;
+	int reg_node;
+
+	parent_node = fdt_subnode_offset(blob, pmic_node, "regulators");
+	if (parent_node < 0)
+		return;
+
+	fdt_for_each_subnode(reg_node, blob, parent_node) {
+		if (soc_is_px30s())
+			fixup_regulators_px30s(blob, reg_node);
+		else if (soc_is_px30())
+			fixup_regulators_px30(blob, reg_node);
+	}
+}
+
+/* Assume that: all regulators are from rk809/817 */
+static int fdt_fixup_regulator(const void *blob)
+{
+	const char *name;
+	int i2c_node;
+	int pmic_node;
+	int root_node;
+
+	root_node = fdt_path_offset(blob, "/");
+	if (root_node < 0)
+		return root_node;
+
+	fdt_for_each_subnode(i2c_node, blob, root_node) {
+		name = fdt_get_name(blob, i2c_node, NULL);
+		debug("depth1: %s\n", name);
+		if (!strncmp(name, "i2c@", 4)) {
+			fdt_for_each_subnode(pmic_node, blob, i2c_node) {
+				name = fdt_get_name(blob, pmic_node, NULL);
+				debug("depth2: %s\n", name);
+				if (!strncmp(name, "pmic@20", 7)) {
+					fixup_regulators(blob, pmic_node);
+					return 0;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 int rk_board_fdt_fixup(const void *blob)
 {
 	if (soc_is_px30s()) {
@@ -613,7 +783,11 @@ int rk_board_fdt_fixup(const void *blob)
 		fdt_fixup_bus_apll(blob);
 		fdt_fixup_cpu_gpu_clk(blob);
 		fdt_fixup_i2s_soft_reset(blob);
+	} else if (soc_is_px30()) {
+		fdt_fixup_rockchip_suspend(blob);
 	}
+
+	fdt_fixup_regulator(blob);
 
 	return 0;
 }
