@@ -14,12 +14,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define ENVF_MSG(fmt, args...)	printf("ENVF: "fmt, ##args)
 #define BLK_CNT(desc, sz)	((sz) / (desc)->blksz)
-#define ENVPARAM_SIZE		SZ_4K
 
 static ulong env_offset, env_offset_redund;
 static ulong env_size;
-static u32 envparam_addr_common[]  = { 0, SZ_4K };
-static u32 envparam_addr_spinand[] = { 0, SZ_256K };
 
 #ifdef CONFIG_SPL_BUILD
 #ifdef CONFIG_SPL_ENV_PARTITION
@@ -28,7 +25,7 @@ static u32 envparam_addr_spinand[] = { 0, SZ_256K };
  * of CONFIG_SPL_SYS_MALLOC_F_LEN. we prefer to use a static address as an env
  * buffer. The tail of bss section is good choice from experience.
  */
-static void *env_buffer =
+static void *env_buf =
 	(void *)CONFIG_SPL_BSS_START_ADDR + CONFIG_SPL_BSS_MAX_SIZE;
 
 static const char *get_strval(env_t *env, u32 size, const char *str)
@@ -56,23 +53,6 @@ static const char *get_strval(env_t *env, u32 size, const char *str)
 	debug("NOT-FIND: %s\n", str);
 
 	return NULL;
-}
-
-static ulong get_strval_ulong(env_t *env, u32 size,
-			      const char *str, ulong default_val)
-{
-	const char *p;
-
-	p = get_strval(env, size, str);
-	if (!p)
-		return default_val;
-	p = strstr(p, "=");
-	if (!p)
-		return default_val;
-
-	++p; /* skip '=' */
-
-	return simple_strtoul(p, NULL, 16);
 }
 
 static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
@@ -105,55 +85,24 @@ static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
 
 int envf_load(struct blk_desc *desc)
 {
-	void *env, *envp0, *envp1;
 	const char *part_list;
-	int read0_fail, read1_fail;
-	int envp_blks;
 	int ret = -ENOENT;
-	u32 *addr;
+	void *env;
 
 	if (!desc)
 		return -ENODEV;
 
-	/* Import envparam */
-	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NAND)
-		addr = envparam_addr_spinand;
-	else
-		addr = envparam_addr_common;
-
-	envp_blks = BLK_CNT(desc, ENVPARAM_SIZE);
-	read0_fail = env_do_load(desc, addr[0], ENVPARAM_SIZE,
-				 env_buffer, &envp0);
-	read1_fail = env_do_load(desc, addr[1], ENVPARAM_SIZE,
-				 env_buffer + ENVPARAM_SIZE, &envp1);
-	if (read0_fail && read1_fail) {
-		ENVF_MSG("No valid envparam!\n");
-	} else if (!read0_fail && read1_fail) {
-		env = envp0;
-		ret = blk_dwrite(desc, BLK_CNT(desc, addr[1]),
-				 BLK_CNT(desc, ENVPARAM_SIZE), envp0);
-		ENVF_MSG("Repair backup envparam %s\n",
-			 ret == envp_blks ? "ok" : "fail");
-	} else if (read0_fail && !read1_fail) {
-		env = envp1;
-		ret = blk_dwrite(desc, BLK_CNT(desc, addr[0]),
-				 BLK_CNT(desc, ENVPARAM_SIZE), envp1);
-		ENVF_MSG("Repair primary envparam %s\n",
-			 ret == envp_blks ?  "ok" : "fail");
+	if (desc->if_type == IF_TYPE_MTD &&
+	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
+		env_size = CONFIG_ENV_NAND_SIZE;
+		env_offset = CONFIG_ENV_NAND_OFFSET;
+		env_offset_redund = CONFIG_ENV_NAND_OFFSET_REDUND;
 	} else {
-		env = envp0; /* both ok, use primary envparam */
-	}
-
-	/* Import env data */
-	env_size = get_strval_ulong(env, ENVPARAM_SIZE, "ENV_SIZE", 0);
-	env_offset = get_strval_ulong(env, ENVPARAM_SIZE, "ENV_OFFSET", 0);
-	env_offset_redund = get_strval_ulong(env, ENVPARAM_SIZE, "ENV_OFFSET_REDUND", 0);
-	if (!env_offset || !env_size) {
-		ENVF_MSG("Using default\n");
-		env_offset = CONFIG_ENV_OFFSET;
 		env_size = CONFIG_ENV_SIZE;
+		env_offset = CONFIG_ENV_OFFSET;
 		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 	}
+
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
 
@@ -162,10 +111,10 @@ int envf_load(struct blk_desc *desc)
 		ENVF_MSG("Backup  0x%08lx - 0x%08lx\n",
 			 env_offset_redund, env_offset_redund + env_size);
 
-	ret = env_do_load(desc, env_offset, env_size, env_buffer, &env);
+	ret = env_do_load(desc, env_offset, env_size, env_buf, &env);
 	if (ret < 0 && env_offset_redund)
 		ret = env_do_load(desc, env_offset_redund, env_size,
-				  env_buffer + env_size, &env);
+				  env_buf + env_size, &env);
 	if (ret < 0) {
 		ENVF_MSG("No valid env data, ret=%d\n", ret);
 		return ret;
@@ -197,11 +146,7 @@ int envf_load(struct blk_desc *desc)
 
 #else
 /*
- * [Example]
- *  generate envparam:
- *	./tools/mkenvimage -s 0x1000 -p 0x0 -o envparam.bin envparam.txt
- *  generate data:
- *	./tools/mkenvimage -s 0x8000 -p 0x0 -o envf.bin envf.txt
+ * Example: ./tools/mkenvimage -s 0x8000 -p 0x0 -o env.img env.txt
  */
 #define ENVF_MAX		64
 #define ENVF_EMSG		"error: please use \"sys_bootargs\" but not " \
@@ -236,19 +181,15 @@ static int envf_extract_list(void)
 static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
 		       const char *list[], int num, void **envp)
 {
+	ALLOC_CACHE_ALIGN_BUFFER(env_t, env, 1);
 	lbaint_t env_size;
 	lbaint_t env_off;
 	u32 blk_cnt;
 	int ret = 0;
-	env_t *env;
 
 	env_size = size - ENV_HEADER_SIZE;
 	env_off = BLK_CNT(desc, offset);
 	blk_cnt = BLK_CNT(desc, size);
-
-	env = memalign(ARCH_DMA_MINALIGN, size);
-	if (!env)
-		return -ENOMEM;
 
 	if (blk_dread(desc, env_off, blk_cnt, (void *)env) != blk_cnt) {
 		ret = -EIO;
@@ -275,16 +216,8 @@ out:
 
 static int envf_load(void)
 {
-	const char *envparam[] = {
-		"ENV_OFFSET", "ENV_SIZE", "ENV_OFFSET_REDUND",
-	};
 	struct blk_desc *desc;
-	int read0_fail, read1_fail;
-	int envp_blks;
-	void *envp0 = NULL;
-	void *envp1 = NULL;
 	int ret = -ENOENT;
-	u32 *addr;
 
 	desc = rockchip_get_bootdev();
 	if (!desc) {
@@ -292,46 +225,17 @@ static int envf_load(void)
 		return 0;
 	}
 
-	/* Import envparam */
-	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NAND)
-		addr = envparam_addr_spinand;
-	else
-		addr = envparam_addr_common;
-
-	envp_blks = BLK_CNT(desc, ENVPARAM_SIZE);
-	read0_fail = env_do_load(desc, addr[0], ENVPARAM_SIZE,
-				 envparam, ARRAY_SIZE(envparam), &envp0);
-	read1_fail = env_do_load(desc, addr[1], ENVPARAM_SIZE,
-				 envparam, ARRAY_SIZE(envparam), &envp1);
-	if (read0_fail && read1_fail) {
-		ENVF_MSG("No valid envparam!\n");
-	} else if (!read0_fail && read1_fail) {
-		ret = blk_dwrite(desc, BLK_CNT(desc, addr[1]),
-				 BLK_CNT(desc, ENVPARAM_SIZE), envp0);
-		ENVF_MSG("Repair backup envparam %s\n",
-			 ret == envp_blks ? "ok" : "fail");
-	} else if (read0_fail && !read1_fail) {
-		ret = blk_dwrite(desc, BLK_CNT(desc, addr[0]),
-				 BLK_CNT(desc, ENVPARAM_SIZE), envp1);
-		ENVF_MSG("Repair primary envparam %s\n",
-			 ret == envp_blks ?  "ok" : "fail");
-	}
-
-	if (envp0)
-		free(envp0);
-	if (envp1)
-		free(envp1);
-
-	/* Import env data */
-	env_size = env_get_ulong("ENV_SIZE", 16, 0);
-	env_offset = env_get_ulong("ENV_OFFSET", 16, 0);
-	env_offset_redund = env_get_ulong("ENV_OFFSET_REDUND", 16, 0);
-	if (!env_offset || !env_size) {
-		ENVF_MSG("Using default\n");
-		env_offset = CONFIG_ENV_OFFSET;
+	if (desc->if_type == IF_TYPE_MTD &&
+	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
+		env_size = CONFIG_ENV_NAND_SIZE;
+		env_offset = CONFIG_ENV_NAND_OFFSET;
+		env_offset_redund = CONFIG_ENV_NAND_OFFSET_REDUND;
+	} else {
 		env_size = CONFIG_ENV_SIZE;
+		env_offset = CONFIG_ENV_OFFSET;
 		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 	}
+
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
 

@@ -500,6 +500,7 @@ config ENV_OFFSET
 	hex "Environment offset"
 	depends on !ENV_IS_IN_UBI
 	depends on !ENV_IS_NOWHERE || ENVF
+	default 0x0 if ENVF
 	default 0x3f8000
 	help
 	  Offset from the start of the device (or partition)
@@ -510,13 +511,26 @@ config ENV_SIZE
 	help
 	  Size of the environment storage area
 
+if ENVF
 config ENV_OFFSET_REDUND
 	hex "Environment redundant(backup) offset"
-	depends on ENVF
 	default ENV_OFFSET
 	help
 	  Redundant(backup) offset from the start of the device (or partition),
 	  this size must be ENV_SIZE.
+
+config ENV_NAND_OFFSET
+	hex "Environment offset in Nand"
+	default 0x0
+
+config ENV_NAND_OFFSET_REDUND
+	hex "Environment redundant(backup) offset in Nand"
+	default ENV_NAND_OFFSET
+
+config ENV_NAND_SIZE
+	hex "Environment size in Nand"
+	default 0x40000
+endif
 endif
 
 endmenu

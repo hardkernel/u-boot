@@ -144,11 +144,18 @@ extern unsigned long nand_env_oob_offset;
 # define ENV_HEADER_SIZE	(sizeof(uint32_t))
 #endif
 
+/* Select the large size value if required */
+#if defined(CONFIG_ENV_NAND_SIZE) && (CONFIG_ENV_SIZE < CONFIG_ENV_NAND_SIZE)
+#define ENV_SIZE_VAL	CONFIG_ENV_NAND_SIZE
+#else
+#define ENV_SIZE_VAL	CONFIG_ENV_SIZE
+#endif
+
 #ifdef CONFIG_ENV_AES
 /* Make sure the payload is multiple of AES block size */
-#define ENV_SIZE ((CONFIG_ENV_SIZE - ENV_HEADER_SIZE) & ~(16 - 1))
+#define ENV_SIZE ((ENV_SIZE_VAL - ENV_HEADER_SIZE) & ~(16 - 1))
 #else
-#define ENV_SIZE (CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
+#define ENV_SIZE (ENV_SIZE_VAL - ENV_HEADER_SIZE)
 #endif
 
 typedef struct environment_s {
