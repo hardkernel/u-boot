@@ -371,8 +371,7 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 
 		/* reset the clock phase when the frequency is lower than 100MHz */
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_CTRL);
-		extra = DLL_RXCLK_NO_INVERTER << DWCMSHC_EMMC_DLL_RXCLK_SRCSEL;
-		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
+		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_RXCLK);
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_TXCLK);
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_STRBIN);
 		sdhci_writel(host, 0, DECMSHC_EMMC_DLL_CMDOUT);
