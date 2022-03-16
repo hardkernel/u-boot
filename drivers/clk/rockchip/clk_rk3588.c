@@ -570,7 +570,7 @@ static ulong rk3588_pwm_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case CLK_PWM1:
 		con = readl(&cru->clksel_con[59]);
-		sel = (con & CLK_PWM1_SEL_MASK) >> CLK_PWM3_SEL_SHIFT;
+		sel = (con & CLK_PWM1_SEL_MASK) >> CLK_PWM1_SEL_SHIFT;
 		break;
 	case CLK_PWM2:
 		con = readl(&cru->clksel_con[59]);
