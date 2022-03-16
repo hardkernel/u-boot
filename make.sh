@@ -750,6 +750,7 @@ function pack_images()
 		if [ "${PLAT_TYPE}" == "FIT" ]; then
 			pack_fit_image ${ARG_LIST_FIT}
 		elif [ "${PLAT_TYPE}" == "DECOMP" ]; then
+			rm -f uboot.img trust.img
 			${SCRIPT_DECOMP}
 		else
 			pack_uboot_image
