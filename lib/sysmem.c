@@ -629,36 +629,33 @@ void *sysmem_fdt_reserve_alloc_base(const char *name,
 	return paddr;
 }
 
-bool sysmem_can_alloc(phys_size_t base, phys_size_t size)
+ulong sysmem_alloc_temporary_mem(phys_size_t size)
 {
 	struct sysmem *sysmem = &plat_sysmem;
 	phys_addr_t alloc_base;
 	phys_addr_t paddr;
+	phys_addr_t base;
 	int ret;
 
 	if (!sysmem_has_init())
 		return false;
 
+	base = (gd->start_addr_sp - CONFIG_SYS_STACK_SIZE - 0x2000) - size;
+
 	/* LMB is align down alloc mechanism */
 	alloc_base = base + size;
-	paddr = __lmb_alloc_base(&sysmem->lmb,
-				 size,
-				 SYSMEM_ALLOC_NO_ALIGN,
-				 alloc_base);
+	paddr = __lmb_alloc_base(&sysmem->lmb, size, SZ_1K, alloc_base);
 	if (paddr) {
 		/* If free failed, return false */
-		ret = lmb_free(&sysmem->lmb, base, size);
+		ret = lmb_free(&sysmem->lmb, paddr, size);
 		if (ret < 0) {
 			SYSMEM_E("Can't free at 0x%08lx - 0x%08lx, ret=%d\n",
-				 (ulong)base, (ulong)(base + size), ret);
-			return false;
+				 (ulong)paddr, (ulong)(paddr + size), ret);
+			return 0;
 		}
-	} else {
-		SYSMEM_D("Can't alloc at 0x%08lx - 0x%08lx\n",
-			 (ulong)base, (ulong)(base + size));
 	}
 
-	return (paddr == base) ? true : false;
+	return paddr;
 }
 
 int sysmem_free(phys_addr_t base)
@@ -813,11 +810,13 @@ static int do_sysmem_search(cmd_tbl_t *cmdtp, int flag,
 	if (!size)
 		return CMD_RET_USAGE;
 
-	addr = (ulong)sysmem_alloc(MEM_SEARCH, size);
-	if (!addr || sysmem_free(addr))
+	addr = sysmem_alloc_temporary_mem(size);
+	if (!addr) {
 		SYSMEM_I("No available region with size 0x%08lx\n", size);
-	else
-		SYSMEM_I("Available region at address: 0x%08lx\n", (ulong)addr);
+	} else {
+		SYSMEM_I("Available region at address: 0x%08lx\n",addr);
+	}
+	env_set_hex("smem_addr", addr);
 
 	return 0;
 }
