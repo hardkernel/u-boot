@@ -505,9 +505,9 @@ static ulong px30_i2s1_mclk_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 		rk_clrsetreg(&cru->clksel_con[30], CLK_I2S1_OUT_SEL_MASK,
 			     CLK_I2S1_OUT_SEL_OSC);
 	} else {
+		px30_i2s_set_clk(priv, SCLK_I2S1, hz);
 		rk_clrsetreg(&cru->clksel_con[30], CLK_I2S1_OUT_SEL_MASK,
 			     CLK_I2S1_OUT_SEL_I2S1);
-		px30_i2s_set_clk(priv, SCLK_I2S1, hz);
 	}
 
 	rk_clrsetreg(&cru->clkgate_con[10], CLK_I2S1_OUT_MCLK_PAD_MASK,
@@ -1896,6 +1896,18 @@ static void px30_clk_init(struct px30_pmuclk_priv *priv)
 	ulong npll_hz;
 	int ret;
 
+	ret = uclass_get_device_by_name(UCLASS_CLK,
+					"clock-controller@ff2b0000", &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return;
+	}
+
+	cru_priv = dev_get_priv(cru_dev);
+
+	/* Source from xin_osc0_half before gpll rate. */
+	px30_i2s1_mclk_set_clk(cru_priv, SCLK_I2S1_OUT, 12000000);
+
 	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
 	if (priv->gpll_hz != GPLL_HZ) {
 		ret = px30_gpll_set_pmuclk(priv, GPLL_HZ);
@@ -1903,14 +1915,6 @@ static void px30_clk_init(struct px30_pmuclk_priv *priv)
 			printf("%s failed to set gpll rate\n", __func__);
 	}
 
-	ret = uclass_get_device_by_name(UCLASS_CLK,
-					"clock-controller@ff2b0000",
-					 &cru_dev);
-	if (ret) {
-		printf("%s failed to get cru device\n", __func__);
-		return;
-	}
-	cru_priv = dev_get_priv(cru_dev);
 	cru_priv->gpll_hz = priv->gpll_hz;
 
 	npll_hz = px30_clk_get_pll_rate(cru_priv, NPLL);
@@ -1926,6 +1930,9 @@ static void px30_clk_init(struct px30_pmuclk_priv *priv)
 	px30_peri_set_clk(cru_priv, ACLK_PERI_PRE, ACLK_PERI_HZ);
 	px30_peri_set_clk(cru_priv, HCLK_PERI_PRE, HCLK_PERI_HZ);
 	px30_pclk_pmu_set_pmuclk(priv, PCLK_PMU_HZ);
+
+	/* Source from gpll as default set. */
+	px30_i2s1_mclk_set_clk(cru_priv, SCLK_I2S1_OUT, 11289600);
 }
 
 static int px30_pmuclk_probe(struct udevice *dev)
