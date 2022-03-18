@@ -750,8 +750,7 @@ function pack_images()
 		if [ "${PLAT_TYPE}" == "FIT" ]; then
 			pack_fit_image ${ARG_LIST_FIT}
 		elif [ "${PLAT_TYPE}" == "DECOMP" ]; then
-			rm -f uboot.img trust.img
-			${SCRIPT_DECOMP}
+			${SCRIPT_DECOMP} ${ARG_LIST_FIT} --chip ${RKCHIP_LABEL}
 		else
 			pack_uboot_image
 			pack_trust_image
