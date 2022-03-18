@@ -45,6 +45,7 @@ struct rk_hash_ctx {
 
 struct rk_crypto_soc_data {
 	u32 capability;
+	u32 (*dynamic_cap)(void);
 };
 
 struct rockchip_crypto_priv {
@@ -216,6 +217,50 @@ static inline void get_tag_from_reg(u32 chn, u8 *tag, u32 tag_len)
 
 	for (i = 0; i < tag_len / 4; i++, chn_base += 4)
 		word2byte_be(crypto_read(chn_base), tag + 4 * i);
+}
+
+static u32 crypto_v3_dynamic_cap(void)
+{
+	u32 capability = 0;
+	u32 ver_reg, i;
+	struct cap_map {
+		u32 ver_offset;
+		u32 mask;
+		u32 cap_bit;
+	};
+	const struct cap_map cap_tbl[] = {
+	{CRYPTO_HASH_VERSION, CRYPTO_HASH_MD5_FLAG,    CRYPTO_MD5},
+	{CRYPTO_HASH_VERSION, CRYPTO_HASH_SHA1_FLAG,   CRYPTO_SHA1},
+	{CRYPTO_HASH_VERSION, CRYPTO_HASH_SHA256_FLAG, CRYPTO_SHA256},
+	{CRYPTO_HASH_VERSION, CRYPTO_HASH_SHA512_FLAG, CRYPTO_SHA512},
+	{CRYPTO_HASH_VERSION, CRYPTO_HASH_SM3_FLAG,    CRYPTO_SM3},
+
+	{CRYPTO_HMAC_VERSION, CRYPTO_HMAC_MD5_FLAG,    CRYPTO_HMAC_MD5},
+	{CRYPTO_HMAC_VERSION, CRYPTO_HMAC_SHA1_FLAG,   CRYPTO_HMAC_SHA1},
+	{CRYPTO_HMAC_VERSION, CRYPTO_HMAC_SHA256_FLAG, CRYPTO_HMAC_SHA256},
+	{CRYPTO_HMAC_VERSION, CRYPTO_HMAC_SHA512_FLAG, CRYPTO_HMAC_SHA512},
+	{CRYPTO_HMAC_VERSION, CRYPTO_HMAC_SM3_FLAG,    CRYPTO_HMAC_SM3},
+
+	{CRYPTO_AES_VERSION,  CRYPTO_AES256_FLAG,      CRYPTO_AES},
+	{CRYPTO_DES_VERSION,  CRYPTO_TDES_FLAG,        CRYPTO_DES},
+	{CRYPTO_SM4_VERSION,  CRYPTO_ECB_FLAG,         CRYPTO_SM4},
+	};
+
+	/* rsa */
+	capability = CRYPTO_RSA512 |
+		     CRYPTO_RSA1024 |
+		     CRYPTO_RSA2048 |
+		     CRYPTO_RSA3072 |
+		     CRYPTO_RSA4096;
+
+	for (i = 0; i < ARRAY_SIZE(cap_tbl); i++) {
+		ver_reg = crypto_read(cap_tbl[i].ver_offset);
+
+		if ((ver_reg & cap_tbl[i].mask) == cap_tbl[i].mask)
+			capability |= cap_tbl[i].cap_bit;
+	}
+
+	return capability;
 }
 
 static int hw_crypto_reset(void)
@@ -1411,6 +1456,10 @@ static int rockchip_crypto_probe(struct udevice *dev)
 	int ret = 0;
 
 	sdata = (struct rk_crypto_soc_data *)dev_get_driver_data(dev);
+
+	if (sdata->dynamic_cap)
+		sdata->capability = sdata->dynamic_cap();
+
 	priv->soc_data = sdata;
 
 	priv->hw_ctx = memalign(LLI_ADDR_ALIGN_SIZE,
@@ -1480,6 +1529,11 @@ static const struct rk_crypto_soc_data soc_data_rk1808 = {
 		      CRYPTO_RSA4096,
 };
 
+static const struct rk_crypto_soc_data soc_data_cryptov3 = {
+	.capability  = 0,
+	.dynamic_cap = crypto_v3_dynamic_cap,
+};
+
 static const struct udevice_id rockchip_crypto_ids[] = {
 	{
 		.compatible = "rockchip,px30-crypto",
@@ -1504,6 +1558,10 @@ static const struct udevice_id rockchip_crypto_ids[] = {
 	{
 		.compatible = "rockchip,rk3588-crypto",
 		.data = (ulong)&soc_data_base_sm
+	},
+	{
+		.compatible = "rockchip,crypto_v3",
+		.data = (ulong)&soc_data_cryptov3
 	},
 	{ }
 };
