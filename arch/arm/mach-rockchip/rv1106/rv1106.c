@@ -335,15 +335,15 @@ int arch_cpu_init(void)
 	/* Set the emmc and fspi to access secure area */
 	writel(0x00000000, FW_DDR_BASE + FW_DDR_MST3_REG);
 	writel(0xff00ffff, FW_SHRM_BASE + FW_SHRM_MST1_REG);
-#endif
-	return 0;
-}
 
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
-	/* Set sdmmc0 iomux */
+	/* Pinctrl is disabled, set sdmmc0 iomux here */
 	writel(0xfff01110, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_L);
 	writel(0xffff1111, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_H);
 #endif
+#endif
+	return 0;
+}
 
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
