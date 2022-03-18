@@ -628,8 +628,8 @@ out:
 	return ret;
 }
 
-static int do_tftp_update(cmd_tbl_t *cmdtp, int flag,
-			  int argc, char * const argv[])
+static int do_tftp_full_update(cmd_tbl_t *cmdtp, int flag,
+			       int argc, char * const argv[])
 {
 	struct local_information *local = &local_info;
 	struct update_header *hdr = &update_hdr;
@@ -755,7 +755,7 @@ out:
 }
 
 U_BOOT_CMD(
-	tftpupdate, 2, 1, do_tftp_update,
+	tftp_full_update, 2, 1, do_tftp_full_update,
 	"Update a set of images organized with FIT via network using TFTP protocol",
 	"[[server-dir:][partition]"
 );
