@@ -11,6 +11,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define CORE_GRF_BASE			0xff040000
+#define CORE_GRF_CACHE_PERI_ADDR_START	0x0024
+#define CORE_GRF_CACHE_PERI_ADDR_END	0x0028
+
 #define PERI_SGRF_BASE			0xff070000
 #define PERI_SGRF_FIREWALL_CON0		0x0020
 #define PERI_SGRF_FIREWALL_CON1		0x0024
@@ -348,6 +352,9 @@ int arch_cpu_init(void)
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
+	/* set the mcu uncache area, usually set the devices address */
+	writel(0xff000, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_START);
+	writel(0xffc00, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_END);
 	/* Reset the hp mcu */
 	writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
 	/* set the mcu addr */
