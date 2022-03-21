@@ -307,6 +307,18 @@
 		status = "disabled";
 	};
 
+	saradc: saradc@ff3c0000 {
+		compatible = "rockchip,rk3588-saradc";
+		reg = <0xff3c0000 0x100>;
+		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+		#io-channel-cells = <1>;
+		clocks = <&cru CLK_SARADC>, <&cru PCLK_SARADC>;
+		clock-names = "saradc", "apb_pclk";
+		resets = <&cru SRST_P_SARADC>;
+		reset-names = "saradc-apb";
+		status = "disabled";
+	};
+
 	sdio: mmc@ff9a0000 {
 		compatible = "rockchip,rv1106-dw-mshc", "rockchip,rk3288-dw-mshc";
 		reg = <0xff9a0000 0x4000>;

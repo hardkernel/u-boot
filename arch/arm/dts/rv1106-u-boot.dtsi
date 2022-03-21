@@ -53,6 +53,11 @@
 	status = "okay";
 };
 
+&saradc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &sfc {
 	u-boot,dm-spl;
 	status = "okay";
