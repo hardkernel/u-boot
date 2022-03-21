@@ -122,6 +122,9 @@ config ARM_ERRATA_852421
 config ARM_ERRATA_852423
 	bool
 
+config ARM_ZERO_CNTVOFF
+	bool
+
 config CPU_ARM720T
 	bool
 	select SYS_CACHE_SHIFT_5
