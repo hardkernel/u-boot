@@ -332,8 +332,8 @@ int arch_cpu_init(void)
 	writel(0x00030002, CORE_SGRF_BASE + CORE_SGRF_CPU_CTRL_CON);
 	writel(0x20000000, PMU_SGRF_BASE);
 
-	/* Set the emmc to access secure area */
-	writel(0xffff0000, FW_DDR_BASE + FW_DDR_MST3_REG);
+	/* Set the emmc and fspi to access secure area */
+	writel(0x00000000, FW_DDR_BASE + FW_DDR_MST3_REG);
 	writel(0xff00ffff, FW_SHRM_BASE + FW_SHRM_MST1_REG);
 #endif
 	return 0;
