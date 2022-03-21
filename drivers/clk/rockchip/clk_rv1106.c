@@ -1012,6 +1012,10 @@ static ulong rv1106_clk_get_rate(struct clk *clk)
 		rate = rockchip_pll_get_rate(&rv1106_pll_clks[APLL], priv->cru,
 					     APLL);
 		break;
+	case PLL_DPLL:
+		rate = rockchip_pll_get_rate(&rv1106_pll_clks[DPLL], priv->cru,
+					     DPLL);
+		break;
 	case PLL_CPLL:
 		rate = rockchip_pll_get_rate(&rv1106_pll_clks[CPLL], priv->cru,
 					     CPLL);
@@ -1337,6 +1341,13 @@ static void rv1106_clk_init(struct rv1106_clk_priv *priv)
 			rockchip_pll_get_rate(&rv1106_pll_clks[APLL],
 					      priv->cru, APLL);
 		priv->armclk_init_hz = priv->armclk_enter_hz;
+	}
+
+	if (priv->armclk_init_hz != APLL_HZ) {
+			ret = rockchip_pll_set_rate(&rv1106_pll_clks[APLL], priv->cru,
+						    APLL, APLL_HZ);
+		if (!ret)
+			priv->armclk_init_hz = APLL_HZ;
 	}
 
 	if (priv->cpll_hz != CPLL_HZ) {
