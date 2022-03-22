@@ -814,24 +814,58 @@ static int rk_check_size(u32 *data, u32 max_word_size)
 	return 0;
 }
 
-int rk_mpa_alloc(struct mpa_num **mpa)
+int rk_mpa_alloc(struct mpa_num **mpa, void *data, u32 word_size)
 {
-	if (!mpa)
+	u32 alignment = sizeof(u32);
+	u32 byte_size = word_size * sizeof(u32);
+	struct mpa_num *tmp_mpa = NULL;
+
+	if (!mpa || word_size == 0)
 		return -EINVAL;
 
-	*mpa = malloc(sizeof(**mpa));
-	if (!(*mpa))
+	*mpa = NULL;
+
+	tmp_mpa = malloc(sizeof(*tmp_mpa));
+	if (!tmp_mpa)
 		return -ENOMEM;
 
-	memset(*mpa, 0x00, sizeof(**mpa));
+	memset(tmp_mpa, 0x00, sizeof(*tmp_mpa));
+
+	if (!data || (unsigned long)data % alignment) {
+		tmp_mpa->d = memalign(alignment, byte_size);
+		if (!tmp_mpa->d) {
+			free(tmp_mpa);
+			return -ENOMEM;
+		}
+
+		if (data)
+			memcpy(tmp_mpa->d, data, byte_size);
+		else
+			memset(tmp_mpa->d, 0x00, byte_size);
+
+		tmp_mpa->alloc = MPA_USE_ALLOC;
+	} else {
+		tmp_mpa->d = data;
+	}
+
+	tmp_mpa->size  = word_size;
+
+	*mpa = tmp_mpa;
 
 	return 0;
 }
 
 void rk_mpa_free(struct mpa_num **mpa)
 {
-	if (mpa && (*mpa))
-		free(*mpa);
+	struct mpa_num *tmp_mpa = NULL;
+
+	if (mpa && (*mpa)) {
+		tmp_mpa = *mpa;
+		if (tmp_mpa->alloc == MPA_USE_ALLOC)
+			free(tmp_mpa->d);
+
+		free(tmp_mpa);
+	}
 }
 
 /* c = |a| + |b| */
@@ -926,16 +960,14 @@ int rk_exptmod(void *a, void *b, void *c, void *d)
 	m_c = (struct mpa_num *)c;
 	m_d = (struct mpa_num *)d;
 
-	if (rk_mpa_alloc(&tmpa) != 0)
+	if (rk_mpa_alloc(&tmpa, NULL, RK_MAX_RSA_BWORDS) != 0)
 		return CRYPT_ERROR;
 
-	tmpa->d = malloc(RK_MAX_RSA_NCHARS);
-	if (!tmpa->d) {
-		error = -ENOMEM;
+	error = rk_mod(a, c, tmpa);
+	if (error) {
+		error = CRYPT_ERROR;
 		goto exit;
 	}
-
-	rk_mod(a, c, tmpa);
 
 	if (!a || !b || !c || !d || rk_mpanum_size(m_c) == 0) {
 		error = CRYPT_ERROR;
@@ -993,9 +1025,6 @@ int rk_exptmod(void *a, void *b, void *c, void *d)
 	rk_pka_finish();
 
 exit:
-	if (tmpa->d)
-		free(tmpa->d);
-
 	rk_mpa_free(&tmpa);
 	return error;
 }
@@ -1014,17 +1043,14 @@ int rk_exptmod_np(void *m, void *e, void *n, void *np, void *d)
 	m_np = (struct mpa_num *)np;
 	m_d = (struct mpa_num *)d;
 
-	if (rk_mpa_alloc(&tmpa) != 0)
+	if (rk_mpa_alloc(&tmpa, NULL, RK_MAX_RSA_BWORDS) != 0)
 		return CRYPT_ERROR;
 
-	tmpa->d = malloc(RK_MAX_RSA_NCHARS);
-	if (!tmpa->d) {
-		error = -ENOMEM;
+	error = rk_mod(m, n, tmpa);
+	if (error) {
+		error = CRYPT_ERROR;
 		goto exit;
 	}
-
-	memset(tmpa->d, 0x00, sizeof(RK_MAX_RSA_NCHARS));
-	rk_mod(m, n, tmpa);
 
 	if (!m || !e || !n || !d || rk_mpanum_size(m_n) == 0) {
 		error = CRYPT_ERROR;
@@ -1049,7 +1075,7 @@ int rk_exptmod_np(void *m, void *e, void *n, void *np, void *d)
 	crypto_write(exact_size + 32, CRYPTO_PKA_L0 + 4);
 
 	/* calculate NP by initialization PKA for modular operations */
-	if (m_np->d)
+	if (m_np && m_np->d)
 		error = rk_calcNp_and_initmodop((m_n)->d, /*in N*/
 						exact_size,	/*in N size*/
 						m_np->d,	/*out NP*/
@@ -1090,9 +1116,6 @@ int rk_exptmod_np(void *m, void *e, void *n, void *np, void *d)
 	rk_pka_finish();
 
 exit:
-	if (tmpa->d)
-		free(tmpa->d);
-
 	rk_mpa_free(&tmpa);
 	return error;
 }

@@ -258,6 +258,9 @@ int crypto_rsa_verify(struct udevice *dev, rsa_key *ctx, u8 *sign, u8 *output)
 	if (!ops || !ops->rsa_verify)
 		return -ENOSYS;
 
+	if (!ctx || !ctx->n || !ctx->e || !sign || !output)
+		return -EINVAL;
+
 	return ops->rsa_verify(dev, ctx, sign, output);
 }
 

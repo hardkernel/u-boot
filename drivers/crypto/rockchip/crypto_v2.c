@@ -1275,7 +1275,6 @@ static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 	struct mpa_num *mpa_m = NULL, *mpa_e = NULL, *mpa_n = NULL;
 	struct mpa_num *mpa_c = NULL, *mpa_result = NULL;
 	u32 n_bits, n_words;
-	u32 *rsa_result;
 	int ret;
 
 	if (!ctx)
@@ -1291,38 +1290,33 @@ static int rockchip_crypto_rsa_verify(struct udevice *dev, rsa_key *ctx,
 	n_bits = crypto_algo_nbits(ctx->algo);
 	n_words = BITS2WORD(n_bits);
 
-	rsa_result = malloc(BITS2BYTE(n_bits));
-	if (!rsa_result)
-		return -ENOMEM;
-
-	memset(rsa_result, 0x00, BITS2BYTE(n_bits));
-
-	ret = rk_mpa_alloc(&mpa_m);
-	ret |= rk_mpa_alloc(&mpa_e);
-	ret |= rk_mpa_alloc(&mpa_n);
-	ret |= rk_mpa_alloc(&mpa_c);
-	ret |= rk_mpa_alloc(&mpa_result);
+	ret = rk_mpa_alloc(&mpa_m, sign, n_words);
 	if (ret)
 		goto exit;
 
-	mpa_m->d = (void *)sign;
-	mpa_e->d = (void *)ctx->e;
-	mpa_n->d = (void *)ctx->n;
-	mpa_c->d = (void *)ctx->c;
-	mpa_result->d = (void *)rsa_result;
+	ret = rk_mpa_alloc(&mpa_e, ctx->e, n_words);
+	if (ret)
+		goto exit;
 
-	mpa_m->size = n_words;
-	mpa_e->size = n_words;
-	mpa_n->size = n_words;
-	mpa_c->size = n_words;
-	mpa_result->size = n_words;
+	ret = rk_mpa_alloc(&mpa_n, ctx->n, n_words);
+	if (ret)
+		goto exit;
+
+	if (ctx->c) {
+		ret = rk_mpa_alloc(&mpa_c, ctx->c, n_words);
+		if (ret)
+			goto exit;
+	}
+
+	ret = rk_mpa_alloc(&mpa_result, NULL, n_words);
+	if (ret)
+		goto exit;
 
 	ret = rk_exptmod_np(mpa_m, mpa_e, mpa_n, mpa_c, mpa_result);
 	if (!ret)
-		memcpy(output, rsa_result, BITS2BYTE(n_bits));
+		memcpy(output, mpa_result->d, BITS2BYTE(n_bits));
 
 exit:
-	free(rsa_result);
 	rk_mpa_free(&mpa_m);
 	rk_mpa_free(&mpa_e);
 	rk_mpa_free(&mpa_n);
