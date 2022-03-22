@@ -10,5 +10,6 @@ gen_header
 gen_uboot_node
 gen_fdt_node
 gen_mcu_node
+gen_loadable_node
 gen_arm_configurations
 
