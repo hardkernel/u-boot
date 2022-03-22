@@ -108,6 +108,7 @@ static int gmac_rockchip_ofdata_to_platdata(struct udevice *dev)
 {
 	struct gmac_rockchip_platdata *pdata = dev_get_platdata(dev);
 	struct ofnode_phandle_args args;
+	struct udevice *phydev;
 	const char *string;
 	int ret;
 
@@ -131,8 +132,17 @@ static int gmac_rockchip_ofdata_to_platdata(struct udevice *dev)
 	if (pdata->integrated_phy) {
 		ret = reset_get_by_name(dev, "mac-phy", &pdata->phy_reset);
 		if (ret) {
-			debug("No PHY reset control found: ret=%d\n", ret);
-			return ret;
+			ret = uclass_get_device_by_ofnode(UCLASS_ETH_PHY, args.node, &phydev);
+			if (ret) {
+				debug("Get phydev by ofnode failed: err=%d\n", ret);
+				return ret;
+			}
+
+			ret = reset_get_by_index(phydev, 0, &pdata->phy_reset);
+			if (ret) {
+				debug("No PHY reset control found: ret=%d\n", ret);
+				return ret;
+			}
 		}
 	}
 
@@ -1246,11 +1256,14 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 {
 	struct rv1106_grf *grf;
 	enum {
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK = BIT(0),
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE = BIT(0),
+	};
+
+	enum {
 		RV1106_MACPHY_ENABLE_MASK = BIT(1),
-		RV1106_MACPHY_DISENABLE = 0,
-		RV1106_MACPHY_ENABLE = BIT(1),
-		RV1106_MACPHY_MODE_MASK = GENMASK(3, 2),
-		RV1106_MACPHY_RMII_MODE = BIT(2),
+		RV1106_MACPHY_DISENABLE = BIT(1),
+		RV1106_MACPHY_ENABLE = 0,
 		RV1106_MACPHY_XMII_SEL_MASK = GENMASK(6, 5),
 		RV1106_MACPHY_XMII_SEL = BIT(6),
 		RV1106_MACPHY_24M_CLK_SEL_MASK = GENMASK(9, 7),
@@ -1261,7 +1274,7 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 
 	enum {
 		RV1106_MACPHY_BGS_MASK = GENMASK(3, 0),
-		RV1106_MACPHY_BGS = BIT(1),
+		RV1106_MACPHY_BGS = BIT(2),
 	};
 
 	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
@@ -1269,14 +1282,16 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 	reset_assert(&pdata->phy_reset);
 	udelay(20);
 
+	rk_clrsetreg(&grf->gmac_clk_con,
+		     RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK,
+		     RV1106_VOGRF_GMAC_CLK_RMII_MODE);
+
 	rk_clrsetreg(&grf->macphy_con0,
 		     RV1106_MACPHY_ENABLE_MASK |
-		     RV1106_MACPHY_MODE_MASK |
 		     RV1106_MACPHY_XMII_SEL_MASK |
 		     RV1106_MACPHY_24M_CLK_SEL_MASK |
 		     RV1106_MACPHY_PHY_ID_MASK,
 		     RV1106_MACPHY_ENABLE |
-		     RV1106_MACPHY_RMII_MODE |
 		     RV1106_MACPHY_XMII_SEL |
 		     RV1106_MACPHY_24M_CLK_SEL_24M |
 		     RV1106_MACPHY_PHY_ID);
@@ -1427,6 +1442,7 @@ static int gmac_rockchip_probe(struct udevice *dev)
 	eth_pdata = &dw_pdata->eth_pdata;
 #endif
 	pdata->bus_id = dev->seq;
+
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
 	if (ret)
@@ -1480,8 +1496,6 @@ static int gmac_rockchip_probe(struct udevice *dev)
 		/* Set to RMII mode */
 		if (ops->set_to_rmii)
 			ops->set_to_rmii(pdata);
-		else
-			return -EPERM;
 
 		break;
 	default:
