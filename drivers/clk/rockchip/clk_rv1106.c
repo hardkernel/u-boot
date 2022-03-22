@@ -1384,6 +1384,9 @@ static int rv1106_clk_probe(struct udevice *dev)
 	priv->gpll_hz = GPLL_HZ;
 	priv->cpll_hz = CPLL_HZ;
 #endif
+	rk_clrsetreg(&priv->cru->core_clksel_con[0],
+		     CLK_CORE_DIV_MASK,
+		     0 << CLK_CORE_DIV_SHIFT);
 	return 0;
 }
 
