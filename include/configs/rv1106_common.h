@@ -41,6 +41,8 @@
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 #define CONFIG_ROCKUSB_G_DNL_PID	0x110c
 
+#define CONFIG_PREBOOT
+
 /*
  *   Image:  0 - 8M
  *  zImage:  8 - 12M
@@ -69,7 +71,21 @@
 	"boot_fit;"			\
 	"boot_android ${devtype} ${devnum};"
 #endif
+
+/* Update define for tiny image */
+#ifdef CONFIG_ROCKCHIP_IMAGE_TINY
+#undef RKIMG_BOOTCOMMAND
+#undef RKIMG_DET_BOOTDEV
+#undef CONFIG_EXTRA_ENV_SETTINGS
+#undef CONFIG_AUTO_COMPLETE
+#undef CONFIG_SYS_LONGHELP
+#undef CONFIG_ZLIB
+#undef CONFIG_GZIP
+/* TODO: #define CONFIG_LIB_HW_RAND */
+
+#define RKIMG_BOOTCOMMAND		"boot_fit;"
+#define CONFIG_EXTRA_ENV_SETTINGS	ENV_MEM_LAYOUT_SETTINGS
 #endif
-#define CONFIG_PREBOOT
+#endif	/* !CONFIG_SPL_BUILD */
 
 #endif
