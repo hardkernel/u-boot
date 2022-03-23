@@ -365,3 +365,24 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_ROCKCHIP_IMAGE_TINY
+int rk_board_scan_bootdev(void)
+{
+	char *devtype, *devnum;
+
+	if (!run_command("blk dev mmc 1", 0) &&
+	    !run_command("rkimgtest mmc 1", 0)) {
+		devtype = "mmc";
+		devnum = "1";
+	} else {
+		run_command("blk dev mtd 2", 0);
+		devtype = "mtd";
+		devnum = "2";
+	}
+	env_set("devtype", devtype);
+	env_set("devnum", devnum);
+
+	return 0;
+}
+#endif

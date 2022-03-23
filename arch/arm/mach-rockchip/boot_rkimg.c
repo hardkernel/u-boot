@@ -42,9 +42,15 @@ __weak int rk_board_early_fdt_fixup(void *blob)
 	return 0;
 }
 
-static void boot_devtype_init(void)
+__weak int rk_board_scan_bootdev(void)
 {
 	const char *devtype_num_set = "run rkimg_bootdev";
+
+	return run_command_list(devtype_num_set, -1, 0);
+}
+
+static void boot_devtype_init(void)
+{
 	char *devtype = NULL, *devnum = NULL;
 	static int done;	/* static */
 	int atags_en = 0;
@@ -122,7 +128,7 @@ static void boot_devtype_init(void)
 #ifdef CONFIG_MMC
 	mmc_initialize(gd->bd);
 #endif
-	ret = run_command_list(devtype_num_set, -1, 0);
+	ret = rk_board_scan_bootdev();
 	if (ret) {
 		/* Set default dev type/num if command not valid */
 		devtype = "mmc";
