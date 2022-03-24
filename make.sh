@@ -558,12 +558,13 @@ function pack_uboot_itb_image()
 		else
 			echo "WARN: No tee bin"
 		fi
-
-		TEE_OFFSET=`filt_val "ADDR" ${INI}`
-		if [ "${TEE_OFFSET}" == "" ]; then
-			TEE_OFFSET=0x8400000
+		if [ ! -z "${TOSTA}" -o ! -z "${TOS}" ]; then
+			TEE_OFFSET=`filt_val "ADDR" ${INI}`
+			if [ "${TEE_OFFSET}" == "" ]; then
+				TEE_OFFSET=0x8400000
+			fi
+			TEE_ARG="-t ${TEE_OFFSET}"
 		fi
-		TEE_ARG="-t ${TEE_OFFSET}"
 	fi
 
 	# MCUs
