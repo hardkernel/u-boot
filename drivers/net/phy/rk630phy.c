@@ -75,35 +75,6 @@ static int rk630_phy_startup(struct phy_device *phydev)
 	return genphy_parse_link(phydev);
 }
 
-static void rk630_phy_ieee_set(struct phy_device *phydev, bool enable)
-{
-	u32 value;
-
-	/* Switch to page 1 */
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0100);
-	value = phy_read(phydev, MDIO_DEVAD_NONE, REG_PAGE1_EEE_CONFIGURE);
-	if (enable)
-		value |= BIT(3);
-	else
-		value &= ~BIT(3);
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE1_EEE_CONFIGURE, value);
-	/* Switch to page 0 */
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0000);
-}
-
-static void rk630_phy_set_uaps(struct phy_device *phydev)
-{
-	u32 value;
-
-	/* Switch to page 1 */
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0100);
-	value = phy_read(phydev, MDIO_DEVAD_NONE, REG_PAGE1_UAPS_CONFIGURE);
-	value |= BIT(15);
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE1_UAPS_CONFIGURE, value);
-	/* Switch to page 0 */
-	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0000);
-}
-
 static void rk630_phy_s40_config_init(struct phy_device *phydev)
 {
 	phy_write(phydev, 0, MDIO_DEVAD_NONE,
@@ -185,12 +156,6 @@ static int rk630_phy_config_init(struct phy_device *phydev)
 		       phydev->addr);
 		return -EINVAL;
 	}
-	rk630_phy_ieee_set(phydev, true);
-	/*
-	 * Ultra Auto-Power Saving Mode (UAPS) is designed to
-	 * save power when cable is not plugged into PHY.
-	 */
-	rk630_phy_set_uaps(phydev);
 
 	return 0;
 }
