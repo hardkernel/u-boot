@@ -11,6 +11,9 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define PERI_GRF_BASE			0xff000000
+#define PERI_GRF_PERI_CON1		0x0004
+
 #define CORE_GRF_BASE			0xff040000
 #define CORE_GRF_CACHE_PERI_ADDR_START	0x0024
 #define CORE_GRF_CACHE_PERI_ADDR_END	0x0028
@@ -41,6 +44,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FW_DDR_MST3_REG			0x4c
 #define FW_SHRM_BASE			0xff910000
 #define FW_SHRM_MST1_REG		0x44
+
+#define CRU_BASE			0xff3b0000
+#define CRU_GLB_RST_CON			0x0c10
 
 #define CORECRU_BASE			0xff3b8000
 #define CORECRU_CORESOFTRST_CON01	0xa04
@@ -359,6 +365,10 @@ int arch_cpu_init(void)
 	 */
 	writel(0x01ff01d1, PERI_GRF_BASE + PERI_GRF_USBPHY_CON0);
 	writel(0x00000000, USBPHY_APB_BASE + USBPHY_FSLS_DIFF_RECEIVER);
+
+	/* release the wdt */
+	writel(0x2000200, PERI_GRF_BASE + PERI_GRF_PERI_CON1);
+	writel(0x400040, CRU_BASE + CRU_GLB_RST_CON);
 
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
 	/* Pinctrl is disabled, set sdmmc0 iomux here */
