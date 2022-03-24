@@ -51,6 +51,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO3A_IOMUX_SEL_L		0x0040
 #define GPIO3A_IOMUX_SEL_H		0x0044
 
+#define GPIO4_IOC_GPIO4B_DS0		0x0030
+
 /* uart0 iomux */
 /* gpio0a0 */
 #define UART0_RX_M0			1
@@ -339,6 +341,9 @@ int arch_cpu_init(void)
 	/* Set the emmc and fspi to access secure area */
 	writel(0x00000000, FW_DDR_BASE + FW_DDR_MST3_REG);
 	writel(0xff00ffff, FW_SHRM_BASE + FW_SHRM_MST1_REG);
+
+	/* Set fspi clk 6mA */
+	writel(0x0f000700, GPIO4_IOC_BASE + GPIO4_IOC_GPIO4B_DS0);
 
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
 	/* Pinctrl is disabled, set sdmmc0 iomux here */
