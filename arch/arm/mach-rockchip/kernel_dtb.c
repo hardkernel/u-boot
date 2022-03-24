@@ -9,11 +9,59 @@
 #include <malloc.h>
 #include <of_live.h>
 #include <dm/root.h>
+#include <dm/uclass-internal.h>
 #include <asm/arch/hotkey.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#ifndef CONFIG_USING_KERNEL_DTB_V2
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+static int dm_rm_kernel_dev(void)
+{
+	struct udevice *dev, *rec[10];
+	u32 uclass[] = { UCLASS_CRYPTO };
+	int i, j, k;
+
+	for (i = 0, j = 0; i < ARRAY_SIZE(uclass); i++) {
+		for (uclass_find_first_device(uclass[i], &dev); dev;
+		     uclass_find_next_device(&dev)) {
+			if (dev->flags & DM_FLAG_KNRL_DTB)
+				rec[j++] = dev;
+		}
+
+		for (k = 0; k < j; k++)
+			list_del_init(&rec[k]->uclass_node);
+	}
+
+	return 0;
+}
+
+static int dm_rm_u_boot_dev(void)
+{
+	struct udevice *dev, *rec[10];
+	u32 uclass[] = { UCLASS_ETH };
+	int del = 0;
+	int i, j, k;
+
+	for (i = 0, j = 0; i < ARRAY_SIZE(uclass); i++) {
+		for (uclass_find_first_device(uclass[i], &dev); dev;
+		     uclass_find_next_device(&dev)) {
+			if (dev->flags & DM_FLAG_KNRL_DTB)
+				del = 1;
+			else
+				rec[j++] = dev;
+		}
+
+		/* remove u-boot dev if there is someone from kernel */
+		if (del) {
+			for (k = 0; k < j; k++)
+				list_del_init(&rec[k]->uclass_node);
+		}
+	}
+
+	return 0;
+}
+
+#else
 /* Here, only fixup cru phandle, pmucru is not included */
 static int phandles_fixup_cru(const void *fdt)
 {
@@ -248,11 +296,8 @@ int init_kernel_dtb(void)
 	ulong fdt_addr = 0;
 	int ret = -ENODEV;
 
-#ifdef CONFIG_USING_KERNEL_DTB_V2
-	printf("DM: v2\n");
-#else
-	printf("DM: v1\n");
-#endif
+	printf("DM: v%d\n", IS_ENABLED(CONFIG_USING_KERNEL_DTB_V2) ? 2 : 1);
+
 	/*
 	 * If memory size <= 128MB, we firstly try to get "fdt_addr1_r".
 	 */
@@ -326,6 +371,10 @@ dtb_okay:
 	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
 	dm_scan_fdt((void *)gd->fdt_blob, false);
 
+#ifdef CONFIG_USING_KERNEL_DTB_V2
+	dm_rm_kernel_dev();
+	dm_rm_u_boot_dev();
+#endif
 	/*
 	 * There maybe something for the mmc devices to do after kernel dtb
 	 * dm setup, eg: regain the clock device binding from kernel dtb.
