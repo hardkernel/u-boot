@@ -726,7 +726,7 @@ static ulong rv1106_adc_set_clk(struct rv1106_clk_priv *priv,
 		rk_clrsetreg(&cru->peri_clksel_con[6],
 			     CLK_SARADC_DIV_MASK,
 			     (src_clk_div - 1) <<
-			     CLK_SARADC_DIV_MASK);
+			     CLK_SARADC_DIV_SHIFT);
 		break;
 	case CLK_TSADC_TSEN:
 		assert(src_clk_div - 1 <= 128);
