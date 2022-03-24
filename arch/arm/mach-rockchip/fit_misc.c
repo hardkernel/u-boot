@@ -89,15 +89,8 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 	if (comp == IH_COMP_LZMA) {
 #if CONFIG_IS_ENABLED(LZMA)
 		SizeT lzma_len = ALIGN(len, FIT_MAX_SPL_IMAGE_SZ);
-		SizeT src_lenp;
-		const fdt32_t *val;
-
-		val = fdt_getprop(fit, node, "raw-size", NULL);
-		if (!val)
-			return -ENOENT;
-		src_lenp = fdt32_to_cpu(*val);
 		ret = lzmaBuffToBuffDecompress((uchar *)(*load_addr), &lzma_len,
-					       (uchar *)(*src_addr), src_lenp);
+					       (uchar *)(*src_addr), *src_len);
 		len = lzma_len;
 #endif
 	} else if (comp == IH_COMP_GZIP) {
