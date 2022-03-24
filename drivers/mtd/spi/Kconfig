@@ -163,6 +163,12 @@ config SPI_FLASH_PUYA
 	  Add support for various PUYA (PUYA Semiconductor (Shangehai) Co., Ltd)
 	  SPI flash chips (P25Qxxx and PS25Qxxxx).
 
+config SPI_FLASH_FMSH
+	bool "FMSH SPI flash support"
+	help
+	  Add support for various FMSH (FUDAN MICRO (Shangehai) Co., Ltd)
+	  SPI flash chips (FM25Qxxx).
+
 endif
 
 config SPI_FLASH_USE_4K_SECTORS

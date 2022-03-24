@@ -376,8 +376,13 @@ const struct flash_info spi_nor_ids[] = {
 	{ INFO("xt25f128b", 0x0b4018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 #endif
 #ifdef CONFIG_SPI_FLASH_PUYA
-	/* PUYA Semiconductor (Shangehai) Co., Ltd. */
+	/* PUYA Semiconductor (Shanghai) Co., Ltd. */
 	{ INFO("PY25Q128HA", 0x852018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+#endif
+#ifdef CONFIG_SPI_FLASH_FMSH
+	/* FUDAN MICRO (Shanghai) Co., Ltd. */
+	{ INFO("FM25Q128A", 0xA14018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("FM25Q64", 0xA14017, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 #endif
 	{ },
 };
