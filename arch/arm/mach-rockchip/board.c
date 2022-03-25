@@ -95,13 +95,15 @@ __weak int rk_board_init(void)
 
 static int rockchip_set_ethaddr(void)
 {
-#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	__maybe_unused bool need_write = false;
+	bool randomed = false;
 	char buf[ARP_HLEN_ASCII + 1], mac[16];
 	u8 ethaddr[ARP_HLEN * MAX_ETHERNET] = {0};
-	int ret, i;
-	bool need_write = false, randomed = false;
+	int i, ret = -EINVAL;
 
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 	ret = vendor_storage_read(LAN_MAC_ID, ethaddr, sizeof(ethaddr));
+#endif
 	for (i = 0; i < MAX_ETHERNET; i++) {
 		if (ret <= 0 || !is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
 			if (!randomed) {
@@ -130,6 +132,7 @@ static int rockchip_set_ethaddr(void)
 		}
 	}
 
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 	if (need_write) {
 		ret = vendor_storage_write(LAN_MAC_ID,
 					   ethaddr, sizeof(ethaddr));
@@ -138,7 +141,6 @@ static int rockchip_set_ethaddr(void)
 			       __func__, ret);
 	}
 #endif
-
 	return 0;
 }
 #endif
