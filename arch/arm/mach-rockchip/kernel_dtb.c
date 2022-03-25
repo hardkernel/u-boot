@@ -8,6 +8,7 @@
 #include <dm.h>
 #include <malloc.h>
 #include <of_live.h>
+#include <dm/device-internal.h>
 #include <dm/root.h>
 #include <dm/uclass-internal.h>
 #include <asm/arch/hotkey.h>
@@ -28,8 +29,10 @@ static int dm_rm_kernel_dev(void)
 				rec[j++] = dev;
 		}
 
-		for (k = 0; k < j; k++)
-			list_del_init(&rec[k]->uclass_node);
+		for (k = 0; k < j; k++) {
+			device_remove(rec[k], DM_REMOVE_NORMAL);
+			device_unbind(rec[k]);
+		}
 	}
 
 	return 0;
@@ -53,8 +56,10 @@ static int dm_rm_u_boot_dev(void)
 
 		/* remove u-boot dev if there is someone from kernel */
 		if (del) {
-			for (k = 0; k < j; k++)
-				list_del_init(&rec[k]->uclass_node);
+			for (k = 0; k < j; k++) {
+				device_remove(rec[k], DM_REMOVE_NORMAL);
+				device_unbind(rec[k]);
+			}
 		}
 	}
 
