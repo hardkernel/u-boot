@@ -144,11 +144,15 @@ extern unsigned long nand_env_oob_offset;
 # define ENV_HEADER_SIZE	(sizeof(uint32_t))
 #endif
 
-/* Select the large size value if required */
+/* Select the MAX from CONFIG_ENV_{,NAND,NOR}_SIZE */
 #if defined(CONFIG_ENV_NAND_SIZE) && (CONFIG_ENV_SIZE < CONFIG_ENV_NAND_SIZE)
 #define ENV_SIZE_VAL	CONFIG_ENV_NAND_SIZE
 #else
 #define ENV_SIZE_VAL	CONFIG_ENV_SIZE
+#endif
+#if defined(CONFIG_ENV_NOR_SIZE) && (ENV_SIZE_VAL < CONFIG_ENV_NOR_SIZE)
+#undef ENV_SIZE_VAL
+#define ENV_SIZE_VAL	CONFIG_ENV_NOR_SIZE
 #endif
 
 #ifdef CONFIG_ENV_AES

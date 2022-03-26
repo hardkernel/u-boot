@@ -15,8 +15,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ENVF_MSG(fmt, args...)	printf("ENVF: "fmt, ##args)
 #define BLK_CNT(desc, sz)	((sz) / (desc)->blksz)
 
-static ulong env_offset, env_offset_redund;
-static ulong env_size;
+static ulong env_size = CONFIG_ENV_SIZE;
+static ulong env_offset = CONFIG_ENV_OFFSET;
+static ulong env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 
 #ifdef CONFIG_SPL_BUILD
 #ifdef CONFIG_SPL_ENV_PARTITION
@@ -92,17 +93,21 @@ int envf_load(struct blk_desc *desc)
 	if (!desc)
 		return -ENODEV;
 
+#if defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_CMD_NAND)
 	if (desc->if_type == IF_TYPE_MTD &&
 	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
 		env_size = CONFIG_ENV_NAND_SIZE;
 		env_offset = CONFIG_ENV_NAND_OFFSET;
 		env_offset_redund = CONFIG_ENV_NAND_OFFSET_REDUND;
-	} else {
-		env_size = CONFIG_ENV_SIZE;
-		env_offset = CONFIG_ENV_OFFSET;
-		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 	}
-
+#endif
+#if defined(CONFIG_SPI_FLASH)
+	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) {
+		env_size = CONFIG_ENV_NOR_SIZE;
+		env_offset = CONFIG_ENV_NOR_OFFSET;
+		env_offset_redund = CONFIG_ENV_NOR_OFFSET_REDUND;
+	}
+#endif
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
 
@@ -225,17 +230,21 @@ static int envf_load(void)
 		return 0;
 	}
 
+#if defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_CMD_NAND)
 	if (desc->if_type == IF_TYPE_MTD &&
 	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
 		env_size = CONFIG_ENV_NAND_SIZE;
 		env_offset = CONFIG_ENV_NAND_OFFSET;
 		env_offset_redund = CONFIG_ENV_NAND_OFFSET_REDUND;
-	} else {
-		env_size = CONFIG_ENV_SIZE;
-		env_offset = CONFIG_ENV_OFFSET;
-		env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 	}
-
+#endif
+#if defined(CONFIG_SPI_FLASH)
+	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) {
+		env_size = CONFIG_ENV_NOR_SIZE;
+		env_offset = CONFIG_ENV_NOR_OFFSET;
+		env_offset_redund = CONFIG_ENV_NOR_OFFSET_REDUND;
+	}
+#endif
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
 

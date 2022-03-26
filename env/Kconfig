@@ -519,6 +519,7 @@ config ENV_OFFSET_REDUND
 	  Redundant(backup) offset from the start of the device (or partition),
 	  this size must be ENV_SIZE.
 
+if CMD_NAND || MTD_SPI_NAND
 config ENV_NAND_OFFSET
 	hex "Environment offset in Nand"
 	default 0x0
@@ -530,6 +531,22 @@ config ENV_NAND_OFFSET_REDUND
 config ENV_NAND_SIZE
 	hex "Environment size in Nand"
 	default 0x40000
+endif
+
+if SPI_FLASH
+config ENV_NOR_OFFSET
+	hex "Environment offset in Nor"
+	default 0x0
+
+config ENV_NOR_OFFSET_REDUND
+	hex "Environment redundant(backup) offset in Nor"
+	default ENV_NOR_OFFSET
+
+config ENV_NOR_SIZE
+	hex "Environment size in Nor"
+	default 0x10000
+endif
+
 endif
 endif
 
