@@ -34,7 +34,7 @@ struct spl_image_info {
 	uintptr_t entry_point_bl32;
 	uintptr_t entry_point_bl33;
 #endif
-#if CONFIG_IS_ENABLED(OPTEE)
+#if CONFIG_IS_ENABLED(OPTEE) || CONFIG_IS_ENABLED(KERNEL_BOOT)
 	uintptr_t entry_point_os;	/* point to uboot or kernel */
 #endif
 	void *fdt_addr;
