@@ -9,7 +9,13 @@
 #include <common.h>
 
 struct rv1106_grf {
-	unsigned int reserved0[0x060000 / 4];
+	unsigned int reserved0[0x20 / 4];
+	unsigned int emmc_con0;
+	unsigned int emmc_con1;
+	unsigned int reserved1[(0x050000 - 0x24) / 4];
+	unsigned int sdmmc_con0;
+	unsigned int sdmmc_con1;
+	unsigned int reserved2[(0x060000 - 0x05000c) / 4];
 	unsigned int gmac_con0;
 	unsigned int gmac_clk_con;
 	unsigned int gmac_st;
@@ -18,7 +24,7 @@ struct rv1106_grf {
 	unsigned int rga_noc;
 	unsigned int vo_mem;
 	unsigned int sdio_con0;
-	unsigned int sdio_co1;
+	unsigned int sdio_con1;
 	unsigned int sdio_ram_clhgat_dis;
 	unsigned int macphy_con0;
 	unsigned int macphy_con1;

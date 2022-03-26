@@ -44,6 +44,10 @@ struct rv1106_clk_priv {
 	bool set_armclk_rate;
 };
 
+struct rv1106_grf_clk_priv {
+	struct rv1106_grf *grf;
+};
+
 struct rv1106_pll {
 	unsigned int con0;
 	unsigned int con1;
