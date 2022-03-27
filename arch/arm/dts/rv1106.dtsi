@@ -1106,8 +1106,11 @@
 		clocks = <&cru HCLK_SDMMC>, <&cru CCLK_SRC_SDMMC>,
 			 <&grf_cru SCLK_SDMMC_DRV>, <&grf_cru SCLK_SDMMC_SAMPLE>;
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
+		cd-gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
 		fifo-depth = <0x100>;
 		max-frequency = <200000000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_det &sdmmc0_bus4>;
 		status = "disabled";
 	};
 
