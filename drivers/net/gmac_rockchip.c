@@ -1255,10 +1255,6 @@ static void rk3588_set_to_rgmii(struct gmac_rockchip_platdata *pdata)
 static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pdata)
 {
 	struct rv1106_grf *grf;
-	enum {
-		RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK = BIT(0),
-		RV1106_VOGRF_GMAC_CLK_RMII_MODE = BIT(0),
-	};
 
 	enum {
 		RV1106_MACPHY_ENABLE_MASK = BIT(1),
@@ -1281,11 +1277,6 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 
 	reset_assert(&pdata->phy_reset);
 	udelay(20);
-
-	rk_clrsetreg(&grf->gmac_clk_con,
-		     RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK,
-		     RV1106_VOGRF_GMAC_CLK_RMII_MODE);
-
 	rk_clrsetreg(&grf->macphy_con0,
 		     RV1106_MACPHY_ENABLE_MASK |
 		     RV1106_MACPHY_XMII_SEL_MASK |
@@ -1299,11 +1290,24 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 	rk_clrsetreg(&grf->macphy_con1,
 		     RV1106_MACPHY_BGS_MASK,
 		     RV1106_MACPHY_BGS);
-
+	udelay(20);
 	reset_deassert(&pdata->phy_reset);
-
 	udelay(30 * 1000);
 }
+
+static void rv1106_set_to_rmii(struct gmac_rockchip_platdata *pdata)
+{
+	struct rv1106_grf *grf;
+	enum {
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK = BIT(0),
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE = BIT(0),
+	};
+
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	rk_clrsetreg(&grf->gmac_clk_con,
+		     RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK,
+		     RV1106_VOGRF_GMAC_CLK_RMII_MODE);
+};
 
 static void rv1126_set_to_rmii(struct gmac_rockchip_platdata *pdata)
 {
@@ -1669,6 +1673,7 @@ const struct rk_gmac_ops rk3588_gmac_ops = {
 
 const struct rk_gmac_ops rv1106_gmac_ops = {
 	.fix_mac_speed = rv1106_set_rmii_speed,
+	.set_to_rmii = rv1106_set_to_rmii,
 	.integrated_phy_powerup = rv1106_gmac_integrated_phy_powerup,
 };
 
