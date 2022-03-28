@@ -73,6 +73,7 @@ static int do_script(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *next_line, *script, *buf;
 	ulong addr;
+	int ret = CMD_RET_SUCCESS;
 
 	if (argc != 2 || !argv[1])
 		return CMD_RET_USAGE;
@@ -89,11 +90,13 @@ static int do_script(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	memcpy(buf, (char *)addr, SCRIPT_FILE_MAX_SIZE);
 	while ((next_line = script_next_line(&script)) != NULL) {
 		printf("\n$ %s\n", next_line);
-		run_command(next_line, 0);
+		ret = run_command(next_line, 0);
+		if (ret)
+			break;	/* fail */
 	}
 	free(buf);
 
-	return CMD_RET_SUCCESS;
+	return ret;
 }
 
 static int do_sd_update(cmd_tbl_t *cmdtp, int flag,
