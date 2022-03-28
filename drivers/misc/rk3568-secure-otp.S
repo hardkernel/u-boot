@@ -2368,18 +2368,18 @@ rk3568_secure_otp_write:
 .LVL253:
 	add	x0, x0, :lo12:.LC10
 .LVL254:
-.L114:
+.L113:
 	.loc 1 619 0
 	bl	printf
 .LVL255:
-	b	.L86
+	b	.L85
 .LVL256:
 .L76:
 	mov	x19, x0
 	.loc 1 607 0
 	cbnz	x0, .L78
 .LVL257:
-.L86:
+.L85:
 .LBB244:
 .LBB245:
 	.loc 1 430 0
@@ -2394,13 +2394,29 @@ rk3568_secure_otp_write:
 .LVL259:
 	cmp	w0, 7
 	bls	.L79
+	.loc 1 611 0
+	mov	w3, w20
+	mov	x2, x19
+	mov	w1, w25
+	mov	x0, x24
+	bl	rk3568_secure_otp_read
+.LVL260:
+	.loc 1 612 0
+	cbnz	w0, .L85
+	mov	x0, 0
+.LVL261:
+.L82:
+	.loc 1 617 0 discriminator 1
+	cmp	w20, w0
+	bgt	.L83
 	.loc 1 635 0 discriminator 1
 	mov	w0, 2
+.LVL262:
 .LBB250:
 .LBB251:
 	.loc 1 580 0 discriminator 1
 	adrp	x19, .LANCHOR4
-.LVL260:
+.LVL263:
 	add	x19, x19, :lo12:.LANCHOR4
 .LBE251:
 .LBE250:
@@ -2408,11 +2424,11 @@ rk3568_secure_otp_write:
 	mov	x23, 0
 	sdiv	w0, w20, w0
 	str	w0, [x29, 108]
-.LVL261:
-.L80:
+.LVL264:
+.L84:
 	ldr	w0, [x29, 108]
 	cmp	w0, w23
-	ble	.L105
+	ble	.L104
 	.loc 1 636 0
 	ldr	x0, [x29, 112]
 	add	w20, w25, w23, lsl 1
@@ -2424,83 +2440,55 @@ rk3568_secure_otp_write:
 .LBE331:
 	.loc 1 636 0
 	ldrh	w26, [x0, x23, lsl 1]
-.LVL262:
+.LVL265:
 .LBB332:
 .LBB328:
 	.loc 1 448 0
 	mov	x0, x24
 	bl	dev_get_driver_data
-.LVL263:
+.LVL266:
 	str	x0, [x29, 120]
-.LVL264:
+.LVL267:
 	.loc 1 451 0
 	cmp	w21, 448
-	bgt	.L86
+	bgt	.L85
 	.loc 1 455 0
 	sub	w0, w21, #64
-.LVL265:
+.LVL268:
 	cmp	w0, 51
-	bhi	.L91
+	bhi	.L90
 	mov	x1, -255
 	movk	x1, 0x7f, lsl 32
 	movk	x1, 0xf, lsl 48
 	lsr	x0, x1, x0
-	tbnz	x0, 0, .L92
-.L91:
+	tbnz	x0, 0, .L91
+.L90:
 	sub	w0, w21, #229
 	cmp	w0, 218
-	bls	.L92
+	bls	.L91
 	.loc 1 458 0
 	mov	w1, w21
 	adrp	x0, .LC4
 	add	x0, x0, :lo12:.LC4
 	bl	printf
-.LVL266:
-	b	.L86
-.LVL267:
-.L79:
+.LVL269:
+	b	.L85
+.LVL270:
+.L83:
+	add	x0, x0, 1
+.LVL271:
 .LBE328:
 .LBE332:
-	.loc 1 611 0
-	mov	w3, w20
-	mov	x2, x19
-	mov	w1, w25
-	mov	x0, x24
-	bl	rk3568_secure_otp_read
-.LVL268:
-	.loc 1 612 0
-	cbnz	w0, .L86
-	mov	x0, 0
-.LVL269:
-.L83:
-	.loc 1 617 0 discriminator 1
-	cmp	w20, w0
-	bgt	.L84
-	mov	x19, 0
-.LVL270:
-.L89:
-	.loc 1 629 0 discriminator 1
-	cmp	w20, w19
-	bgt	.L90
-.LVL271:
-.L105:
-	.loc 1 621 0
-	mov	w27, 0
-	b	.L75
-.LVL272:
-.L84:
-	add	x0, x0, 1
-.LVL273:
 	.loc 1 618 0
 	add	x1, x19, x0
 	ldrb	w1, [x1, -1]
-	cbz	w1, .L83
+	cbz	w1, .L82
 	.loc 1 619 0
 	adrp	x0, .LC11
 	add	x0, x0, :lo12:.LC11
-	b	.L114
-.LVL274:
-.L90:
+	b	.L113
+.LVL272:
+.L89:
 .LBB333:
 .LBB246:
 	.loc 1 428 0
@@ -2521,51 +2509,51 @@ rk3568_secure_otp_write:
 .LBE334:
 	.loc 1 630 0
 	ldrb	w22, [x0, x19]
-.LVL275:
+.LVL273:
 .LBB335:
 .LBB248:
 	.loc 1 428 0
 	mov	w1, w21
 	mov	x0, x24
 	bl	rk3568_secure_otp_read
-.LVL276:
+.LVL274:
 	.loc 1 429 0
-	cbnz	w0, .L86
+	cbnz	w0, .L85
 	ldrh	w3, [x29, 142]
 	.loc 1 432 0
-	cbnz	w26, .L87
-.LVL277:
+	cbnz	w26, .L86
+.LVL275:
 	.loc 1 434 0
 	bic	w3, w22, w3
 	mov	w2, w23
-.LVL278:
-.L112:
+.LVL276:
+.L111:
 	.loc 1 437 0
 	mov	x1, x28
 	mov	x0, x24
-.LVL279:
+.LVL277:
 	add	x19, x19, 1
-.LVL280:
+.LVL278:
 	bl	rk3568_secure_otp_write_2_bytes_noecc
-.LVL281:
+.LVL279:
 	mov	w27, w0
-.LVL282:
+.LVL280:
 .LBE248:
 .LBE335:
 	.loc 1 631 0
-	cbz	w0, .L89
-.LVL283:
+	cbz	w0, .L88
+.LVL281:
 .L75:
 	.loc 1 643 0
 	mov	w0, w27
 	ldp	x19, x20, [sp, 16]
 	ldp	x21, x22, [sp, 32]
 	ldp	x23, x24, [sp, 48]
-.LVL284:
+.LVL282:
 	ldp	x25, x26, [sp, 64]
-.LVL285:
+.LVL283:
 	ldp	x27, x28, [sp, 80]
-.LVL286:
+.LVL284:
 	ldp	x29, x30, [sp], 144
 	.cfi_remember_state
 	.cfi_restore 30
@@ -2581,35 +2569,48 @@ rk3568_secure_otp_write:
 	.cfi_restore 19
 	.cfi_restore 20
 	.cfi_def_cfa 31, 0
-.LVL287:
+.LVL285:
 	ret
-.LVL288:
-.L87:
+.LVL286:
+.L86:
 	.cfi_restore_state
 .LBB336:
 .LBB249:
 	.loc 1 436 0
 	lsl	w22, w22, 8
-.LVL289:
+.LVL287:
 	.loc 1 437 0
 	mov	w2, w21
 	bic	w3, w22, w3
-	b	.L112
-.LVL290:
-.L92:
+	b	.L111
+.LVL288:
+.L79:
 .LBE249:
 .LBE336:
+	mov	x19, 0
+.LVL289:
+.L88:
+	.loc 1 629 0 discriminator 1
+	cmp	w20, w19
+	bgt	.L89
+.LVL290:
+.L104:
+	.loc 1 621 0
+	mov	w27, 0
+	b	.L75
+.LVL291:
+.L91:
 .LBB337:
 .LBB329:
 	.loc 1 462 0
-	cbnz	w26, .L93
-.LVL291:
-.L103:
-	add	x23, x23, 1
+	cbnz	w26, .L92
 .LVL292:
-	b	.L80
+.L102:
+	add	x23, x23, 1
 .LVL293:
-.L93:
+	b	.L84
+.LVL294:
+.L92:
 	.loc 1 465 0
 	ldr	x0, [x29, 120]
 	mov	w3, w21
@@ -2617,7 +2618,7 @@ rk3568_secure_otp_write:
 	ldr	x5, [x0, 16]
 	ldr	x0, [x28, 8]
 	blr	x5
-.LVL294:
+.LVL295:
 .LBB252:
 	.loc 1 468 0
 #APP
@@ -2628,7 +2629,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 65536
 	str	w1, [x0, 256]
-.LVL295:
+.LVL296:
 .LBE252:
 .LBB253:
 	.loc 1 469 0
@@ -2640,7 +2641,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 262148
 	str	w1, [x0, 32]
-.LVL296:
+.LVL297:
 .LBE253:
 .LBB254:
 	.loc 1 470 0
@@ -2652,7 +2653,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, -65536
 	str	w1, [x0, 40]
-.LVL297:
+.LVL298:
 .LBE254:
 .LBB255:
 	.loc 1 471 0
@@ -2665,7 +2666,7 @@ rk3568_secure_otp_write:
 	mov	w1, 512
 	movk	w1, 0xff00, lsl 16
 	str	w1, [x0, 32]
-.LVL298:
+.LVL299:
 .LBE255:
 .LBB256:
 	.loc 1 472 0
@@ -2677,7 +2678,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, -65522
 	str	w1, [x0, 36]
-.LVL299:
+.LVL300:
 .LBE256:
 .LBB257:
 	.loc 1 473 0
@@ -2689,7 +2690,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w3, 240
 	str	w3, [x29, 100]
-.LVL300:
+.LVL301:
 	str	w3, [x0, 4096]
 .LBE257:
 .LBB258:
@@ -2702,7 +2703,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 1
 	str	w1, [x0, 4100]
-.LVL301:
+.LVL302:
 .LBE258:
 .LBB259:
 	.loc 1 475 0
@@ -2714,7 +2715,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w2, 122
 	str	w2, [x29, 104]
-.LVL302:
+.LVL303:
 	str	w2, [x0, 4104]
 .LBE259:
 .LBB260:
@@ -2727,7 +2728,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 37
 	str	w1, [x0, 4108]
-.LVL303:
+.LVL304:
 .LBE260:
 .LBB261:
 	.loc 1 477 0
@@ -2738,7 +2739,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4112]
-.LVL304:
+.LVL305:
 .LBE261:
 .LBB262:
 	.loc 1 478 0
@@ -2749,7 +2750,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4116]
-.LVL305:
+.LVL306:
 .LBE262:
 .LBB263:
 	.loc 1 479 0
@@ -2760,7 +2761,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4120]
-.LVL306:
+.LVL307:
 .LBE263:
 .LBB264:
 	.loc 1 480 0
@@ -2772,7 +2773,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 31
 	str	w1, [x0, 4124]
-.LVL307:
+.LVL308:
 .LBE264:
 .LBB265:
 	.loc 1 481 0
@@ -2784,7 +2785,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 11
 	str	w1, [x0, 4128]
-.LVL308:
+.LVL309:
 .LBE265:
 .LBB266:
 	.loc 1 482 0
@@ -2796,7 +2797,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 8
 	str	w1, [x0, 4132]
-.LVL309:
+.LVL310:
 .LBE266:
 .LBB267:
 	.loc 1 483 0
@@ -2807,7 +2808,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4136]
-.LVL310:
+.LVL311:
 .LBE267:
 .LBB268:
 	.loc 1 484 0
@@ -2818,7 +2819,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4140]
-.LVL311:
+.LVL312:
 .LBE268:
 .LBB269:
 	.loc 1 485 0
@@ -2843,7 +2844,7 @@ rk3568_secure_otp_write:
 .LBB271:
 	.loc 1 487 0
 	ubfx	x20, x20, 9, 8
-.LVL312:
+.LVL313:
 .LBE271:
 .LBB272:
 	.loc 1 486 0
@@ -2858,7 +2859,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w20, [x0, 4152]
-.LVL313:
+.LVL314:
 .LBE273:
 .LBB274:
 	.loc 1 488 0
@@ -2879,23 +2880,23 @@ rk3568_secure_otp_write:
 	.loc 1 489 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL314:
-	mov	w27, w0
 .LVL315:
+	mov	w27, w0
+.LVL316:
 	.loc 1 490 0
 	ldp	w3, w2, [x29, 100]
-	tbz	w0, #31, .L94
+	tbz	w0, #31, .L93
 	.loc 1 491 0
 	adrp	x0, .LC5
-.LVL316:
+.LVL317:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC5
-.LVL317:
-.L113:
+.LVL318:
+.L112:
 	.loc 1 580 0
 	bl	printf
-.LVL318:
-.L95:
+.LVL319:
+.L94:
 .LBB276:
 	.loc 1 585 0
 #APP
@@ -2919,14 +2920,14 @@ rk3568_secure_otp_write:
 	ldr	x6, [x0, 24]
 	ldr	x0, [x28, 8]
 	blr	x6
-.LVL319:
+.LVL320:
 .LBE329:
 .LBE337:
 	.loc 1 637 0
-	cbz	w27, .L103
+	cbz	w27, .L102
 	b	.L75
-.LVL320:
-.L94:
+.LVL321:
+.L93:
 .LBB338:
 .LBB330:
 .LBB278:
@@ -2937,11 +2938,11 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL321:
+.LVL322:
 	mov	w1, 14848
 	movk	w1, 0xff00, lsl 16
 	str	w1, [x0, 32]
-.LVL322:
+.LVL323:
 .LBE278:
 .LBB279:
 	.loc 1 496 0
@@ -2952,7 +2953,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w3, [x0, 4096]
-.LVL323:
+.LVL324:
 .LBE279:
 .LBB280:
 	.loc 1 497 0
@@ -2964,7 +2965,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 1
 	str	w1, [x0, 4100]
-.LVL324:
+.LVL325:
 .LBE280:
 .LBB281:
 	.loc 1 498 0
@@ -2975,7 +2976,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w2, [x0, 4104]
-.LVL325:
+.LVL326:
 .LBE281:
 .LBB282:
 	.loc 1 499 0
@@ -2987,7 +2988,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 21
 	str	w1, [x0, 4108]
-.LVL326:
+.LVL327:
 .LBE282:
 .LBB283:
 	.loc 1 500 0
@@ -2999,7 +3000,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 220
 	str	w1, [x0, 4112]
-.LVL327:
+.LVL328:
 .LBE283:
 .LBB284:
 	.loc 1 501 0
@@ -3011,7 +3012,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 146
 	str	w1, [x0, 4116]
-.LVL328:
+.LVL329:
 .LBE284:
 .LBB285:
 	.loc 1 502 0
@@ -3023,7 +3024,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 121
 	str	w1, [x0, 4120]
-.LVL329:
+.LVL330:
 .LBE285:
 .LBB286:
 	.loc 1 503 0
@@ -3035,7 +3036,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 129
 	str	w1, [x0, 4124]
-.LVL330:
+.LVL331:
 .LBE286:
 .LBB287:
 	.loc 1 504 0
@@ -3047,7 +3048,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 126
 	str	w1, [x0, 4128]
-.LVL331:
+.LVL332:
 .LBE287:
 .LBB288:
 	.loc 1 505 0
@@ -3059,7 +3060,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 33
 	str	w1, [x0, 4132]
-.LVL332:
+.LVL333:
 .LBE288:
 .LBB289:
 	.loc 1 506 0
@@ -3071,7 +3072,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 17
 	str	w1, [x0, 4136]
-.LVL333:
+.LVL334:
 .LBE289:
 .LBB290:
 	.loc 1 507 0
@@ -3083,7 +3084,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 157
 	str	w1, [x0, 4140]
-.LVL334:
+.LVL335:
 .LBE290:
 .LBB291:
 	.loc 1 508 0
@@ -3094,9 +3095,9 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	mov	w20, 2
-.LVL335:
-	str	w20, [x0, 4144]
 .LVL336:
+	str	w20, [x0, 4144]
+.LVL337:
 .LBE291:
 .LBB292:
 	.loc 1 509 0
@@ -3107,7 +3108,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4148]
-.LVL337:
+.LVL338:
 .LBE292:
 .LBB293:
 	.loc 1 510 0
@@ -3118,7 +3119,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4152]
-.LVL338:
+.LVL339:
 .LBE293:
 .LBB294:
 	.loc 1 511 0
@@ -3138,19 +3139,19 @@ rk3568_secure_otp_write:
 	.loc 1 512 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL339:
-	mov	w27, w0
 .LVL340:
+	mov	w27, w0
+.LVL341:
 	.loc 1 513 0
-	tbz	w0, #31, .L96
+	tbz	w0, #31, .L95
 	.loc 1 514 0
 	adrp	x0, .LC12
-.LVL341:
+.LVL342:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC12
-	b	.L113
-.LVL342:
-.L96:
+	b	.L112
+.LVL343:
+.L95:
 .LBB296:
 	.loc 1 518 0
 #APP
@@ -3159,11 +3160,11 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL343:
+.LVL344:
 	mov	w1, 512
 	movk	w1, 0xff00, lsl 16
 	str	w1, [x0, 32]
-.LVL344:
+.LVL345:
 .LBE296:
 .LBB297:
 	.loc 1 519 0
@@ -3175,7 +3176,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, -65535
 	str	w1, [x0, 36]
-.LVL345:
+.LVL346:
 .LBE297:
 .LBB298:
 	.loc 1 520 0
@@ -3187,7 +3188,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 251
 	str	w1, [x0, 4096]
-.LVL346:
+.LVL347:
 .LBE298:
 .LBB299:
 	.loc 1 521 0
@@ -3198,7 +3199,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4100]
-.LVL347:
+.LVL348:
 .LBE299:
 .LBB300:
 	.loc 1 522 0
@@ -3218,19 +3219,19 @@ rk3568_secure_otp_write:
 	.loc 1 523 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL348:
-	mov	w27, w0
 .LVL349:
+	mov	w27, w0
+.LVL350:
 	.loc 1 524 0
-	tbz	w0, #31, .L97
+	tbz	w0, #31, .L96
 	.loc 1 525 0
 	adrp	x0, .LC13
-.LVL350:
+.LVL351:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC13
-	b	.L113
-.LVL351:
-.L97:
+	b	.L112
+.LVL352:
+.L96:
 .LBB302:
 	.loc 1 529 0
 #APP
@@ -3239,10 +3240,10 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL352:
+.LVL353:
 	mov	w1, -65534
 	str	w1, [x0, 36]
-.LVL353:
+.LVL354:
 .LBE302:
 .LBB303:
 	.loc 1 530 0
@@ -3258,7 +3259,7 @@ rk3568_secure_otp_write:
 .LBB304:
 	.loc 1 531 0
 	and	w1, w26, 255
-.LVL354:
+.LVL355:
 #APP
 // 531 "drivers/misc/rk3568-secure-otp.c" 1
 	dmb sy
@@ -3269,7 +3270,7 @@ rk3568_secure_otp_write:
 .LBB305:
 	.loc 1 532 0
 	lsr	w26, w26, 8
-.LVL355:
+.LVL356:
 .LBE305:
 .LBB306:
 	.loc 1 531 0
@@ -3284,7 +3285,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w26, [x0, 4104]
-.LVL356:
+.LVL357:
 .LBE307:
 .LBB308:
 	.loc 1 533 0
@@ -3297,7 +3298,7 @@ rk3568_secure_otp_write:
 .LBE308:
 	.loc 1 534 0
 	mov	w1, w20
-.LVL357:
+.LVL358:
 .LBB309:
 	.loc 1 533 0
 	str	w22, [x0, 32]
@@ -3305,19 +3306,19 @@ rk3568_secure_otp_write:
 	.loc 1 534 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL358:
-	mov	w27, w0
 .LVL359:
+	mov	w27, w0
+.LVL360:
 	.loc 1 535 0
-	tbz	w0, #31, .L98
+	tbz	w0, #31, .L97
 	.loc 1 536 0
 	adrp	x0, .LC14
-.LVL360:
+.LVL361:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC14
-	b	.L113
-.LVL361:
-.L98:
+	b	.L112
+.LVL362:
+.L97:
 .LBB310:
 	.loc 1 540 0
 #APP
@@ -3326,11 +3327,11 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL362:
+.LVL363:
 	mov	w1, 14848
 	movk	w1, 0xff00, lsl 16
 	str	w1, [x0, 32]
-.LVL363:
+.LVL364:
 .LBE310:
 .LBB311:
 	.loc 1 541 0
@@ -3342,7 +3343,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, -65535
 	str	w1, [x0, 36]
-.LVL364:
+.LVL365:
 .LBE311:
 .LBB312:
 	.loc 1 542 0
@@ -3354,7 +3355,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 255
 	str	w1, [x0, 4096]
-.LVL365:
+.LVL366:
 .LBE312:
 .LBB313:
 	.loc 1 543 0
@@ -3366,7 +3367,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 10
 	str	w1, [x0, 4100]
-.LVL366:
+.LVL367:
 .LBE313:
 .LBB314:
 	.loc 1 544 0
@@ -3386,19 +3387,19 @@ rk3568_secure_otp_write:
 	.loc 1 545 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL367:
-	mov	w27, w0
 .LVL368:
+	mov	w27, w0
+.LVL369:
 	.loc 1 546 0
-	tbz	w0, #31, .L99
+	tbz	w0, #31, .L98
 	.loc 1 547 0
 	adrp	x0, .LC15
-.LVL369:
+.LVL370:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC15
-	b	.L113
-.LVL370:
-.L99:
+	b	.L112
+.LVL371:
+.L98:
 .LBB316:
 	.loc 1 551 0
 #APP
@@ -3407,10 +3408,10 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL371:
+.LVL372:
 	mov	w1, -65534
 	str	w1, [x0, 36]
-.LVL372:
+.LVL373:
 .LBE316:
 .LBB317:
 	.loc 1 552 0
@@ -3422,7 +3423,7 @@ rk3568_secure_otp_write:
 	ldr	x0, [x28]
 	mov	w1, 1
 	str	w1, [x0, 4096]
-.LVL373:
+.LVL374:
 .LBE317:
 .LBB318:
 	.loc 1 553 0
@@ -3433,9 +3434,9 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	mov	w26, 191
-.LVL374:
-	str	w26, [x0, 4100]
 .LVL375:
+	str	w26, [x0, 4100]
+.LVL376:
 .LBE318:
 .LBB319:
 	.loc 1 554 0
@@ -3446,7 +3447,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	wzr, [x0, 4104]
-.LVL376:
+.LVL377:
 .LBE319:
 .LBB320:
 	.loc 1 555 0
@@ -3466,36 +3467,36 @@ rk3568_secure_otp_write:
 	.loc 1 556 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL377:
-	mov	w27, w0
 .LVL378:
+	mov	w27, w0
+.LVL379:
 	.loc 1 557 0
-	tbz	w0, #31, .L100
+	tbz	w0, #31, .L99
 	.loc 1 558 0
 	adrp	x0, .LC16
-.LVL379:
+.LVL380:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC16
-	b	.L113
-.LVL380:
-.L100:
+	b	.L112
+.LVL381:
+.L99:
 	.loc 1 562 0
 	mov	x0, x28
-.LVL381:
-	bl	rockchip_secure_otp_check_flag.isra.0
 .LVL382:
-	mov	w27, w0
+	bl	rockchip_secure_otp_check_flag.isra.0
 .LVL383:
+	mov	w27, w0
+.LVL384:
 	.loc 1 563 0
-	tbz	w0, #31, .L101
+	tbz	w0, #31, .L100
 	.loc 1 564 0
 	adrp	x0, .LC6
-.LVL384:
+.LVL385:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC6
-	b	.L113
-.LVL385:
-.L101:
+	b	.L112
+.LVL386:
+.L100:
 .LBB322:
 	.loc 1 568 0
 #APP
@@ -3504,10 +3505,10 @@ rk3568_secure_otp_write:
 // 0 "" 2
 #NO_APP
 	ldr	x0, [x28]
-.LVL386:
+.LVL387:
 	mov	w1, -65535
 	str	w1, [x0, 36]
-.LVL387:
+.LVL388:
 .LBE322:
 .LBB323:
 	.loc 1 569 0
@@ -3518,7 +3519,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w20, [x0, 4096]
-.LVL388:
+.LVL389:
 .LBE323:
 .LBB324:
 	.loc 1 570 0
@@ -3529,7 +3530,7 @@ rk3568_secure_otp_write:
 #NO_APP
 	ldr	x0, [x28]
 	str	w26, [x0, 4100]
-.LVL389:
+.LVL390:
 .LBE324:
 .LBB325:
 	.loc 1 571 0
@@ -3549,34 +3550,34 @@ rk3568_secure_otp_write:
 	.loc 1 572 0
 	mov	x0, x28
 	bl	rockchip_secure_otp_wait_status.isra.2
-.LVL390:
-	mov	w27, w0
 .LVL391:
+	mov	w27, w0
+.LVL392:
 	.loc 1 573 0
-	tbz	w0, #31, .L102
+	tbz	w0, #31, .L101
 	.loc 1 574 0
 	adrp	x0, .LC17
-.LVL392:
+.LVL393:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC17
-	b	.L113
-.LVL393:
-.L102:
+	b	.L112
+.LVL394:
+.L101:
 	.loc 1 578 0
 	mov	x0, x28
-.LVL394:
-	bl	rockchip_secure_otp_wait_flag.isra.1
 .LVL395:
-	mov	w27, w0
+	bl	rockchip_secure_otp_wait_flag.isra.1
 .LVL396:
+	mov	w27, w0
+.LVL397:
 	.loc 1 579 0
-	tbz	w0, #31, .L95
+	tbz	w0, #31, .L94
 	.loc 1 580 0
 	adrp	x0, .LC7
-.LVL397:
+.LVL398:
 	mov	x1, x19
 	add	x0, x0, :lo12:.LC7
-	b	.L113
+	b	.L112
 .LBE330:
 .LBE338:
 	.cfi_endproc
@@ -7028,7 +7029,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.4byte	0x29ff
 	.4byte	.LLST84
 	.uleb128 0x34
-	.8byte	.LVL276
+	.8byte	.LVL274
 	.4byte	0x3917
 	.4byte	0x1b7e
 	.uleb128 0x35
@@ -7056,7 +7057,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.byte	0x32
 	.byte	0
 	.uleb128 0x36
-	.8byte	.LVL281
+	.8byte	.LVL279
 	.4byte	0x2a0c
 	.uleb128 0x35
 	.uleb128 0x1
@@ -7102,7 +7103,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.4byte	.LLST90
 	.uleb128 0x44
 	.4byte	0x251e
-	.8byte	.L95
+	.8byte	.L94
 	.uleb128 0x45
 	.4byte	0x2511
 	.uleb128 0x46
@@ -7599,7 +7600,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.4byte	0x10001
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL263
+	.8byte	.LVL266
 	.4byte	0x4207
 	.4byte	0x22ad
 	.uleb128 0x35
@@ -7610,7 +7611,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL266
+	.8byte	.LVL269
 	.4byte	0x4213
 	.4byte	0x22d2
 	.uleb128 0x35
@@ -7627,7 +7628,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x4b
-	.8byte	.LVL294
+	.8byte	.LVL295
 	.4byte	0x22e6
 	.uleb128 0x35
 	.uleb128 0x1
@@ -7637,7 +7638,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL314
+	.8byte	.LVL315
 	.4byte	0x3f7a
 	.4byte	0x230b
 	.uleb128 0x35
@@ -7658,10 +7659,10 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x4d
-	.8byte	.LVL318
+	.8byte	.LVL319
 	.4byte	0x4213
 	.uleb128 0x4b
-	.8byte	.LVL319
+	.8byte	.LVL320
 	.4byte	0x232c
 	.uleb128 0x35
 	.uleb128 0x1
@@ -7671,7 +7672,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL339
+	.8byte	.LVL340
 	.4byte	0x3f7a
 	.4byte	0x2352
 	.uleb128 0x35
@@ -7693,7 +7694,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL348
+	.8byte	.LVL349
 	.4byte	0x3f7a
 	.4byte	0x2378
 	.uleb128 0x35
@@ -7715,7 +7716,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL358
+	.8byte	.LVL359
 	.4byte	0x3f7a
 	.4byte	0x239e
 	.uleb128 0x35
@@ -7737,7 +7738,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL367
+	.8byte	.LVL368
 	.4byte	0x3f7a
 	.4byte	0x23c4
 	.uleb128 0x35
@@ -7759,7 +7760,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL377
+	.8byte	.LVL378
 	.4byte	0x3f7a
 	.4byte	0x23ea
 	.uleb128 0x35
@@ -7781,7 +7782,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL382
+	.8byte	.LVL383
 	.4byte	0x3ea5
 	.4byte	0x240a
 	.uleb128 0x35
@@ -7797,7 +7798,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x34
-	.8byte	.LVL390
+	.8byte	.LVL391
 	.4byte	0x3f7a
 	.4byte	0x2430
 	.uleb128 0x35
@@ -7819,7 +7820,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.sleb128 0
 	.byte	0
 	.uleb128 0x36
-	.8byte	.LVL395
+	.8byte	.LVL396
 	.4byte	0x3f0f
 	.uleb128 0x35
 	.uleb128 0x1
@@ -7867,7 +7868,7 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	.LVL255
 	.4byte	0x4213
 	.uleb128 0x36
-	.8byte	.LVL268
+	.8byte	.LVL260
 	.4byte	0x3917
 	.uleb128 0x35
 	.uleb128 0x1
@@ -12525,17 +12526,17 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.2byte	0x1
 	.byte	0x50
 	.8byte	.LVL249-1
-	.8byte	.LVL284
+	.8byte	.LVL282
 	.2byte	0x1
 	.byte	0x68
-	.8byte	.LVL284
-	.8byte	.LVL288
+	.8byte	.LVL282
+	.8byte	.LVL286
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
 	.byte	0x50
 	.byte	0x9f
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x68
@@ -12547,17 +12548,17 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.2byte	0x1
 	.byte	0x51
 	.8byte	.LVL249-1
-	.8byte	.LVL285
+	.8byte	.LVL283
 	.2byte	0x1
 	.byte	0x69
-	.8byte	.LVL285
-	.8byte	.LVL288
+	.8byte	.LVL283
+	.8byte	.LVL286
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
 	.byte	0x51
 	.byte	0x9f
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x69
@@ -12569,16 +12570,16 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.2byte	0x1
 	.byte	0x52
 	.8byte	.LVL249-1
-	.8byte	.LVL287
+	.8byte	.LVL285
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 224
-	.8byte	.LVL287
-	.8byte	.LVL288
+	.8byte	.LVL285
+	.8byte	.LVL286
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 80
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LFE272
 	.2byte	0x3
 	.byte	0x8f
@@ -12602,39 +12603,28 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.byte	0x53
 	.byte	0x9f
 	.8byte	.LVL258
-	.8byte	.LVL261
+	.8byte	.LVL264
 	.2byte	0x1
 	.byte	0x64
-	.8byte	.LVL261
-	.8byte	.LVL267
+	.8byte	.LVL264
+	.8byte	.LVL270
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
 	.byte	0x53
 	.byte	0x9f
-	.8byte	.LVL267
-	.8byte	.LVL271
+	.8byte	.LVL270
+	.8byte	.LVL281
 	.2byte	0x1
 	.byte	0x64
-	.8byte	.LVL271
-	.8byte	.LVL272
+	.8byte	.LVL281
+	.8byte	.LVL286
 	.2byte	0x4
 	.byte	0xf3
 	.uleb128 0x1
 	.byte	0x53
 	.byte	0x9f
-	.8byte	.LVL272
-	.8byte	.LVL283
-	.2byte	0x1
-	.byte	0x64
-	.8byte	.LVL283
-	.8byte	.LVL288
-	.2byte	0x4
-	.byte	0xf3
-	.uleb128 0x1
-	.byte	0x53
-	.byte	0x9f
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x64
@@ -12653,10 +12643,10 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.2byte	0x1
 	.byte	0x50
 	.8byte	.LVL251
-	.8byte	.LVL286
+	.8byte	.LVL284
 	.2byte	0x1
 	.byte	0x6c
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x6c
@@ -12664,16 +12654,16 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	0
 .LLST74:
 	.8byte	.LVL250
-	.8byte	.LVL287
+	.8byte	.LVL285
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 224
-	.8byte	.LVL287
-	.8byte	.LVL288
+	.8byte	.LVL285
+	.8byte	.LVL286
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 80
-	.8byte	.LVL288
+	.8byte	.LVL286
 	.8byte	.LFE272
 	.2byte	0x3
 	.byte	0x8f
@@ -12694,55 +12684,55 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.2byte	0x1
 	.byte	0x50
 	.8byte	.LVL259
-	.8byte	.LVL260
+	.8byte	.LVL263
 	.2byte	0x1
 	.byte	0x63
-	.8byte	.LVL267
 	.8byte	.LVL270
+	.8byte	.LVL272
 	.2byte	0x1
 	.byte	0x63
-	.8byte	.LVL272
-	.8byte	.LVL274
+	.8byte	.LVL288
+	.8byte	.LVL289
 	.2byte	0x1
 	.byte	0x63
 	.8byte	0
 	.8byte	0
 .LLST77:
 	.8byte	.LVL261
-	.8byte	.LVL267
-	.2byte	0x1
-	.byte	0x67
-	.8byte	.LVL269
-	.8byte	.LVL270
+	.8byte	.LVL262
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL264
+	.8byte	.LVL270
+	.2byte	0x1
+	.byte	0x67
 	.8byte	.LVL270
 	.8byte	.LVL271
 	.2byte	0x1
-	.byte	0x63
-	.8byte	.LVL272
-	.8byte	.LVL273
-	.2byte	0x1
 	.byte	0x50
-	.8byte	.LVL274
-	.8byte	.LVL280
+	.8byte	.LVL272
+	.8byte	.LVL278
 	.2byte	0x1
 	.byte	0x63
+	.8byte	.LVL286
 	.8byte	.LVL288
+	.2byte	0x1
+	.byte	0x63
+	.8byte	.LVL289
 	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x63
-	.8byte	.LVL290
-	.8byte	.LVL291
-	.2byte	0x1
-	.byte	0x67
 	.8byte	.LVL291
 	.8byte	.LVL292
+	.2byte	0x1
+	.byte	0x67
+	.8byte	.LVL292
+	.8byte	.LVL293
 	.2byte	0x3
 	.byte	0x87
 	.sleb128 1
 	.byte	0x9f
-	.8byte	.LVL293
+	.8byte	.LVL294
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x67
@@ -12760,35 +12750,35 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.byte	0x30
 	.byte	0x9f
 	.8byte	.LVL258
-	.8byte	.LVL268
+	.8byte	.LVL260
 	.2byte	0x2
 	.byte	0x30
 	.byte	0x9f
-	.8byte	.LVL268
-	.8byte	.LVL269
+	.8byte	.LVL260
+	.8byte	.LVL261
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL264
 	.8byte	.LVL270
+	.2byte	0x2
+	.byte	0x30
+	.byte	0x9f
 	.8byte	.LVL272
+	.8byte	.LVL280
 	.2byte	0x2
 	.byte	0x30
 	.byte	0x9f
-	.8byte	.LVL274
-	.8byte	.LVL282
+	.8byte	.LVL286
+	.8byte	.LVL292
 	.2byte	0x2
 	.byte	0x30
 	.byte	0x9f
-	.8byte	.LVL288
-	.8byte	.LVL291
-	.2byte	0x2
-	.byte	0x30
-	.byte	0x9f
-	.8byte	.LVL293
-	.8byte	.LVL319
-	.2byte	0x2
-	.byte	0x30
-	.byte	0x9f
+	.8byte	.LVL294
 	.8byte	.LVL320
+	.2byte	0x2
+	.byte	0x30
+	.byte	0x9f
+	.8byte	.LVL321
 	.8byte	.LFE272
 	.2byte	0x2
 	.byte	0x30
@@ -12796,52 +12786,52 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	0
 	.8byte	0
 .LLST79:
-	.8byte	.LVL275
-	.8byte	.LVL278
+	.8byte	.LVL273
+	.8byte	.LVL276
 	.2byte	0x1
 	.byte	0x66
-	.8byte	.LVL288
-	.8byte	.LVL289
+	.8byte	.LVL286
+	.8byte	.LVL287
 	.2byte	0x1
 	.byte	0x66
 	.8byte	0
 	.8byte	0
 .LLST80:
-	.8byte	.LVL275
-	.8byte	.LVL282
+	.8byte	.LVL273
+	.8byte	.LVL280
 	.2byte	0x1
 	.byte	0x67
+	.8byte	.LVL286
 	.8byte	.LVL288
-	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x67
 	.8byte	0
 	.8byte	0
 .LLST81:
-	.8byte	.LVL275
-	.8byte	.LVL282
+	.8byte	.LVL273
+	.8byte	.LVL280
 	.2byte	0x1
 	.byte	0x6c
+	.8byte	.LVL286
 	.8byte	.LVL288
-	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x6c
 	.8byte	0
 	.8byte	0
 .LLST82:
-	.8byte	.LVL275
-	.8byte	.LVL282
+	.8byte	.LVL273
+	.8byte	.LVL280
 	.2byte	0x1
 	.byte	0x68
+	.8byte	.LVL286
 	.8byte	.LVL288
-	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x68
 	.8byte	0
 	.8byte	0
 .LLST83:
-	.8byte	.LVL277
-	.8byte	.LVL278
+	.8byte	.LVL275
+	.8byte	.LVL276
 	.2byte	0xd
 	.byte	0x8f
 	.sleb128 254
@@ -12855,8 +12845,8 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.byte	0x1a
 	.byte	0x1a
 	.byte	0x9f
-	.8byte	.LVL288
-	.8byte	.LVL289
+	.8byte	.LVL286
+	.8byte	.LVL287
 	.2byte	0xf
 	.byte	0x8f
 	.sleb128 254
@@ -12875,271 +12865,271 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	0
 	.8byte	0
 .LLST84:
-	.8byte	.LVL276
-	.8byte	.LVL279
+	.8byte	.LVL274
+	.8byte	.LVL277
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL286
 	.8byte	.LVL288
-	.8byte	.LVL290
 	.2byte	0x1
 	.byte	0x50
 	.8byte	0
 	.8byte	0
 .LLST85:
-	.8byte	.LVL262
-	.8byte	.LVL267
+	.8byte	.LVL265
+	.8byte	.LVL270
 	.2byte	0x1
 	.byte	0x6a
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x1
 	.byte	0x6a
-	.8byte	.LVL293
-	.8byte	.LVL317
+	.8byte	.LVL294
+	.8byte	.LVL318
 	.2byte	0x1
 	.byte	0x6a
-	.8byte	.LVL320
-	.8byte	.LVL355
+	.8byte	.LVL321
+	.8byte	.LVL356
 	.2byte	0x1
 	.byte	0x6a
 	.8byte	0
 	.8byte	0
 .LLST86:
-	.8byte	.LVL262
-	.8byte	.LVL264
-	.2byte	0x1
-	.byte	0x64
-	.8byte	.LVL264
+	.8byte	.LVL265
 	.8byte	.LVL267
 	.2byte	0x1
+	.byte	0x64
+	.8byte	.LVL267
+	.8byte	.LVL270
+	.2byte	0x1
 	.byte	0x65
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x1
 	.byte	0x65
-	.8byte	.LVL293
-	.8byte	.LVL319
-	.2byte	0x1
-	.byte	0x65
+	.8byte	.LVL294
 	.8byte	.LVL320
+	.2byte	0x1
+	.byte	0x65
+	.8byte	.LVL321
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x65
 	.8byte	0
 	.8byte	0
 .LLST87:
-	.8byte	.LVL262
-	.8byte	.LVL267
+	.8byte	.LVL265
+	.8byte	.LVL270
 	.2byte	0x1
 	.byte	0x6c
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x1
 	.byte	0x6c
-	.8byte	.LVL293
-	.8byte	.LVL319
-	.2byte	0x1
-	.byte	0x6c
+	.8byte	.LVL294
 	.8byte	.LVL320
+	.2byte	0x1
+	.byte	0x6c
+	.8byte	.LVL321
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x6c
 	.8byte	0
 	.8byte	0
 .LLST88:
-	.8byte	.LVL262
-	.8byte	.LVL267
+	.8byte	.LVL265
+	.8byte	.LVL270
 	.2byte	0x1
 	.byte	0x68
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x1
 	.byte	0x68
-	.8byte	.LVL293
-	.8byte	.LVL319
-	.2byte	0x1
-	.byte	0x68
+	.8byte	.LVL294
 	.8byte	.LVL320
+	.2byte	0x1
+	.byte	0x68
+	.8byte	.LVL321
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x68
 	.8byte	0
 	.8byte	0
 .LLST89:
-	.8byte	.LVL262
-	.8byte	.LVL267
+	.8byte	.LVL265
+	.8byte	.LVL270
 	.2byte	0x2
 	.byte	0x30
 	.byte	0x9f
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x2
 	.byte	0x30
 	.byte	0x9f
-	.8byte	.LVL293
-	.8byte	.LVL315
-	.2byte	0x2
-	.byte	0x30
-	.byte	0x9f
-	.8byte	.LVL315
+	.8byte	.LVL294
 	.8byte	.LVL316
+	.2byte	0x2
+	.byte	0x30
+	.byte	0x9f
+	.8byte	.LVL316
+	.8byte	.LVL317
 	.2byte	0x1
 	.byte	0x50
-	.8byte	.LVL316
-	.8byte	.LVL319
-	.2byte	0x1
-	.byte	0x6b
+	.8byte	.LVL317
 	.8byte	.LVL320
-	.8byte	.LVL321
-	.2byte	0x1
-	.byte	0x50
-	.8byte	.LVL321
-	.8byte	.LVL340
 	.2byte	0x1
 	.byte	0x6b
-	.8byte	.LVL340
-	.8byte	.LVL341
+	.8byte	.LVL321
+	.8byte	.LVL322
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL322
+	.8byte	.LVL341
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL341
 	.8byte	.LVL342
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL342
 	.8byte	.LVL343
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL343
-	.8byte	.LVL349
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL349
-	.8byte	.LVL350
+	.8byte	.LVL344
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL344
+	.8byte	.LVL350
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL350
 	.8byte	.LVL351
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL351
 	.8byte	.LVL352
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL352
-	.8byte	.LVL359
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL359
-	.8byte	.LVL360
+	.8byte	.LVL353
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL353
+	.8byte	.LVL360
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL360
 	.8byte	.LVL361
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL361
 	.8byte	.LVL362
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL362
-	.8byte	.LVL368
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL368
-	.8byte	.LVL369
+	.8byte	.LVL363
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL363
+	.8byte	.LVL369
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL369
 	.8byte	.LVL370
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL370
 	.8byte	.LVL371
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL371
-	.8byte	.LVL378
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL378
-	.8byte	.LVL379
+	.8byte	.LVL372
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL372
+	.8byte	.LVL379
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL379
 	.8byte	.LVL380
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL380
 	.8byte	.LVL381
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL381
-	.8byte	.LVL383
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL383
-	.8byte	.LVL384
+	.8byte	.LVL382
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL382
+	.8byte	.LVL384
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL384
 	.8byte	.LVL385
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL385
 	.8byte	.LVL386
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL386
-	.8byte	.LVL391
-	.2byte	0x1
-	.byte	0x6b
-	.8byte	.LVL391
-	.8byte	.LVL392
+	.8byte	.LVL387
 	.2byte	0x1
 	.byte	0x50
+	.8byte	.LVL387
+	.8byte	.LVL392
+	.2byte	0x1
+	.byte	0x6b
 	.8byte	.LVL392
 	.8byte	.LVL393
 	.2byte	0x1
-	.byte	0x6b
+	.byte	0x50
 	.8byte	.LVL393
 	.8byte	.LVL394
 	.2byte	0x1
-	.byte	0x50
+	.byte	0x6b
 	.8byte	.LVL394
-	.8byte	.LVL396
+	.8byte	.LVL395
+	.2byte	0x1
+	.byte	0x50
+	.8byte	.LVL395
+	.8byte	.LVL397
 	.2byte	0x1
 	.byte	0x6b
-	.8byte	.LVL396
 	.8byte	.LVL397
+	.8byte	.LVL398
 	.2byte	0x1
 	.byte	0x50
-	.8byte	.LVL397
+	.8byte	.LVL398
 	.8byte	.LFE272
 	.2byte	0x1
 	.byte	0x6b
 	.8byte	0
 	.8byte	0
 .LLST90:
-	.8byte	.LVL264
-	.8byte	.LVL265
+	.8byte	.LVL267
+	.8byte	.LVL268
 	.2byte	0x1
 	.byte	0x50
-	.8byte	.LVL265
-	.8byte	.LVL267
+	.8byte	.LVL268
+	.8byte	.LVL270
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 232
-	.8byte	.LVL290
 	.8byte	.LVL291
+	.8byte	.LVL292
 	.2byte	0x3
 	.byte	0x8f
 	.sleb128 232
-	.8byte	.LVL293
-	.8byte	.LVL319
-	.2byte	0x3
-	.byte	0x8f
-	.sleb128 232
+	.8byte	.LVL294
 	.8byte	.LVL320
+	.2byte	0x3
+	.byte	0x8f
+	.sleb128 232
+	.8byte	.LVL321
 	.8byte	.LFE272
 	.2byte	0x3
 	.byte	0x8f
@@ -13147,19 +13137,19 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	0
 	.8byte	0
 .LLST91:
-	.8byte	.LVL312
-	.8byte	.LVL317
+	.8byte	.LVL313
+	.8byte	.LVL318
 	.2byte	0x1
 	.byte	0x64
-	.8byte	.LVL320
-	.8byte	.LVL335
+	.8byte	.LVL321
+	.8byte	.LVL336
 	.2byte	0x1
 	.byte	0x64
 	.8byte	0
 	.8byte	0
 .LLST92:
-	.8byte	.LVL318
-	.8byte	.LVL320
+	.8byte	.LVL319
+	.8byte	.LVL321
 	.2byte	0x5
 	.byte	0x11
 	.sleb128 -65533
@@ -13167,15 +13157,15 @@ _u_boot_list_2_driver_2_rockchip_secure_otp:
 	.8byte	0
 	.8byte	0
 .LLST93:
-	.8byte	.LVL354
-	.8byte	.LVL357
+	.8byte	.LVL355
+	.8byte	.LVL358
 	.2byte	0x1
 	.byte	0x51
 	.8byte	0
 	.8byte	0
 .LLST94:
-	.8byte	.LVL355
-	.8byte	.LVL374
+	.8byte	.LVL356
+	.8byte	.LVL375
 	.2byte	0x1
 	.byte	0x6a
 	.8byte	0
