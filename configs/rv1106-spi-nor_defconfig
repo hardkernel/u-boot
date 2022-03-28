@@ -85,6 +85,7 @@ CONFIG_OF_LIVE=y
 CONFIG_OF_SPL_REMOVE_PROPS="interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
 CONFIG_OF_U_BOOT_REMOVE_PROPS="interrupt-parent"
 CONFIG_ENVF=y
+CONFIG_ENVF_LIST="blkdevparts mtdparts sys_bootargs app reserved ipaddr serverip netmask gatewayip ethaddr"
 # CONFIG_DM_WARN is not set
 # CONFIG_DM_STDIO is not set
 CONFIG_REGMAP=y
