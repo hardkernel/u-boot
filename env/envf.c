@@ -12,24 +12,33 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * Example: ./tools/mkenvimage -s 0x8000 -p 0x0 -o env.img env.txt
+ */
 #define ENVF_MSG(fmt, args...)	printf("ENVF: "fmt, ##args)
+#define ENVF_DBG(fmt, args...)	debug("ENVF: "fmt, ##args)
+
+#define EMSG_ARGS		"error: please use \"sys_bootargs\" but not \"bootargs\""
 #define BLK_CNT(desc, sz)	((sz) / (desc)->blksz)
+#define ENVF_MAX		64
 
-static ulong env_size = CONFIG_ENV_SIZE;
-static ulong env_offset = CONFIG_ENV_OFFSET;
-static ulong env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
+static ulong env_size, env_offset, env_offset_redund;
+static const char *part_type[] = { "mtdparts", "blkdevparts", };
 
-#ifdef CONFIG_SPL_BUILD
-#ifdef CONFIG_SPL_ENV_PARTITION
 /*
  * In case of env and env-backup partitions are too large that exceeds the limit
  * of CONFIG_SPL_SYS_MALLOC_F_LEN. we prefer to use a static address as an env
  * buffer. The tail of bss section is good choice from experience.
  */
-static void *env_buf =
+#ifdef CONFIG_SPL_BUILD
+static void *spl_env =
 	(void *)CONFIG_SPL_BSS_START_ADDR + CONFIG_SPL_BSS_MAX_SIZE;
+#else
+static u32 envf_num;
+static const char *envf_list[ENVF_MAX];
+#endif
 
-static const char *get_strval(env_t *env, u32 size, const char *str)
+static const char *env_get_string(env_t *env, u32 size, const char *str)
 {
 	const char *dp;
 	u32 env_size;
@@ -56,44 +65,15 @@ static const char *get_strval(env_t *env, u32 size, const char *str)
 	return NULL;
 }
 
-static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
-		       void *buf, void **envp)
+static void envf_init_location(struct blk_desc *desc)
 {
-	lbaint_t env_size;
-	lbaint_t env_off;
-	env_t *env = buf;
-	u32 blk_cnt;
-
-	env_size = size - ENV_HEADER_SIZE;
-	env_off = BLK_CNT(desc, offset);
-	blk_cnt = BLK_CNT(desc, size);
-
-	if (blk_dread(desc, env_off, blk_cnt, (void *)env) != blk_cnt) {
-		ENVF_MSG("io error @ 0x%x\n", offset);
-		return -EIO;
-	}
-
-	if (crc32(0, env->data, env_size) != env->crc) {
-		ENVF_MSG("!bad CRC @ 0x%x\n", offset);
-		return -EINVAL;
-	}
-
-	if (envp)
-		*envp = env;
-
-	return 0;
-}
-
-int envf_load(struct blk_desc *desc)
-{
-	const char *part_list;
-	int ret = -ENOENT;
-	void *env;
-
-	if (!desc)
-		return -ENODEV;
+	/* eMMC (default) */
+	env_size = CONFIG_ENV_SIZE;
+	env_offset = CONFIG_ENV_OFFSET;
+	env_offset_redund = CONFIG_ENV_OFFSET_REDUND;
 
 #if defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_CMD_NAND)
+	/* nand or spi-nand */
 	if (desc->if_type == IF_TYPE_MTD &&
 	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
 		env_size = CONFIG_ENV_NAND_SIZE;
@@ -102,6 +82,7 @@ int envf_load(struct blk_desc *desc)
 	}
 #endif
 #if defined(CONFIG_SPI_FLASH)
+	/* spi-nor */
 	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) {
 		env_size = CONFIG_ENV_NOR_SIZE;
 		env_offset = CONFIG_ENV_NOR_OFFSET;
@@ -110,119 +91,147 @@ int envf_load(struct blk_desc *desc)
 #endif
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
+}
+
+static int env_read(struct blk_desc *desc, u32 offset, u32 size, env_t **envp)
+{
+	lbaint_t data_size;
+	lbaint_t blk_off;
+	lbaint_t blk_cnt;
+	env_t *env;
+	int ret;
+
+#ifdef CONFIG_SPL_BUILD
+	env = spl_env;
+#else
+	env = malloc(size);
+	if (!env)
+		return -ENOMEM;
+#endif
+	data_size = size - ENV_HEADER_SIZE;
+	blk_off = BLK_CNT(desc, offset);
+	blk_cnt = BLK_CNT(desc, size);
+
+	if (blk_dread(desc, blk_off, blk_cnt, (void *)env) != blk_cnt) {
+		ret = -EIO;
+		goto fail;
+	}
+
+	if (crc32(0, env->data, data_size) != env->crc) {
+		ENVF_MSG("!bad CRC @ 0x%x\n", offset);
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	*envp = env;
+
+	return 0;
+fail:
+#ifndef CONFIG_SPL_BUILD
+	free(env);
+#endif
+	return ret;
+}
+
+static env_t *envf_read(struct blk_desc *desc)
+{
+	env_t *env = NULL;
+	int ret;
+
+	if (!desc)
+		return NULL;
+
+	envf_init_location(desc);
+
+	ret = env_read(desc, env_offset, env_size, &env);
+	if (ret < 0 && env_offset_redund)
+		ret = env_read(desc, env_offset_redund, env_size, &env);
+
+	return env;
+}
+
+char *envf_get_part_table(struct blk_desc *desc)
+{
+	const char *list = NULL;
+	env_t *env;
+
+	if (!desc)
+		goto out;
+
+	env = envf_read(desc);
+	if (!env)
+		goto out;
 
 	ENVF_MSG("Primary 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
 	if (env_offset_redund)
 		ENVF_MSG("Backup  0x%08lx - 0x%08lx\n",
 			 env_offset_redund, env_offset_redund + env_size);
 
-	ret = env_do_load(desc, env_offset, env_size, env_buf, &env);
-	if (ret < 0 && env_offset_redund)
-		ret = env_do_load(desc, env_offset_redund, env_size,
-				  env_buf + env_size, &env);
-	if (ret < 0) {
-		ENVF_MSG("No valid env data, ret=%d\n", ret);
-		return ret;
-	}
-
-	part_list = get_strval(env, env_size, "mtdparts");
-	if (!part_list)
-		part_list = get_strval(env, env_size, "blkdevparts");
-	if (!part_list) {
-		ENVF_MSG("No valid env part list\n");
-		return ret;
-	}
-
-	ENVF_MSG("OK\n");
-	env_part_list_init(part_list);
-	/*
-	 * Call blk_dread() to read env content:
-	 *    => mmc_init() => part_init() with CONFIG_ENV_PARTITION_LIST => mmc init ok
-	 *    => read env content! including partition tables(blkdevparts/mtdparts).
-	 *
-	 * So we must reinit env partition after we setup the partition
-	 * tables(blkdevparts/mtdparts) from env.
-	 */
-	part_init(desc);
-
-	return 0;
+	list = env_get_string(env, env_size, part_type[0]);
+	if (!list)
+		list = env_get_string(env, env_size, part_type[1]);
+	if (!list)
+		ENVF_MSG("Unavailable env part table\n");
+	else
+		ENVF_MSG("OK\n");
+out:
+	return (char *)list;
 }
-#endif
 
-#else
-/*
- * Example: ./tools/mkenvimage -s 0x8000 -p 0x0 -o env.img env.txt
- */
-#define ENVF_MAX		64
-#define ENVF_EMSG		"error: please use \"sys_bootargs\" but not " \
-				"\"bootargs\" in CONFIG_ENVF_LIST and envf.bin"
-static const char *envf_list[ENVF_MAX];
-static u32 envf_num;
-
-static int envf_extract_list(void)
+#ifndef CONFIG_SPL_BUILD
+static int envf_init_vars(void)
 {
 	char *tok, *p;
-	u32 i = 0;
 
 	tok = strdup(CONFIG_ENVF_LIST);
 	if (!tok)
-		return -ENOMEM;
+		return 0;
 
+	envf_num = 0;
 	p = strtok(tok, " ");
-	while (p && i < ENVF_MAX) {
+	while (p && envf_num < ENVF_MAX) {
 		if (!strcmp(p, "bootargs")) {
-			printf("%s\n", ENVF_EMSG);
+			printf("%s\n", EMSG_ARGS);
 			run_command("download", 0);
 		}
-		envf_list[i++] = p;
+		envf_list[envf_num++] = p;
 		p = strtok(NULL, " ");
 	}
 
-	envf_num = i;
-
-	return 0;
+	return envf_num;
 }
 
-static int env_do_load(struct blk_desc *desc, u32 offset, u32 size,
-		       const char *list[], int num, void **envp)
+static int envf_add_bootargs(void)
 {
-	ALLOC_CACHE_ALIGN_BUFFER(env_t, env, 1);
-	lbaint_t env_size;
-	lbaint_t env_off;
-	u32 blk_cnt;
-	int ret = 0;
+	char *part_list;
+	char *bootargs;
+	int i;
 
-	env_size = size - ENV_HEADER_SIZE;
-	env_off = BLK_CNT(desc, offset);
-	blk_cnt = BLK_CNT(desc, size);
-
-	if (blk_dread(desc, env_off, blk_cnt, (void *)env) != blk_cnt) {
-		ret = -EIO;
-		goto out;
+	for (i = 0; i < ARRAY_SIZE(part_type); i++) {
+		part_list = env_get(part_type[i]);
+		if (part_list)
+			break;
 	}
+	if (!part_list)
+		return -EINVAL;
 
-	if (crc32(0, env->data, env_size) != env->crc) {
-		ENVF_MSG("!bad CRC @ 0x%x\n", offset);
-		ret = -EINVAL;
-		goto out;
-	}
+	bootargs = calloc(1, strlen(part_list) + strlen(part_type[i]) + 2);
+	if (!bootargs)
+		return -ENOMEM;
 
-	if (!himport_r(&env_htab, (char *)env->data, env_size, '\0',
-		       H_NOCLEAR, 0, num, (char * const *)list)) {
-		ENVF_MSG("himport error: %d\n", errno);
-		ret = -EINTR;
-	}
+	strcat(bootargs, part_type[i]);
+	strcat(bootargs, "=");
+	strcat(bootargs, part_list);
+	env_update("bootargs", bootargs);
+	free(bootargs);
 
-	if (envp)
-		*envp = env;
-out:
-	return ret;
+	return 0;
 }
 
 static int envf_load(void)
 {
 	struct blk_desc *desc;
-	int ret = -ENOENT;
+	env_t *env;
 
 	desc = rockchip_get_bootdev();
 	if (!desc) {
@@ -230,53 +239,20 @@ static int envf_load(void)
 		return 0;
 	}
 
-#if defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_CMD_NAND)
-	if (desc->if_type == IF_TYPE_MTD &&
-	    (desc->devnum == BLK_MTD_SPI_NAND || desc->devnum == BLK_MTD_NAND)) {
-		env_size = CONFIG_ENV_NAND_SIZE;
-		env_offset = CONFIG_ENV_NAND_OFFSET;
-		env_offset_redund = CONFIG_ENV_NAND_OFFSET_REDUND;
-	}
-#endif
-#if defined(CONFIG_SPI_FLASH)
-	if (desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) {
-		env_size = CONFIG_ENV_NOR_SIZE;
-		env_offset = CONFIG_ENV_NOR_OFFSET;
-		env_offset_redund = CONFIG_ENV_NOR_OFFSET_REDUND;
-	}
-#endif
-	if (env_offset == env_offset_redund)
-		env_offset_redund = 0;
+	env = envf_read(desc);
+	if (!env)
+		return -EINVAL;
 
-	ENVF_MSG("Primary 0x%08lx - 0x%08lx\n", env_offset, env_offset + env_size);
-	if (env_offset_redund)
-		ENVF_MSG("Backup  0x%08lx - 0x%08lx\n",
-			 env_offset_redund, env_offset_redund + env_size);
-
-	envf_extract_list();
-	ret = env_do_load(desc, env_offset, env_size, envf_list, envf_num, NULL);
-	if (ret < 0 && env_offset_redund) {
-		ret = env_do_load(desc, env_offset_redund,
-				  env_size, envf_list, envf_num, NULL);
-	}
-	if (ret < 0) {
-		ENVF_MSG("No valid env data, ret=%d\n", ret);
-		return ret;
+	if (envf_init_vars() > 0) {
+		if (!himport_r(&env_htab, (char *)env->data, env_size, '\0',
+			H_NOCLEAR, 0, envf_num, (char * const *)envf_list)) {
+			ENVF_MSG("envf himport error: %d\n", errno);
+			return -EINTR;
+		}
 	}
 
-	ENVF_MSG("OK\n");
-	printf("  - %s\n", CONFIG_ENVF_LIST);
-#ifdef CONFIG_ENV_PARTITION
-	/*
-	 * Call blk_dread() to read envf content:
-	 *    => mmc_init() => part_init() with CONFIG_ENV_PARTITION_LIST => mmc init ok
-	 *    => read envf content! including partition tables(blkdevparts/mtdparts).
-	 *
-	 * So we must reinit env partition after we setup the partition
-	 * tables(blkdevparts/mtdparts) from envf.
-	 */
-	part_init(desc);
-#endif
+	envf_add_bootargs();
+
 	return 0;
 }
 
@@ -284,8 +260,8 @@ static int envf_save(void)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(env_t, env, 1);
 	struct blk_desc *desc;
-	u32 blk_cnt;
 	ssize_t	len;
+	u32 blk_cnt;
 	char *res;
 	int ret = 0;
 
@@ -339,3 +315,4 @@ U_BOOT_ENV_LOCATION(nowhere) = {
 	ENV_NAME("envf")
 };
 #endif
+

@@ -935,7 +935,7 @@ int himport_r(struct hsearch_data *htab,
 
 	/*
 	 * CONFIG_ENVF=y: don't delete the default variables when they are
-	 * not present in envf.bin
+	 * not present in env.img
 	 */
 #ifndef CONFIG_ENVF
 	int i;

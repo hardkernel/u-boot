@@ -27,13 +27,8 @@ struct env_part {
 static int dev_num = -1;
 static LIST_HEAD(parts_head);
 
-#ifdef CONFIG_SPL_BUILD
-static char *env_parts_list;
-
-void env_part_list_init(const char *list)
-{
-	env_parts_list = (char *)list;
-}
+#if CONFIG_IS_ENABLED(ENVF)
+extern char *envf_get_part_table(struct blk_desc *desc);
 #endif
 
 static unsigned long long memparse(const char *ptr, char **retptr)
@@ -83,7 +78,10 @@ static int env_init_parts(struct blk_desc *dev_desc, struct list_head *parts_hea
 	int len, offset = 0;
 	char *next, *pend;
 	char *parts_list = NULL;
-#ifndef CONFIG_SPL_BUILD
+
+#if CONFIG_IS_ENABLED(ENVF)
+	parts_list = envf_get_part_table(dev_desc);
+#else
 	const char *parts_prefix[] = { "mtdparts", "blkdevparts", };
 	int i;
 
@@ -92,8 +90,6 @@ static int env_init_parts(struct blk_desc *dev_desc, struct list_head *parts_hea
 		if (parts_list)
 			break;
 	}
-#else
-	parts_list = env_parts_list;
 #endif
 	if (!parts_list)
 		return -EINVAL;
@@ -136,23 +132,6 @@ static int env_init_parts(struct blk_desc *dev_desc, struct list_head *parts_hea
 	}
 
 	dev_num = DEV_NUM(dev_desc);
-
-	/* Add into "bootargs" */
-#ifndef CONFIG_SPL_BUILD
-	char *parts_cmdline;
-
-	parts_cmdline =
-		calloc(1, strlen(parts_list) + strlen(parts_prefix[i]) + 2);
-	if (!parts_cmdline)
-		return -ENOMEM;
-	strcat(parts_cmdline, parts_prefix[i]);
-	strcat(parts_cmdline, "=");
-	strcat(parts_cmdline, parts_list);
-	env_update("bootargs", parts_cmdline);
-	free(parts_cmdline);
-#endif
-
-	printf("PartType: ENV\n");
 
 	return 0;
 }

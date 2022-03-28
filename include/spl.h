@@ -346,11 +346,4 @@ const char *spl_kernel_partition(struct spl_image_info *spl,
 				 struct spl_load_info *info);
 #endif
 
-#ifdef CONFIG_SPL_ENVF
-/**
- * envf_load() - envf data load and init.
- */
-int envf_load(struct blk_desc *dev_desc);
-#endif
-
 #endif

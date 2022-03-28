@@ -112,9 +112,6 @@ int spl_mtd_load_image(struct spl_image_info *spl_image,
 	if (!desc)
 		return -ENODEV;
 
-#ifdef CONFIG_SPL_ENVF
-	envf_load(desc);
-#endif
 #ifdef CONFIG_SPL_LIBDISK_SUPPORT
 	disk_partition_t info;
 

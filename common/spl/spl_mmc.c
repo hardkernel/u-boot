@@ -299,9 +299,6 @@ int spl_mmc_load_image(struct spl_image_info *spl_image,
 		return err;
 	}
 
-#ifdef CONFIG_SPL_ENVF
-	envf_load(mmc_get_blk_desc(mmc));
-#endif
 #ifdef CONFIG_SPL_LOAD_RKFW
 	struct spl_load_info load;
 
