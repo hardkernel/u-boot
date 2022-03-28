@@ -14,8 +14,17 @@
 		stdout-path = &uart2;
 		u-boot,spl-boot-order = &sdmmc, &spi_nor, &spi_nand, &emmc;
 	};
-};
 
+	secure_otp: secure_otp@ff3fd8000 {
+		compatible = "rockchip,rv1106-secure-otp";
+		reg = <0xff3d8000 0x4000>;
+		secure_conf = <0xff07a018>;
+		cru_rst_addr = <0xff3bca08>;
+		mask_addr = <0xff3dc000>;
+		u-boot,dm-spl;
+		status = "okay";
+	};
+};
 
 &emmc {
 	mmc-ecsd = <0x0020f000>;
