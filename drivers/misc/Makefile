@@ -71,6 +71,10 @@ ifdef CONFIG_ROCKCHIP_RK3568
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3568-secure-otp.o
 endif
 
+ifdef CONFIG_ROCKCHIP_RV1106
+obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rv1106-secure-otp.o
+endif
+
 ifdef CONFIG_ROCKCHIP_RV1126
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rv1126-secure-otp.o
 endif
