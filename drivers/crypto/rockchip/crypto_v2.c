@@ -1554,7 +1554,7 @@ static const struct udevice_id rockchip_crypto_ids[] = {
 		.data = (ulong)&soc_data_base_sm
 	},
 	{
-		.compatible = "rockchip,crypto_v3",
+		.compatible = "rockchip,crypto-v3",
 		.data = (ulong)&soc_data_cryptov3
 	},
 	{ }
