@@ -115,7 +115,7 @@ static void update_cleanup(void *fit, struct update_header *hdr)
 	}
 
 	if (hdr->shared_buf)
-		free((phys_addr_t)hdr->shared_buf);
+		free(hdr->shared_buf);
 	if (fit)
 		free(fit);
 }
