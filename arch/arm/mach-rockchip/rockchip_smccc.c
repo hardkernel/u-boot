@@ -110,6 +110,14 @@ int sip_smc_secure_reg_write(unsigned long addr_phy, unsigned long val)
 	return res.a0;
 }
 
+int sip_smc_hdcp_config(unsigned long func, unsigned long arg1, unsigned long arg2)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_HDCP_CONFIG, func, arg1, arg2);
+	return res.a0;
+}
+
 struct arm_smccc_res sip_smc_get_sip_version(void)
 {
 	return __invoke_sip_fn_smc(SIP_SIP_VERSION, 0, 0, 0);
