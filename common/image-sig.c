@@ -437,7 +437,8 @@ int fit_config_check_sig(const void *fit, int noffset, int required_keynode,
 	}
 	/* Get the secure flag here and write the secure data and the secure flag */
 #if !defined(USE_HOSTCC)
-#ifdef CONFIG_SPL_FIT_HW_CRYPTO
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_FIT_HW_CRYPTO) && \
+    defined(CONFIG_SPL_ROCKCHIP_SECURE_OTP)
 	rsa_burn_key_hash(&info);
 #endif
 #endif
