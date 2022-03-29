@@ -396,7 +396,7 @@ function fit_gen_boot_itb()
 		FDT_ADDR_R=`awk /fdt_addr_r/         ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
 		KERNEL_ADDR_R=`awk /kernel_addr_r/   ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
 		RMADISK_ADDR_R=`awk /ramdisk_addr_r/ ${COMMON_FILE} | awk -F '=' '{ print $2 }' | awk -F '\\' '{ print $1 }'`
-		# sed -i "s/${FDT_ADDR_PLACEHOLDER}/${FDT_ADDR_R}/g"         ${ITS_BOOT}
+		sed -i "s/${FDT_ADDR_PLACEHOLDER}/${FDT_ADDR_R}/g"         ${ITS_BOOT}
 		sed -i "s/${KERNEL_ADDR_PLACEHOLDER}/${KERNEL_ADDR_R}/g"   ${ITS_BOOT}
 		sed -i "s/${RAMDISK_ADDR_PLACEHOLDER}/${RMADISK_ADDR_R}/g" ${ITS_BOOT}
 		if grep -q '^CONFIG_ARM64=y' .config ; then
