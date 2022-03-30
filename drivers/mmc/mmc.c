@@ -658,18 +658,19 @@ static int mmc_complete_op_cond(struct mmc *mmc)
 
 static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 {
-	static int initialized;
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int err;
 
+#ifdef CONFIG_MMC_USE_PRE_CONFIG
+	static int initialized;
 	if (initialized) {
 		memcpy(ext_csd, mmc_ext_csd, 512);
 		return 0;
 	}
 
 	initialized = 1;
-
+#endif
 	/* Get the Card Status Register */
 	cmd.cmdidx = MMC_CMD_SEND_EXT_CSD;
 	cmd.resp_type = MMC_RSP_R1;
