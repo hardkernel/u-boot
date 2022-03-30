@@ -28,6 +28,8 @@
 
 &emmc {
 	mmc-ecsd = <0x0020f000>;
+	bus-width = <8>;
+	mmc-hs200-1_8v;
 	u-boot,dm-spl;
 	status = "okay";
 };
