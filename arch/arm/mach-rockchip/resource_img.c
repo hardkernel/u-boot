@@ -154,6 +154,7 @@ static int add_file_to_list(struct resource_entry *entry, int rsce_base, bool ra
 	file->hash_size = entry->hash_size;
 	file->ram = ram;
 	memcpy(file->hash, entry->hash, entry->hash_size);
+	INIT_LIST_HEAD(&file->dtbs);
 	list_add_tail(&file->link, &entrys_head);
 	if (strstr(file->name, DTB_SUFFIX) && board_resource_dtb_accepted(file->name))
 		list_add_tail(&file->dtbs, &entrys_dtbs_head);
