@@ -1248,10 +1248,16 @@ static void phy_cfg(struct dram_info *dram,
 	clrbits_le32(PHY_REG(phy_base, 0x62), BIT(5));
 	dq_map = readl(PHY_REG(phy_base, 0x4f));
 	for (i = 0; i < 4; i++) {
-		if (((dq_map >> (i * 2)) & 0x3) == 0)
+		if (((dq_map >> (i * 2)) & 0x3) == 0) {
 			byte0 = i;
-		if (((dq_map >> (i * 2)) & 0x3) == 1)
+			break;
+		}
+	}
+	for (i = 0; i < 4; i++) {
+		if (((dq_map >> (i * 2)) & 0x3) == 1) {
 			byte1 = i;
+			break;
+		}
 	}
 
 	tmp = readl(PHY_REG(phy_base, 0xf)) & (~PHY_DQ_WIDTH_MASK);
@@ -2427,13 +2433,62 @@ static void print_ddr_info(struct rv1126_sdram_params *sdram_params)
 			     &sdram_params->base, split);
 }
 
+static int modify_ddr34_bw_byte_map(u8 rg_result, struct rv1126_sdram_params *sdram_params)
+{
+	struct sdram_head_info_index_v2 *index = (struct sdram_head_info_index_v2 *)common_info;
+	struct dq_map_info *map_info = (struct dq_map_info *)
+				       ((void *)common_info + index->dq_map_index.offset * 4);
+	struct sdram_cap_info *cap_info = &sdram_params->ch.cap_info;
+	u32 dramtype = sdram_params->base.dramtype;
+	u32 byte_map = 0;
+	u32 byte = 0;
+	u32 byte_map_shift;
+	int i;
+
+	if (dramtype == DDR3)
+		byte_map_shift = 24;
+	else if (dramtype == DDR4)
+		byte_map_shift = 0;
+	else
+		return -1;
+
+	for (i = 0; i < 4; i++) {
+		if ((rg_result & BIT(i)) == 0) {
+			byte_map |= byte << (i * 2);
+			byte++;
+		}
+	}
+	if (byte != 1 && byte != 2 && byte != 4) {
+		printascii("DTT result is abnormal: ");
+		printdec(byte);
+		printascii("byte\n");
+		return -1;
+	}
+	cap_info->bw = byte / 2;
+	for (i = 0; i < 4; i++) {
+		if ((rg_result & BIT(i)) != 0) {
+			byte_map |= byte << (i * 2);
+			byte++;
+		}
+	}
+
+	if ((u8)byte_map != (u8)(map_info->byte_map[0] >> byte_map_shift)) {
+		clrsetbits_le32(&map_info->byte_map[0],
+				0xff << byte_map_shift, byte_map << byte_map_shift);
+		pctl_remodify_sdram_params(&sdram_params->pctl_regs, cap_info, dramtype);
+		return 1;
+	}
+
+	return 0;
+}
+
 static int sdram_init_(struct dram_info *dram,
 		       struct rv1126_sdram_params *sdram_params, u32 post_init)
 {
 	void __iomem *pctl_base = dram->pctl;
 	void __iomem *phy_base = dram->phy;
 	u32 ddr4_vref;
-	u32 mr_tmp;
+	u32 mr_tmp, tmp;
 
 	rkclk_configure_ddr(dram, sdram_params);
 
@@ -2460,7 +2515,7 @@ static int sdram_init_(struct dram_info *dram,
 	}
 
 #ifdef CONFIG_ROCKCHIP_DRAM_EXTENDED_TEMP_SUPPORT
-	u32 tmp, trefi;
+	u32 trefi;
 
 	tmp = readl(pctl_base + DDR_PCTL2_RFSHTMG);
 	trefi = (tmp >> 16) & 0xfff;
@@ -2505,10 +2560,22 @@ static int sdram_init_(struct dram_info *dram,
 			      LPDDR4);
 	}
 
-	if (data_training(dram, 0, sdram_params, 0, READ_GATE_TRAINING) != 0) {
-		if (post_init != 0)
+	if (sdram_params->base.dramtype == DDR3 && post_init == 0)
+		setbits_le32(PHY_REG(phy_base, 0xf), 0xf);
+	tmp = data_training(dram, 0, sdram_params, 0, READ_GATE_TRAINING) & 0xf;
+
+	if (tmp != 0) {
+		if (post_init != 0) {
 			printascii("DTT cs0 error\n");
-		return -1;
+			return -1;
+		}
+		if (sdram_params->base.dramtype != DDR3 || tmp == 0xf)
+			return -1;
+	}
+
+	if (sdram_params->base.dramtype == DDR3 && post_init == 0) {
+		if (modify_ddr34_bw_byte_map((u8)tmp, sdram_params) != 0)
+			return -1;
 	}
 
 	if (sdram_params->base.dramtype == LPDDR4) {
@@ -2563,15 +2630,13 @@ static u64 dram_detect_cap(struct dram_info *dram,
 	u32 pwrctl;
 	u32 i, dq_map;
 	u32 byte1 = 0, byte0 = 0;
-	u32 tmp, byte;
-	struct sdram_head_info_index_v2 *index = (struct sdram_head_info_index_v2 *)common_info;
-	struct dq_map_info *map_info = (struct dq_map_info *)
-				       ((void *)common_info + index->dq_map_index.offset * 4);
 
-	cap_info->bw = dram_type == DDR3 ? 0 : 1;
 	if (dram_type != LPDDR4 && dram_type != LPDDR4X) {
 		if (dram_type != DDR4) {
-			coltmp = 12;
+			if (dram_type == DDR3)
+				coltmp = 11;
+			else
+				coltmp = 12;
 			bktmp = 3;
 			if (dram_type == LPDDR2)
 				rowtmp = 15;
@@ -2635,28 +2700,9 @@ static u64 dram_detect_cap(struct dram_info *dram,
 
 	setbits_le32(PHY_REG(phy_base, 0xf), 0xf);
 
-	tmp = data_training_rg(dram, 0, dram_type) & 0xf;
-
-	if (tmp == 0) {
-		cap_info->bw = 2;
-	} else {
-		if (dram_type == DDR3 || dram_type == DDR4) {
-			dq_map = 0;
-			byte = 0;
-			for (i = 0; i < 4; i++) {
-				if ((tmp & BIT(i)) == 0) {
-					dq_map |= byte << (i * 2);
-					byte++;
-				}
-			}
-			cap_info->bw = byte / 2;
-			for (i = 0; i < 4; i++) {
-				if ((tmp & BIT(i)) != 0) {
-					dq_map |= byte << (i * 2);
-					byte++;
-				}
-			}
-			clrsetbits_le32(&map_info->byte_map[0], 0xff << 24, dq_map << 24);
+	if (dram_type != DDR3) {
+		if ((data_training_rg(dram, 0, dram_type) & 0xf) == 0) {
+			cap_info->bw = 2;
 		} else {
 			dq_map = readl(PHY_REG(phy_base, 0x4f));
 			for (i = 0; i < 4; i++) {
@@ -2771,18 +2817,9 @@ static int sdram_init_detect(struct dram_info *dram,
 	u32 ret;
 	u32 sys_reg = 0;
 	u32 sys_reg3 = 0;
-	struct sdram_head_info_index_v2 *index =
-		(struct sdram_head_info_index_v2 *)common_info;
-	struct dq_map_info *map_info;
-
-	map_info = (struct dq_map_info *)((void *)common_info +
-		index->dq_map_index.offset * 4);
 
 	if (sdram_init_(dram, sdram_params, 0)) {
 		if (sdram_params->base.dramtype == DDR3) {
-			clrsetbits_le32(&map_info->byte_map[0], 0xff << 24,
-					((0x1 << 6) | (0x3 << 4) | (0x2 << 2) |
-					(0x0 << 0)) << 24);
 			if (sdram_init_(dram, sdram_params, 0))
 				return -1;
 		} else {
