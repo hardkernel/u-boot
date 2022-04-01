@@ -15,7 +15,7 @@ if [ "${COMPRESSION}" == "gzip" ]; then
 	COMPRESS_CMD="gzip -kf9"
 elif [ "${COMPRESSION}" == "lzma" ]; then
 	SUFFIX=".lzma"
-	COMPRESS_CMD="${srctree}/scripts/lzma.sh"
+	COMPRESS_CMD="${srctree}/scripts/compress.sh lzma"
 else
 	COMPRESSION="none"
 	SUFFIX=
