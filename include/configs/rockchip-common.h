@@ -41,6 +41,23 @@
 	BOOT_TARGET_DEVICES_references_RKNAND_without_CONFIG_CMD_RKNAND
 #endif
 
+#ifdef CONFIG_CMD_MTD_BLK
+#define BOOTENV_SHARED_MTD				\
+	"mtd_boot="					\
+		"if mtd_blk dev ${devnum}; then "	\
+			"setenv devtype mtd; "		\
+			"run scan_dev_for_boot_part; "	\
+		"fi\0"
+#define BOOTENV_DEV_MTD		BOOTENV_DEV_BLKDEV
+#define BOOTENV_DEV_NAME_MTD	BOOTENV_DEV_NAME_BLKDEV
+#else
+#define BOOTENV_SHARED_MTD
+#define BOOTENV_DEV_MTD		\
+	BOOT_TARGET_DEVICES_references_MTD_without_CONFIG_CMD_MTD_BLK
+#define BOOTENV_DEV_NAME_MTD	\
+	BOOT_TARGET_DEVICES_references_MTD_without_CONFIG_CMD_MTD_BLK
+#endif
+
 /* First try to boot from SD (index 1), then eMMC (index 0) */
 #if CONFIG_IS_ENABLED(CMD_MMC)
 	#define BOOT_TARGET_MMC(func) \
@@ -48,6 +65,15 @@
 		func(MMC, mmc, 0)
 #else
 	#define BOOT_TARGET_MMC(func)
+#endif
+
+#if CONFIG_IS_ENABLED(CMD_MTD_BLK)
+	#define BOOT_TARGET_MTD(func)	\
+		func(MTD, mtd, 2)	\
+		func(MTD, mtd, 1)	\
+		func(MTD, mtd, 0)
+#else
+	#define BOOT_TARGET_MTD(func)
 #endif
 
 #if CONFIG_IS_ENABLED(CMD_RKNAND)
@@ -76,6 +102,7 @@
 
 #define BOOT_TARGET_DEVICES(func) \
 	BOOT_TARGET_MMC(func) \
+	BOOT_TARGET_MTD(func) \
 	BOOT_TARGET_RKNAND(func) \
 	BOOT_TARGET_USB(func) \
 	BOOT_TARGET_PXE(func) \
