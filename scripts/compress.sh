@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 Fuzhou Rockchip Electronics Co., Ltd
+# Copyright (c) 2022 Rockchip Electronics Co., Ltd
 #
 # SPDX-License-Identifier: GPL-2.0
 #
