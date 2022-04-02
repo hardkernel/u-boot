@@ -8,7 +8,7 @@ set -e
 
 MKIMAGE="./tools/mkimage"
 UNPACK="./scripts/fit-unpack.sh"
-OFFS="0xa00"
+OFFS="0x1000"
 OUT="out/repack"
 ITB="out/repack/image.itb"
 ITS="out/repack/image.its"
