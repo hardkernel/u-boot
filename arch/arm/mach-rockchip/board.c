@@ -989,9 +989,12 @@ int fit_write_trusty_rollback_index(u32 trusty_index)
 {
 	if (!trusty_index)
 		return 0;
-
+#ifdef CONFIG_OPTEE_CLIENT
 	return trusty_write_rollback_index(FIT_ROLLBACK_INDEX_LOCATION,
 					   (u64)trusty_index);
+#else
+	return 0;
+#endif
 }
 #endif
 
