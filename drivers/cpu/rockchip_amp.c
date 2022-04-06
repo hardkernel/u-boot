@@ -300,8 +300,15 @@ static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 		      (u32)read_mpidr() & 0x0fff, g_bootcpu.state, g_bootcpu.entry);
 		cleanup_before_linux();
 		printf("OK\n");
+#ifdef CONFIG_ARM64
 		armv8_switch_to_el2(0, 0, 0, g_bootcpu.state, (u64)g_bootcpu.entry,
 		     g_bootcpu.arch == IH_ARCH_ARM ? ES_TO_AARCH32 : ES_TO_AARCH64);
+#else
+		void (*armv7_entry)(void);
+
+		armv7_entry = (void (*)(void))g_bootcpu.entry;
+		armv7_entry();
+#endif
 	}
 
 	/* return: boot cpu continue to boot linux */
