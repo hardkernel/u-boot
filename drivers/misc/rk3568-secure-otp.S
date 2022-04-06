@@ -2111,8 +2111,8 @@ rk3568_secure_otp_read:
 	blr	x4
 .LVL221:
 	.loc 1 161 0
-	sub	w0, w20, #224
-	cmp	w0, 7
+	sub	w0, w20, #112
+	cmp	w0, 3
 	bhi	.L58
 	.loc 1 162 0
 	mov	w1, 0
