@@ -389,6 +389,10 @@ function fit_gen_boot_itb()
 				echo "ERROR: No arg \"--rollback-index-boot <n>\""
 				exit 1
 			fi
+			if ! grep -q '^CONFIG_OPTEE_CLIENT=y' .config ; then
+				echo "ERROR: Don't support \"--rollback-index-boot <n>\""
+				exit 1
+			fi
 		fi
 
 		# fixup
@@ -469,6 +473,10 @@ function fit_gen_recovery_itb()
 			ARG_ROLLBACK_PROTECT="y"
 			if [ -z ${ARG_ROLLBACK_IDX_RECOVERY} ]; then
 				echo "ERROR: No arg \"--rollback-index-recovery <n>\""
+				exit 1
+			fi
+			if ! grep -q '^CONFIG_OPTEE_CLIENT=y' .config ; then
+				echo "ERROR: Don't support \"--rollback-index-recovery <n>\""
 				exit 1
 			fi
 		fi
