@@ -203,10 +203,10 @@ int get_disk_guid(struct blk_desc * dev_desc, char *guid)
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
 			 gpt_head, &gpt_pte) != 1) {
-		printf("%s: *** ERROR: Invalid GPT ***\n", __func__);
+		debug("%s: *** ERROR: Invalid GPT ***\n", __func__);
 		if (is_gpt_valid(dev_desc, dev_desc->lba - 1,
 				 gpt_head, &gpt_pte) != 1) {
-			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+			debug("%s: *** ERROR: Invalid Backup GPT ***\n",
 			       __func__);
 			return -EINVAL;
 		} else {
@@ -232,10 +232,10 @@ void part_print_efi(struct blk_desc *dev_desc)
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
 			 gpt_head, &gpt_pte) != 1) {
-		printf("%s: *** ERROR: Invalid GPT ***\n", __func__);
+		debug("%s: *** ERROR: Invalid GPT ***\n", __func__);
 		if (is_gpt_valid(dev_desc, (dev_desc->lba - 1),
 				 gpt_head, &gpt_pte) != 1) {
-			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+			debug("%s: *** ERROR: Invalid Backup GPT ***\n",
 			       __func__);
 			return;
 		} else {
@@ -306,10 +306,10 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
 			gpt_head, &gpt_pte) != 1) {
-		printf("%s: *** ERROR: Invalid GPT ***\n", __func__);
+		debug("%s: *** ERROR: Invalid GPT ***\n", __func__);
 		if (is_gpt_valid(dev_desc, (dev_desc->lba - 1),
 				 gpt_head, &gpt_pte) != 1) {
-			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+			debug("%s: *** ERROR: Invalid Backup GPT ***\n",
 			       __func__);
 			return -1;
 		} else {
@@ -861,13 +861,13 @@ int gpt_verify_headers(struct blk_desc *dev_desc, gpt_header *gpt_head,
 	if (is_gpt_valid(dev_desc,
 			 GPT_PRIMARY_PARTITION_TABLE_LBA,
 			 gpt_head, gpt_pte) != 1) {
-		printf("%s: *** ERROR: Invalid GPT ***\n",
+		debug("%s: *** ERROR: Invalid GPT ***\n",
 		       __func__);
 		return -1;
 	}
 	if (is_gpt_valid(dev_desc, (dev_desc->lba - 1),
 			 gpt_head, gpt_pte) != 1) {
-		printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+		debug("%s: *** ERROR: Invalid Backup GPT ***\n",
 		       __func__);
 		return -1;
 	}
@@ -1134,13 +1134,13 @@ static int is_gpt_valid(struct blk_desc *dev_desc, u64 lba,
 
 	/* Read MBR Header from device */
 	if (blk_dread(dev_desc, 0, 1, (ulong *)mbr) != 1) {
-		printf("*** ERROR: Can't read MBR header ***\n");
+		debug("*** ERROR: Can't read MBR header ***\n");
 		return 0;
 	}
 
 	/* Read GPT Header from device */
 	if (blk_dread(dev_desc, (lbaint_t)lba, 1, pgpt_head) != 1) {
-		printf("*** ERROR: Can't read GPT header ***\n");
+		debug("*** ERROR: Can't read GPT header ***\n");
 		return 0;
 	}
 
