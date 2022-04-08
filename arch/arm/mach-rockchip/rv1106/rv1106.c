@@ -15,6 +15,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CORE_GRF_CACHE_PERI_ADDR_START	0x0024
 #define CORE_GRF_CACHE_PERI_ADDR_END	0x0028
 
+#define PERI_GRF_BASE			0xff000000
+#define PERI_GRF_USBPHY_CON0		0x0050
+
 #define PERI_SGRF_BASE			0xff070000
 #define PERI_SGRF_FIREWALL_CON0		0x0020
 #define PERI_SGRF_FIREWALL_CON1		0x0024
@@ -41,6 +44,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define CORECRU_BASE			0xff3b8000
 #define CORECRU_CORESOFTRST_CON01	0xa04
+
+#define USBPHY_APB_BASE			0xff3e0000
+#define USBPHY_FSLS_DIFF_RECEIVER	0x0100
 
 #define GPIO0_IOC_BASE			0xFF388000
 #define GPIO1_IOC_BASE			0xFF538000
@@ -344,6 +350,15 @@ int arch_cpu_init(void)
 
 	/* Set fspi clk 6mA */
 	writel(0x0f000700, GPIO4_IOC_BASE + GPIO4_IOC_GPIO4B_DS0);
+
+	/*
+	 * Set the USB2 PHY in suspend mode and turn off the
+	 * USB2 PHY FS/LS differential receiver to save power:
+	 * VCC1V8_USB : reduce 3.8 mA
+	 * VDD_0V9 : reduce 4.4 mA
+	 */
+	writel(0x01ff01d1, PERI_GRF_BASE + PERI_GRF_USBPHY_CON0);
+	writel(0x00000000, USBPHY_APB_BASE + USBPHY_FSLS_DIFF_RECEIVER);
 
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
 	/* Pinctrl is disabled, set sdmmc0 iomux here */
