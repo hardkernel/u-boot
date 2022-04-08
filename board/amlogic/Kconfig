@@ -274,6 +274,11 @@ config ODROID_N2
 	select ODROID_COMMON
 	default n
 
+config ODROID_N2L
+	bool "Support Hardkernel ODROID-N2L board"
+	select ODROID_COMMON
+	default n
+
 config ODROID_C4
 	bool "Support Hardkernel ODROID-C4 board"
 	select ODROID_COMMON
@@ -537,6 +542,10 @@ source "board/hardkernel/odroidc3/Kconfig"
 endif
 
 if ODROID_N2
+source "board/hardkernel/odroidn2/Kconfig"
+endif
+
+if ODROID_N2L
 source "board/hardkernel/odroidn2/Kconfig"
 endif
 

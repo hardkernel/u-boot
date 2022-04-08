@@ -72,6 +72,13 @@ static unsigned int get_hw_revision(void)
 	} else if (IS_RANGE(adc, 500, 520)) {
 		hwrev = BOARD_REVISION(2021,  1, 21);
 	}
+#elif defined(CONFIG_ODROID_N2L)
+	/* ODROID-N2lite rev_0.1 */
+	if (IS_RANGE(adc, 410, 430)) {		/* avg : 419 */
+		hwrev = BOARD_REVISION(2022, 2, 18);
+	} else {
+		hwrev = BOARD_REVISION(2022, 2, 18);
+	}
 #elif defined(CONFIG_ODROID_C4)
 	if (IS_RANGE(adc, 80, 100))	/* avg : 90 */
 		hwrev = BOARD_REVISION(2020, 1, 29);
@@ -105,7 +112,7 @@ void board_set_dtbfile(const char *format)
 	setenv("fdtfile", s);
 }
 
-#if defined(CONFIG_ODROID_N2)
+#if defined(CONFIG_ODROID_N2) || defined(CONFIG_ODROID_N2L)
 int board_is_odroidn2(void)
 {
 	int hwrev = board_revision();
@@ -120,6 +127,14 @@ int board_is_odroidn2plus(void)
 {
 	return !board_is_odroidn2();
 }
+
+int board_is_odroidn2l(void)
+{
+	int hwrev = board_revision();
+
+	return ((hwrev >= BOARD_REVISION(2022, 2, 18)) ? 1 : 0);
+}
+
 #elif defined(CONFIG_ODROID_C4)
 int board_is_odroidc4(void)
 {

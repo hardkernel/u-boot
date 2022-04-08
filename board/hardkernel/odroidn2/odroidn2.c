@@ -116,8 +116,10 @@ int board_eth_init(bd_t *bis)
 	dwmac_meson_cfg_drive_strength();
 	setup_net_chip_ext();
 #endif
+#if !defined(CONFIG_ODROID_N2L)
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
+#endif
 	return 0;
 }
 
@@ -278,9 +280,10 @@ static void gpio_set_vbus_power(char is_power_on)
 {
 	int ret;
 
+#if !defined(CONFIG_ODROID_N2L)
 	/* USB Host power enable/disable */
 	usbhost_set_power(is_power_on);
-
+#endif
 	/* usb otg power enable */
 	ret = gpio_request(CONFIG_USB_GPIO_PWR,
 			CONFIG_USB_GPIO_PWR_NAME);
@@ -416,9 +419,13 @@ int board_late_init(void)
 	}
 #endif
 
+#if defined(CONFIG_ODROID_N2L)
+	setenv("variant", board_is_odroidn2l() ? "n2l" : "n2");
+	board_set_dtbfile("meson64_odroid%s.dtb");
+#else
 	setenv("variant", board_is_odroidn2plus() ? "n2_plus" : "n2");
 	board_set_dtbfile("meson64_odroid%s.dtb");
-
+#endif
 	/* boot logo display - 1080p60hz */
 	run_command("showlogo", 0);
 
