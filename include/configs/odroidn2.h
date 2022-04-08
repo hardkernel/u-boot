@@ -25,4 +25,12 @@
 	#define CONFIG_USB_GPIO_PWR_NAME	"GPIOH_6"
 #endif
 
+#if defined(CONFIG_ODROID_N2L)
+#define CONFIG_ETHERNET_NONE
+#undef ETHERNET_EXTERNAL_PHY
+#undef ETHERNET_INTERNAL_PHY
+
+#undef CONFIG_AML_CVBS
+#endif
+
 #endif
