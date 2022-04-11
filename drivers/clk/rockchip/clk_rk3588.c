@@ -1585,6 +1585,9 @@ static ulong rk3588_clk_get_rate(struct clk *clk)
 	case DCLK_DECOM:
 		rate = rk3588_mmc_get_clk(priv, clk->id);
 		break;
+	case TCLK_WDT0:
+		rate = OSC_HZ;
+		break;
 #ifndef CONFIG_SPL_BUILD
 	case CLK_AUX16M_0:
 	case CLK_AUX16M_1:
@@ -1730,6 +1733,9 @@ static ulong rk3588_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_SFC:
 	case DCLK_DECOM:
 		ret = rk3588_mmc_set_clk(priv, clk->id, rate);
+		break;
+	case TCLK_WDT0:
+		ret = OSC_HZ;
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case CLK_AUX16M_0:
