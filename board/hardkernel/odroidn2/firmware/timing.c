@@ -424,9 +424,15 @@ bl2_reg_t __bl2_reg[] = {
 	/* Enable 5V_EN */
 	{GPIO_O_EN_N_REG3,    (1 << 8),                (1 << 8),     0, BL2_INIT_STAGE_1, 0},
 	{GPIO_O_REG3,         (1 << 8),                (1 << 8),   0, BL2_INIT_STAGE_1, 0},
+#if defined(CONFIG_ODROID_N2L)
+	/* Enable CPUA ,control by GPIOAO_4 */
+	{AO_GPIO_O_EN_N,    (0 << 4) | (0 << 6),       (0x5 << 4),     0, BL2_INIT_STAGE_1, 0},
+	{AO_GPIO_O,         (0x5 << 4),                (0x5 << 4),   0, BL2_INIT_STAGE_1, 0},
+#else
 	/* Enable CPUA ,control by GPIOAO_4 */
 	{AO_GPIO_O_EN_N,    (0 << 4),                (1 << 4),     0, BL2_INIT_STAGE_1, 0},
 	{AO_GPIO_O,         (1 << 4),                (1 << 4),   0, BL2_INIT_STAGE_1, 0},
+#endif
 	/* Enable VCCK */
 	{AO_SEC_REG0,         (1 << 0),                (1 << 0),     0, BL2_INIT_STAGE_1, 0},
 	{AO_GPIO_O,           (1 << 31),               (1 << 31),    0, BL2_INIT_STAGE_1, 0},
