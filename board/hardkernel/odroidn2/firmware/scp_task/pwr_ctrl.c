@@ -74,6 +74,11 @@ static void power_off_at_24M(unsigned int suspend_from)
 		writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
 		writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
 	}
+#ifdef CONFIG_SYS_LED
+	/*N2-Lite set gpioao_6 low to power off sys_led(red)*/
+	writel(readl(AO_GPIO_O) & (~(1 << 6)), AO_GPIO_O);
+	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 6)), AO_GPIO_O_EN_N);
+#endif
 
 	/*set gpioao_4 low to power off vcck_a*/
 	writel(readl(AO_GPIO_O) & (~(1 << 4)), AO_GPIO_O);
