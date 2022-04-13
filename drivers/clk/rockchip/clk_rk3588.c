@@ -2008,16 +2008,6 @@ static void rk3588_clk_init(struct rk3588_clk_priv *priv)
 {
 	int ret, div;
 
-	priv->sync_kernel = false;
-	if (!priv->armclk_enter_hz) {
-		ret = rockchip_pll_set_rate(&rk3588_pll_clks[LPLL], priv->cru,
-					    LPLL, LPLL_HZ);
-		priv->armclk_enter_hz =
-			rockchip_pll_get_rate(&rk3588_pll_clks[LPLL],
-					      priv->cru, LPLL);
-		priv->armclk_init_hz = priv->armclk_enter_hz;
-	}
-
 	div = DIV_ROUND_UP(GPLL_HZ, 300 * MHz);
 	rk_clrsetreg(&priv->cru->clksel_con[38],
 		     ACLK_BUS_ROOT_SEL_MASK |
@@ -2058,11 +2048,21 @@ static int rk3588_clk_probe(struct udevice *dev)
 	int ret;
 	struct clk clk;
 
+	priv->sync_kernel = false;
+
 #ifdef CONFIG_SPL_BUILD
 	rockchip_pll_set_rate(&rk3588_pll_clks[B0PLL], priv->cru,
 			      B0PLL, LPLL_HZ);
 	rockchip_pll_set_rate(&rk3588_pll_clks[B1PLL], priv->cru,
 			      B1PLL, LPLL_HZ);
+	if (!priv->armclk_enter_hz) {
+		ret = rockchip_pll_set_rate(&rk3588_pll_clks[LPLL], priv->cru,
+					    LPLL, LPLL_HZ);
+		priv->armclk_enter_hz =
+			rockchip_pll_get_rate(&rk3588_pll_clks[LPLL],
+					      priv->cru, LPLL);
+		priv->armclk_init_hz = priv->armclk_enter_hz;
+	}
 #endif
 
 	ret = rockchip_get_scmi_clk(&clk.dev);
@@ -2076,14 +2076,26 @@ static int rk3588_clk_probe(struct udevice *dev)
 		printf("Failed to set spll\n");
 	}
 
+#ifndef CONFIG_SPL_BUILD
+	if (!priv->armclk_enter_hz) {
+		clk.id = SCMI_CLK_CPUL;
+		ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
+		if (ret < 0) {
+			printf("Failed to set cpubl\n");
+		} else {
+			priv->armclk_enter_hz = CPU_PVTPLL_HZ;
+			priv->armclk_init_hz = CPU_PVTPLL_HZ;
+		}
+	}
 	clk.id = SCMI_CLK_CPUB01;
-	ret = clk_set_rate(&clk, LPLL_HZ);
+	ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
 	if (ret < 0)
 		printf("Failed to set cpub01\n");
 	clk.id = SCMI_CLK_CPUB23;
-	ret = clk_set_rate(&clk, LPLL_HZ);
+	ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
 	if (ret < 0)
 		printf("Failed to set cpub23\n");
+#endif
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 	if (IS_ERR(priv->grf))
