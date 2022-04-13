@@ -62,6 +62,7 @@ int rk_board_late_init(void)
 	}
 
 	env_set("bootcmd", buf);
+	env_set("variant", "m1");	/* FIXME: if we have variant model */
 
 	return 0;
 }
