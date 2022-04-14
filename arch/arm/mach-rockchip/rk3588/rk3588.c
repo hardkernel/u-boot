@@ -44,8 +44,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU2_IOC_BASE			0xfd5f4000
 
 #define BUS_IOC_BASE			0xfd5f8000
+#define BUS_IOC_GPIO2A_IOMUX_SEL_L	0x40
 #define BUS_IOC_GPIO2B_IOMUX_SEL_L	0x48
 #define BUS_IOC_GPIO2D_IOMUX_SEL_L	0x58
+#define BUS_IOC_GPIO2D_IOMUX_SEL_H	0x5c
 #define BUS_IOC_GPIO3A_IOMUX_SEL_L	0x60
 
 #define VCCIO3_5_IOC_BASE		0xfd5fa000
@@ -862,12 +864,13 @@ int arch_cpu_init(void)
 	writel(0x03400340, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
 
 	if (readl(BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L) == 0x2222) {
+		/* Set the fspi m0 io ds level to 55ohm */
 		writel(0x00070002, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
 		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
 		writel(0x07000200, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
 	} else if (readl(BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L) == 0x1111) {
 		/*
-		 * set the emmc io drive strength:
+		 * Set the emmc io drive strength:
 		 * data and cmd: 50ohm
 		 * clock: 25ohm
 		 */
@@ -875,14 +878,21 @@ int arch_cpu_init(void)
 		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
 		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
 	} else if ((readl(BUS_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_L) & 0xf0ff) == 0x3033) {
+		/* Set the fspi m1 io ds level to 55ohm */
 		writel(0x33002200, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2A_DS_H);
 		writel(0x30332022, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_L);
 		writel(0x00030002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_H);
 	} else if (readl(BUS_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_L) == 0x5555) {
+		/* Set the fspi m2 io ds level to 55ohm */
 		writel(0x77772222, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_L);
 		writel(0x00700020, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_H);
 		writel(0x00070002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3C_DS_H);
 	}
+
+	/* Set emmc iomux for good extention if the emmc is not the boot device */
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
 
 	/*
 	 * Assert reset the pipephy0, pipephy1 and pipephy2,
