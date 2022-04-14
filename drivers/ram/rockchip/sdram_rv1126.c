@@ -3225,15 +3225,15 @@ static void pctl_modify_trfc(struct ddr_pctl_regs *pctl_regs,
 				tmp = pctl_regs->pctl[i][1];
 				/* t_xs_x32 */
 				tmp &= ~((u32)0x7f);
-				tmp |= ((txsnr + 63) / 64) & 0x7f;
+				tmp |= ((txsnr + 63) / 64 + 1) & 0x7f;
 
 				if (dram_type == DDR4) {
 					/* t_xs_abort_x32 */
 					tmp &= ~((u32)(0x7f << 16));
-					tmp |= (((txs_abort_fast + 63) / 64) & 0x7f) << 16;
+					tmp |= (((txs_abort_fast + 63) / 64 + 1) & 0x7f) << 16;
 					/* t_xs_fast_x32 */
 					tmp &= ~((u32)(0x7f << 24));
-					tmp |= (((txs_abort_fast + 63) / 64) & 0x7f) << 24;
+					tmp |= (((txs_abort_fast + 63) / 64 + 1) & 0x7f) << 24;
 				}
 
 				pctl_regs->pctl[i][1] = tmp;
