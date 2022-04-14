@@ -223,7 +223,7 @@ int board_mmc_init(bd_t	*bis)
 #ifdef CONFIG_SYS_I2C_AML
 struct aml_i2c_platform g_aml_i2c_plat[] = {
 	{
-		.wait_count         = 1000000,
+		.wait_count         = 100,
 		.wait_ack_interval  = 5,
 		.wait_read_interval = 5,
 		.wait_xfer_interval = 5,
@@ -408,7 +408,7 @@ int board_late_init(void)
 		setenv("hdmimode", "1024x600p60hz");
 		setenv("outputmode", "1024x600p60hz");
 	} else {
-		printf(" lt8619c hdmi_to_lcd device not found.!\n");
+		printf("lt8619c hdmi_to_lcd device not found.!\n");
 	}
 #endif
 
