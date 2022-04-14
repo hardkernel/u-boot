@@ -631,9 +631,7 @@ static int initr_malloc_bootparams(void)
 
 static int initr_jumptable(void)
 {
-#ifndef CONFIG_ROCKCHIP_IMAGE_TINY
 	jumptable_init();
-#endif
 	return 0;
 }
 
