@@ -520,8 +520,8 @@ int aml_i2c_xfer(struct i2c_msg *msgs,
 	if (ret == 0)
 		return num;
 	else {
-		printf("[aml_i2c_xfer] error ret = %d \t", ret);
-		printf("i2c master %s current slave addr is 0x%x\n",
+		AML_I2C_DBG(1, "[aml_i2c_xfer] error ret = %d \t", ret);
+		AML_I2C_DBG(1, "i2c master %s current slave addr is 0x%x\n",
 						i2c->master_no?"a":"b", i2c->cur_slave_addr);
 		return ret;
 	}
