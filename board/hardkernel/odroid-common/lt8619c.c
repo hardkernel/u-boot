@@ -121,8 +121,10 @@ static int lt8619c_reg_write(uint8_t reg, uint8_t data)
 	outbuf[0] = reg;
 	outbuf[1] = data;
 
-	if (aml_i2c_xfer(&msg, 1) != 1)
+	if (aml_i2c_xfer(&msg, 1) != 1) {
 		printf("i2c 0x%02x 0x%02x write failed\n", reg, data);
+		return -1;
+	}
 
 	return 0;
 }
@@ -150,7 +152,8 @@ static bool lt8619c_check_chipid(void)
 {
 	unsigned int chip_id[3];
 
-	lt8619c_reg_write(0xff, 0x60);
+	if (lt8619c_reg_write(0xff, 0x60) < 0)
+		return false;
 
 	chip_id[0] = lt8619c_reg_read(0x00);
 	chip_id[1] = lt8619c_reg_read(0x01);
