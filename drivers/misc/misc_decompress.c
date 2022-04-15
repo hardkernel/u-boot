@@ -197,6 +197,8 @@ int misc_decompress_cleanup(void)
 	for (uclass_find_first_device(UCLASS_MISC, &dev);
 	     dev;
 	     uclass_find_next_device(&dev)) {
+		if (!device_active(dev))
+			continue;
 		ops = device_get_ops(dev);
 		if (!ops || !ops->ioctl)
 			continue;
