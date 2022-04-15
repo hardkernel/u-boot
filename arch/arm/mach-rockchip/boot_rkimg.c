@@ -480,7 +480,7 @@ static int rockchip_read_distro_dtb(void *fdt_addr)
 
 	devplist = env_get("devplist");
 	if (!devplist)
-		return -ENODEV;
+		devplist = "1";
 
 	devtype = env_get("devtype");
 	devnum = env_get("devnum");
