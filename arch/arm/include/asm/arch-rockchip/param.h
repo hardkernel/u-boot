@@ -46,14 +46,24 @@ struct memblock param_parse_optee_mem(void);
 struct memblock param_parse_common_resv_mem(void);
 
 /**
- * param_parse_bootdev() - Parse boot device info.
+ * param_parse_atags_bootdev() - Parse boot device info from atags.
  *
  * @devtype: out data to store dev type
  * @devnum: out data to store dev number
  *
  * @return 0 on success, otherwise failed.
  */
-int param_parse_bootdev(char **devtype, char **devtnum);
+int param_parse_atags_bootdev(char **devtype, char **devtnum);
+
+/**
+ * param_parse_assign_bootdev() - Parse boot device info from configuration.
+ *
+ * @devtype: out data to store dev type
+ * @devnum: out data to store dev number
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int param_parse_assign_bootdev(char **devtype, char **devtnum);
 
 /**
  * param_parse_pre_serial() - Parse and Init serial according to pre-loader serial.

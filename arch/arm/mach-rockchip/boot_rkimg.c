@@ -20,6 +20,7 @@
 #include <mmc.h>
 #include <malloc.h>
 #include <nvme.h>
+#include <scsi.h>
 #include <stdlib.h>
 #include <sysmem.h>
 #include <asm/io.h>
@@ -49,97 +50,81 @@ __weak int rk_board_scan_bootdev(void)
 	return run_command_list(devtype_num_set, -1, 0);
 }
 
+static int bootdev_init(const char *devtype, const char *devnum)
+{
+#ifdef CONFIG_MMC
+	if (!strcmp("mmc", devtype))
+		mmc_initialize(gd->bd);
+#endif
+#ifdef CONFIG_NVME
+	if (!strcmp("nvme", devtype)) {
+		pci_init();
+		if (nvme_scan_namespace())
+			return -ENODEV;
+	}
+#endif
+#if defined(CONFIG_SCSI) && defined(CONFIG_CMD_SCSI) && defined(CONFIG_AHCI)
+	if (!strcmp("scsi", devtype)) {
+		if (scsi_scan(true))
+			return -ENODEV;
+	}
+#endif
+	/* Ok, let's test whether we can get the expected boot device or not */
+	if (!blk_get_devnum_by_typename(devtype, atoi(devnum)))
+		return -ENODEV;
+
+	env_set("devtype", devtype);
+	env_set("devnum", devnum);
+
+	return 0;
+}
+
+/*
+ * Priority: configuration > atags > scan list.
+ */
 static void boot_devtype_init(void)
 {
 	char *devtype = NULL, *devnum = NULL;
+	char *src = "scan";
 	static int done;	/* static */
-	int atags_en = 0;
 	int ret;
 
 	if (done)
 		return;
 
-	/*
-	 * The loader stage does not support SATA, and the boot device
-	 * can only be other storage. Therefore, it is necessary to
-	 * initialize the SATA device before judging the initialization
-	 * of atag boot device
-	 */
-#if defined(CONFIG_SCSI) && defined(CONFIG_CMD_SCSI) && defined(CONFIG_AHCI)
-	ret = run_command("scsi scan", 0);
-	if (!ret) {
-		ret = run_command("scsi dev 0", 0);
-		if (!ret) {
-			devtype = "scsi";
-			devnum = "0";
-			env_set("devtype", devtype);
-			env_set("devnum", devnum);
+	/* configuration */
+	if (!param_parse_assign_bootdev(&devtype, &devnum)) {
+		if (!bootdev_init(devtype, devnum)) {
+			src = "assign";
 			goto finish;
 		}
 	}
-#endif
 
-#ifdef CONFIG_NVME
-	struct udevice *udev;
-
-	pci_init();
-	ret = nvme_scan_namespace();
-	if (!ret) {
-		ret = blk_get_device(IF_TYPE_NVME, 0, &udev);
-		if (!ret) {
-			devtype = "nvme";
-			devnum = "0";
-			env_set("devtype", devtype);
-			env_set("devnum", devnum);
-			goto finish;
-		}
-	} else {
-		printf("Set nvme as boot storage fail ret=%d\n", ret);
-	}
-#endif
-
-	/* High priority: get bootdev from atags */
+	/* atags */
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
-	ret = param_parse_bootdev(&devtype, &devnum);
-	if (!ret) {
-		atags_en = 1;
-		env_set("devtype", devtype);
-		env_set("devnum", devnum);
-
-#ifdef CONFIG_MMC
-		if (!strcmp("mmc", devtype))
-			mmc_initialize(gd->bd);
-#endif
-		/*
-		 * For example, the pre-loader do not have mtd device,
-		 * and pass devtype is nand. Then U-Boot can not get
-		 * dev_desc when use mtd driver to read firmware. So
-		 * test the block dev is exist or not here.
-		 *
-		 * And the devtype & devnum maybe wrong sometimes, it
-		 * is better to test first.
-		 */
-		if (blk_get_devnum_by_typename(devtype, atoi(devnum)))
+	if (!param_parse_atags_bootdev(&devtype, &devnum)) {
+		if (!bootdev_init(devtype, devnum)) {
+			src = "atags";
 			goto finish;
+		}
 	}
 #endif
 
-	/* Low priority: if not get bootdev by atags, scan all possible */
+	/* scan list */
 #ifdef CONFIG_MMC
 	mmc_initialize(gd->bd);
 #endif
 	ret = rk_board_scan_bootdev();
 	if (ret) {
-		/* Set default dev type/num if command not valid */
+		/* Set default if all failed */
 		devtype = "mmc";
 		devnum = "0";
 		env_set("devtype", devtype);
 		env_set("devnum", devnum);
 	}
-
 finish:
 	done = 1;
-	printf("Bootdev%s: %s %s\n", atags_en ? "(atags)" : "",
+	printf("Bootdev(%s): %s %s\n", src,
 	       env_get("devtype"), env_get("devnum"));
 }
 

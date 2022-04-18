@@ -710,6 +710,14 @@ config RKIMG_ANDROID_BOOTMODE_LEGACY
 	  Rockchip set "androidboot.mode=" as "charger" or boot media for android,
 	  which is a rockchip private solution(SDK < 8.1) and deprecated.
 
+config ROCKCHIP_BOOTDEV
+	string "Set the boot device for multiple storage board"
+	default ""
+	help
+	  On the multiple storage on board, set this to determine what we really
+	  want to be the boot device, which contains kernel, rootfs and etc.
+	  Fall through to get from preloader or scan list when it's NULL.
+
 config ROCKCHIP_RESOURCE_IMAGE
 	bool "Enable support for rockchip resource image"
 	depends on RKIMG_BOOTLOADER

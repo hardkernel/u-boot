@@ -164,7 +164,26 @@ struct memblock param_parse_common_resv_mem(void)
 	return mem;
 }
 
-int param_parse_bootdev(char **devtype, char **devnum)
+int param_parse_assign_bootdev(char **devtype, char **devnum)
+{
+	char *bootdev_str = CONFIG_ROCKCHIP_BOOTDEV;
+	char *type, *num;
+
+	num = strchr(bootdev_str, ' ');
+	if (!num)
+		return -ENODEV;
+
+	type = strdup(bootdev_str);
+	type[num - bootdev_str] = 0;
+	num++;
+
+	*devtype = type;
+	*devnum = num;
+
+	return 0;
+}
+
+int param_parse_atags_bootdev(char **devtype, char **devnum)
 {
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	struct tag *t;
