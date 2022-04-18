@@ -19,16 +19,16 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/*
- * Table with supported baudrates (defined in config_xyz.h)
- */
-static const unsigned long baudrate_table[] = CONFIG_SYS_BAUDRATE_TABLE;
-
 #if !CONFIG_VAL(SYS_MALLOC_F_LEN)
 #error "Serial is required before relocation - define CONFIG_$(SPL_)SYS_MALLOC_F_LEN to make this work"
 #endif
 
 #ifndef CONFIG_DEBUG_UART_ALWAYS
+/*
+ * Table with supported baudrates (defined in config_xyz.h)
+ */
+static const unsigned long baudrate_table[] = CONFIG_SYS_BAUDRATE_TABLE;
+
 static int serial_check_stdout(const void *blob, struct udevice **devp)
 {
 	int node;
@@ -370,6 +370,7 @@ static int serial_stub_tstc(struct stdio_dev *sdev)
 }
 #endif
 
+#ifndef CONFIG_DEBUG_UART_ALWAYS
 /**
  * on_baudrate() - Update the actual baudrate when the env var changes
  *
@@ -430,6 +431,7 @@ static int on_baudrate(const char *name, const char *value, enum env_op op,
 	}
 }
 U_BOOT_ENV_CALLBACK(baudrate, on_baudrate);
+#endif
 
 #if CONFIG_IS_ENABLED(SERIAL_PRESENT)
 static int serial_post_probe(struct udevice *dev)
