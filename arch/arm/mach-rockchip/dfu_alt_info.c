@@ -25,12 +25,12 @@ static char *get_dfu_alt(char *interface, char *devstr)
 	}
 
 	switch (dev_desc->if_type) {
-#ifdef CONFIG_MMC
+#ifdef CONFIG_DFU_MMC
 	case IF_TYPE_MMC:
 		alt_boot = DFU_ALT_BOOT_EMMC;
 		break;
 #endif
-#ifdef CONFIG_MTD_BLK
+#ifdef CONFIG_DFU_MTD
 	case IF_TYPE_MTD:
 #ifdef CONFIG_ANDROID_AB
 		rk_avb_get_current_slot(current_slot);
@@ -48,7 +48,7 @@ static char *get_dfu_alt(char *interface, char *devstr)
 		alt_boot = DFU_ALT_BOOT_MTD;
 #endif
 		break;
-#endif /* CONFIG_MTD_BLK */
+#endif /* CONFIG_DFU_MTD */
 	default:
 		printf("[dfu ERROR]:Boot device type is invalid!\n");
 		return NULL;
