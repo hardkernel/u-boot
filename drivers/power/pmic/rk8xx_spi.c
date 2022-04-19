@@ -28,6 +28,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK806_REG_H			0x00
 
 #define RK806_SYS_CFG1			0x5f
+#define RK806_PWRCTRL_CONFIG0		0x62
+#define RK806_PWRCTRL_CONFIG1		0x63
+#define RK806_VSEL_CTR_SEL0		0x64
+#define RK806_DVS_CTR_SEL4		0x6e
 #define RK806_SYS_CFG3			0x72
 #define RK806_PWRON_KEY			0x76
 #define RK806_INT_STS0			0x77
@@ -35,11 +39,18 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK806_INT_STS1			0x79
 #define RK806_INT_MSK1			0x7A
 #define RK806_GPIO_INT_CONFIG		0x7B
+#define RK806_ON_SOURCE			0xf4
+#define RK806_OFF_SOURCE		0xf5
+
 #define RK806_IRQ_PWRON_FALL_MSK	BIT(0)
 #define RK806_IRQ_PWRON_RISE_MSK	BIT(1)
 #define RK806_DEV_OFF			BIT(0)
 #define RK806_RST_MODE1			0x01
 #define RK806_RST_MODE2			0x02
+#define RK806_PWRCTRL_FUN_MSK		0x88
+#define RK806_VSEL_CTRL_MSK		0xcc
+#define RK806_VSEL_PWRCTRL1		0x11
+#define RK806_ENABLE_PWRCTRL		0x04
 #define VERSION_AB			0x01
 
 #if CONFIG_IS_ENABLED(IRQ)
@@ -254,6 +265,7 @@ static int rk8xx_spi_probe(struct udevice *dev)
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	struct udevice *spi = dev_get_parent(dev);
 	struct spi_slave *slave = NULL;
+	u8 on_source, off_source;
 	u8 msb, lsb, value = 0;
 	int ret;
 
@@ -283,6 +295,10 @@ static int rk8xx_spi_probe(struct udevice *dev)
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
 	printf("spi%d: RK%x%x: %d\n", spi->seq, msb, (lsb >> 4), lsb & 0x0f);
+
+	rk806_spi_read(dev, RK806_ON_SOURCE, &on_source, 1);
+	rk806_spi_read(dev, RK806_OFF_SOURCE, &off_source, 1);
+	printf("ON=0x%02x, OFF=0x%02x\n", on_source, off_source);
 
 	ret = rk806_spi_read(dev, RK806_HW_VER, &value, 1);
 	if (ret)
@@ -351,11 +367,101 @@ static int rk8xx_spi_shutdown(struct udevice *dev)
 	return 0;
 }
 
+static int rk806_suspend(struct udevice *dev)
+{
+	int ret = 0;
+	u8 i, val;
+
+	ret = rk806_spi_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+	val &= RK806_PWRCTRL_FUN_MSK;
+	ret = rk806_spi_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+
+	ret = rk806_spi_read(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+	if (ret)
+		return ret;
+	val &= RK806_PWRCTRL_FUN_MSK;
+	ret = rk806_spi_write(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+	if (ret)
+		return ret;
+
+	for (i = RK806_VSEL_CTR_SEL0; i <= 0x6e; i++) {
+		ret = rk806_spi_read(dev, i, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_VSEL_CTRL_MSK;
+		ret = rk806_spi_write(dev, i, &val, 1);
+		if (ret)
+			return ret;
+	}
+
+	ret = rk806_spi_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+	val &= RK806_PWRCTRL_FUN_MSK;
+	val |= RK806_ENABLE_PWRCTRL;
+	ret = rk806_spi_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+
+	for (i = RK806_VSEL_CTR_SEL0; i <= RK806_DVS_CTR_SEL4; i++) {
+		ret = rk806_spi_read(dev, i, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_VSEL_CTRL_MSK;
+		val |= RK806_VSEL_PWRCTRL1;
+		ret = rk806_spi_write(dev, i, &val, 1);
+		if (ret)
+			return ret;
+	}
+
+	return ret;
+}
+
+static int rk806_resume(struct udevice *dev)
+{
+	int ret = 0;
+	u8 i, val;
+
+	for (i = RK806_VSEL_CTR_SEL0; i <= RK806_DVS_CTR_SEL4; i++) {
+		ret = rk806_spi_read(dev, i, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_VSEL_CTRL_MSK;
+		ret = rk806_spi_write(dev, i, &val, 1);
+		if (ret)
+			return ret;
+	}
+
+	ret = rk806_spi_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+	val &= RK806_PWRCTRL_FUN_MSK;
+	ret = rk806_spi_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+	if (ret)
+		return ret;
+
+	ret = rk806_spi_read(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+	if (ret)
+		return ret;
+	val &= RK806_PWRCTRL_FUN_MSK;
+	ret = rk806_spi_write(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+	if (ret)
+		return ret;
+
+	return ret;
+}
+
 static struct dm_pmic_ops rk8xx_spi_ops = {
 	.reg_count = rk8xx_spi_reg_count,
 	.read = rk806_spi_read,
 	.write = rk806_spi_write,
 	.shutdown = rk8xx_spi_shutdown,
+	.suspend = rk806_suspend,
+	.resume = rk806_resume,
 };
 
 static const struct udevice_id rk8xx_spi_ids[] = {

@@ -36,6 +36,11 @@
 #define RK806_POWER_EN(n)		(0x00 + n)
 #define RK806_NLDO_EN(n)		(0x03 + n)
 #define RK806_PLDO_EN(n)		(0x04 + n)
+
+#define RK806_BUCK_SUSPEND_EN		0x06
+#define RK806_NLDO_SUSPEND_EN		0x07
+#define RK806_PLDO_SUSPEND_EN		0x08
+
 #define RK806_RAMP_RATE_MASK1		0xc0
 #define RK806_RAMP_RATE_REG1(n)		(0x10 + n)
 #define RK806_RAMP_RATE_REG1_8		0xeb
@@ -336,12 +341,43 @@ static int _buck_set_ramp_delay(struct udevice *pmic, int buck, u32 ramp_delay)
 
 static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
 {
-	return 0;
+	uint mask;
+	int ret;
+
+	if (buck <= 7) {
+		mask = 1 << buck;
+		ret = pmic_clrsetbits(pmic, RK806_BUCK_SUSPEND_EN, mask,
+				      enable ? mask : 0);
+	} else {
+		if (buck == 8)
+			mask = 0x40;
+		else
+			mask = 0x80;
+		ret = pmic_clrsetbits(pmic, RK806_NLDO_SUSPEND_EN, mask,
+				      enable ? mask : 0);
+	}
+
+	return ret;
 }
 
 static int _buck_get_suspend_enable(struct udevice *pmic, int buck)
 {
-	return 0;
+	uint mask, val;
+	int ret;
+
+	if (buck <= 7) {
+		mask = 1 << buck % 7;
+		val = pmic_reg_read(pmic, RK806_BUCK_SUSPEND_EN);
+	} else {
+		mask = 1 << ((buck - 7) + 6);
+		val = pmic_reg_read(pmic, RK806_NLDO_SUSPEND_EN);
+	}
+
+	if (val < 0)
+		return val;
+	ret = val & mask ? 1 : 0;
+
+	return ret;
 }
 
 static const struct rk8xx_reg_info *get_ldo_reg(struct udevice *pmic,
@@ -515,12 +551,29 @@ static int _pldo_set_enable(struct udevice *pmic, int pldo, bool enable)
 
 static int _ldo_set_suspend_enable(struct udevice *pmic, int ldo, bool enable)
 {
-	return 0;
+	uint mask;
+	int ret;
+
+	mask = 1 << ldo;
+	ret = pmic_clrsetbits(pmic, RK806_NLDO_SUSPEND_EN, mask,
+			      enable ? mask : 0);
+
+	return ret;
 }
 
 static int _ldo_get_suspend_enable(struct udevice *pmic, int ldo)
 {
-	return 0;
+	uint mask, val;
+	int ret;
+
+	mask = 1 << ldo;
+	val = pmic_reg_read(pmic, RK806_NLDO_SUSPEND_EN);
+
+	if (val < 0)
+		return val;
+	ret = val & mask ? 1 : 0;
+
+	return ret;
 }
 
 static int buck_get_value(struct udevice *dev)
@@ -790,6 +843,90 @@ static int pldo_get_enable(struct udevice *dev)
 	return _pldo_get_enable(dev->parent, ldo);
 }
 
+static int pldo_set_suspend_value(struct udevice *dev, int uvolt)
+{
+	int ldo = dev->driver_data - 1;
+	const struct rk8xx_reg_info *info = get_pldo_reg(dev->parent, ldo, uvolt);;
+	int mask = info->vsel_mask;
+	int val;
+
+	if (info->vsel_sleep_reg == NA)
+		return -EINVAL;
+
+	if (info->step_uv == 0)
+		val = info->min_sel;
+	else
+		val = ((uvolt - info->min_uv) / info->step_uv) + info->min_sel;
+
+	return pmic_clrsetbits(dev->parent, info->vsel_sleep_reg, mask, val);
+}
+
+static int pldo_get_suspend_value(struct udevice *dev)
+{
+	int ldo = dev->driver_data - 1;
+	const struct rk8xx_reg_info *info = get_pldo_reg(dev->parent, ldo, 0);
+	int mask = info->vsel_mask;
+	int val, ret;
+
+	if (info->vsel_sleep_reg == NA)
+		return -EINVAL;
+
+	ret = pmic_reg_read(dev->parent, info->vsel_sleep_reg);
+	if (ret < 0)
+		return ret;
+
+	val = ret & mask;
+
+	return info->min_uv + val * info->step_uv;
+}
+
+static int _pldo_set_suspend_enable(struct udevice *pmic, int ldo, bool enable)
+{
+	uint mask;
+	int ret;
+
+	if (ldo < 5)
+		mask = 1 << (ldo + 1);
+	else
+		mask = 1;
+	ret = pmic_clrsetbits(pmic, RK806_PLDO_SUSPEND_EN, mask,
+			      enable ? mask : 0);
+
+	return ret;
+}
+
+static int _pldo_get_suspend_enable(struct udevice *pmic, int ldo)
+{
+	uint mask, val;
+	int ret;
+
+	if (ldo < 5)
+		mask = 1 << (ldo + 1);
+	else
+		mask = 1;
+	val = pmic_reg_read(pmic, RK806_PLDO_SUSPEND_EN);
+
+	if (val < 0)
+		return val;
+	ret = val & mask ? 1 : 0;
+
+	return ret;
+}
+
+static int pldo_set_suspend_enable(struct udevice *dev, bool enable)
+{
+	int ldo = dev->driver_data - 1;
+
+	return _pldo_set_suspend_enable(dev->parent, ldo, enable);
+}
+
+static int pldo_get_suspend_enable(struct udevice *dev)
+{
+	int ldo = dev->driver_data - 1;
+
+	return _pldo_get_suspend_enable(dev->parent, ldo);
+}
+
 static int rk8xx_buck_probe(struct udevice *dev)
 {
 	struct dm_regulator_uclass_platdata *uc_pdata;
@@ -849,8 +986,12 @@ static const struct dm_regulator_ops rk8xx_ldo_ops = {
 static const struct dm_regulator_ops rk8xx_pldo_ops = {
 	.get_value  = pldo_get_value,
 	.set_value  = pldo_set_value,
+	.set_suspend_value = pldo_set_suspend_value,
+	.get_suspend_value = pldo_get_suspend_value,
 	.get_enable = pldo_get_enable,
 	.set_enable = pldo_set_enable,
+	.set_suspend_enable = pldo_set_suspend_enable,
+	.get_suspend_enable = pldo_get_suspend_enable,
 };
 
 U_BOOT_DRIVER(rk8xx_spi_buck) = {
