@@ -19,12 +19,15 @@
 #endif
 #include "../../../drivers/video/drm/rockchip_display.h"
 #include <environment.h>
+#include <fdt_support.h>
 
 extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
 extern void *get_display_buffer(int size);
 
 DECLARE_GLOBAL_DATA_PTR;
+
+static char *panel = NULL;
 
 #ifdef CONFIG_USB_DWC3
 static struct dwc3_device dwc3_device_data = {
@@ -100,8 +103,27 @@ int board_early_init_r(void)
 
 	snprintf(cmd, sizeof(cmd), "sf read 0x%p 0x%p 0x%p\n",
 			env, (void*)CONFIG_ENV_OFFSET, (void*)CONFIG_ENV_SIZE);
-	if (run_command(cmd, 0) == 0)
-		env_import(env, 1);
+	if (run_command(cmd, 0) == 0) {
+		env_t *ep = (env_t *)env;
+		uint32_t crc;
+
+		memcpy(&crc, &ep->crc, sizeof(crc));
+		if (crc32(0, ep->data, ENV_SIZE) == crc) {
+			struct hsearch_data env_htab = {
+				.change_ok = env_flags_validate,
+			};
+
+			if (himport_r(&env_htab, env, ENV_SIZE, '\0', 0, 0, 0, NULL)) {
+				ENTRY e, *ep;
+
+				e.key = "panel";
+				e.data = NULL;
+
+				hsearch_r(e, FIND, &ep, &env_htab, 0);
+				panel = ep->data;
+			}
+		}
+	}
 
 	return 0;
 }
@@ -119,6 +141,20 @@ int board_read_dtb_file(void *fdt_addr)
 
 	if (do_cramfs_load(NULL, 0, ARRAY_SIZE(argv), argv))
 		return 1;
+
+	if (panel) {
+		snprintf(buf, sizeof(buf), "%s.dtbo", panel);
+
+		argv[1] = env_get("loadaddr");
+		argv[2] = buf;
+
+		if (do_cramfs_load(NULL, 0, ARRAY_SIZE(argv), argv) == 0) {
+			ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
+
+			fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
+			fdt_overlay_apply_verbose(fdt_addr, (void *)fdt_dtbo);
+		}
+	}
 
 	return fdt_check_header(fdt_addr);
 }
