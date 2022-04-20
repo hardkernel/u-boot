@@ -445,7 +445,6 @@ static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
 static int part_test_efi(struct blk_desc *dev_desc)
 {
 	ALLOC_CACHE_ALIGN_BUFFER_PAD(legacy_mbr, legacymbr, 1, dev_desc->blksz);
-	int ret = 0;
 
 	/* Read legacy MBR from block 0 and validate it */
 	if ((blk_dread(dev_desc, 0, 1, (ulong *)legacymbr) != 1)
@@ -489,10 +488,7 @@ static int part_test_efi(struct blk_desc *dev_desc)
 		if (part_efi_repair(dev_desc, b_gpt_pte, b_gpt_head,
 				    head_gpt_valid, backup_gpt_valid))
 			printf("Primary GPT repair fail!\n");
-	} else if (head_gpt_valid == 0 && backup_gpt_valid == 0) {
-		ret = -1;
 	}
-
 	free(h_gpt_pte);
 	h_gpt_pte = NULL;
 	free(h_gpt_head);
@@ -503,7 +499,7 @@ static int part_test_efi(struct blk_desc *dev_desc)
 	b_gpt_head = NULL;
 #endif
 #endif
-	return ret;
+	return 0;
 }
 
 /**
@@ -1083,18 +1079,6 @@ static int pmbr_part_valid(struct partition *part)
 static int is_pmbr_valid(legacy_mbr * mbr)
 {
 	int i = 0;
-
-#ifdef CONFIG_ARCH_ROCKCHIP
-	/*
-	 * In sd-update card, we use RKPARM partition in bootloader to load
-	 * firmware, and use MS-DOS partition in recovery to update system.
-	 * Now, we want to use gpt in bootloader and abandon the RKPARM
-	 * partition. So in new sd-update card, we write the MS-DOS partition
-	 * table and gpt to sd card. Then we must return 1 directly when test
-	 * the mbr sector otherwise the gpt is unavailable.
-	 */
-	return 1;
-#endif
 
 	if (!mbr || le16_to_cpu(mbr->signature) != MSDOS_MBR_SIGNATURE)
 		return 0;
