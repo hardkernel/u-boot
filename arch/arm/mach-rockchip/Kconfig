@@ -468,7 +468,6 @@ endif
 config ROCKCHIP_RV1106
 	bool "Support Rockchip RV1106"
 	select CPU_V7
-	select ARM_ZERO_CNTVOFF
 	select DEBUG_UART_BOARD_INIT
 	imply SUPPORT_SPL
 	imply SUPPORT_TPL
