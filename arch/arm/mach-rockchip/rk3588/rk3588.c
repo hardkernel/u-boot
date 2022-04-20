@@ -70,6 +70,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU1CRU_SOFTRST_CON03		0x0a0c
 #define PMU1CRU_SOFTRST_CON04		0x0a10
 
+#define HDMIRX_NODE_FDT_PATH		"/hdmirx-controller@fdee0000"
+#define RK3588_PHY_CONFIG		0xfdee00c0
+
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 
@@ -921,3 +924,19 @@ int arch_cpu_init(void)
 	return 0;
 }
 #endif
+
+int rk_board_fdt_fixup(const void *blob)
+{
+	int node;
+
+	/* set hdmirx to low power mode */
+	node = fdt_path_offset(blob, HDMIRX_NODE_FDT_PATH);
+	if (node >= 0) {
+		if (fdtdec_get_int(blob, node, "low-power-mode", 0)) {
+			printf("hdmirx low power mode\n");
+			writel(0x00000100, RK3588_PHY_CONFIG);
+		}
+	}
+
+	return 0;
+}
