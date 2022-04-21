@@ -2031,6 +2031,14 @@ static void rk3588_clk_init(struct rk3588_clk_priv *priv)
 			priv->gpll_hz = GPLL_HZ;
 	}
 
+#ifdef CONFIG_PCI
+	if (priv->ppll_hz != PPLL_HZ) {
+		ret = rockchip_pll_set_rate(&rk3588_pll_clks[PPLL], priv->cru,
+					    PPLL, PPLL_HZ);
+		priv->ppll_hz = rockchip_pll_get_rate(&rk3588_pll_clks[PPLL],
+						      priv->cru, PPLL);
+	}
+#endif
 	rk_clrsetreg(&priv->cru->clksel_con[9],
 		     ACLK_TOP_S400_SEL_MASK |
 		     ACLK_TOP_S200_SEL_MASK,
