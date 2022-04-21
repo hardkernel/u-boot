@@ -370,7 +370,7 @@ int amp_cpus_on(void)
 	if (part_get_info_by_name(dev_desc, AMP_PART, &part) < 0)
 		return -ENODEV;
 
-	fit = malloc(part.size * part.blksz);
+	fit = memalign(ARCH_DMA_MINALIGN, part.size * part.blksz);
 	if (!fit) {
 		AMP_E("No memory, please increase CONFIG_SYS_MALLOC_LEN\n");
 		return -ENOMEM;
