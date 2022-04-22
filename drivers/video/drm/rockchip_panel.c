@@ -532,6 +532,7 @@ static int rockchip_panel_probe(struct udevice *dev)
 static const struct udevice_id rockchip_panel_ids[] = {
 	{ .compatible = "simple-panel", },
 	{ .compatible = "simple-panel-dsi", },
+	{ .compatible = "odroid,hj080be31ia1", },
 	{}
 };
 
