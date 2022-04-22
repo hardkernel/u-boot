@@ -18,6 +18,7 @@
 #include <rksfc.h>
 #endif
 #include "../../../drivers/video/drm/rockchip_display.h"
+#include <environment.h>
 
 extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
@@ -72,6 +73,8 @@ int board_early_init_r(void)
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
 	int ret = -EINVAL;
 	char buf[16];
+	char cmd[256];
+	char env[CONFIG_ENV_SIZE];
 	int n;
 
 #if defined(CONFIG_RKSFC_NOR)
@@ -83,7 +86,6 @@ int board_early_init_r(void)
 		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);
 
 		if (file_exists("mmc", buf, "ODROIDBIOS.BIN", FS_TYPE_ANY)) {
-			char cmd[256];
 			snprintf(cmd, sizeof(cmd),
 					"load mmc %s $cramfsaddr ODROIDBIOS.BIN", buf);
 			ret = run_command(cmd, 0);
@@ -92,11 +94,14 @@ int board_early_init_r(void)
 		}
 	}
 
-	if (ret) {
-		run_command_list( "sf probe\n"
-				"sf read $cramfsaddr 0x400000 0xc00000",
-				-1, 0);
-	}
+	run_command("sf probe", 0);
+	if (ret)
+		run_command("sf read $cramfsaddr 0x400000 0xc00000", 0);
+
+	snprintf(cmd, sizeof(cmd), "sf read 0x%p 0x%p 0x%p\n",
+			env, (void*)CONFIG_ENV_OFFSET, (void*)CONFIG_ENV_SIZE);
+	if (run_command(cmd, 0) == 0)
+		env_import(env, 1);
 
 	return 0;
 }
