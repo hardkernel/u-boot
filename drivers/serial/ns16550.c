@@ -335,6 +335,23 @@ static inline int _debug_uart_clrc(void)
 	else
 		com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
 
+	serial_dout(&com_port->fcr, UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT);
+
+	return 0;
+}
+
+static inline int _debug_uart_flushc(void)
+{
+	struct NS16550 *com_port;
+
+	if (gd && gd->flags & GD_FLG_DISABLE_CONSOLE)
+		return 0;
+
+	if (gd && gd->serial.addr)
+		com_port = (struct NS16550 *)gd->serial.addr;
+	else
+		com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
+
 	/*
 	 * Wait fifo flush.
 	 *
@@ -480,15 +497,7 @@ static int ns16550_serial_clear(struct udevice *dev)
 {
 	struct NS16550 *const com_port = dev_get_priv(dev);
 
-	/*
-	 * Wait fifo flush.
-	 *
-	 * UART_USR: bit2 trans_fifo_empty:
-	 *	0 = Transmit FIFO is not empty
-	 *	1 = Transmit FIFO is empty
-	 */
-	while (!(serial_in(&com_port->rbr + 0x1f) & 0x04))
-		;
+	serial_out(UART_FCR_CLEAR_RCVR | UART_FCR_CLEAR_XMIT, &com_port->fcr);
 
 	return 0;
 }

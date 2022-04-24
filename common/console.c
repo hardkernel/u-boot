@@ -459,10 +459,9 @@ void flushc(void)
 	if (!gd || gd->flags & GD_FLG_DISABLE_CONSOLE)
 		return;
 
-	if (gd->flags & GD_FLG_DEVINIT)
-		fclear(stdout);
-	else
-		serial_clear();
+#ifdef CONFIG_DEBUG_UART_NS16550
+	debug_uart_flushc();
+#endif
 }
 
 #define PRE_CONSOLE_FLUSHPOINT1_SERIAL			0

@@ -79,6 +79,7 @@ void printch(int ch);
 int debug_uart_getc(void);
 int debug_uart_tstc(void);
 int debug_uart_clrc(void);
+int debug_uart_flushc(void);
 int debug_uart_setbrg(void);
 
 /**
@@ -163,6 +164,11 @@ void printdec(uint value);
 	int debug_uart_clrc(void)\
 	{ \
 		return _debug_uart_clrc(); \
+	} \
+\
+	int debug_uart_flushc(void)\
+	{ \
+		return _debug_uart_flushc(); \
 	} \
 \
 	int debug_uart_setbrg(void)\
