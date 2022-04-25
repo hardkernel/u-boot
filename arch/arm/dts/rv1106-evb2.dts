@@ -69,5 +69,5 @@
 };
 
 &spi_nor {
-	spi-max-frequency = <118800000>;
+	spi-max-frequency = <125000000>;
 };
