@@ -72,6 +72,14 @@ static int rockchip_p3phy_rk3568_init(struct rockchip_p3phy_priv *priv)
 			     (0x1 << 15) | (0x1 << 31));
 	}
 
+	reset_deassert(&priv->p30phy);
+	udelay(5);
+
+	/* Updata RX VCO calibration controls */
+	writel(0x2800, priv->mmio + (0x104a << 2));
+	writel(0x2800, priv->mmio + (0x114a << 2));
+	udelay(10);
+
 	return 0;
 }
 
@@ -127,6 +135,9 @@ static int rockchip_p3phy_rk3588_init(struct rockchip_p3phy_priv *priv)
 		return -ETIMEDOUT;
 	}
 
+	reset_deassert(&priv->p30phy);
+	udelay(5);
+
 	return 0;
 }
 
@@ -156,9 +167,6 @@ static int rochchip_p3phy_init(struct phy *phy)
 		}
 
 	}
-
-	reset_deassert(&priv->p30phy);
-	udelay(5);
 
 	return 0;
 }
