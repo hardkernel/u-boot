@@ -85,8 +85,7 @@ static int rk860x_write(struct udevice *dev, uint reg, const uint8_t *buff,
 
 	ret = dm_i2c_write(dev, reg, buff, len);
 	if (ret) {
-		debug("%s: write reg 0x%02x failed, ret=%d\n",
-		      __func__, reg, ret);
+		dev_err(dev, "write reg[0x%02x] failed, ret=%d\n", reg, ret);
 		return ret;
 	}
 
@@ -99,27 +98,25 @@ static int rk860x_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 
 	ret = dm_i2c_read(dev, reg, buff, len);
 	if (ret) {
-		debug("%s: read reg 0x%02x failed, ret=%d\n",
-		      __func__, reg, ret);
+		dev_err(dev, "read reg[0x%02x] failed, ret=%d\n", reg, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-int rk860x_reg_read(struct udevice *dev, uint reg)
+static int rk860x_reg_read(struct udevice *dev, uint reg, u8 *val)
 {
-	u8 byte;
 	int ret;
 
 	debug("%s: reg=%x", __func__, reg);
-	ret = rk860x_read(dev, reg, &byte, 1);
-	debug(", value=%x, ret=%d\n", byte, ret);
+	ret = rk860x_read(dev, reg, val, 1);
+	debug(", value=%x, ret=%d\n", *val, ret);
 
-	return ret ? ret : byte;
+	return ret;
 }
 
-int rk860x_reg_write(struct udevice *dev, uint reg, uint value)
+static int rk860x_reg_write(struct udevice *dev, uint reg, uint value)
 {
 	u8 byte = value;
 	int ret;
@@ -131,15 +128,16 @@ int rk860x_reg_write(struct udevice *dev, uint reg, uint value)
 	return ret;
 }
 
-int  rk860x_clrsetbits(struct udevice *dev, uint reg, uint clr, uint set)
+static int  rk860x_clrsetbits(struct udevice *dev, uint reg, uint clr, uint set)
 {
-	u8 byte;
+	u8 byte, val;
 	int ret;
 
-	ret = rk860x_reg_read(dev, reg);
+	ret = rk860x_reg_read(dev, reg, &val);
 	if (ret < 0)
 		return ret;
-	byte = (ret & ~clr) | set;
+
+	byte = (val & ~clr) | set;
 
 	return rk860x_reg_write(dev, reg, byte);
 }
@@ -169,7 +167,8 @@ static int rk860x_regulator_set_enable(struct udevice *dev, bool enable)
 static int rk860x_regulator_get_enable(struct udevice *dev)
 {
 	struct rk860x_regulator_info *priv = dev_get_priv(dev);
-	int val;
+	u8 val;
+	int ret;
 
 	if (dm_gpio_is_valid(&priv->vsel_gpio)) {
 		if (priv->sleep_vsel_id)
@@ -178,7 +177,10 @@ static int rk860x_regulator_get_enable(struct udevice *dev)
 			return dm_gpio_get_value(&priv->vsel_gpio);
 	}
 
-	val = rk860x_reg_read(dev, priv->en_reg);
+	ret = rk860x_reg_read(dev, priv->en_reg, &val);
+	if (ret)
+		return ret;
+
 	if (val & VSEL_BUCK_EN)
 		return 1;
 	else
@@ -204,9 +206,13 @@ static int rk860x_regulator_set_suspend_enable(struct udevice *dev,
 static int rk860x_regulator_get_suspend_enable(struct udevice *dev)
 {
 	struct rk860x_regulator_info *priv = dev_get_priv(dev);
-	int val;
+	int ret;
+	u8 val;
 
-	val = rk860x_reg_read(dev, priv->sleep_en_reg);
+	ret = rk860x_reg_read(dev, priv->sleep_en_reg, &val);
+	if (ret)
+		return ret;
+
 	if (val & VSEL_BUCK_EN)
 		return 1;
 	else
@@ -216,9 +222,13 @@ static int rk860x_regulator_get_suspend_enable(struct udevice *dev)
 static int rk860x_regulator_get_voltage(struct udevice *dev)
 {
 	struct rk860x_regulator_info *priv = dev_get_priv(dev);
-	int uvolt = 0, val;
+	int uvolt = 0, ret;
+	u8 val;
 
-	val = rk860x_reg_read(dev, priv->vol_reg);
+	ret = rk860x_reg_read(dev, priv->vol_reg, &val);
+	if (ret)
+		return ret;
+
 	val &= priv->vol_mask;
 	uvolt = (val * priv->vsel_step) + priv->vsel_min;
 
@@ -239,9 +249,13 @@ static int rk860x_regulator_set_voltage(struct udevice *dev, int uvolt)
 static int rk860x_regulator_get_suspend_voltage(struct udevice *dev)
 {
 	struct rk860x_regulator_info *priv = dev_get_priv(dev);
-	int uvolt = 0, val;
+	int uvolt = 0, ret;
+	u8 val;
 
-	val = rk860x_reg_read(dev, priv->sleep_reg);
+	ret = rk860x_reg_read(dev, priv->sleep_reg, &val);
+	if (ret)
+		return ret;
+
 	val &= priv->vol_mask;
 	uvolt = (val * priv->vsel_step) + priv->vsel_min;
 
@@ -334,7 +348,7 @@ static int rk860x_regulator_ofdata_to_platdata(struct udevice *dev)
 	ret = gpio_request_by_name(dev, "vsel-gpios", 0,
 				   &priv->vsel_gpio, GPIOD_IS_OUT);
 	if (ret)
-		dev_err(dev, "vsel-gpios- not found! Error: %d\n", ret);
+		dev_err(dev, "vsel-gpios- not found!\n");
 
 	if (dm_gpio_is_valid(&priv->vsel_gpio))
 		dm_gpio_set_value(&priv->vsel_gpio, !priv->sleep_vsel_id);
@@ -342,7 +356,7 @@ static int rk860x_regulator_ofdata_to_platdata(struct udevice *dev)
 	ret = gpio_request_by_name(dev, "en-gpios", 0,
 				   &priv->en_gpio, GPIOD_IS_OUT);
 	if (ret)
-		dev_err(dev, "en-gpios- not found! Error: %d\n", ret);
+		dev_err(dev, "en-gpios- not found!\n");
 
 	if (dm_gpio_is_valid(&priv->en_gpio))
 		dm_gpio_set_value(&priv->en_gpio, 1);
@@ -362,11 +376,12 @@ static int rk860x_regulator_probe(struct udevice *dev)
 	uc_pdata->mode_count = 0;
 
 	/* Get chip ID */
-	val = rk860x_reg_read(dev, RK860X_ID1);
-	if (val < 0) {
+	ret = rk860x_reg_read(dev, RK860X_ID1, &val);
+	if (ret) {
 		dev_err(dev, "Failed to get chip ID!\n");
-		return val;
+		return ret;
 	}
+
 	if ((val & DIE_ID) == 0x8)
 		di->chip_id = RK860X_CHIP_ID_00;
 	else
