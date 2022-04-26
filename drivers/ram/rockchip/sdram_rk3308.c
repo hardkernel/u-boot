@@ -553,7 +553,7 @@ void ddr_phy_dqs_rx_dll_cfg(struct dram_info *priv, u32 freq)
 		/* 22.5 degree delay */
 		writel(LEFT_CHN_A_READ_DQS_22_5_DELAY, &priv->phy->phy_reg28);
 		writel(RIGHT_CHN_A_READ_DQS_22_5_DELAY, &priv->phy->phy_reg38);
-	} else if (freq > 441) {
+	} else {
 		/* 45 degree delay */
 		writel(LEFT_CHN_A_READ_DQS_45_DELAY, &priv->phy->phy_reg28);
 		writel(RIGHT_CHN_A_READ_DQS_45_DELAY, &priv->phy->phy_reg38);
