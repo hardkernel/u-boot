@@ -356,11 +356,37 @@ static int fg_charger_get_chrg_online(struct udevice *dev)
 	return fuel_gauge_get_chrg_online(charger);
 }
 
+static int sys_shutdown(struct udevice *dev)
+{
+	struct charge_animation_priv *priv = dev_get_priv(dev);
+	struct udevice *pmic = priv->pmic;
+	struct udevice *fg = priv->fg;
+
+	/*
+	 * Call the fuel/charge again to update something specific
+	 * before shutdown. This fix a scene:
+	 *
+	 * Plug out charger which auto wakeup cpu from a long time system suspend,
+	 * fuel/charge need to update something before shutdown.
+	 */
+	fg_charger_get_chrg_online(dev);
+	fuel_gauge_get_voltage(fg);
+	fuel_gauge_update_get_soc(fg);
+
+	flushc();
+	mdelay(50);
+	pmic_shutdown(pmic);
+
+	mdelay(500);
+	printf("Cpu should never reach here, shutdown failed !\n");
+
+	return 0;
+}
+
 static int charge_extrem_low_power(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 	struct charge_animation_priv *priv = dev_get_priv(dev);
-	struct udevice *pmic = priv->pmic;
 	struct udevice *fg = priv->fg;
 	int voltage, soc, charging = 1;
 	static int timer_initialized;
@@ -376,12 +402,7 @@ static int charge_extrem_low_power(struct udevice *dev)
 		if (charging <= 0) {
 			printf("%s: Not charging, online=%d. Shutdown...\n",
 			       __func__, charging);
-			/* wait uart flush before shutdown */
-			mdelay(5);
-			/* PMIC shutdown */
-			pmic_shutdown(pmic);
-
-			printf("Cpu should never reach here, shutdown failed !\n");
+			sys_shutdown(dev);
 			continue;
 		}
 
@@ -435,7 +456,6 @@ static int charge_animation_show(struct udevice *dev)
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	const struct charge_image *image = priv->image;
-	struct udevice *pmic = priv->pmic;
 	struct udevice *fg = priv->fg;
 	const char *preboot = env_get("preboot");
 	int image_num = priv->image_num;
@@ -508,8 +528,8 @@ static int charge_animation_show(struct udevice *dev)
 			printf("Not charging and low power, Shutdown...\n");
 			show_idx = IMAGE_LOWPOWER_IDX(image_num);
 			charge_show_bmp(image[show_idx].name);
-			mdelay(1000);
-			pmic_shutdown(pmic);
+
+			sys_shutdown(dev);
 		}
 	}
 
@@ -603,13 +623,7 @@ static int charge_animation_show(struct udevice *dev)
 			local_irq_disable();
 #endif
 #endif
-			/* wait uart flush before shutdown */
-			mdelay(5);
-
-			/* PMIC shutdown */
-			pmic_shutdown(pmic);
-
-			printf("Cpu should never reach here, shutdown failed !\n");
+			sys_shutdown(dev);
 			continue;
 		}
 
