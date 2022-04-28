@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <asm/io.h>
 #include <dwc3-uboot.h>
 #include <usb.h>
 
@@ -28,6 +29,7 @@ int usb_gadget_handle_interrupts(void)
 
 int board_usb_init(int index, enum usb_init_type init)
 {
+	writel(0x01ff0000, 0xff000050); /* Resume usb2 phy to normal mode */
 	return dwc3_uboot_init(&dwc3_device_data);
 }
 #endif
