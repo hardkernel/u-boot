@@ -563,8 +563,8 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 	 *
 	 * kernel: 5.10 commit 120dc60d0bdb ("arm64: get rid of TEXT_OFFSET")
 	 * arm64 kernel version:
-	 *	data[10] == 0x00 if kernel version >= 5.10
-	 *	data[10] == 0x08 if kernel version <  5.10
+	 *	data[10] == 0x00 if kernel version >= 5.10: N*2MB align
+	 *	data[10] == 0x08 if kernel version <  5.10: N*2MB + 0x80000(TEXT_OFFSET)
 	 *
 	 * Why fix here?
 	 *   1. this is the common and final path for any boot command.
@@ -867,6 +867,7 @@ int board_do_bootm(int argc, char * const argv[])
 	int format;
 	void *img;
 
+	/* only 'bootm' full image goes further */
 	if (argc != 2)
 		return 0;
 
@@ -1000,9 +1001,6 @@ int fit_write_trusty_rollback_index(u32 trusty_index)
 
 void board_quiesce_devices(void *images)
 {
-	bootm_headers_t *bootm_images = (bootm_headers_t *)images;
-	ulong kernel_addr;
-
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
@@ -1019,6 +1017,10 @@ void board_quiesce_devices(void *images)
 #ifdef CONFIG_ROCKCHIP_HW_DECOMPRESS
 	misc_decompress_cleanup();
 #endif
+#ifdef CONFIG_ARM64
+	bootm_headers_t *bootm_images = (bootm_headers_t *)images;
+	ulong kernel_addr;
+
 	/* relocate kernel after decompress cleanup */
 	kernel_addr = env_get_ulong("kernel_addr_r", 16, 0);
 	if (kernel_addr != bootm_images->ep) {
@@ -1027,6 +1029,7 @@ void board_quiesce_devices(void *images)
 		printf("== DO RELOCATE == Kernel from 0x%08lx to 0x%08lx\n",
 		       kernel_addr, bootm_images->ep);
 	}
+#endif
 
 	hotkey_run(HK_CMDLINE);
 	hotkey_run(HK_CLI_OS_GO);
