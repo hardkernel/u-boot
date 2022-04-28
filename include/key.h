@@ -65,6 +65,9 @@ int pwrkey_download_init(void);
 /* Read key */
 int key_read(int code);
 
+/* Check whether the key is exist or not, 1: exist, 0: not exist */
+int key_exist(int code);
+
 int key_bind_children(struct udevice *dev, const char *drv_name);
 
 #endif
