@@ -55,6 +55,10 @@
 #define CONFIG_LIB_HW_RAND
 #define CONFIG_PREBOOT
 
+#if CONFIG_USB_FUNCTION_DFU
+#define CONFIG_SET_DFU_ALT_INFO
+#endif
+
 /*
  *   Image:  0 - 8M
  *  zImage:  8 - 12M
