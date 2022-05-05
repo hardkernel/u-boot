@@ -9,6 +9,8 @@
 #include <environment.h>
 #include <memalign.h>
 #include <part.h>
+#include <part_efi.h>
+#include <asm/unaligned.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -37,6 +39,44 @@ static void *spl_env =
 static u32 envf_num;
 static const char *envf_list[ENVF_MAX];
 #endif
+
+static int pmbr_part_valid(struct partition *part)
+{
+	if (part->sys_ind == EFI_PMBR_OSTYPE_EFI_GPT &&
+		get_unaligned_le32(&part->start_sect) == 1UL) {
+		return 1;
+	}
+
+	return 0;
+}
+
+static int is_pmbr_valid(legacy_mbr * mbr)
+{
+	int i = 0;
+
+	if (!mbr || le16_to_cpu(mbr->signature) != MSDOS_MBR_SIGNATURE)
+		return 0;
+
+	for (i = 0; i < 4; i++) {
+		if (pmbr_part_valid(&mbr->partition_record[i])) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int can_find_pmbr(struct blk_desc *dev_desc)
+{
+	ALLOC_CACHE_ALIGN_BUFFER_PAD(legacy_mbr, legacymbr, 1, dev_desc->blksz);
+
+	/* Read legacy MBR from block 0 and validate it */
+	if ((blk_dread(dev_desc, 0, 1, (ulong *)legacymbr) != 1)
+		|| (is_pmbr_valid(legacymbr) != 1)) {
+		return -1;
+	}
+
+	return 0;
+}
 
 static const char *env_get_string(env_t *env, u32 size, const char *str)
 {
@@ -143,6 +183,14 @@ static env_t *envf_read(struct blk_desc *desc)
 
 	envf_init_location(desc);
 
+#ifdef CONFIG_DM_MMC
+	/* SD upgrade card: LBA0 is MBR, and LBA1 is env.img with 16KB size */
+	if (desc->if_type == IF_TYPE_MMC && desc->devnum == 1 &&
+	    !env_offset && can_find_pmbr(desc)) {
+		env_offset = 512;
+		env_size = SZ_16K;
+	}
+#endif
 	ret = env_read(desc, env_offset, env_size, &env);
 	if (ret < 0 && env_offset_redund)
 		ret = env_read(desc, env_offset_redund, env_size, &env);
