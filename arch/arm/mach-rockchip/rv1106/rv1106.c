@@ -4,6 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <boot_rkimg.h>
+#include <cli.h>
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rv1106.h>
@@ -488,3 +490,16 @@ int rk_board_scan_bootdev(void)
 	return 0;
 }
 #endif
+
+int rk_board_late_init(void)
+{
+#if defined(CONFIG_CMD_SCRIPT_UPDATE)
+	struct blk_desc *desc;
+
+	desc = rockchip_get_bootdev();
+	if (desc && desc->if_type == IF_TYPE_MMC && desc->devnum == 1)
+		run_command("sd_update", 0);
+#endif
+	return 0;
+}
+
