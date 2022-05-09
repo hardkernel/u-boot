@@ -40,6 +40,50 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PMU_SGRF_BASE			0xff080000
 
+/* QoS Generator Base Address */
+#define QOS_CPU_BASE			0xff110000
+#define QOS_CRYPTO_BASE			0xff120000
+#define QOS_DECOM_BASE			0xff120080
+#define QOS_DMAC_BASE			0xff120100
+#define QOS_EMMC_BASE			0xff120180
+#define QOS_FSPI_BASE			0xff120200
+#define QOS_IVE_RD_BASE			0xff120280
+#define QOS_IVE_WR_BASE			0xff120300
+#define QOS_USB_BASE			0xff120380
+#define QOS_ISP_BASE			0xff130000
+#define QOS_SDMMC0_BASE			0xff130080
+#define QOS_VICAP_BASE			0xff130100
+#define QOS_NPU_BASE			0xff140000
+#define QOS_VENC_BASE			0xff150000
+#define QOS_VEPU_PP_BASE		0xff150080
+#define QOS_MAC_BASE			0xff160000
+#define QOS_RGA_RD_BASE			0xff160080
+#define QOS_RGA_WR_BASE			0xff160100
+#define QOS_SDIO_BASE			0xff160280
+#define QOS_VOP_BASE			0xff160300
+
+#define QOS_PRIORITY			0x0008
+#define QOS_MODE			0x000c
+#define QOS_BANDWIDTH			0x0010
+#define QOS_SATURATION			0x0014
+#define QOS_EXTCONTROL			0x0018
+
+/* Shaping Base Address */
+#define SHAPING_CPU_BASE		0xff110080
+#define SHAPING_DECOM_BASE		0xff110400
+#define SHAPING_IVE_RD_BASE		0xff120480
+#define SHAPING_IVE_WR_BASE		0xff120500
+#define SHAPING_ISP_BASE		0xff130180
+#define SHAPING_VICAP_BASE		0xff130200
+#define SHAPING_NPU_BASE		0xff140080
+#define SHAPING_VENC_BASE		0xff150100
+#define SHAPING_VEPU_PP_BASE		0xff150180
+#define SHAPING_RGA_RD_BASE		0xff160380
+#define SHAPING_RGA_WR_BASE		0xff160400
+#define SHAPING_VOP_BASE		0xff160580
+
+#define SHAPING_NBPKTMAX		0x0008
+
 #define FW_DDR_BASE			0xff900000
 #define FW_DDR_MST3_REG			0x4c
 #define FW_SHRM_BASE			0xff910000
@@ -369,6 +413,13 @@ int arch_cpu_init(void)
 	/* release the wdt */
 	writel(0x2000200, PERI_GRF_BASE + PERI_GRF_PERI_CON1);
 	writel(0x400040, CRU_BASE + CRU_GLB_RST_CON);
+
+	/*
+	 * Limits npu max transport packets to 4 for route to scheduler,
+	 * give much more chance for other controllers to access memory.
+	 * such as VENC.
+	 */
+	writel(0x4, SHAPING_NPU_BASE + SHAPING_NBPKTMAX);
 
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
 	/* Pinctrl is disabled, set sdmmc0 iomux here */
