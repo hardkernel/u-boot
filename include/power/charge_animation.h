@@ -7,6 +7,11 @@
 #ifndef _CHARGE_ANIMATION_H_
 #define _CHARGE_ANIMATION_H_
 
+struct regulator_mem {
+	struct udevice *dev;
+	bool enable;
+};
+
 struct charge_animation_pdata {
 	int android_charge;	/* android charge, 1: enable, 0: disable */
 	int uboot_charge;	/* u-boot charge, 1: enable, 0: disable */
@@ -21,6 +26,8 @@ struct charge_animation_pdata {
 	int auto_wakeup_interval;/* timeout seconds to auto wakeup system */
 	int auto_wakeup_screen_invert;/* auto wakeup system, 1: enable, 0: disable */
 	int auto_off_screen_interval;/* timeout seconds to auto turn off screen */
+
+	struct regulator_mem *regulators_mem; /* assigned regulator suspend state */
 };
 
 #endif
