@@ -512,18 +512,7 @@ int fit_config_verify_required_sigs(const void *fit, int conf_noffset,
 		if (ret) {
 			printf("Failed to verify required signature '%s'\n",
 			       fit_get_name(sig_blob, noffset, NULL));
-#ifndef USE_HOSTCC
-			/*
-			 * Allow bring up if enable FIT_SIGNATURE but
-			 * not enable the device secure boot.
-			 *
-			 * return value: 1: device secure boot is enabled.
-			 */
-			if (fit_board_verify_required_sigs())
-				return ret;
-#else
 			return ret;
-#endif
 		}
 	}
 
