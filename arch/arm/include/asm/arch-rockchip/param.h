@@ -70,7 +70,7 @@ int param_parse_assign_bootdev(char **devtype, char **devtnum);
  *
  * @return 0 on success, otherwise failed.
  */
-int param_parse_pre_serial(void);
+int param_parse_pre_serial(int *flags);
 
 /**
  * param_parse_pubkey_fuse_programmed() - Parse and pass fuse programmed state.

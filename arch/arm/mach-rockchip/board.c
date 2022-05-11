@@ -693,10 +693,7 @@ int board_init_f_boot_flags(void)
 
 	arch_fpga_init();
 
-	param_parse_pre_serial();
-
-	if (!gd->serial.enable)
-		boot_flags |= GD_FLG_DISABLE_CONSOLE;
+	param_parse_pre_serial(&boot_flags);
 
 	/* The highest priority to turn off (override) console */
 #if defined(CONFIG_DISABLE_CONSOLE)
