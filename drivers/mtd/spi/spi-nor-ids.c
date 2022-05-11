@@ -82,6 +82,7 @@ const struct flash_info spi_nor_ids[] = {
 	/* EON -- en25xxx */
 	{ INFO("en25q32b",   0x1c3016, 0, 64 * 1024,   64, 0) },
 	{ INFO("en25q64",    0x1c3017, 0, 64 * 1024,  128, SECT_4K) },
+	{ INFO("en25qh64",  0x1c7017, 0, 64 * 1024,  128, SECT_4K) },
 	{ INFO("en25qh128",  0x1c7018, 0, 64 * 1024,  256, SECT_4K) },
 	{ INFO("en25s64",    0x1c3817, 0, 64 * 1024,  128, SECT_4K) },
 #endif
@@ -383,6 +384,12 @@ const struct flash_info spi_nor_ids[] = {
 	/* FUDAN MICRO (Shanghai) Co., Ltd. */
 	{ INFO("FM25Q128A", 0xA14018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 	{ INFO("FM25Q64", 0xA14017, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+#endif
+#ifdef CONFIG_SPI_FLASH_DOSILICON
+	/* Dosilicon Co., Ltd. */
+	{ INFO("FM25Q64A", 0xf83217, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("FM25M4AA", 0xf84218, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("FM25M64C", 0xf84317, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 #endif
 	{ },
 };
