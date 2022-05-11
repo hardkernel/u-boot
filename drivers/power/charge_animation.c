@@ -164,6 +164,30 @@ static void regulators_suspend(struct udevice *dev)
 		regulators_enable_state_mem(false);
 }
 
+static void pmics_ops(bool suspend)
+{
+	struct udevice *dev;
+
+	for (uclass_first_device(UCLASS_PMIC, &dev);
+	     dev;
+	     uclass_next_device(&dev)) {
+		if (suspend)
+			pmic_suspend(dev);
+		else
+			pmic_resume(dev);
+	}
+}
+
+static void pmics_suspend(void)
+{
+	pmics_ops(true);
+}
+
+static void pmics_resume(void)
+{
+	pmics_ops(false);
+}
+
 static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
@@ -300,7 +324,7 @@ static int system_suspend_enter(struct udevice *dev)
 		putc('1');
 		regulators_suspend(dev);
 		putc('2');
-		pmic_suspend(priv->pmic);
+		pmics_suspend();
 		putc('3');
 		irqs_suspend();
 		putc('4');
@@ -317,7 +341,7 @@ static int system_suspend_enter(struct udevice *dev)
 		putc('3');
 		irqs_resume();
 		putc('2');
-		pmic_resume(priv->pmic);
+		pmics_resume();
 		putc('1');
 		local_irq_enable();
 		putc('0');
