@@ -94,6 +94,9 @@ int g_dnl_bind_fixup(struct usb_device_descriptor *dev, const char *name)
 		/* Fix to Rockchip's VID and PID for DFU */
 		dev->idVendor  = cpu_to_le16(0x2207);
 		dev->idProduct = cpu_to_le16(0x0107);
+	} else if (!strncmp(name, "usb_dnl_ums", 11)) {
+		dev->idVendor  = cpu_to_le16(0x2207);
+		dev->idProduct = cpu_to_le16(0x0010);
 	}
 
 	return 0;
