@@ -486,22 +486,24 @@ static int fdt_fixup_pcfg(const void *blob)
 {
 	int depth1_node;
 	int depth2_node;
-	int root_node;
+	int root_node, i;
+	const char *path[] = { "/", "/pinctrl" };
 
-	root_node = fdt_path_offset(blob, "/");
-	if (root_node < 0)
-		return root_node;
+	for (i = 0; i < ARRAY_SIZE(path); i++) {
+		root_node = fdt_path_offset(blob, path[i]);
+		if (root_node < 0)
+			return root_node;
 
-	fdt_for_each_subnode(depth1_node, blob, root_node) {
-		debug("depth1: %s\n", fdt_get_name(blob, depth2_node, NULL));
-		fixup_pcfg_drive_strength(blob, depth1_node);
-		fdt_for_each_subnode(depth2_node, blob, depth1_node) {
-			debug("    depth2: %s\n",
-			      fdt_get_name(blob, depth2_node, NULL));
-			fixup_pcfg_drive_strength(blob, depth2_node);
+		fdt_for_each_subnode(depth1_node, blob, root_node) {
+			debug("depth1: %s\n", fdt_get_name(blob, depth1_node, NULL));
+			fixup_pcfg_drive_strength(blob, depth1_node);
+			fdt_for_each_subnode(depth2_node, blob, depth1_node) {
+				debug("    depth2: %s\n",
+				      fdt_get_name(blob, depth2_node, NULL));
+				fixup_pcfg_drive_strength(blob, depth2_node);
+			}
 		}
 	}
-
 	return 0;
 }
 
