@@ -636,7 +636,7 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 		return 0;
 	}
 
-	return 0;
+	return blkcnt;
 }
 #endif
 
