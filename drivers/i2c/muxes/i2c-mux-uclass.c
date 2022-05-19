@@ -38,6 +38,9 @@ static int i2c_mux_child_post_bind(struct udevice *dev)
 	struct i2c_mux_bus *plat = dev_get_parent_platdata(dev);
 	int channel;
 
+	if (device_get_uclass_id(dev) != UCLASS_I2C)
+		return 0;
+
 	channel = dev_read_u32_default(dev, "reg", -1);
 	if (channel < 0)
 		return -EINVAL;
@@ -60,6 +63,9 @@ static int i2c_mux_post_bind(struct udevice *mux)
 	dev_for_each_subnode(node, mux) {
 		struct udevice *dev;
 		const char *name;
+
+		if (!ofnode_get_property(node, "reg", NULL))
+			continue;
 
 		name = ofnode_get_name(node);
 		ret = device_bind_driver_to_node(mux, "i2c_mux_bus_drv", name,
