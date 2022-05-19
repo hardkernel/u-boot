@@ -138,6 +138,14 @@ config PINCTRL_AT91PIO4
 	  This option is to enable the AT91 pinctrl driver for AT91 PIO4
 	  controller which is available on SAMA5D2 SoC.
 
+config PINCTRL_MAX96752F
+	bool "Maxim MAX96752F pinctrl driver"
+	depends on DM && I2C_MUX_MAX96752F
+	select PINCONF
+	help
+	  This option is to enable the pinctrl driver for Maxim
+	  MAX96752F.
+
 config PINCTRL_PIC32
 	bool "Microchip PIC32 pin-control and pin-mux driver"
 	depends on DM && MACH_PIC32
