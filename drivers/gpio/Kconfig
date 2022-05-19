@@ -202,6 +202,12 @@ config TEGRA186_GPIO
 	  covers both the "main" and "AON" controller instances, even though
 	  they have slightly different register layout.
 
+config GPIO_MAX96752F
+	bool "Maxim MAX96752F GPIO"
+	depends on DM_GPIO && I2C_MUX_MAX96752F
+	help
+	  Say yes here to support Maxim MAX96752F GPIOs.
+
 config GPIO_UNIPHIER
 	bool "UniPhier GPIO"
 	depends on ARCH_UNIPHIER
