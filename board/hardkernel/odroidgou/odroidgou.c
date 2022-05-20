@@ -413,7 +413,7 @@ int board_late_init(void)
 	lcd_probe();
 #endif
 
-	setenv("variant", board_is_odroidgou() ? "gou" : "n2");
+	setenv("variant", "gou");
 	board_set_dtbfile("meson64_odroid%s.dtb");
 
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
@@ -427,7 +427,6 @@ int board_late_init(void)
 #ifdef CONFIG_AML_LCD
 	gou_display_env_init();
 	gou_bmp_display(DISP_LOGO);
-	udelay(500000);
 #endif
 	return 0;
 }
