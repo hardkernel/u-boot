@@ -200,21 +200,20 @@ rk3588_pll_clk_set_by_auto(unsigned long fin_hz,
 		}
 		pr_err("CANNOT FIND Fout by auto,fout = %lu\n", fout_hz);
 	} else {
-		fout = (fout_hz / MHZ) * MHZ;
-		ffrac = (fout_hz % MHZ);
 		for (s = 0; s <= 6; s++) {
-			fvco = fout << s;
+			fvco = fout_hz << s;
 			if (fvco < RK3588_VCO_MIN_HZ ||
 			    fvco > RK3588_VCO_MAX_HZ)
 				continue;
 			for (p = 1; p <= 4; p++) {
 				for (m = 64; m <= 1023; m++) {
-					if (fvco == m * fin_hz / p) {
+					if ((fvco >= m * fin_hz / p) && (fvco < (m + 1) * fin_hz / p)) {
 						rate_table->p = p;
 						rate_table->m = m;
 						rate_table->s = s;
 						fref = fin_hz / p;
-						fout = (ffrac << s) * 65535;
+						ffrac = fvco - (m * fref);
+						fout = ffrac * 65536;
 						rate_table->k = fout / fref;
 						return rate_table;
 					}
@@ -438,7 +437,7 @@ static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 		     RK3588_PLLCON1_S_MASK),
 		     (rate->p << RK3588_PLLCON1_P_SHIFT |
 		     rate->s << RK3588_PLLCON1_S_SHIFT));
-	if (!rate->k) {
+	if (rate->k) {
 		rk_clrsetreg(base + pll->con_offset + RK3588_PLLCON(2),
 			     RK3588_PLLCON2_K_MASK,
 			     rate->k << RK3588_PLLCON2_K_SHIFT);
@@ -542,7 +541,7 @@ static ulong rk3588_pll_get_rate(struct rockchip_pll_clock *pll,
 			/* fractional mode */
 			u64 frac_rate64 = OSC_HZ * k;
 
-			postdiv = p * 65535;
+			postdiv = p * 65536;
 			do_div(frac_rate64, postdiv);
 			rate += frac_rate64;
 		}
