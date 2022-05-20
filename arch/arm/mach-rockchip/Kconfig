@@ -211,7 +211,7 @@ config ROCKCHIP_RK3308
 	bool "Support Rockchip RK3308"
 	select ARM64 if !ARM64_BOOT_AARCH32
 	select ARM_SMCCC
-	select GICV2
+	imply GICV2
 	select SUPPORT_SPL if !ARM64_BOOT_AARCH32
 	select SUPPORT_TPL if !ARM64_BOOT_AARCH32
 	select SPL if !ARM64_BOOT_AARCH32
