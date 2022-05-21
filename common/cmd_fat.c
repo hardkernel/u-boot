@@ -120,15 +120,15 @@ int do_fat_exist (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf ("usage: fatexist <interface> <dev[:part]> <filepath>\n");
 		return 1;
 	}
-	dev = (int)simple_strtoul (argv[2], &ep, 16);
-	dev_desc=get_dev(argv[1],dev);
-	if (dev_desc==NULL) {
-		puts ("\n** Invalid boot device **\n");
+	dev = (int)simple_strtoul(argv[2], &ep, 16);
+	dev_desc = get_dev(argv[1],dev);
+	if (dev_desc == NULL) {
+		puts("\n** Invalid boot device **\n");
 		return 1;
 	}
 	if (*ep) {
 		if (*ep != ':') {
-			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
+			puts("\n** Invalid boot device, use `dev[:part]' **\n");
 			return 1;
 		}
 		part = (int)simple_strtoul(++ep, NULL, 16);
@@ -175,7 +175,7 @@ int do_fat_ls (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return 0;
 	}
 	dev = (int)simple_strtoul(argv[2], &ep, 16);
-	dev_desc = get_dev(argv[1],dev);
+	dev_desc = get_dev(argv[1], dev);
 	if (dev_desc == NULL) {
 		puts("\n** Invalid boot device **\n");
 		return 1;
@@ -256,11 +256,11 @@ int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
         block_dev_desc_t *dev_desc = NULL;
 
         if (argc < 2) {
-                printf ("usage : fatformat <interface> <dev[:part]>\n");
+                printf("usage : fatformat <interface> <dev[:part]>\n");
                 return(0);
         }
 
-        dev = (int)simple_strtoul (argv[2], &ep, 16);
+        dev = (int)simple_strtoul(argv[2], &ep, 16);
         dev_desc = get_dev(argv[1], dev);
 
         if (dev_desc == NULL) {
@@ -270,12 +270,12 @@ int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
         if (*ep) {
                 if (*ep != ':') {
-                        puts ("\n **Invald boot device,use 'dev[:part]'**\n");
+                        puts("\n **Invald boot device,use 'dev[:part]'**\n");
                         return 1;
                 }
                 part = (int)simple_strtoul(++ep, NULL, 16);
                 if (part > 4 || part <1) {
-                        puts ("** Partition Number should be 1 ~ 4 **\n");
+                        puts("** Partition Number should be 1 ~ 4 **\n");
                 }
         }
 
