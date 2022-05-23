@@ -122,51 +122,40 @@ fi
 
 # tee
 if [ ! -z "${TEE_OFFSET}" ]; then
-	TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
-	TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
+	TEE_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+TEE_OFFSET))"|bc)
 fi
 
 # mcu
 if [ ! -z "${MCU0_OFFSET}" ]; then
-	MCU0_LOAD_ADDR=$((DARM_BASE+$MCU0_OFFSET))
-	MCU0_LOAD_ADDR=$(echo "obase=16;${MCU0_LOAD_ADDR}"|bc)
+	MCU0_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$MCU0_OFFSET))"|bc)
 fi
 if [ ! -z "${MCU1_OFFSET}" ]; then
-	MCU1_LOAD_ADDR=$((DARM_BASE+$MCU1_OFFSET))
-	MCU1_LOAD_ADDR=$(echo "obase=16;${MCU1_LOAD_ADDR}"|bc)
+	MCU1_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$MCU1_OFFSET))"|bc)
 fi
 if [ ! -z "${MCU2_OFFSET}" ]; then
-	MCU2_LOAD_ADDR=$((DARM_BASE+$MCU2_OFFSET))
-	MCU2_LOAD_ADDR=$(echo "obase=16;${MCU2_LOAD_ADDR}"|bc)
+	MCU2_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$MCU2_OFFSET))"|bc)
 fi
 if [ ! -z "${MCU3_OFFSET}" ]; then
-	MCU3_LOAD_ADDR=$((DARM_BASE+$MCU3_OFFSET))
-	MCU3_LOAD_ADDR=$(echo "obase=16;${MCU3_LOAD_ADDR}"|bc)
+	MCU3_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$MCU3_OFFSET))"|bc)
 fi
 if [ ! -z "${MCU4_OFFSET}" ]; then
-	MCU4_LOAD_ADDR=$((DARM_BASE+$MCU4_OFFSET))
-	MCU4_LOAD_ADDR=$(echo "obase=16;${MCU4_LOAD_ADDR}"|bc)
+	MCU4_LOAD_ADDR="0x"$(echo "obase=16;$$((DARM_BASE+$MCU4_OFFSET))"|bc)
 fi
 
 # loadables
 if [ ! -z "${LOAD0_OFFSET}" ]; then
-	LOAD0_LOAD_ADDR=$((DARM_BASE+$LOAD0_OFFSET))
-	LOAD0_LOAD_ADDR=$(echo "obase=16;${LOAD0_LOAD_ADDR}"|bc)
+	LOAD0_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$LOAD0_OFFSET))"|bc)
 fi
 if [ ! -z "${LOAD1_OFFSET}" ]; then
-	LOAD1_LOAD_ADDR=$((DARM_BASE+$LOAD1_OFFSET))
-	LOAD1_LOAD_ADDR=$(echo "obase=16;${LOAD1_LOAD_ADDR}"|bc)
+	LOAD1_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$LOAD1_OFFSET))"|bc)
 fi
 if [ ! -z "${LOAD2_OFFSET}" ]; then
-	LOAD2_LOAD_ADDR=$((DARM_BASE+$LOAD2_OFFSET))
-	LOAD2_LOAD_ADDR=$(echo "obase=16;${LOAD2_LOAD_ADDR}"|bc)
+	LOAD2_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$LOAD2_OFFSET))"|bc)
 fi
 if [ ! -z "${LOAD3_OFFSET}" ]; then
-	LOAD3_LOAD_ADDR=$((DARM_BASE+$LOAD3_OFFSET))
-	LOAD3_LOAD_ADDR=$(echo "obase=16;${LOAD3_LOAD_ADDR}"|bc)
+	LOAD3_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$LOAD3_OFFSET))"|bc)
 fi
 if [ ! -z "${LOAD4_OFFSET}" ]; then
-	LOAD4_LOAD_ADDR=$((DARM_BASE+$LOAD4_OFFSET))
-	LOAD4_LOAD_ADDR=$(echo "obase=16;${LOAD4_LOAD_ADDR}"|bc)
+	LOAD4_LOAD_ADDR="0x"$(echo "obase=16;$((DARM_BASE+$LOAD4_OFFSET))"|bc)
 fi
 # echo " ## $DARM_BASE, $UBOOT_LOAD_ADDR, $TEE_LOAD_ADDR, $MCU0_LOAD_ADDR, $MCU1_LOAD_ADDR, $MCU2_LOAD_ADDR, $MCU3_LOAD_ADDR, $MCU4_LOAD_ADDR"
