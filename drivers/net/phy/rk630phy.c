@@ -21,6 +21,8 @@
 #define RK630_PHY_ID				0x00441400
 
 /* PAGE 0 */
+#define REG_MMD_ACCESS_CONTROL			0x0d
+#define REG_MMD_ACCESS_DATA_ADDRESS		0x0e
 #define REG_INTERRUPT_STATUS			0X10
 #define REG_INTERRUPT_MASK			0X11
 #define REG_GLOBAL_CONFIGURATION		0X13
@@ -69,6 +71,7 @@ static int rk630_phy_startup(struct phy_device *phydev)
 	ret = genphy_update_link(phydev);
 	if (ret)
 		return ret;
+
 	/* Read the Status (2x to make sure link is right) */
 	phy_read(phydev, MDIO_DEVAD_NONE, MII_BMSR);
 
@@ -141,6 +144,12 @@ static void rk630_phy_t22_config_init(struct phy_device *phydev)
 
 	/* Switch to page 0 */
 	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0000);
+
+	/* Disable eee mode advertised */
+	phy_write(phydev, MDIO_DEVAD_NONE, REG_MMD_ACCESS_CONTROL, 0x0007);
+	phy_write(phydev, MDIO_DEVAD_NONE, REG_MMD_ACCESS_DATA_ADDRESS, 0x003c);
+	phy_write(phydev, MDIO_DEVAD_NONE, REG_MMD_ACCESS_CONTROL, 0x4007);
+	phy_write(phydev, MDIO_DEVAD_NONE, REG_MMD_ACCESS_DATA_ADDRESS, 0x0000);
 }
 static int rk630_phy_config_init(struct phy_device *phydev)
 {
@@ -157,6 +166,7 @@ static int rk630_phy_config_init(struct phy_device *phydev)
 		return -EINVAL;
 	}
 
+	genphy_config_aneg(phydev);
 	return 0;
 }
 
