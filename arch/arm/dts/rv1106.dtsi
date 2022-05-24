@@ -552,6 +552,12 @@
 		log_leakage: log-leakage@1b {
 			reg = <0x1b 0x1>;
 		};
+		macphy_bgs: macphy-bgs@2d {
+			reg = <0x2d 0x1>;
+		};
+		macphy_txlevel: macphy-txlevel@2e {
+			reg = <0x2e 0x2>;
+		};
 	};
 
 	u2phy: usb2-phy@ff3e0000 {
@@ -1047,6 +1053,9 @@
 		snps,mixed-burst;
 		snps,tso;
 
+		tx-dma-size = <256>;
+		rx-dma-size = <16>;
+
 		snps,axi-config = <&stmmac_axi_setup>;
 		snps,mtl-rx-config = <&mtl_rx_setup>;
 		snps,mtl-tx-config = <&mtl_tx_setup>;
@@ -1054,6 +1063,9 @@
 		phy-mode = "rmii";
 		clock_in_out = "input";
 		phy-handle = <&rmii_phy>;
+
+		nvmem-cells = <&macphy_bgs>;
+		nvmem-cell-names = "bgs";
 		status = "disabled";
 
 		mdio: mdio {
@@ -1066,6 +1078,8 @@
 				clocks = <&cru CLK_MACPHY>;
 				resets = <&cru SRST_MACPHY>;
 				phy-is-integrated;
+				nvmem-cells = <&macphy_txlevel>;
+				nvmem-cell-names = "txlevel";
 			};
 		};
 
@@ -1077,12 +1091,16 @@
 
 		mtl_rx_setup: rx-queues-config {
 			snps,rx-queues-to-use = <1>;
-			queue0 {};
+			queue0 {
+				status = "okay";
+			};
 		};
 
 		mtl_tx_setup: tx-queues-config {
 			snps,tx-queues-to-use = <1>;
-			queue0 {};
+			queue0 {
+				status = "okay";
+			};
 		};
 	};
 
