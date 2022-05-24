@@ -9,6 +9,7 @@
 #include <common.h>
 #include <dm.h>
 #include <clk.h>
+#include <misc.h>
 #include <phy.h>
 #include <reset.h>
 #include <syscon.h>
@@ -1255,6 +1256,12 @@ static void rk3588_set_to_rgmii(struct gmac_rockchip_platdata *pdata)
 static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pdata)
 {
 	struct rv1106_grf *grf;
+	unsigned char bgs[1] = {0};
+
+	enum {
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE_MASK = BIT(0),
+		RV1106_VOGRF_GMAC_CLK_RMII_MODE = BIT(0),
+	};
 
 	enum {
 		RV1106_MACPHY_ENABLE_MASK = BIT(1),
@@ -1273,6 +1280,37 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 		RV1106_MACPHY_BGS = BIT(2),
 	};
 
+#if defined(CONFIG_ROCKCHIP_EFUSE) || defined(CONFIG_ROCKCHIP_OTP)
+	struct udevice *dev;
+	u32 regs[2] = {0};
+	ofnode node;
+	int ret = 0;
+
+	/* retrieve the device */
+	if (IS_ENABLED(CONFIG_ROCKCHIP_EFUSE))
+		ret = uclass_get_device_by_driver(UCLASS_MISC,
+						  DM_GET_DRIVER(rockchip_efuse),
+						  &dev);
+	else
+		ret = uclass_get_device_by_driver(UCLASS_MISC,
+						  DM_GET_DRIVER(rockchip_otp),
+						  &dev);
+	if (!ret) {
+		node = dev_read_subnode(dev, "macphy-bgs");
+		if (ofnode_valid(node)) {
+			if (!ofnode_read_u32_array(node, "reg", regs, 2)) {
+				/* read the bgs from the efuses */
+				ret = misc_read(dev, regs[0], &bgs, 1);
+				if (ret) {
+					printf("read bgs from efuse/otp failed, ret=%d\n",
+					       ret);
+					bgs[0] = 0;
+				}
+			}
+		}
+	}
+#endif
+
 	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 
 	reset_assert(&pdata->phy_reset);
@@ -1289,7 +1327,7 @@ static void rv1106_gmac_integrated_phy_powerup(struct gmac_rockchip_platdata *pd
 
 	rk_clrsetreg(&grf->macphy_con1,
 		     RV1106_MACPHY_BGS_MASK,
-		     RV1106_MACPHY_BGS);
+		     bgs[0]);
 	udelay(20);
 	reset_deassert(&pdata->phy_reset);
 	udelay(30 * 1000);
