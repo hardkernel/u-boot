@@ -153,6 +153,13 @@ config PINCTRL_MAX96752F
 	  This option is to enable the pinctrl driver for Maxim
 	  MAX96752F.
 
+config PINCTRL_MAX96755F
+	bool "Maxim MAX96755F pinctrl driver"
+	depends on DM && I2C_MUX_MAX96755F
+	help
+	  This option is to enable the pinctrl driver for Maxim
+	  MAX96755F.
+
 config PINCTRL_PIC32
 	bool "Microchip PIC32 pin-control and pin-mux driver"
 	depends on DM && MACH_PIC32
