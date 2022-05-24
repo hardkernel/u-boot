@@ -26,21 +26,31 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define FIT_UNCOMP_HASH_NODENAME	"digest"
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
-static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
-				       const void *data, size_t size)
+static int fit_image_get_uncomp_digest(const void *fit, int parent_noffset)
 {
 	const char *name;
-	char *err_msgp;
 	int noffset;
 
 	fdt_for_each_subnode(noffset, fit, parent_noffset) {
 		name = fit_get_name(fit, noffset, NULL);
 		if (!strncmp(name, FIT_UNCOMP_HASH_NODENAME,
 			     strlen(FIT_UNCOMP_HASH_NODENAME))) {
-			return fit_image_check_hash(fit, noffset, data,
-						    size, &err_msgp);
+			return noffset;
 		}
 	}
+
+	return -EINVAL;
+}
+
+static int fit_image_check_uncomp_hash(const void *fit, int parent_noffset,
+				       const void *data, size_t size)
+{
+	char *err_msgp;
+	int noffset;
+
+	noffset = fit_image_get_uncomp_digest(fit, parent_noffset);
+	if (noffset > 0)
+		return fit_image_check_hash(fit, noffset, data, size, &err_msgp);
 
 	return 0;
 }
@@ -101,10 +111,14 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 		 */
 #if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
 		const void *prop;
+		bool sync = true;
+
+		if (fit_image_get_uncomp_digest(fit, node) < 0)
+			sync = false;
 
 		ret = misc_decompress_process((ulong)(*load_addr),
 					      (ulong)(*src_addr), (ulong)(*src_len),
-					      DECOM_GZIP, true, &len, flags);
+					      DECOM_GZIP, sync, &len, flags);
 		/* mark for misc_decompress_cleanup() */
 		prop = fdt_getprop(fit, node, "decomp-async", NULL);
 		if (prop)
