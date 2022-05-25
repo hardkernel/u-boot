@@ -421,6 +421,9 @@ int arch_cpu_init(void)
 	 */
 	writel(0x4, SHAPING_NPU_BASE + SHAPING_NBPKTMAX);
 
+	/* Improve VENC QOS PRIORITY */
+	writel(0x303, QOS_VENC_BASE + QOS_PRIORITY);
+
 #ifdef CONFIG_ROCKCHIP_IMAGE_TINY
 	/* Pinctrl is disabled, set sdmmc0 iomux here */
 	writel(0xfff01110, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_L);
