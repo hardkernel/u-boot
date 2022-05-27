@@ -75,6 +75,11 @@ static int do_script(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong addr;
 	int ret = CMD_RET_SUCCESS;
 
+#ifdef CONFIG_FIT_SIGNATURE
+	printf("Verify-boot: forbit no-signed script\n");
+	return CMD_RET_FAILURE;
+#endif
+
 	if (argc != 2 || !argv[1])
 		return CMD_RET_USAGE;
 
@@ -102,21 +107,35 @@ static int do_script(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 static int do_sd_update(cmd_tbl_t *cmdtp, int flag,
 			int argc, char * const argv[])
 {
+	struct blk_desc *desc;
+	int part_type;
 	char cmd[128];
 	char *buf;
 	int ret;
+
+	printf("## retrieving sd_update.txt ...\n");
+
+	desc = blk_get_devnum_by_type(IF_TYPE_MMC, 1);
+	if (!desc)
+		return CMD_RET_FAILURE;
 
 	buf = memalign(ARCH_DMA_MINALIGN, SCRIPT_FILE_MAX_SIZE * 2);
 	if (!buf)
 		return CMD_RET_FAILURE;
 
-	snprintf(cmd, 128, "fatload mmc 1 0x%08lx sd_update.txt", (ulong)buf);
+	part_type = desc->part_type;
+	desc->part_type = PART_TYPE_DOS;
+
+	snprintf(cmd, sizeof(cmd),
+		 "fatload mmc 1 0x%08lx sd_update.txt", (ulong)buf);
 	ret = run_command(cmd, 0);
 	if (!ret) {
-		snprintf(cmd, 128, "script 0x%08lx", (ulong)buf);
+		snprintf(cmd, sizeof(cmd), "script 0x%08lx", (ulong)buf);
 		ret = run_command(cmd, 0);
 	}
 	free(buf);
+
+	desc->part_type = part_type;
 
 	return ret;
 }
@@ -124,25 +143,38 @@ static int do_sd_update(cmd_tbl_t *cmdtp, int flag,
 static int do_usb_update(cmd_tbl_t *cmdtp, int flag,
 			 int argc, char * const argv[])
 {
+	struct blk_desc *desc;
+	int part_type;
 	char cmd[128];
 	char *buf;
 	int ret;
+
+	printf("## retrieving usb_update.txt ...\n");
+
+	desc = blk_get_devnum_by_type(IF_TYPE_USB, 0);
+	if (!desc)
+		return CMD_RET_FAILURE;
 
 	buf = memalign(ARCH_DMA_MINALIGN, SCRIPT_FILE_MAX_SIZE * 2);
 	if (!buf)
 		return CMD_RET_FAILURE;
 
-	snprintf(cmd, 128, "usb reset");
+	part_type = desc->part_type;
+	desc->part_type = PART_TYPE_DOS;
+
+	snprintf(cmd, sizeof(cmd), "usb reset");
 	ret = run_command(cmd, 0);
 	if (!ret) {
-		snprintf(cmd, 128, "fatload usb 0 0x%08lx usb_update.txt", (ulong)buf);
+		snprintf(cmd, sizeof(cmd), "fatload usb 0 0x%08lx usb_update.txt", (ulong)buf);
 		ret = run_command(cmd, 0);
 	}
 	if (!ret) {
-		snprintf(cmd, 128, "script 0x%08lx", (ulong)buf);
+		snprintf(cmd, sizeof(cmd), "script 0x%08lx", (ulong)buf);
 		ret = run_command(cmd, 0);
 	}
 	free(buf);
+
+	desc->part_type = part_type;
 
 	return ret;
 }
@@ -155,6 +187,8 @@ static int do_tftp_update(cmd_tbl_t *cmdtp, int flag,
 	int dhcp = 0;
 	int ret;
 
+	printf("## retrieving tftp_update.txt ...\n");
+
 	if ((argc > 1) && !strcmp(argv[1], "-d"))
 		dhcp = 1;
 
@@ -165,10 +199,10 @@ static int do_tftp_update(cmd_tbl_t *cmdtp, int flag,
 	if (dhcp)
 		run_command("dhcp", 0);
 
-	snprintf(cmd, 128, "tftp 0x%08lx tftp_update.txt", (ulong)buf);
+	snprintf(cmd, sizeof(cmd), "tftp 0x%08lx tftp_update.txt", (ulong)buf);
 	ret = run_command(cmd, 0);
 	if (!ret) {
-		snprintf(cmd, 128, "script 0x%08lx", (ulong)buf);
+		snprintf(cmd, sizeof(cmd), "script 0x%08lx", (ulong)buf);
 		ret = run_command(cmd, 0);
 	}
 	free(buf);
