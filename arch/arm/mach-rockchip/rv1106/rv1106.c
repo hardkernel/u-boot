@@ -107,6 +107,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO3A_IOMUX_SEL_L		0x0040
 #define GPIO3A_IOMUX_SEL_H		0x0044
 
+#define GPIO4A_IOMUX_SEL_L		0x000
+#define GPIO4A_IOMUX_SEL_H		0x004
+#define GPIO4B_IOMUX_SEL_L		0x008
+
 #define GPIO4_IOC_GPIO4B_DS0		0x0030
 
 /* uart0 iomux */
@@ -429,6 +433,20 @@ int arch_cpu_init(void)
 	writel(0xfff01110, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_L);
 	writel(0xffff1111, GPIO3_IOC_BASE + GPIO3A_IOMUX_SEL_H);
 #endif
+
+#if defined(CONFIG_ROCKCHIP_SFC_IOMUX)
+	/* fspi iomux */
+	writel(0x0f000700, GPIO4_IOC_BASE + 0x0030);
+	writel(0xff002200, GPIO4_IOC_BASE + GPIO4A_IOMUX_SEL_L);
+	writel(0x0f0f0202, GPIO4_IOC_BASE + GPIO4A_IOMUX_SEL_H);
+	writel(0x00ff0022, GPIO4_IOC_BASE + GPIO4B_IOMUX_SEL_L);
+#elif defined(CONFIG_ROCKCHIP_EMMC_IOMUX)
+	/* emmc iomux */
+	writel(0xffff1111, GPIO4_IOC_BASE + GPIO4A_IOMUX_SEL_L);
+	writel(0xffff1111, GPIO4_IOC_BASE + GPIO4A_IOMUX_SEL_H);
+	writel(0x00ff0011, GPIO4_IOC_BASE + GPIO4B_IOMUX_SEL_L);
+#endif
+
 #endif
 	return 0;
 }
