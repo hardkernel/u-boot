@@ -375,7 +375,7 @@ int do_avb_write_is_device_unlocked(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_USAGE;
 
 	out_is_unlocked = simple_strtoul(argv[1], NULL, 16);
-	if ((out_is_unlocked != 0) || (out_is_unlocked != 1))
+	if ((out_is_unlocked != 0) && (out_is_unlocked != 1))
 		printf("enter out_is_unlocked value must is '0' or '1'\n");
 
 	ops = avb_ops_user_new();
