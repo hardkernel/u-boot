@@ -397,6 +397,65 @@ static ulong rockchip_aclk_lcdc_set_clk(struct rk3036_cru *cru,
 	return rockchip_aclk_lcdc_get_clk(cru, clk_general_rate);
 }
 
+static ulong rk3036_peri_get_clk(struct rk3036_clk_priv *priv, ulong clk_id,
+				 uint clk_general_rate)
+{
+	struct rk3036_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case ACLK_PERI:
+		con = readl(&cru->cru_clksel_con[10]);
+		div = (con & PERI_ACLK_DIV_MASK) >> PERI_ACLK_DIV_SHIFT;
+		parent = clk_general_rate;
+		break;
+	case PCLK_PWM:
+		con = readl(&cru->cru_clksel_con[10]);
+		div = (con & PERI_PCLK_DIV_MASK) >> PERI_PCLK_DIV_SHIFT;
+		parent = rk3036_peri_get_clk(priv, ACLK_PERI, clk_general_rate);
+		break;
+	default:
+		printf("do not support this peripheral bus\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3036_peri_set_clk(struct rk3036_clk_priv *priv,
+				 ulong clk_id, uint clk_general_rate,
+				 uint hz)
+{
+	struct rk3036_cru *cru = priv->cru;
+	int src_clk_div;
+
+	switch (clk_id) {
+	case ACLK_PERI:
+		src_clk_div = DIV_ROUND_UP(clk_general_rate, hz);
+		assert(src_clk_div - 1 < 32);
+		rk_clrsetreg(&cru->cru_clksel_con[10],
+			     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
+			     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << PERI_ACLK_DIV_SHIFT);
+		break;
+	case PCLK_PWM:
+		src_clk_div = DIV_ROUND_UP(rk3036_peri_get_clk(priv,
+							       ACLK_PERI,
+							       clk_general_rate),
+							       hz);
+		assert(src_clk_div - 1 < 8);
+		rk_clrsetreg(&cru->cru_clksel_con[10],
+			     PERI_PCLK_DIV_MASK,
+			     (src_clk_div - 1) << PERI_PCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peripheral bus\n");
+		return -EINVAL;
+	}
+
+	return rk3036_peri_get_clk(priv, clk_id, clk_general_rate);
+}
+
 static ulong rk3036_clk_get_rate(struct clk *clk)
 {
 	struct rk3036_clk_priv *priv = dev_get_priv(clk->dev);
@@ -411,6 +470,8 @@ static ulong rk3036_clk_get_rate(struct clk *clk)
 		return rockchip_aclk_lcdc_get_clk(priv->cru, gclk_rate);
 	case SCLK_SPI:
 		return rk3036_spi_get_clk(priv->cru, gclk_rate);
+	case PCLK_PWM:
+		return rk3036_peri_get_clk(priv, clk->id, gclk_rate);
 	default:
 		return -ENOENT;
 	}
@@ -441,6 +502,10 @@ static ulong rk3036_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_SPI:
 		new_rate = rk3036_spi_set_clk(priv->cru, gclk_rate,
 					      rate);
+		break;
+	case PCLK_PWM:
+		new_rate = rk3036_peri_set_clk(priv, clk->id, gclk_rate,
+					       rate);
 		break;
 	default:
 		return -ENOENT;
