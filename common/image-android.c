@@ -537,15 +537,17 @@ crypto_calc:
 	}
 
 	/* sha1 */
+	if (hdr->header_version < 3) {
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
 #ifdef CONFIG_DM_CRYPTO
-	crypto_sha_update(crypto, (u32 *)buffer, length);
-	crypto_sha_update(crypto, (u32 *)&length, typesz);
+		crypto_sha_update(crypto, (u32 *)buffer, length);
+		crypto_sha_update(crypto, (u32 *)&length, typesz);
 #else
-	sha1_update(&sha1_ctx, (void *)buffer, length);
-	sha1_update(&sha1_ctx, (void *)&length, typesz);
+		sha1_update(&sha1_ctx, (void *)buffer, length);
+		sha1_update(&sha1_ctx, (void *)&length, typesz);
 #endif
 #endif
+	}
 
 	return 0;
 }
