@@ -15,6 +15,13 @@
 #include <watchdog.h>
 #include <u-boot/sha256.h>
 
+#include <linux/compiler.h>
+
+#ifdef USE_HOSTCC
+#undef __weak
+#define __weak
+#endif
+
 const uint8_t sha256_der_prefix[SHA256_DER_LEN] = {
 	0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
 	0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
@@ -56,7 +63,7 @@ void sha256_starts(sha256_context * ctx)
 	ctx->state[7] = 0x5BE0CD19;
 }
 
-static void sha256_process(sha256_context *ctx, const uint8_t data[64])
+static void sha256_process_one(sha256_context *ctx, const uint8_t data[64])
 {
 	uint32_t temp1, temp2;
 	uint32_t W[64];
@@ -187,6 +194,18 @@ static void sha256_process(sha256_context *ctx, const uint8_t data[64])
 	ctx->state[7] += H;
 }
 
+__weak void sha256_process(sha256_context *ctx, const unsigned char *data,
+			   unsigned int blocks)
+{
+	if (!blocks)
+		return;
+
+	while (blocks--) {
+		sha256_process_one(ctx, data);
+		data += 64;
+	}
+}
+
 void sha256_update(sha256_context *ctx, const uint8_t *input, uint32_t length)
 {
 	uint32_t left, fill;
@@ -205,17 +224,15 @@ void sha256_update(sha256_context *ctx, const uint8_t *input, uint32_t length)
 
 	if (left && length >= fill) {
 		memcpy((void *) (ctx->buffer + left), (void *) input, fill);
-		sha256_process(ctx, ctx->buffer);
+		sha256_process(ctx, ctx->buffer, 1);
 		length -= fill;
 		input += fill;
 		left = 0;
 	}
 
-	while (length >= 64) {
-		sha256_process(ctx, input);
-		length -= 64;
-		input += 64;
-	}
+	sha256_process(ctx, input, length / 64);
+	input += length / 64 * 64;
+	length = length % 64;
 
 	if (length)
 		memcpy((void *) (ctx->buffer + left), (void *) input, length);
