@@ -250,6 +250,7 @@ int setup_boot_mode(void)
 	case BOOT_MODE_LOADER:
 		printf("enter Rockusb!\n");
 		env_set("preboot", "setenv preboot; rockusb 0 ${devtype} ${devnum}; rbrom");
+		run_command("rockusb 0 ${devtype} ${devnum}", 0);
 		break;
 	case BOOT_MODE_CHARGING:
 		printf("enter charging!\n");
