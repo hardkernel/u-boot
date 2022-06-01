@@ -143,4 +143,15 @@ config ARMV8_SECURE_BASE
 
 endif
 
+menuconfig ARMV8_CRYPTO
+	bool "ARM64 Accelerated Cryptographic Algorithms"
+
+if ARMV8_CRYPTO
+
+config ARMV8_CE_SHA1
+	bool "SHA-1 digest algorithm (ARMv8 Crypto Extensions)"
+	default y if SHA1
+
+endif
+
 endif
