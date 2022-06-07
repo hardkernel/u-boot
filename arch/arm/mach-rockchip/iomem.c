@@ -91,6 +91,10 @@ static int do_iomem_by_match(cmd_tbl_t *cmdtp, int flag,
 	search = argv[1];
 	start = simple_strtoul(argv[2], NULL, 0);
 	end = simple_strtoul(argv[3], NULL, 0);
+	if (start > end) {
+		printf("Invalid: 0x%lx > 0x%lx\n", (ulong)start, (ulong)end);
+		return CMD_RET_FAILURE;
+	}
 
 	if (!iomem_show_by_match(SEARCH_COMP, search, start, end))
 		iomem_show_by_match(SEARCH_NAME, search, start, end);
