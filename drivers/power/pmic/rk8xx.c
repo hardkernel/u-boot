@@ -415,6 +415,7 @@ static int rk8xx_irq_chip_init(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	struct virq_chip *irq_chip = NULL;
+	__maybe_unused int irq_plugout = 1;
 	int ret;
 
 	switch (priv->variant) {
@@ -423,6 +424,7 @@ static int rk8xx_irq_chip_init(struct udevice *dev)
 		break;
 	case RK805_ID:
 		irq_chip = &rk805_irq_chip;
+		irq_plugout = 0;
 		break;
 	case RK816_ID:
 		irq_chip = &rk816_irq_chip;
@@ -451,13 +453,15 @@ static int rk8xx_irq_chip_init(struct udevice *dev)
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 		int irq;
 
-		irq = virq_to_irq(irq_chip, RK8XX_IRQ_PLUG_OUT);
-		if (irq < 0) {
-			printf("Failed to register plugout irq, ret=%d\n", irq);
-			return irq;
+		if (irq_plugout) {
+			irq = virq_to_irq(irq_chip, RK8XX_IRQ_PLUG_OUT);
+			if (irq < 0) {
+				printf("Failed to register plugout irq, ret=%d\n", irq);
+				return irq;
+			}
+			irq_install_handler(irq, rk8xx_plug_out_handler, dev);
+			irq_handler_enable_suspend_only(irq);
 		}
-		irq_install_handler(irq, rk8xx_plug_out_handler, dev);
-		irq_handler_enable_suspend_only(irq);
 #endif
 	}
 
