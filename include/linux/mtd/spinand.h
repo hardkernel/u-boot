@@ -261,6 +261,7 @@ extern const struct spinand_manufacturer etron_spinand_manufacturer;
 extern const struct spinand_manufacturer jsc_spinand_manufacturer;
 extern const struct spinand_manufacturer silicongo_spinand_manufacturer;
 extern const struct spinand_manufacturer unim_spinand_manufacturer;
+extern const struct spinand_manufacturer skyhigh_spinand_manufacturer;
 
 /**
  * struct spinand_op_variants - SPI NAND operation variants
