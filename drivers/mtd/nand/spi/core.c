@@ -1047,8 +1047,8 @@ static int spinand_detect(struct spinand_device *spinand)
 
 	ret = spinand_id_detect(spinand);
 	if (ret) {
-		dev_err(dev, "unknown raw ID %*phN\n", SPINAND_MAX_ID_LEN,
-			spinand->id.data);
+		dev_err(dev, "unknown raw ID %x %x %x\n",
+			spinand->id.data[0], spinand->id.data[1], spinand->id.data[2]);
 		return ret;
 	}
 
