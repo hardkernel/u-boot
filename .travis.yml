@@ -14,6 +14,22 @@ matrix:
 addons:
   apt:
     packages:
+    - cppcheck
+    - sloccount
+    - sparse
+    - bc
+    - build-essential
+    - libsdl1.2-dev
+    - python
+    - python-virtualenv
+    - swig
+    - libpython-dev
+    - gcc-powerpc-linux-gnu
+    - iasl
+    - grub-efi-ia32-bin
+    - rpm2cpio
+    - wget
+    - device-tree-compiler        
 
 git:
   depth: 1
