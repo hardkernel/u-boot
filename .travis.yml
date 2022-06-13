@@ -32,12 +32,11 @@ before_script:
   - export PATH=$TOPDIR/opt/toolchains/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin:/opt/toolchains/xpack-riscv-none-embed-gcc-10.2.0-1.2/bin:$PATH
 
 script:
-  - make ${TARGET_BOARD}_defconfig
-  - make
+  - ./make.sh ${TARGET_BOARD}
 
 before_deploy:
   - export RELEASE_VERSION="${TARGET_BOARD}-${TRAVIS_BUILD_NUMBER}"
-  - tar czf u-boot-${RELEASE_VERSION}.tar.gz sd_fuse/u-boot.bin sd_fuse/sd_fusing.sh
+  - tar czf u-boot-${RELEASE_VERSION}.tar.gz uboot.img
   - git config --global user.name ${GIT_USER_NAME}
   - git config --global user.email ${GIT_USER_EMAIL}
   - export REMOTE_URL=`git config --get remote.origin.url`
