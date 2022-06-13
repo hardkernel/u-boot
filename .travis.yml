@@ -29,7 +29,10 @@ addons:
     - grub-efi-ia32-bin
     - rpm2cpio
     - wget
-    - device-tree-compiler        
+    - device-tree-compiler
+    - lzop
+    - gcc
+    - libncurses5-dev
 
 git:
   depth: 1
