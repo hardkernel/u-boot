@@ -180,7 +180,7 @@
         "ramdisk_addr_r=0x3080000\0" \
         "preloadaddr=0x4000000\0"\
         "lcd_clk_path=1\0" \
-        "lcd_debug_print=1\0" \
+        "lcd_debug_print=0\0" \
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
@@ -315,7 +315,7 @@
 //#define CONFIG_VPU_CLK_LEVEL_DFT		7
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20			1
+//#define CONFIG_AML_HDMITX20			1
 #define CONFIG_AML_CANVAS			1
 #define CONFIG_AML_VOUT				1
 #define CONFIG_AML_OSD				1
@@ -404,6 +404,13 @@
 #define CONFIG_SYS_I2C_SPEED			400000
 #define CONFIG_EFUSE				1
 #define CONFIG_ODROID_PMIC			1
+
+#define CONFIG_POWER				1
+#define CONFIG_POWER_I2C			1
+#define CONFIG_POWER_RK818			1
+#define CONFIG_UBOOT_CHARGE			1
+#define CONFIG_SYSTEM_ON_VOL_THRESD		3000
+#define CONFIG_SCREEN_ON_VOL_THRESD		0
 
 /* commands */
 #define CONFIG_CMD_CACHE			1

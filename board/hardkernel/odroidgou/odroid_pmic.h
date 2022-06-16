@@ -21,7 +21,18 @@
 #define RK817_POWER_EN0		0xb1
 #define RK817_POWER_EN1		0xb2
 #define RK817_POWER_EN2		0xb3
+#define RK817_POWER_EN3		0xb4
+
+enum pwron_src {
+	PWRON_KEY = 0,
+	PWRON_USB,
+	PWRON_RTC,
+	PWRON_RESET,
+	PWRON_KEY_LP,
+	PWRON_RECOVER,
+};
 
 void odroid_pmic_init(void);
+int board_check_power(void);
 
 #endif

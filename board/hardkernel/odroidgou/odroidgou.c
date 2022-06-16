@@ -34,10 +34,7 @@
 #include <linux/sizes.h>
 #include <asm-generic/gpio.h>
 #include <dm.h>
-#ifdef CONFIG_AML_SPIFC
-#include <amlogic/spifc.h>
-#endif
-
+#include <asm/arch/usb-v2.h>
 #include <odroid-common.h>
 #include "display.h"
 #include "odroid_pmic.h"
@@ -46,7 +43,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
 struct eth_board_socket*  eth_board_skt;
-
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -288,6 +284,7 @@ int board_early_init_f(void){
 
 static void gpio_set_vbus_power(char is_power_on)
 {
+	return;
 }
 
 struct amlogic_usb_config g_usb_config_GXL_skt={
@@ -306,53 +303,7 @@ struct amlogic_usb_config g_usb_config_GXL_skt={
 
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-#ifdef CONFIG_AML_HDMITX20
-static void hdmi_tx_set_hdmi_5v(void)
-{
-}
-#endif
 
-#ifdef CONFIG_AML_SPIFC
-/*
- * BOOT_3: NOR_HOLDn:reg0[15:12]=3
- * BOOT_4: NOR_D:reg0[19:16]=3
- * BOOT_5: NOR_Q:reg0[23:20]=3
- * BOOT_6: NOR_C:reg0[27:24]=3
- * BOOT_7: NOR_WPn:reg0[31:28]=3
- * BOOT_14: NOR_CS:reg1[27:24]=3
- */
-#define SPIFC_NUM_CS 1
-static int spifc_cs_gpios[SPIFC_NUM_CS] = {54};
-
-static int spifc_pinctrl_enable(void *pinctrl, bool enable)
-{
-	unsigned int val;
-
-	val = readl(P_PERIPHS_PIN_MUX_0);
-	val &= ~(0xfffff << 12);
-	if (enable)
-		val |= 0x33333 << 12;
-	writel(val, P_PERIPHS_PIN_MUX_0);
-
-	val = readl(P_PERIPHS_PIN_MUX_1);
-	val &= ~(0xf << 24);
-	writel(val, P_PERIPHS_PIN_MUX_1);
-	return 0;
-}
-
-static const struct spifc_platdata spifc_platdata = {
-	.reg = 0xffd14000,
-	.mem_map = 0xf6000000,
-	.pinctrl_enable = spifc_pinctrl_enable,
-	.num_chipselect = SPIFC_NUM_CS,
-	.cs_gpios = spifc_cs_gpios,
-};
-
-U_BOOT_DEVICE(spifc) = {
-	.name = "spifc",
-	.platdata = &spifc_platdata,
-};
-#endif /* CONFIG_AML_SPIFC */
 
 int board_init(void)
 {
@@ -369,8 +320,6 @@ int board_init(void)
 #if !defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV		0
 #endif
-
-extern void cvbs_init(void);
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
@@ -399,35 +348,20 @@ int board_late_init(void)
 	vpu_probe();
 #endif
 	vpp_init();
-#ifdef CONFIG_AML_HDMITX20
-	hdmi_tx_set_hdmi_5v();
-	hdmi_tx_init();
-#endif
-
-#ifdef CONFIG_AML_CVBS
-	run_command("cvbs init; cvbs output 480cvbs", 0);
-	board_cvbs_probe();
-#endif
 
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
+#endif
+	/* boot logo display - 1080p60hz */
+#ifdef CONFIG_AML_LCD
+	gou_display_env_init();
 #endif
 
 	setenv("variant", "gou");
 	board_set_dtbfile("meson64_odroid%s.dtb");
 
-	if (get_boot_device() == BOOT_DEVICE_SPI) {
-		setenv("bootdelay", "0");
-		setenv("bootcmd", "run boot_spi");
-	}
+	board_check_power();
 
-	usbhost_early_poweron();
-
-	/* boot logo display - 1080p60hz */
-#ifdef CONFIG_AML_LCD
-	gou_display_env_init();
-	gou_bmp_display(DISP_LOGO);
-#endif
 	return 0;
 }
 #endif

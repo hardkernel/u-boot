@@ -44,6 +44,7 @@ struct power_fg {
 };
 
 struct power_chrg {
+	int state_of_charger;
 	int (*chrg_type) (struct pmic *p);
 	int (*chrg_bat_present) (struct pmic *p);
 	int (*chrg_state) (struct pmic *p, int state, int current);
@@ -78,6 +79,20 @@ struct pmic {
 	struct list_head list;
 };
 
+struct  pmic_voltage{
+        char            *name;
+        int             vol;
+};
+
+struct fdt_regulator_match {
+	const char *prop;
+	const char *name;
+	int min_uV;
+	int max_uV;
+	int boot_on;
+	int init_uV;
+};
+
 int pmic_init(unsigned char bus);
 int power_init_board(void);
 int pmic_dialog_init(unsigned char bus);
@@ -88,11 +103,28 @@ int pmic_probe(struct pmic *p);
 int pmic_reg_read(struct pmic *p, u32 reg, u32 *val);
 int pmic_reg_write(struct pmic *p, u32 reg, u32 val);
 int pmic_set_output(struct pmic *p, u32 reg, int ldo, int on);
+int pmic_get_vol(char *name);
+
+#if 1
+int fdt_regulator_match(const void *blob, int node,
+		struct fdt_regulator_match *matches, int num_matches);
+int fdt_get_regulator_node(const void * blob, int node);
+int fdt_get_i2c_info(const void* blob, int node, u32 *pbus, u32 *paddr);
+int fdt_get_regulator_init_data(const void *blob, int node,
+				struct fdt_regulator_match *match);
+#endif
 
 #define pmic_i2c_addr (p->hw.i2c.addr)
 #define pmic_i2c_tx_num (p->hw.i2c.tx_num)
 
 #define pmic_spi_bitlen (p->hw.spi.bitlen)
 #define pmic_spi_flags (p->hw.spi.flags)
+
+int check_charge(void);
+int pmic_charger_setting(int current);
+void shut_down(void);
+int fg_init(unsigned char bus);
+void plat_charger_init(void);
+int fixed_regulator_init(void);
 
 #endif /* __CORE_PMIC_H_ */

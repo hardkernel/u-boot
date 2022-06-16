@@ -17,13 +17,19 @@
 */
 
 #include <common.h>
+#include <errno.h>
 #include <malloc.h>
 #include <asm/arch/gpio.h>
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
 
+#include <power/battery.h>
+#include <power/rk818_pmic.h>
+#include <power/rockchip_power.h>
+
 #include "odroid_pmic.h"
+#include "display.h"
 
 void i2c_check_bus(unsigned int master_num)
 {
@@ -80,6 +86,97 @@ static int rk817_i2c_write(int32_t command, uint8_t val)
 	return ret;
 }
 
+void rk817_shutdown(void)
+{
+	/* RK817 LDO disable */
+	rk817_i2c_write(RK817_POWER_EN1, 0xf0);
+	rk817_i2c_write(RK817_POWER_EN2, 0xf0);
+	rk817_i2c_write(RK817_POWER_EN3, 0xf0);
+}
+
+int odroid_check_pwron_src(void)
+{
+	int ret = PWRON_KEY;
+	u8 reg = rk818_pwron_source();
+
+	if ( reg & 0x80) {
+		printf("PWRON source : PWRON_KEY\n");
+		ret = PWRON_KEY;
+	} else if ( reg & 0x40) {
+		printf("PWRON source : PWRON_USB\n");
+		ret = PWRON_USB;
+	} else if ( reg & 0x20) {
+		printf("PWRON source : PWRON_RTC\n");
+		ret = PWRON_RTC;
+	} else if ( reg & 0x10) {
+		printf("PWRON source : PWRON_RESET\n");
+		ret = PWRON_RESET;
+	} else if ( reg & 0x08) {
+		printf("PWRON source : PWRON_KEY Long press\n");
+		ret = PWRON_KEY_LP;
+	} else if ( reg & 0x04) {
+		printf("PWRON source : PWRON_KEY Recovery\n");
+		ret = PWRON_RECOVER;
+	} else {
+		printf("PWRON source : Unknown source, set default PWRON_KEY\n");
+		ret = PWRON_KEY;
+	}
+
+	return ret;
+}
+
+int odroid_charge_enable(void)
+{
+	struct pmic *p_fg = NULL;
+
+	p_fg = pmic_get("RK818_FG");
+
+	if (p_fg) {
+		if (p_fg->pbat->battery_charge)
+			p_fg->pbat->battery_charge(p_fg);
+
+		if (p_fg->fg->fg_battery_update)
+			p_fg->fg->fg_battery_update(p_fg, p_fg);
+	} else {
+		printf("no fuel gauge found\n");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+int board_check_power(void)
+{
+	int pwron_src;
+	int cnt = 0;
+	// check pwr on source
+
+	pwron_src = odroid_check_pwron_src();
+	printf("PWRON source : %d\n",pwron_src);
+	if (pwron_src != PWRON_KEY) {
+		odroid_charge_enable();
+		printf("battery charge state\n");
+		while(1) {
+			gou_bmp_display(DISP_BATT_0+cnt);
+			mdelay(1000);
+			cnt++;
+			if (cnt >= DISP_BATT_3) cnt=0;
+			if(!is_charging()) {
+				break;
+			}
+		}
+	}
+
+	gou_bmp_display(DISP_LOGO);
+	// poweron source != PWR_KEY
+	// check charger : online = charging, offline = shutdown
+	// charge full = stanby
+
+	// poweron source == PWR_KEY
+	// battery check : Low = low_batt display -> shutdown, else boot up
+
+	return 0;
+}
 /* Set default buck, ldo voltage */
 void odroid_pmic_init(void)
 {
@@ -113,5 +210,21 @@ void odroid_pmic_init(void)
 	/* RK817 BUCK2,BUCK3 enable */
 	rk817_i2c_write(RK817_POWER_EN0, 0x66);
 
+#if defined(CONFIG_POWER_RK818)
+	int ret = -1;
+	ret = pmic_init(RK818_I2C_BUS);
+	if (ret >= 0) printf("pmic:rk818\n");
+	else printf("pmic:rk818 init fail....\n");
+#endif
 	printf("leave odroid_pmic_init.\n");
+	return;
 }
+
+int do_poweroff(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+	rk817_shutdown();
+	pmic_rk818_shut_down();
+	return (0);
+}
+
+U_BOOT_CMD(poweroff, 1, 1, do_poweroff, "Switch off power", "");
