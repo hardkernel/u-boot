@@ -529,8 +529,9 @@ static int rk3588_set_rgmii_speed(struct gmac_rockchip_platdata *pdata,
 		RK3588_GMAC_CLK_RGMII_DIV1 = 0,
 		RK3588_GMAC_CLK_RGMII_DIV5 = GENMASK(3, 2),
 		RK3588_GMAC_CLK_RGMII_DIV50 = BIT(3),
-		RK3588_GMA_CLK_RMII_DIV2 = BIT(2),
+		RK3588_GMAC_CLK_RMII_DIV2 = BIT(2),
 		RK3588_GMAC_CLK_RMII_DIV20 = 0,
+		RK3588_GMAC1_ID_SHIFT = 5,
 	};
 
 	php_grf = syscon_get_first_range(ROCKCHIP_SYSCON_PHP_GRF);
@@ -544,7 +545,7 @@ static int rk3588_set_rgmii_speed(struct gmac_rockchip_platdata *pdata,
 		break;
 	case 100:
 		if (pdata->phy_interface == PHY_INTERFACE_MODE_RMII)
-			div = RK3588_GMA_CLK_RMII_DIV2;
+			div = RK3588_GMAC_CLK_RMII_DIV2;
 		else
 			div = RK3588_GMAC_CLK_RGMII_DIV5;
 		break;
@@ -563,6 +564,10 @@ static int rk3588_set_rgmii_speed(struct gmac_rockchip_platdata *pdata,
 		div <<= 5;
 		div_mask = RK3588_GMAC_CLK_RGMII_DIV_MASK << 5;
 	}
+
+	div <<= pdata->bus_id ? RK3588_GMAC1_ID_SHIFT : 0;
+	div_mask = pdata->bus_id ? (RK3588_GMAC_CLK_RGMII_DIV_MASK << 5) :
+		   RK3588_GMAC_CLK_RGMII_DIV_MASK;
 
 	rk_clrsetreg(&php_grf->clk_con1, div_mask, div);
 
