@@ -1090,10 +1090,8 @@ static ulong rk3588_dclk_vop_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 					       priv->cru, V0PLL);
 	else if (sel == DCLK_VOP_SRC_SEL_GPLL)
 		parent = priv->gpll_hz;
-	else if (sel == DCLK_VOP_SRC_SEL_CPLL)
-		parent = priv->cpll_hz;
 	else
-		return -ENOENT;
+		parent = priv->cpll_hz;
 
 	return DIV_TO_RATE(parent, div);
 }
