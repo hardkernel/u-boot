@@ -293,7 +293,7 @@ static ulong rk3588_top_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 		if (sel == ACLK_TOP_ROOT_SRC_SEL_CPLL)
 			prate = priv->cpll_hz;
 		else
-			prate = priv->cpll_hz;
+			prate = priv->gpll_hz;
 		return DIV_TO_RATE(prate, div);
 	case ACLK_LOW_TOP_ROOT:
 		con = readl(&cru->clksel_con[8]);
