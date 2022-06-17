@@ -1806,7 +1806,7 @@ int rk3588_mmc_get_phase(struct clk *clk)
 	ulong rate;
 
 	rate = rk3588_clk_get_rate(clk);
-	if (rate < 0)
+	if (rate <= 0)
 		return rate;
 
 	if (clk->id == SCLK_SDMMC_SAMPLE)
@@ -1839,7 +1839,7 @@ int rk3588_mmc_set_phase(struct clk *clk, u32 degrees)
 	ulong rate;
 
 	rate = rk3588_clk_get_rate(clk);
-	if (rate < 0)
+	if (rate <= 0)
 		return rate;
 
 	nineties = degrees / 90;
