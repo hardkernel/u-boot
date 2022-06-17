@@ -14,7 +14,7 @@
 #define TIMER7_BASE		0xff810020
 
 #define rk_clrsetreg(addr, clr, set)	\
-				writel(((clr) | (set)) << 16 | (set), addr)
+				writel((((clr) | (set)) << 16) | (set), addr)
 #define rk_clrreg(addr, clr)		writel((clr) << 16, addr)
 #define rk_setreg(addr, set)		writel((set) << 16 | (set), addr)
 
