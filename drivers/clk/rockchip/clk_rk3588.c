@@ -2491,21 +2491,12 @@ int soc_clk_dump(void)
 
 			rate = clk_get_rate(&clk);
 			clk_free(&clk);
-			if (i == 0) {
-				if (rate < 0)
-					printf("  %s %s\n", clk_dump->name,
-					       "unknown");
-				else
-					printf("  %s %lu KHz\n", clk_dump->name,
-					       rate / 1000);
-			} else {
-				if (rate < 0)
-					printf("  %s %s\n", clk_dump->name,
-					       "unknown");
-				else
-					printf("  %s %lu KHz\n", clk_dump->name,
-					       rate / 1000);
-			}
+			if (rate < 0)
+				printf("  %s %s\n", clk_dump->name,
+				       "unknown");
+			else
+				printf("  %s %lu KHz\n", clk_dump->name,
+				       rate / 1000);
 		}
 	}
 
