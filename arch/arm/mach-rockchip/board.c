@@ -123,7 +123,7 @@ static int rockchip_set_ethaddr(void)
 		}
 
 		if (is_valid_ethaddr(&ethaddr[i * ARP_HLEN])) {
-			sprintf(buf, "%pM", &ethaddr[i * ARP_HLEN]);
+			snprintf(buf, ARP_HLEN_ASCII + 1, "%pM", &ethaddr[i * ARP_HLEN]);
 			if (i == 0)
 				memcpy(mac, "ethaddr", sizeof("ethaddr"));
 			else
