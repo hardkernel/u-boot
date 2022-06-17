@@ -292,7 +292,7 @@ static int rk3399_emmc_get_phy(struct udevice *dev)
 	}
 
 	grf_base = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-	if (grf_base < 0)
+	if (IS_ERR(grf_base))
 		printf("%s Get syscon grf failed", __func__);
 	grf_phy_offset = ofnode_read_u32_default(phy_node, "reg", 0);
 
