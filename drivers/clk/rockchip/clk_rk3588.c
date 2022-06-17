@@ -2484,6 +2484,7 @@ int soc_clk_dump(void)
 	for (i = 0; i < clk_count; i++) {
 		clk_dump = &clks_dump[i];
 		if (clk_dump->name) {
+			memset(&clk, 0, sizeof(struct clk));
 			clk.id = clk_dump->id;
 			if (clk_dump->is_cru)
 				ret = clk_request(cru_dev, &clk);
