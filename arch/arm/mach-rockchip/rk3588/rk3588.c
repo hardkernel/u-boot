@@ -945,3 +945,36 @@ int rk_board_fdt_fixup(const void *blob)
 
 	return 0;
 }
+
+#ifdef CONFIG_SPL_BUILD
+int spl_fit_standalone_release(char *id, uintptr_t entry_point)
+{
+	/* gpll enable */
+	writel(0x00f00042, 0xfd7c01c4);
+	/* set start addr, pmu_mcu_code_addr_start */
+	writel(0xFFFF0000 | (entry_point >> 16), 0xFD582024);
+	/* pmu_mcu_sram_addr_start */
+	writel(0xFFFF2000, 0xFD582028);
+	/* pmu_mcu_tcm_addr_start */
+	writel(0xFFFF2000, 0xFD582034);
+	/* set mcu secure */
+	writel(0x00080000, 0xFD582000);
+	/* set cache cache_peripheral_addr */
+	writel(0xffff0000, 0xFD582018);
+	writel(0xffffee00, 0xFD58201c);
+	writel(0x00ff00ff, 0xFD582020);  /* 0xf0000000 ~ 0xfee00000 */
+	/* mcupmu access DDR secure control, each bit for a region. */
+	writel(0x0000ffff, 0xFE03008C);
+	/* mcupmu access DDR secure control, each bit for a region. */
+	writel(0x000000ff, 0xFE03808C);
+	/* PMU WDT reset system enable */
+	writel(0x02000200, 0xFD586008);
+	/* WDT trigger global reset. */
+	writel(0x08400840, 0xFD7C0C10);
+	/* Spl helps to load the mcu image, but not need to release
+	 * mcu for rk3588.
+	 */
+
+	return 0;
+}
+#endif
