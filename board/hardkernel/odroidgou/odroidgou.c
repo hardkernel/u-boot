@@ -22,9 +22,6 @@
 #include <vpu.h>
 #endif
 #include <vpp.h>
-#ifdef CONFIG_AML_HDMITX20
-#include <amlogic/hdmi.h>
-#endif
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
@@ -40,9 +37,6 @@
 #include "odroid_pmic.h"
 
 DECLARE_GLOBAL_DATA_PTR;
-
-//new static eth setup
-struct eth_board_socket*  eth_board_skt;
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -64,48 +58,6 @@ int dram_init(void)
 void secondary_boot_func(void)
 {
 }
-
-#ifdef ETHERNET_EXTERNAL_PHY
-
-static int dwmac_meson_cfg_drive_strength(void)
-{
-	writel(0xaaaaaaa5, P_PAD_DS_REG4A);
-	return 0;
-}
-
-static void setup_net_chip_ext(void)
-{
-	eth_aml_reg0_t eth_reg0;
-	writel(0x11111111, P_PERIPHS_PIN_MUX_6);
-	writel(0x111111, P_PERIPHS_PIN_MUX_7);
-
-	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 1;
-	eth_reg0.b.rx_clk_rmii_invert = 0;
-	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 1;
-	eth_reg0.b.rgmii_tx_clk_ratio = 4;
-	eth_reg0.b.phy_ref_clk_enable = 1;
-	eth_reg0.b.clk_rmii_i_invert = 0;
-	eth_reg0.b.clk_en = 1;
-	eth_reg0.b.adj_enable = 0;
-	eth_reg0.b.adj_setup = 0;
-	eth_reg0.b.adj_delay = 0;
-	eth_reg0.b.adj_skew = 0;
-	eth_reg0.b.cali_start = 0;
-	eth_reg0.b.cali_rise = 0;
-	eth_reg0.b.cali_sel = 0;
-	eth_reg0.b.rgmii_rx_reuse = 0;
-	eth_reg0.b.eth_urgent = 0;
-	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
-
-	setbits_le32(HHI_GCLK_MPEG1, 0x1 << 3);
-	/* power on memory */
-	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
-}
-#endif
-extern struct eth_board_socket* eth_board_setup(char *name);
-extern int designware_initialize(ulong base_addr, u32 interface);
 
 int board_eth_init(bd_t *bis)
 {
@@ -361,6 +313,16 @@ int board_late_init(void)
 	board_set_dtbfile("meson64_odroid%s.dtb");
 
 	board_check_power();
+
+	if (board_check_odroidbios(0) == 0) {
+		/* TODO: WHY?
+		 * eMMC must be initiated once, otherwise SPI flash memory cannot be
+		 * accessible in the Linux kernel.
+		 */
+		run_command("mmc dev 0", 0);
+	} else if (board_check_odroidbios(1) == 0) {
+		run_command("mmc dev 0", 0);
+	}
 
 	return 0;
 }

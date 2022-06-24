@@ -56,4 +56,6 @@ int usbhost_early_poweron(void);
 int usbhost_gpio_alloc(void);
 int usbhost_set_power(int on);
 
+int board_check_odroidbios(int devno);
+
 #endif

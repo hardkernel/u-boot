@@ -674,7 +674,7 @@ int aml_i2c_init_port(struct aml_i2c_platform *plat)
 		return	-1;
 	}
 
-	printf("%s init regs for %d\n", __func__, i2c->master_no);
+	AML_I2C_DBG(1, "%s init regs for %d\n", __func__, i2c->master_no);
 	i2c->master_regs = (struct aml_i2c_reg_master __iomem*)(g_aml_i2c_reg_start[i2c->master_no]);
 
 	AML_I2C_ASSERT(i2c->master_regs);
@@ -1098,7 +1098,7 @@ int i2c_set_bus_num(unsigned int busnum)
 		printf("%s no %d busnum enable\n", __func__, busnum);
 		return 0;
 	}
-	printf("%s i2c sel %d bus\n", __func__, busnum);
+	AML_I2C_DBG(1, "%s i2c sel %d bus\n", __func__, busnum);
 	aml_i2c_init_port(&g_i2c_ports[i]);
 	return 0;
 }

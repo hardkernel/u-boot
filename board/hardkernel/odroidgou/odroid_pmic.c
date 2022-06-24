@@ -125,45 +125,35 @@ int odroid_check_pwron_src(void)
 	return ret;
 }
 
-int odroid_charge_enable(void)
+int board_check_power(void)
 {
 	struct pmic *p_fg = NULL;
 
-	p_fg = pmic_get("RK818_FG");
-
-	if (p_fg) {
-		if (p_fg->pbat->battery_charge)
-			p_fg->pbat->battery_charge(p_fg);
-
-		if (p_fg->fg->fg_battery_update)
-			p_fg->fg->fg_battery_update(p_fg, p_fg);
-	} else {
-		printf("no fuel gauge found\n");
-		return -ENODEV;
-	}
-
-	return 0;
-}
-
-int board_check_power(void)
-{
 	int pwron_src;
 	int cnt = 0;
 	// check pwr on source
 
+	p_fg = pmic_get("RK818_FG");
+	if (p_fg == NULL)
+		printf("fuel gauge not found\n");
+
 	pwron_src = odroid_check_pwron_src();
-	printf("PWRON source : %d\n",pwron_src);
+
 	if (pwron_src != PWRON_KEY) {
-		odroid_charge_enable();
-		printf("battery charge state\n");
+		if (p_fg->fg->fg_battery_update)
+			p_fg->fg->fg_battery_update(p_fg, p_fg);
 		while(1) {
+			if(!is_charging()) {
+				// TODO : poweroff
+				break;
+			}
+			if (p_fg->fg->fg_battery_update)
+				p_fg->fg->fg_battery_update(p_fg, p_fg);
+
 			gou_bmp_display(DISP_BATT_0+cnt);
 			mdelay(1000);
 			cnt++;
 			if (cnt >= DISP_BATT_3) cnt=0;
-			if(!is_charging()) {
-				break;
-			}
 		}
 	}
 

@@ -20,7 +20,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static int dbg_enable = 1;
+static int dbg_enable = 0;
 #define DBG(args...) \
 	do { \
 		if (dbg_enable) { \
@@ -1084,7 +1084,6 @@ static void rk818_bat_fg_init(struct battery_info *di)
 	di->term_sig_base = get_timer(0);
 	di->pwr_vol = di->voltage_avg;
 
-rk818_bat_debug_info(di);
 	DBG("%s: dsoc=%d, rsoc=%d, v=%d, ov=%d, c=%d, estv=%d\n",
 	    __func__, di->dsoc, di->rsoc, di->voltage_avg, di->voltage_ocv,
 	    di->current_avg, rk818_bat_get_est_voltage(di));
@@ -1771,7 +1770,6 @@ int fg_rk818_init(unsigned char bus, uchar addr)
 	struct battery_info *di = &rk818_fg.di;
 	int ret;
 
-printf("CKKIM -> %s[%d]\n",__func__,__LINE__);
 	if (!rk818_fg.p)
 		rk818_fg.p = pmic_alloc();
 	rk818_fg.p->name = name;
@@ -1783,13 +1781,11 @@ printf("CKKIM -> %s[%d]\n",__func__,__LINE__);
 	i2c_set_bus_num(bus);
 	i2c_init(RK818_I2C_SPEED, addr);
 
-printf("CKKIM -> %s[%d]\n",__func__,__LINE__);
 	ret = rk818_bat_set_info(di);
 	if (ret < 0) {
 		printf("rk818_bat_set_info failed!\n");
 		return ret;
 	}
-printf("CKKIM -> %s[%d]\n",__func__,__LINE__);
 
 	rk818_bat_fg_init(di);
 

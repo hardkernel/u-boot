@@ -5,6 +5,7 @@
 #include <asm-generic/gpio.h>
 #include <asm/arch/gpio.h>
 #include <linux/kernel.h>
+#include <fs.h>
 
 #include <odroid-common.h>
 
@@ -141,3 +142,40 @@ int board_is_odroidgou(void)
 	return (board_revision() >= 0x20211110);
 }
 #endif
+
+int board_check_odroidbios(int devno)
+{
+	char buf[1024];
+	int len = 0;
+
+	if (get_boot_device() == BOOT_DEVICE_SPI) {
+		len = snprintf(buf, sizeof(buf),
+				"sf probe; "
+				"sf read ${cramfsaddr} "
+				"${bios_offset_firmware} ${bios_sizeof_firmware}; ");
+
+		setenv("bootdev", "/dev/mtd1");
+	} else {
+		char devstr[16];
+		snprintf(devstr, sizeof(devstr), "%d:1", devno);
+
+		if (!file_exists("mmc", devstr, "ODROIDBIOS.BIN", FS_TYPE_ANY))
+			return -ENODEV;
+
+		len = snprintf(buf, sizeof(buf),
+				"load mmc %s ${cramfsaddr} ODROIDBIOS.BIN; ", devstr);
+		if (get_boot_device() == BOOT_DEVICE_EMMC)
+			setenv("bootdev", "/dev/mmcblk0");
+		else if (get_boot_device() == BOOT_DEVICE_SD)
+			setenv("bootdev", "/dev/mmcblk1");
+	}
+
+	strncat(buf, "cramfsload 0x10000000 boot.ini; "
+			"source 0x10000000", sizeof(buf) - len);
+
+	setenv("bootcmd", buf);
+	setenv("cramfsaddr", "0x10100000");
+	setenv("bootdelay", "0");
+
+	return 0;
+}
