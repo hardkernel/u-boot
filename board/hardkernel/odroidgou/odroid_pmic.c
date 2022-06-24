@@ -189,17 +189,18 @@ void odroid_pmic_init(void)
 	rk817_i2c_write(RK817_BUCK2_ON_VSEL, 0x2b);
 	/* RK817 BUCK3 default : 2.4V */
 	rk817_i2c_write(RK817_BUCK3_ON_VSEL, 0x59);
-
 	/* RK817 LDO8(vdd_lcd) : 3.3V */
 	rk817_i2c_write(RK817_LDO8_ON_VSEL, 0x6c);
 
+	/* RK817 BOOST enable */
+	rk817_i2c_write(RK817_POWER_EN3, 0xf7);
 	/* RK817 LDO4,LDO8 enable */
-	rk817_i2c_write(RK817_POWER_EN2, 0x88);
+	rk817_i2c_write(RK817_POWER_EN2, 0xf8);
 	/* RK817 LDO1,LDO2,LDO3 disable */
 	/* RK817 LDO5,LDO6,LDO7 disable */
-	rk817_i2c_write(RK817_POWER_EN1, 0x88);
+	rk817_i2c_write(RK817_POWER_EN1, 0xf8);
 	/* RK817 BUCK2,BUCK3 enable */
-	rk817_i2c_write(RK817_POWER_EN0, 0x66);
+	rk817_i2c_write(RK817_POWER_EN0, 0xf6);
 
 #if defined(CONFIG_POWER_RK818)
 	int ret = -1;
