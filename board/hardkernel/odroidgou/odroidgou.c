@@ -34,6 +34,7 @@
 #include <asm/arch/usb-v2.h>
 #include <odroid-common.h>
 #include "display.h"
+#include "recovery.h"
 #include "odroid_pmic.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -307,23 +308,30 @@ int board_late_init(void)
 	/* boot logo display - 1080p60hz */
 #ifdef CONFIG_AML_LCD
 	gou_display_env_init();
+	gou_bmp_display(DISP_LOGO);
 #endif
 
 	setenv("variant", "gou");
 	board_set_dtbfile("meson64_odroid%s.dtb");
 
-	board_check_power();
+	if (board_check_recovery() < 0) {
+		gou_bmp_display(DISP_SYS_ERR);
+		mdelay(5000);
+		run_command("poweroff", 0);
+	} else {
+		if (board_check_power() < 0) {
+			gou_bmp_display(DISP_BATT_LOW);
+			mdelay(5000);
+			run_command("poweroff", 0);
+		}
 
-	if (board_check_odroidbios(0) == 0) {
-		/* TODO: WHY?
-		 * eMMC must be initiated once, otherwise SPI flash memory cannot be
-		 * accessible in the Linux kernel.
-		 */
-		run_command("mmc dev 0", 0);
-	} else if (board_check_odroidbios(1) == 0) {
-		run_command("mmc dev 0", 0);
+		if (get_bootmode() != BOOTMODE_NORMAL) {
+			gou_bmp_display(DISP_RECOVERY);
+			mdelay(3000);
+		} else {
+			gou_bmp_display(DISP_LOGO);
+		}
 	}
-
 	return 0;
 }
 #endif

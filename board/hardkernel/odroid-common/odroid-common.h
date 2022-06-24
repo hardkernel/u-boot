@@ -57,5 +57,6 @@ int usbhost_gpio_alloc(void);
 int usbhost_set_power(int on);
 
 int board_check_odroidbios(int devno);
+int board_check_recovery_image(void);
 
 #endif

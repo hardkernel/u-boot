@@ -179,3 +179,25 @@ int board_check_odroidbios(int devno)
 
 	return 0;
 }
+
+int board_check_recovery_image(void)
+{
+	char buf[1024];
+	int len = 0;
+
+	if (!file_exists("mmc", "1:1", "bios/ODROIDBIOS.BIN", FS_TYPE_ANY))
+		return -ENODEV;
+
+	len = snprintf(buf, sizeof(buf),
+			"load mmc 1:1 ${cramfsaddr} bios/ODROIDBIOS.BIN; ");
+
+	setenv("bootdev", "/dev/mmcblk1");
+	strncat(buf, "cramfsload 0x10000000 boot.ini; "
+			"source 0x10000000", sizeof(buf) - len);
+
+	setenv("bootcmd", buf);
+	setenv("cramfsaddr", "0x10100000");
+	setenv("bootdelay", "0");
+
+	return 0;
+}

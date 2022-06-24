@@ -26,6 +26,7 @@ extern int g_i2c_node;
 unsigned char get_rockchip_pmic_id(void);
 int dwc_otg_check_dpdm(void);
 int is_charging(void);
+int is_power_low(void);
 
 int pmic_rk818_init(unsigned char bus);
 int pmic_rk818_charger_setting(int current);

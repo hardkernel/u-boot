@@ -30,6 +30,7 @@
 
 #include "odroid_pmic.h"
 #include "display.h"
+#include "recovery.h"
 
 void i2c_check_bus(unsigned int master_num)
 {
@@ -125,45 +126,45 @@ int odroid_check_pwron_src(void)
 	return ret;
 }
 
+int odroid_charge_enable(struct pmic *p_fg)
+{
+	if (p_fg->pbat->battery_charge)
+		p_fg->pbat->battery_charge(p_fg);
+
+	if (p_fg->fg->fg_battery_update)
+		p_fg->fg->fg_battery_update(p_fg, p_fg);
+
+	return 0;
+}
+
 int board_check_power(void)
 {
-	struct pmic *p_fg = NULL;
-
-	int pwron_src;
+	struct pmic *pfg = NULL;
+	int pwron_src, bootmode;
 	int cnt = 0;
+
+	pfg = pmic_get("RK818_FG");
+
 	// check pwr on source
-
-	p_fg = pmic_get("RK818_FG");
-	if (p_fg == NULL)
-		printf("fuel gauge not found\n");
-
 	pwron_src = odroid_check_pwron_src();
+	bootmode = get_bootmode();
+	printf("PWRON source : %d\n",pwron_src);
 
-	if (pwron_src != PWRON_KEY) {
-		if (p_fg->fg->fg_battery_update)
-			p_fg->fg->fg_battery_update(p_fg, p_fg);
+	if (pfg) odroid_charge_enable(pfg);
+
+	if ((pwron_src != PWRON_KEY) && (bootmode == BOOTMODE_NORMAL)) {
+		printf("battery charge state\n");
 		while(1) {
-			if(!is_charging()) {
-				// TODO : poweroff
-				break;
-			}
-			if (p_fg->fg->fg_battery_update)
-				p_fg->fg->fg_battery_update(p_fg, p_fg);
-
 			gou_bmp_display(DISP_BATT_0+cnt);
+			pfg->fg->fg_battery_update(pfg, pfg);
 			mdelay(1000);
 			cnt++;
 			if (cnt >= DISP_BATT_3) cnt=0;
+			if(!is_charging())
+				run_command("poweroff", 0);
 		}
 	}
-
-	gou_bmp_display(DISP_LOGO);
-	// poweron source != PWR_KEY
-	// check charger : online = charging, offline = shutdown
-	// charge full = stanby
-
-	// poweron source == PWR_KEY
-	// battery check : Low = low_batt display -> shutdown, else boot up
+	if(is_power_low()) return -1;
 
 	return 0;
 }
