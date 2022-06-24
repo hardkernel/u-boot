@@ -80,8 +80,8 @@ static u32 fit_get_u32_default(const void *fit, int noffset,
 static int parse_cpus_boot_by_linux(void)
 {
 	const void *fdt = gd->fdt_blob;
-	int noffset, cpu;
-	int mpidr, i = 0;
+	int noffset, cpu, i = 0;
+	u64 mpidr;
 
 	memset(g_cpus_boot_by_linux, 0xff, sizeof(g_cpus_boot_by_linux));
 	noffset = fdt_path_offset(fdt, LINXU_AMP_NODES);
@@ -89,7 +89,7 @@ static int parse_cpus_boot_by_linux(void)
 		return 0;
 
 	fdt_for_each_subnode(cpu, fdt, noffset) {
-		mpidr = fdtdec_get_uint(fdt, cpu, "id", 0xffffffff);
+		mpidr = fdtdec_get_uint64(fdt, cpu, "id", 0xffffffff);
 		if (mpidr == 0xffffffff)
 			continue;
 		g_cpus_boot_by_linux[i++] = mpidr;
