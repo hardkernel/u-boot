@@ -26,6 +26,7 @@ enum disp_index_e {
 	DISP_BATT_LOW,
 	DISP_RECOVERY,
 	DISP_SYS_ERR,
+	DISP_TEST,
 	DISP__MAX,
 };
 

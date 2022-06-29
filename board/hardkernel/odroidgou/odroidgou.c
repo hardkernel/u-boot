@@ -316,21 +316,27 @@ int board_late_init(void)
 
 	if (board_check_recovery() < 0) {
 		gou_bmp_display(DISP_SYS_ERR);
-		mdelay(5000);
+		mdelay(4000);
 		run_command("poweroff", 0);
 	} else {
 		if (board_check_power() < 0) {
 			gou_bmp_display(DISP_BATT_LOW);
-			mdelay(5000);
+			mdelay(4000);
 			run_command("poweroff", 0);
 		}
-
-		if (get_bootmode() != BOOTMODE_NORMAL) {
+	}
+	switch (get_bootmode()) {
+		case BOOTMODE_RECOVERY :
 			gou_bmp_display(DISP_RECOVERY);
 			mdelay(3000);
-		} else {
+		break;
+		case BOOTMODE_TEST :
+			gou_bmp_display(DISP_TEST);
+			mdelay(3000);
+		break;
+		default :
 			gou_bmp_display(DISP_LOGO);
-		}
+		break;
 	}
 	return 0;
 }

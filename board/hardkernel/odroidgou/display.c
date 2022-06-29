@@ -86,6 +86,9 @@ int gou_bmp_display(unsigned idx)
 		case DISP_SYS_ERR:
 			sprintf(str, "load mmc %d ${bootlogo_addr} res/sys_err.bmp", bootdev);
 		break;
+		case DISP_TEST:
+			sprintf(str, "load mmc %d ${bootlogo_addr} res/auto_test.bmp", bootdev);
+		break;
 		default:
 			sprintf(str, "load mmc %d ${bootlogo_addr} res/logo.bmp", bootdev);
 		break;
