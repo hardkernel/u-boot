@@ -164,7 +164,8 @@ int board_check_power(void)
 				run_command("poweroff", 0);
 		}
 	}
-	if(is_power_low()) return -1;
+	pfg->fg->fg_battery_update(pfg, pfg);
+	if(is_power_low() && !is_charging()) return -1;
 
 	return 0;
 }
