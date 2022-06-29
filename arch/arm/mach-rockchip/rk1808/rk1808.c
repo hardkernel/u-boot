@@ -159,7 +159,7 @@ int rk_board_fdt_fixup(void *blob)
 
 	debug("soc=0x%x, flags=0x%x\n", t->u.soc.name, t->u.soc.flags);
 
-	if (t->u.soc.flags != SOC_FLAGS_ET00)
+	if (t->u.soc.flags != 0x45543030)
 		return 0;
 
 	ph_pu_2ma = fdt_get_phandle(gd->fdt_blob,
