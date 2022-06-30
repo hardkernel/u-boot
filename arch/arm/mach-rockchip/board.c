@@ -168,10 +168,14 @@ static int rockchip_set_serialno(void)
 				break;
 		}
 
-		serialno_str[i + 1] = 0x0;
-		env_set("serial#", serialno_str);
-	} else {
+		/* valid character count > 0 */
+		if (i > 0) {
+			serialno_str[i + 1] = 0x0;
+			env_set("serial#", serialno_str);
+		}
+	}
 #endif
+	if (!env_get("serial#")) {
 #if defined(CONFIG_ROCKCHIP_EFUSE) || defined(CONFIG_ROCKCHIP_OTP)
 		struct udevice *dev;
 
@@ -213,14 +217,11 @@ static int rockchip_set_serialno(void)
 		snprintf(serialno_str, sizeof(serialno_str), "%llx", serialno);
 
 		env_set("serial#", serialno_str);
-#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 	}
-#endif
 
 	return ret;
 }
 #endif
-
 
 #if defined(CONFIG_USB_FUNCTION_FASTBOOT)
 int fb_set_reboot_flag(void)
