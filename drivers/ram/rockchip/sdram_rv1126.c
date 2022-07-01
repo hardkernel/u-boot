@@ -2383,7 +2383,7 @@ static void ddr_set_atags(struct dram_info *dram,
 	t_serial.id = 2;
 
 	atags_destroy();
-	atags_set_tag(ATAG_SERIAL,  &t_serial);
+	atags_set_tag(ATAG_SERIAL, &t_serial);
 
 	split = readl(&dram->ddrgrf->grf_ddrsplit_con);
 	memset(&t_ddrmem, 0, sizeof(struct tag_ddr_mem));
@@ -2411,11 +2411,13 @@ static void ddr_set_atags(struct dram_info *dram,
 		t_ddrmem.bank[1] = (u64)cs_cap[0] + (u64)cs_cap[1] - reduce_cap;
 	}
 
-	atags_set_tag(ATAG_DDR_MEM,  &t_ddrmem);
+	atags_set_tag(ATAG_DDR_MEM, &t_ddrmem);
 
 	memset(&t_socinfo, 0, sizeof(struct tag_soc_info));
-	t_socinfo.version = 0;
+	t_socinfo.version = 0x1;
 	t_socinfo.name = 0x1126;
+	t_socinfo.flags = SOC_FLAGS_TDBT;
+	atags_set_tag(ATAG_SOC_INFO, &t_socinfo);
 }
 
 static void print_ddr_info(struct rv1126_sdram_params *sdram_params)
