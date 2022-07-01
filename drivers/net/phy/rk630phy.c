@@ -109,8 +109,8 @@ static int rk630_phy_t22_get_txlevel_from_efuse(unsigned char *txlevel_100,
 		       __func__, ret);
 		return ret;
 	}
-	*txlevel_100 = tx_level[0];
-	*txlevel_10 = tx_level[1];
+	*txlevel_100 = tx_level[1];
+	*txlevel_10 = tx_level[0];
 
 	return 0;
 #else
