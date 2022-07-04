@@ -20,6 +20,7 @@ ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_$(SPL_)FIT) += fit_misc.o
 ifdef CONFIG_SPL_BUILD
 obj-y += spl_boot_mode.o
+obj-$(CONFIG_ROCKCHIP_META) += rk_meta.o
 endif
 endif
 

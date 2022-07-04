@@ -62,6 +62,7 @@ struct rockchip_image {
 #define PART_SYSTEM			"system"
 #define PART_METADATA			"metadata"
 #define PART_USERDATA			"userdata"
+#define PART_META			"meta"
 
 struct blk_desc *rockchip_get_bootdev(void);
 void rockchip_set_bootdev(struct blk_desc *desc);
