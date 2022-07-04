@@ -357,14 +357,26 @@ static void cmdline_handle(void)
 		return;
 
 	/*
-	 * From rk356x, the sd/udisk update flag was moved from
-	 * IDB to Android BCB.
+	 * 1. From rk356x, the sd/udisk recovery update flag was moved from
+	 *    IDB to Android BCB.
+	 *
+	 * 2. Udisk is init at the late boot_from_udisk(), but
+	 *    rockchip_get_boot_mode() actually only read once,
+	 *    we need to update boot mode according to udisk BCB.
 	 */
-	if (get_bcb_recovery_msg() == BCB_MSG_RECOVERY_RK_FWUPDATE) {
-		if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1)
-			env_update("bootargs", "sdfwupdate");
-		else if (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)
-			env_update("bootargs", "usbfwupdate");
+	if ((dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1) ||
+	    (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)) {
+		if (get_bcb_recovery_msg() == BCB_MSG_RECOVERY_RK_FWUPDATE) {
+			if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 1) {
+				env_update("bootargs", "sdfwupdate");
+			} else if (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0) {
+				env_update("bootargs", "usbfwupdate");
+				env_set("reboot_mode", "recovery-usb");
+			}
+		} else {
+			if (dev_desc->if_type == IF_TYPE_USB && dev_desc->devnum == 0)
+				env_set("reboot_mode", "normal");
+		}
 	}
 }
 
