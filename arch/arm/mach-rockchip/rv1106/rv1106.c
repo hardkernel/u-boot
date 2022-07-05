@@ -123,6 +123,13 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define GPIO4_IOC_GPIO4B_DS0		0x0030
 
+/* OS_REG1[2:0]: chip ver */
+#define CHIP_VER_REG			0xff020204
+#define CHIP_VER_MSK			0x7
+#define V(x)				((x) - 1)
+#define ROM_VER_REG			0xffff4ffc
+#define ROM_V2				0x30303256
+
 /* uart0 iomux */
 /* gpio0a0 */
 #define UART0_RX_M0			1
@@ -393,6 +400,12 @@ void board_debug_uart_init(void)
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
+	/* Save chip version to OS_REG1[2:0] */
+	if (readl(ROM_VER_REG) == ROM_V2)
+		writel((readl(CHIP_VER_REG) & ~CHIP_VER_MSK) | V(2), CHIP_VER_REG);
+	else
+		writel((readl(CHIP_VER_REG) & ~CHIP_VER_MSK) | V(1), CHIP_VER_REG);
+
 	/* Set all devices to Non-secure */
 	writel(0xffff0000, PERI_SGRF_BASE + PERI_SGRF_FIREWALL_CON0);
 	writel(0xffff0000, PERI_SGRF_BASE + PERI_SGRF_FIREWALL_CON1);
