@@ -93,7 +93,7 @@ static int parse_cpus_boot_by_linux(void)
 		if (mpidr == 0xffffffff)
 			continue;
 		g_cpus_boot_by_linux[i++] = mpidr;
-		printf("CPU[0x%x] is required boot by Linux\n", mpidr);
+		printf("CPU[0x%llx] is required boot by Linux\n", mpidr);
 	}
 
 	return 0;
