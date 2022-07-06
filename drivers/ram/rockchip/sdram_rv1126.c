@@ -98,7 +98,7 @@ struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-924.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr3-detect-1056.inc"
 };
-#elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 7)
+#elif (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 7) || (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 8)
 struct rv1126_sdram_params sdram_configs[] = {
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-328.inc"
 	#include "sdram_inc/rv1126/sdram-rv1126-lpddr4-detect-396.inc"
@@ -3557,7 +3557,7 @@ int sdram_init(void)
 
 	sdram_params = &sdram_configs[0];
 	#if (CONFIG_ROCKCHIP_TPL_INIT_DRAM_TYPE == 8)
-	for (j = 0; j < ARRAY_SIZE(sdram_configs); j++)
+	for (int j = 0; j < ARRAY_SIZE(sdram_configs); j++)
 		sdram_configs[j].base.dramtype = LPDDR4X;
 	#endif
 	if (sdram_params->base.dramtype == DDR3 ||
