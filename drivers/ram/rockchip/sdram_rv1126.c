@@ -2101,8 +2101,10 @@ static int high_freq_training(struct dram_info *dram,
 	if (dramtype == LPDDR4 || dramtype == LPDDR4X) {
 		min_val = 0xff;
 		for (j = 0; j < sdram_params->ch.cap_info.rank; j++)
-			for (i = 0; i < sdram_params->ch.cap_info.bw; i++)
-				min_val = MIN(wrlvl_result[j][i], min_val);
+			for (i = 0; i < ARRAY_SIZE(wrlvl_result[0]); i++) {
+				if ((byte_en & BIT(i)) != 0)
+					min_val = MIN(wrlvl_result[j][i], min_val);
+			}
 
 		if (min_val < 0) {
 			clk_skew = -min_val;
