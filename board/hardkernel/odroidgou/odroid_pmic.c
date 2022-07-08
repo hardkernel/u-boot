@@ -42,12 +42,23 @@ void i2c_check_bus(unsigned int master_num)
 		i2c_set_bus_num(master_num);
 }
 
-#define CHG_LED GPIOAO(GPIOAO_6)
-void charger_led_bilnk(void)
+#define CHG_LED GPIOAO(GPIOAO_6)  // red
+#define SYS_LED GPIOAO(GPIOAO_11) // blue
+
+void charger_led_bilnk(unsigned char with_sysled)
 {
 	gpio_request(CHG_LED, "chg_led");
-	gpio_direction_output(CHG_LED, !gpio_get_value(CHG_LED));
+	gpio_request(SYS_LED, "sys_led");
+	int onoff = !gpio_get_value(CHG_LED);
+
+	gpio_direction_output(CHG_LED, onoff);
+	if(with_sysled)
+		gpio_direction_output(SYS_LED, !onoff);
+	else
+		gpio_direction_output(SYS_LED, 1);
+
 	gpio_free(CHG_LED);
+	gpio_free(SYS_LED);
 }
 void charger_led_off(void)
 {
@@ -167,7 +178,7 @@ int board_check_power(void)
 		while(1) {
 			gou_bmp_display(DISP_BATT_0+cnt);
 			mdelay(1000);
-			charger_led_bilnk();
+			charger_led_bilnk(0);
 			cnt++;
 			if (cnt >= DISP_BATT_3) cnt=0;
 			if(!is_charging())
@@ -205,7 +216,7 @@ void odroid_pmic_init(void)
 			if(!is_power_low())
 				break;
 			mdelay(500);
-			charger_led_bilnk();
+			charger_led_bilnk(1);
 			if(!is_charging())
 				run_command("poweroff", 0);
 		}
@@ -219,7 +230,7 @@ void odroid_pmic_init(void)
 	rk817_i2c_write(RK817_LDO8_ON_VSEL, 0x6c);
 
 	/* RK817 BOOST enable */
-	rk817_i2c_write(RK817_POWER_EN3, 0xf3);
+	rk817_i2c_write(RK817_POWER_EN3, 0xf7);
 	/* RK817 LDO4,LDO8 enable */
 	rk817_i2c_write(RK817_POWER_EN2, 0xf8);
 	/* RK817 LDO1,LDO2,LDO3 disable */

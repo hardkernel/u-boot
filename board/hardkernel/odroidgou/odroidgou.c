@@ -321,18 +321,18 @@ int board_late_init(void)
 	} else {
 		if (board_check_power() < 0) {
 			gou_bmp_display(DISP_BATT_LOW);
-			mdelay(2000);
+			mdelay(1000);
 			run_command("poweroff", 0);
 		}
 	}
 	switch (get_bootmode()) {
 		case BOOTMODE_RECOVERY :
 			gou_bmp_display(DISP_RECOVERY);
-			mdelay(3000);
+			mdelay(2000);
 		break;
 		case BOOTMODE_TEST :
 			gou_bmp_display(DISP_TEST);
-			mdelay(3000);
+			mdelay(2000);
 		break;
 		default :
 			gou_bmp_display(DISP_LOGO);
