@@ -17,7 +17,6 @@
 #include <asm/arch-gxb/gpio.h>
 #include <asm-generic/gpio.h>
 
-
 DECLARE_GLOBAL_DATA_PTR;
 
 static int dbg_enable = 0;
@@ -1330,7 +1329,7 @@ static void rk818_bat_debug_info(struct battery_info *di)
 	    ggcon, ggsts, rtc, sup_sts, vb_mod, usb_ctrl,
 	    thermal, misc, chrg_ctrl1, chrg_ctrl2, chrg_ctrl3
 	    );
-	DBG("----------------------------------------------------------\n"
+	BAT_INFO("----------------------------------------------------------\n"
 	    "Dsoc=%d, Rsoc=%d, Vavg=%d, Iavg=%d, Cap=%d, Fcc=%d, d=%d\n"
 	    "K=%d, old_cap=%d, charger=%s, Is=%d, Ip=%d, Vs=%d\n"
 	    "min=%d, meet: soc=%d, calc: dsoc=%d, rsoc=%d, Vocv=%d\n"
@@ -1710,7 +1709,7 @@ static struct power_fg fg_ops = {
 
 
 static u32 rk818_ocv_table[] = {
-	3400, 3675, 3689, 3716, 3740, 3756, 3768, 3780,
+	3280, 3675, 3689, 3716, 3740, 3756, 3768, 3780,
 	3793, 3807, 3827, 3853, 3896, 3937, 3974, 4007,
 	4066, 4110, 4161, 4217, 4250,
 };
