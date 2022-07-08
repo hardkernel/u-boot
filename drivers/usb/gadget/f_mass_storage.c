@@ -821,6 +821,7 @@ static int do_write(struct fsg_common *common)
 	unsigned int		partial_page;
 	ssize_t			nwritten;
 	int			rc;
+	const char		*cdev_name = common->fsg->function.config->cdev->driver->name;
 
 	if (curlun->ro) {
 		curlun->sense_data = SS_WRITE_PROTECTED;
@@ -978,6 +979,9 @@ static int do_write(struct fsg_common *common)
 		if (rc)
 			return rc;
 	}
+
+	if (IS_RKUSB_UMS_DNL(cdev_name))
+		rkusb_do_check_parity(common);
 
 	return -EIO;		/* No default reply */
 }
@@ -1996,9 +2000,17 @@ static int do_scsi_command(struct fsg_common *common)
 	case SC_WRITE_10:
 		common->data_size_from_cmnd =
 				get_unaligned_be16(&common->cmnd[7]) << 9;
-		reply = check_command(common, 10, DATA_DIR_FROM_HOST,
-				      (1<<1) | (0xf<<2) | (3<<7), 1,
-				      "WRITE(10)");
+
+		if (IS_RKUSB_UMS_DNL(cdev_name)) {
+			reply = check_command(common, common->cmnd_size, DATA_DIR_FROM_HOST,
+					      (1 << 1) | (0xf << 2) | (3 << 7) | (0xf << 9), 1,
+					      "WRITE(10)");
+		} else {
+			reply = check_command(common, 10, DATA_DIR_FROM_HOST,
+					      (1 << 1) | (0xf << 2) | (3 << 7), 1,
+					      "WRITE(10)");
+		}
+
 		if (reply == 0)
 			reply = do_write(common);
 		break;

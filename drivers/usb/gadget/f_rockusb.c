@@ -723,7 +723,8 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 #if defined(CONFIG_ROCKCHIP_NEW_IDB)
 	buf[1] = BIT(0);
 #endif
-	buf[1] |= BIT(1);
+	buf[1] |= BIT(1); /* Switch Storage */
+	buf[1] |= BIT(2); /* LBAwrite Parity */
 
 	/* Set data xfer size */
 	common->residue = len;
@@ -871,6 +872,29 @@ static int rkusb_cmd_process(struct fsg_common *common,
 	}
 
 	return rc;
+}
+
+int rkusb_do_check_parity(struct fsg_common *common)
+{
+	int ret = 0, rc;
+	u32 parity, i, usb_parity, lba, len;
+	static u32 usb_check_buffer[1024 * 256];
+
+	usb_parity = common->cmnd[9] | (common->cmnd[10] << 8) |
+			(common->cmnd[11] << 16) | (common->cmnd[12] << 24);
+
+	if (common->cmnd[0] == SC_WRITE_10 && (usb_parity)) {
+		lba = get_unaligned_be32(&common->cmnd[2]);
+		len = common->data_size_from_cmnd >> 9;
+		rc = blk_dread(&ums[common->lun].block_dev, lba, len, usb_check_buffer);
+		parity = 0x000055aa;
+		for (i = 0; i < len * 128; i++)
+			parity += usb_check_buffer[i];
+		if (!rc || parity != usb_parity)
+			common->phase_error = 1;
+	}
+
+	return ret;
 }
 
 DECLARE_GADGET_BIND_CALLBACK(rkusb_ums_dnl, fsg_add);

@@ -52,8 +52,12 @@ enum rkusb_rc {
 	RKUSB_RC_UNKNOWN_CMND	= 2,
 };
 
+struct fsg_common;
+
 #ifdef CONFIG_CMD_ROCKUSB
 #define IS_RKUSB_UMS_DNL(name)	(!strncmp((name), "rkusb_ums_dnl", 13))
+
+int rkusb_do_check_parity(struct fsg_common *common);
 #else
 #define IS_RKUSB_UMS_DNL(name)	0
 
@@ -69,6 +73,11 @@ static inline int rkusb_cmd_process(struct fsg_common *common,
 				    struct fsg_buffhd *bh, int *reply)
 {
 	return -EPERM;
+}
+
+static inline int rkusb_do_check_parity(struct fsg_common *common)
+{
+	return -EOPNOTSUPP;
 }
 #endif
 
