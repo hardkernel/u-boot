@@ -18,8 +18,11 @@
 
 /* Register for RK3568 */
 #define GRF_PCIE30PHY_RK3568_CON1 0x4
+#define GRF_PCIE30PHY_RK3568_CON4 0x10
 #define GRF_PCIE30PHY_RK3568_CON6 0x18
 #define GRF_PCIE30PHY_RK3568_CON9 0x24
+#define GRF_PCIE30PHY_RK3568_STATUS0 0x80
+#define RK3568_SRAM_INIT_DONE(reg) (reg & BIT(14))
 
 /* Register for RK3588 */
 #define PHP_GRF_PCIESEL_CON 0x100
@@ -58,8 +61,15 @@ struct rockchip_p3phy_ops {
 	int (*phy_init)(struct rockchip_p3phy_priv *priv);
 };
 
+static const u16 phy_fw[] = {
+	#include "phy-rockchip-snps-pcie3.fw"
+};
+
 static int rockchip_p3phy_rk3568_init(struct rockchip_p3phy_priv *priv)
 {
+	int i, ret = 0;
+	u32 reg;
+
 	/* Deassert PCIe PMA output clamp mode */
 	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON9,
 		     (0x1 << 15) | (0x1 << 31));
@@ -72,12 +82,32 @@ static int rockchip_p3phy_rk3568_init(struct rockchip_p3phy_priv *priv)
 			     (0x1 << 15) | (0x1 << 31));
 	}
 
+	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON4,
+		     (0x0 << 14) | (0x1 << (14 + 16))); //sdram_ld_done
+	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON4,
+		     (0x0 << 13) | (0x1 << (13 + 16))); //sdram_bypass
 	reset_deassert(&priv->p30phy);
 	udelay(5);
+	ret = regmap_read_poll_timeout(priv->phy_grf,
+				 GRF_PCIE30PHY_RK3568_STATUS0,
+				 reg, RK3568_SRAM_INIT_DONE(reg),
+				 0, 500);
+	if (ret) {
+		pr_err("%s: lock failed 0x%x, check refclk and power\n",
+		       __func__, reg);
+		return -ETIMEDOUT;
+	}
 
-	/* Updata RX VCO calibration controls */
-	writel(0x2800, priv->mmio + (0x104a << 2));
-	writel(0x2800, priv->mmio + (0x114a << 2));
+	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON9,
+		     (0x3 << 8) | (0x3 << (8 + 16))); //map to access sram
+	for (i = 0; i < ARRAY_SIZE(phy_fw); i++)
+		writel(phy_fw[i], priv->mmio + (i<<2));
+	printf("snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
+	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON9,
+		     (0x0 << 8) | (0x3 << (8 + 16)));
+	regmap_write(priv->phy_grf, GRF_PCIE30PHY_RK3568_CON4,
+		     (0x1 << 14) | (0x1 << (14 + 16))); //sdram_ld_done
+
 	udelay(10);
 
 	return 0;
