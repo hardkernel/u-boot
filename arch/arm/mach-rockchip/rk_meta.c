@@ -20,7 +20,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 	const char *part_name = PART_META;
 	disk_partition_t part_info;
 	struct meta_head meta;
-	struct rk_amp_info *amp_info;
+	struct meta_head *meta_p;
 	struct cmdline_info *cmd;
 	ulong sector;
 	char *data;
@@ -42,31 +42,28 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 		return -EINVAL;
 	}
 
-	if (meta.crc32 != crc32(0, (const unsigned char *)&meta, sizeof(struct meta_head) - 4)) {
+	if (meta.crc32 != crc32(0, (const unsigned char *)&meta, sizeof(struct meta_head) - 4 - 4)) {
 		debug("Invalid meta crc32.\n");
 		return -EINVAL;
 	}
 
-	sector += RK_META_DATA_OFFSET;
-	data = (char *)meta.load + 512;
-	debug("Meta: load addr is %x, size is %x\n", meta.load, meta.size);
+	data = (char *)meta.load;
+	printf("Meta: 0x%08x - 0x%08x\n", meta.load, meta.load + meta.size);
 	if (info->read(info, sector, meta.size / 512, data) != (meta.size / 512)) {
 		debug("%s: Failed to read header\n", __func__);
 		return -EIO;
 	}
 
-	cmd = (struct cmdline_info *)(data + CMDLINE_OFFSET - META_INFO_SIZE);
+	meta_p = (struct meta_head *)meta.load;
+
+	cmd = (struct cmdline_info *)(meta_p->load + CMDLINE_OFFSET);
 	if (cmd->tag == RK_CMDLINE) {
 		if (cmd->crc32 == crc32(0, (const unsigned char *)cmd, sizeof(struct cmdline_info) - 4))
 			cmdline = (char *)cmd->data;
 	}
 
-	amp_info = (struct rk_amp_info *)meta.load;
-	memset(amp_info, 0, sizeof(struct rk_amp_info));
-	amp_info->tag = RK_AMP;
-	amp_info->flags = RK_AMP_DATA_READY;
-	amp_info->crc32 = crc32(0, (const unsigned char *)&amp_info, sizeof(struct rk_amp_info) - 4);
-	flush_cache(meta.load, meta.size);
+	meta_p->meta_flags = META_READ_DONE_FLAG;
+	flush_cache(meta_p->load, meta_p->size);
 
 	return 0;
 }

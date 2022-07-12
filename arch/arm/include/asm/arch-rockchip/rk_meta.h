@@ -9,7 +9,7 @@
 
 /*      META storage layout        */
 /***************************/      /* ----- ITEM start -----*/
-/**     META_HEAD  4KB    **/
+/**     META_HEAD         **/
 /***************************/
 /**     ITEM 1            **/
 /***************************/
@@ -27,14 +27,14 @@
 /***************************/
 /**       ....            **/
 /***************************/
-/**     META_END  4KB     **/
+/**     META_END          **/
 /***************************/      /* ----- ITEM backup end -----*/
 /**     IQ FILE BIN       **/       /* 320K sensor iq file bin */
 /***************************/
 
 /*      META memory layout        */
 /***************************/      /* ----- ITEM start -----*/
-/**     Amp info  512B    **/
+/**     META_HEAD         **/
 /***************************/
 /**     ITEM 1            **/
 /***************************/
@@ -52,7 +52,7 @@
 /***************************/
 /**       ....            **/
 /***************************/
-/**     META_END  4KB     **/
+/**     META_END          **/
 /***************************/      /* ----- ITEM backup end -----*/
 /**     IQ FILE BIN       **/       /* 320K sensor iq file bin */
 /***************************/
@@ -60,7 +60,6 @@
 #define RK_META			0x544d4b52
 #define RK_META_END		0x55aabbcc
 #define RK_CMDLINE		0x4c444d43
-#define RK_META_DATA_OFFSET	0x8
 
 #define ITEM_SIZE		(4 * 1024)
 #define MAX_CMDLINE_LENGTH	1024
@@ -80,11 +79,8 @@
 #define SENSOR_IQ_BIN_OFFSET			(MAX_META_SEGMENT_SIZE)
 #define SENSOR_IQ_BIN_MAX_SIZE			(320 * 1024)
 #define META_SIZE						MAX_META_BIN_SIZE
-#define	META_HEAD_RESERVED_SIZE	   (124*4)
-
-#define RK_AMP			0x504d4b52
-/* rk_amp_info flags */
-#define RK_AMP_DATA_READY	(1 << 0)
+#define	META_HEAD_RESERVED_SIZE	   (123*4)
+#define META_READ_DONE_FLAG (1 << 0)
 
 struct meta_head {
 	uint32_t tag;
@@ -92,12 +88,7 @@ struct meta_head {
 	uint32_t size;
 	uint8_t  reserved[META_HEAD_RESERVED_SIZE];
 	uint32_t crc32;
-};
-
-struct rk_amp_info {
-	uint32_t tag;
-	uint32_t flags;
-	uint32_t crc32;
+	uint32_t meta_flags;
 };
 
 struct cmdline_info {
