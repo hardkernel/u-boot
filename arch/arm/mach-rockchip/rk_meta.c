@@ -70,5 +70,8 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 
 void rk_meta_bootargs_append(void *fdt)
 {
+	if (!cmdline || (!fdt || fdt_check_header(fdt)))
+		return;
+
 	fdt_bootargs_append(fdt, cmdline);
 }
