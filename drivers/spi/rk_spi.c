@@ -427,7 +427,8 @@ static int rockchip_spi_xfer(struct udevice *dev, unsigned int bitlen,
 			u32 status = readl(&regs->sr);
 
 			if (towrite && !(status & SR_TF_FULL)) {
-				writel(out ? *out++ : 0, regs->txdr);
+				if (out)
+					writel(out ? *out++ : 0, regs->txdr);
 				towrite--;
 			}
 			if (toread && !(status & SR_RF_EMPT)) {
