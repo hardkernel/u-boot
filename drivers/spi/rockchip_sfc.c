@@ -577,15 +577,15 @@ static int rockchip_sfc_xfer_data_dma_async(struct rockchip_sfc *sfc,
 {
 	void *dma_buf;
 
-	if (op->data.dir == SPI_MEM_DATA_OUT)
+	if (op->data.dir == SPI_MEM_DATA_OUT) {
 		dma_buf = (void *)op->data.buf.out;
-	else
+		flush_dcache_range((unsigned long)dma_buf,
+				   (unsigned long)dma_buf + len);
+	} else {
 		dma_buf = (void *)op->data.buf.in;
+	}
 
 	dev_dbg(sfc->dev, "xfer_dma_async len=%x %p\n", len, dma_buf);
-
-	flush_dcache_range((unsigned long)dma_buf,
-			   (unsigned long)dma_buf + len);
 
 	rockchip_sfc_fifo_transfer_dma(sfc, (dma_addr_t)dma_buf, len);
 	sfc->last_async_size = len;
