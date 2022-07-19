@@ -427,7 +427,8 @@ int arch_cpu_init(void)
 	writel(0xff00ffff, FW_SHRM_BASE + FW_SHRM_MST1_REG);
 
 	/* Set fspi clk 6mA */
-	writel(0x0f000700, GPIO4_IOC_BASE + GPIO4_IOC_GPIO4B_DS0);
+	if ((readl(GPIO4_IOC_BASE + GPIO4B_IOMUX_SEL_L) & 0x70) == 0x20)
+		writel(0x3f000700, GPIO4_IOC_BASE + GPIO4_IOC_GPIO4B_DS0);
 
 	/*
 	 * Set the USB2 PHY in suspend mode and turn off the
