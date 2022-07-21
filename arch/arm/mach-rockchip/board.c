@@ -158,10 +158,12 @@ static int rockchip_set_serialno(void)
 	memset(serialno_str, 0, VENDOR_SN_MAX);
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	int j;
+
 	ret = vendor_storage_read(SN_ID, serialno_str, (VENDOR_SN_MAX-1));
 	if (ret > 0) {
-		i = strlen(serialno_str);
-		for (; i > 0; i--) {
+		j = strlen(serialno_str);
+		for (i = 0; i < j; i++) {
 			if ((serialno_str[i] >= 'a' && serialno_str[i] <= 'z') ||
 			    (serialno_str[i] >= 'A' && serialno_str[i] <= 'Z') ||
 			    (serialno_str[i] >= '0' && serialno_str[i] <= '9'))
