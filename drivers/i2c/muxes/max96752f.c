@@ -9,6 +9,8 @@
 #include <i2c.h>
 #include <max96752f.h>
 
+#include <asm-generic/gpio.h>
+
 static int max96752f_select(struct udevice *mux, struct udevice *bus,
 			    uint channel)
 {
@@ -60,11 +62,25 @@ void max96752f_init(struct udevice *dev)
 
 static int max96752f_probe(struct udevice *dev)
 {
+	struct gpio_desc enable_gpio;
 	int ret;
 
 	ret = i2c_set_chip_offset_len(dev, 2);
 	if (ret)
 		return ret;
+
+	ret = gpio_request_by_name(dev, "enable-gpios", 0, &enable_gpio,
+				   GPIOD_IS_OUT);
+	if (ret && ret != -ENOENT) {
+		dev_err(dev, "%s: failed to get enable GPIO: %d\n",
+			__func__, ret);
+		return ret;
+	}
+
+	if (dm_gpio_is_valid(&enable_gpio)) {
+		dm_gpio_set_value(&enable_gpio, 1);
+		mdelay(200);
+	}
 
 	return 0;
 }
