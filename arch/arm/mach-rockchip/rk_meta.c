@@ -15,6 +15,8 @@
 
 static char *cmdline;
 
+__weak void rk_meta_process(void) { }
+
 int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 {
 	const char *part_name = PART_META;
@@ -64,6 +66,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 
 	meta_p->meta_flags = META_READ_DONE_FLAG;
 	flush_cache(meta_p->load, meta_p->size);
+	rk_meta_process();
 
 	return 0;
 }

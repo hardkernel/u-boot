@@ -20,6 +20,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CORE_GRF_BASE			0xff040000
 #define CORE_GRF_CACHE_PERI_ADDR_START	0x0024
 #define CORE_GRF_CACHE_PERI_ADDR_END	0x0028
+#define CORE_GRF_MCU_CACHE_MISC		0x002c
 
 #define PERI_GRF_BASE			0xff000000
 #define PERI_GRF_USBPHY_CON0		0x0050
@@ -507,6 +508,11 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 	writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
 
 	return 0;
+}
+
+void rk_meta_process(void)
+{
+	writel(0x00080008, CORE_GRF_BASE + CORE_GRF_MCU_CACHE_MISC);
 }
 #endif
 
