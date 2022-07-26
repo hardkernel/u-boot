@@ -61,10 +61,10 @@
 #define RK_META_END		0x55aabbcc
 #define RK_CMDLINE		0x4c444d43
 
-#define ITEM_SIZE		(4 * 1024)
+#define ITEM_SIZE		(1 * 1024)
 #define MAX_CMDLINE_LENGTH	(1024 / 2)
 #define MAX_HEAD_SIZE 4
-#define MAX_META_SEGMENT_SIZE (64 * 1024)
+#define MAX_META_SEGMENT_SIZE (16 * 1024)
 #define BACKUP_META_SIZE (MAX_META_SEGMENT_SIZE / 2)
 #define META_INFO_HEAD_OFFSET	0
 #define META_INFO_SIZE		ITEM_SIZE
@@ -84,16 +84,23 @@
 #define SENSOR_IQ_BIN_MAX_SIZE			(320 * 1024)
 #define MAX_META_BIN_SIZE (MAX_META_SEGMENT_SIZE + SENSOR_IQ_BIN_MAX_SIZE)
 #define META_SIZE						MAX_META_BIN_SIZE
-#define	META_HEAD_RESERVED_SIZE	   (123*4)
+
+/* 512 - sizeof(tag/load/size/comp_type/comp_size/comp_off/crc32/meta_flags) */
+#define	META_HEAD_RESERVED_SIZE	   (120*4)
 #define META_READ_DONE_FLAG (1 << 0)
 
 #define	PARAM_SHARE2KERNEL_ITEM_SIZE	(4)
 #define AE_TABLE_SHARE2KERNEL_OFFSET	(PARAM_SHARE2KERNEL_OFFSET)
 
+#define	META_COMPRESS_TYPE_GZ 0x1
+
 struct meta_head {
 	uint32_t tag;
 	uint32_t load;
 	uint32_t size;
+	uint32_t comp_type;
+	uint32_t comp_size;
+	uint32_t comp_off;
 	uint8_t  reserved[META_HEAD_RESERVED_SIZE];
 	uint32_t crc32;
 	uint32_t meta_flags;
