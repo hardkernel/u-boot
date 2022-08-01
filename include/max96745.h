@@ -17,9 +17,6 @@
 #define RESET_ALL		BIT(7)
 #define SLEEP			BIT(3)
 
-/* 002Ah, 0034h */
-#define LINK_LOCKED		BIT(0)
-
 /* 0076h, 0086h */
 #define DIS_REM_CC		BIT(7)
 
