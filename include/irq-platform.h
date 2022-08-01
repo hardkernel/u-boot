@@ -261,6 +261,26 @@
 #define IRQ_GPIO3			108
 #define IRQ_GPIO4			110
 
+#elif defined(CONFIG_ROCKCHIP_RK3562)
+#define GPIO0_PHYS			0xff260000
+#define GPIO1_PHYS			0xff620000
+#define GPIO2_PHYS			0xff630000
+#define GPIO3_PHYS			0xffac0000
+#define GPIO4_PHYS			0xffad0000
+
+#define GIC_IRQS_NR			(5 * 32)
+#define GPIO_IRQS_NR			(5 * 32)
+
+#define GPIO_BANK_NUM			5
+#define GPIO_BANK_PINS			32
+
+#define IRQ_TIMER0			77
+#define IRQ_GPIO0			32
+#define IRQ_GPIO1			34
+#define IRQ_GPIO2			36
+#define IRQ_GPIO3			38
+#define IRQ_GPIO4			40
+
 #elif defined(CONFIG_ROCKCHIP_RK3568)
 #define GPIO0_PHYS			0xfdd60000
 #define GPIO1_PHYS			0xfe740000
