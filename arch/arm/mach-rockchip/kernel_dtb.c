@@ -12,6 +12,7 @@
 #include <dm/root.h>
 #include <dm/uclass-internal.h>
 #include <asm/arch/hotkey.h>
+#include <asm/arch/resource_img.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -317,6 +318,7 @@ int init_kernel_dtb(void)
 	}
 
 	if (IS_ENABLED(CONFIG_EMBED_KERNEL_DTB_ALWAYS)) {
+		resource_init_list();
 		printf("Always embed kernel dtb\n");
 		goto dtb_embed;
 	}
