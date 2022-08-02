@@ -197,13 +197,30 @@ static int rkusb_do_read_flash_id(struct fsg_common *common,
 	u8 *buf = (u8 *)bh->buf;
 	u32 len = 5;
 	enum if_type type = ums[common->lun].block_dev.if_type;
+	u32 devnum = ums[common->lun].block_dev.devnum;
+	const char *str;
 
-	if (type == IF_TYPE_MMC)
-		memcpy((void *)&buf[0], "EMMC ", 5);
-	else if (type == IF_TYPE_RKNAND)
-		memcpy((void *)&buf[0], "NAND ", 5);
-	else
-		memcpy((void *)&buf[0], "UNKN ", 5); /* unknown */
+	switch (type) {
+	case IF_TYPE_MMC:
+		str = "EMMC ";
+		break;
+	case IF_TYPE_RKNAND:
+		str = "NAND ";
+		break;
+	case IF_TYPE_MTD:
+		if (devnum == BLK_MTD_SPI_NAND)
+			str ="SNAND";
+		else if (devnum == BLK_MTD_NAND)
+			str = "NAND ";
+		else
+			str = "NOR  ";
+		break;
+	default:
+		str = "UNKN "; /* unknown */
+		break;
+	}
+
+	memcpy((void *)&buf[0], str, len);
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
