@@ -82,14 +82,6 @@ static int max96755f_power_on(struct max96755f_priv *priv)
 	return 0;
 }
 
-static int max96755f_power_off(struct max96755f_priv *priv)
-{
-	if (dm_gpio_is_valid(&priv->enable_gpio))
-		dm_gpio_set_value(&priv->enable_gpio, 0);
-
-	return 0;
-}
-
 static int max96755f_probe(struct udevice *dev)
 {
 	struct max96755f_priv *priv = dev_get_priv(dev);
@@ -114,13 +106,6 @@ static int max96755f_probe(struct udevice *dev)
 	if (ret) {
 		dev_err(dev, "%s: failed to power on: %d\n", __func__, ret);
 		return ret;
-	}
-
-	ret = dm_i2c_reg_read(dev, 0x0013);
-	if (ret < 0 || !FIELD_GET(LOCKED, ret)) {
-		max96755f_power_off(priv);
-		dev_err(dev, "%s: GMSL link not locked\n", __func__);
-		return -ENODEV;
 	}
 
 	ofnode_for_each_subnode(child, dev_ofnode(dev)) {
