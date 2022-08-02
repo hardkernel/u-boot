@@ -180,6 +180,7 @@ struct max96755f_priv {
 	bool dpi_deskew_en;
 	struct drm_display_mode mode;
 	u32 num_lanes;
+	struct gpio_desc lock_gpio;
 };
 
 #endif
