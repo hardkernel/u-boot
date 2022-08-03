@@ -131,6 +131,7 @@ struct rockchip_udphy {
 	u32 dp_lane_sel[4];
 	u32 dp_aux_dout_sel;
 	u32 dp_aux_din_sel;
+	u32 max_link_rate;
 	u8 bw; /* dp bandwidth */
 	int id;
 
@@ -732,6 +733,7 @@ static int rockchip_dpphy_power_on(struct phy *phy)
 
 	dp_lanes = udphy_dplane_get(udphy);
 	phy->attrs.bus_width = dp_lanes;
+	phy->attrs.max_link_rate = udphy->max_link_rate;
 
 	ret = udphy_power_on(udphy, UDPHY_MODE_DP);
 	if (ret)
@@ -1240,6 +1242,29 @@ static int rk3588_dp_phy_set_voltages(struct rockchip_udphy *udphy,
 	return 0;
 }
 
+static int rockchip_dpphy_probe(struct udevice *dev)
+{
+	struct rockchip_udphy *udphy = dev_get_priv(dev->parent);
+	u32 max_link_rate;
+
+	max_link_rate = dev_read_u32_default(dev, "max-link-rate", 8100);
+	switch (max_link_rate) {
+	case 1620:
+	case 2700:
+	case 5400:
+	case 8100:
+		break;
+	default:
+		dev_warn(dev, "invalid max-link-rate %d, using 8100\n", max_link_rate);
+		max_link_rate = 8100;
+		break;
+	}
+
+	udphy->max_link_rate = max_link_rate;
+
+	return 0;
+}
+
 static const char * const rk3588_udphy_rst_l[] = {
 	"init", "cmn", "lane", "pcs_apb", "pma_apb"
 };
@@ -1291,6 +1316,7 @@ U_BOOT_DRIVER(rockchip_udphy_dp_port) = {
 	.name		= "rockchip_udphy_dp_port",
 	.id		= UCLASS_PHY,
 	.ops		= &rockchip_dpphy_ops,
+	.probe		= rockchip_dpphy_probe,
 };
 
 U_BOOT_DRIVER(rockchip_udphy) = {
