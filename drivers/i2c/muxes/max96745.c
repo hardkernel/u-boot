@@ -52,15 +52,24 @@ static int max96745_power_on(struct max96745_priv *priv)
 
 	if (dm_gpio_is_valid(&priv->enable_gpio)) {
 		dm_gpio_set_value(&priv->enable_gpio, 1);
-		mdelay(100);
+	} else {
+		ret = dm_i2c_reg_clrset(priv->dev, 0x0010, RESET_ALL,
+					FIELD_PREP(RESET_ALL, 1));
+		if (ret < 0)
+			return ret;
 	}
 
-	ret = dm_i2c_reg_clrset(priv->dev, 0x0010, RESET_ALL,
-				FIELD_PREP(RESET_ALL, 1));
+	mdelay(200);
+
+	ret = dm_i2c_reg_clrset(priv->dev, 0x0076, DIS_REM_CC,
+				FIELD_PREP(DIS_REM_CC, 1));
 	if (ret < 0)
 		return ret;
 
-	mdelay(100);
+	ret = dm_i2c_reg_clrset(priv->dev, 0x0086, DIS_REM_CC,
+				FIELD_PREP(DIS_REM_CC, 1));
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
@@ -83,14 +92,7 @@ static int max96745_probe(struct udevice *dev)
 		return ret;
 	}
 
-	ret = max96745_power_on(priv);
-	if (ret) {
-		dev_err(dev, "%s: failed to power on: %d\n", __func__, ret);
-		return ret;
-	}
-
-	dm_i2c_reg_clrset(dev, 0x0076, DIS_REM_CC, FIELD_PREP(DIS_REM_CC, 1));
-	dm_i2c_reg_clrset(dev, 0x0086, DIS_REM_CC, FIELD_PREP(DIS_REM_CC, 1));
+	max96745_power_on(priv);
 
 	return 0;
 }
