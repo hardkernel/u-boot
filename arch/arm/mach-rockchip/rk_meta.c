@@ -10,12 +10,35 @@
 #include <errno.h>
 #include <fdt_support.h>
 #include <image.h>
+#include <misc.h>
 #include <spl.h>
 #include <asm/arch/rk_meta.h>
 
 static char *cmdline;
 
+#if (IS_ENABLED(CONFIG_ROCKCHIP_RV1106))
+#define COMPRESS_LOAD_ADDR 0xa0000
+#else
+#error	"Please Define COMPRESS_LOAD_ADDR !!!"
+#endif
+
 __weak void rk_meta_process(void) { }
+
+static int rk_meta_iq_decom(unsigned long dst, unsigned long src,
+			    unsigned long src_len, u64 *len)
+{
+	int ret;
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS)
+
+	ret = misc_decompress_process(dst, src, src_len, DECOM_GZIP, true, len, 0);
+	misc_decompress_sync(IH_COMP_GZIP);
+#else
+	ret = gunzip((void *)&dst, ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
+		     (void *)&src, (void *)len);
+#endif
+
+	return ret;
+}
 
 int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 {
@@ -26,6 +49,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 	struct cmdline_info *cmd;
 	ulong sector;
 	char *data;
+	u64 len;
 
 	if (part_get_info_by_name(info->dev, part_name, &part_info) <= 0) {
 		debug("%s: no partition\n", __func__);
@@ -51,7 +75,8 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 
 	data = (char *)meta.load;
 	printf("Meta: 0x%08x - 0x%08x\n", meta.load, meta.load + meta.size);
-	if (info->read(info, sector, meta.size / 512, data) != (meta.size / 512)) {
+	if (info->read(info, sector, DIV_ROUND_UP(MAX_META_SEGMENT_SIZE, info->bl_len), data)
+			!= DIV_ROUND_UP(MAX_META_SEGMENT_SIZE, info->bl_len)) {
 		debug("%s: Failed to read header\n", __func__);
 		return -EIO;
 	}
@@ -62,6 +87,38 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 	if (cmd->tag == RK_CMDLINE) {
 		if (cmd->crc32 == crc32(0, (const unsigned char *)cmd, sizeof(struct cmdline_info) - 4))
 			cmdline = (char *)cmd->data;
+	}
+
+	/* load compress data */
+	data = (char *)COMPRESS_LOAD_ADDR;
+	if (meta_p->comp_type == META_COMPRESS_TYPE_GZ) {
+		if (info->read(info, sector + (MAX_META_SEGMENT_SIZE / info->bl_len),
+			       DIV_ROUND_UP(meta.comp_size, info->bl_len), data)
+			       != DIV_ROUND_UP(meta.comp_size, info->bl_len)) {
+			debug("%s: Failed to read compress data.\n", __func__);
+			return -EIO;
+		}
+
+		if (rk_meta_iq_decom((meta_p->load + meta_p->comp_off),
+				     (unsigned long)(data + meta_p->comp_off -
+							MAX_META_SEGMENT_SIZE),
+					 meta.comp_size, &len)) {
+			debug("%s: Failed to decompress.\n", __func__);
+			return -EIO;
+		}
+		/* update decompress gz's file size */
+		unsigned int *p_len = (unsigned int *)
+			(meta_p->load + MAX_META_SEGMENT_SIZE + MAX_HEAD_SIZE);
+		*p_len = (u32)len;
+		/* TODO: update decompress gz's file crc32 */
+	} else {
+		if (info->read(info, sector + (MAX_META_SEGMENT_SIZE / info->bl_len),
+			       DIV_ROUND_UP(meta.comp_size, info->bl_len),
+		   (void *)(meta_p->load + MAX_META_SEGMENT_SIZE))
+		   != DIV_ROUND_UP(meta.comp_size, info->bl_len)) {
+			debug("%s: Failed to read\n", __func__);
+			return -EIO;
+		}
 	}
 
 	meta_p->meta_flags = META_READ_DONE_FLAG;
