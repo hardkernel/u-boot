@@ -381,7 +381,7 @@ AvbIOResult avb_read_perm_attr_hash(AvbAtxOps *atx_ops,
 				       AVB_SHA256_DIGEST_SIZE / 4))
 		return -1;
 #else
-	avb_error("Please open the macro!\n");
+	printf("Please open the macro!\n");
 	return -1;
 #endif
 #endif

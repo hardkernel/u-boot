@@ -109,7 +109,7 @@ int rk_avb_read_flash_lock_state(uint8_t *flash_lock_state)
 	case TEE_ERROR_ITEM_NOT_FOUND:
 		*flash_lock_state = 1;
 		if (trusty_write_flash_lock_state(*flash_lock_state)) {
-			avb_error("trusty_write_flash_lock_state error!");
+			printf("trusty_write_flash_lock_state error!");
 			ret = -1;
 		} else {
 			ret = trusty_read_flash_lock_state(flash_lock_state);
@@ -169,7 +169,7 @@ int rk_avb_read_lock_state(uint8_t *lock_state)
 	case TEE_ERROR_ITEM_NOT_FOUND:
 		*lock_state = 1;
 		if (rk_avb_write_lock_state(*lock_state)) {
-			avb_error("avb_write_lock_state error!");
+			printf("avb_write_lock_state error!");
 			ret = -1;
 		} else {
 			ret = trusty_read_lock_state(lock_state);
@@ -213,7 +213,7 @@ int rk_avb_read_perm_attr_flag(uint8_t *flag)
 	case TEE_ERROR_ITEM_NOT_FOUND:
 		*flag = 0;
 		if (rk_avb_write_perm_attr_flag(*flag)) {
-			avb_error("avb_write_perm_attr_flag error!");
+			printf("avb_write_perm_attr_flag error!");
 			ret = -1;
 		} else {
 			ret = trusty_read_permanent_attributes_flag(flag);
@@ -334,7 +334,7 @@ int rk_avb_read_all_rollback_index(char *buffer)
 					 AVB_ATX_PIK_VERSION_LOCATION,
 					 &stored_rollback_index);
 	if (io_ret != AVB_IO_RESULT_OK) {
-		avb_error("Failed to read PIK minimum version.\n");
+		printf("Failed to read PIK minimum version.\n");
 		goto out;
 	}
 	/* PIK rollback index */
@@ -348,7 +348,7 @@ int rk_avb_read_all_rollback_index(char *buffer)
 					  AVB_ATX_PSK_VERSION_LOCATION,
 					  &stored_rollback_index);
 	if (io_ret != AVB_IO_RESULT_OK) {
-		avb_error("Failed to read PSK minimum version.\n");
+		printf("Failed to read PSK minimum version.\n");
 		goto out;
 	}
 	/* PSK rollback index */
@@ -395,7 +395,7 @@ int rk_bootloader_rollback_index_read(uint32_t offset, uint32_t bytes,
 		if (get_mmc_num() > 0)
 			curr_device = 0;
 		else {
-			avb_error("No MMC device available");
+			printf("No MMC device available");
 			return -1;
 		}
 	}
@@ -432,7 +432,7 @@ int rk_avb_get_bootloader_min_version(char *buffer)
 
 	if (rk_bootloader_rollback_index_read(UBOOT_RB_INDEX_OFFSET,
 					      sizeof(uint32_t), &rb_index)) {
-		avb_error("Can not read uboot rollback index");
+		printf("Can not read uboot rollback index");
 		return -1;
 	}
 	snprintf(temp, sizeof(int) + 1, "%d", 0);
@@ -444,7 +444,7 @@ int rk_avb_get_bootloader_min_version(char *buffer)
 
 	if (rk_bootloader_rollback_index_read(TRUST_RB_INDEX_OFFSET,
 					      sizeof(uint32_t), &rb_index)) {
-		avb_error("Can not read trust rollback index");
+		printf("Can not read trust rollback index");
 		return -1;
 	}
 
@@ -470,7 +470,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 	int n;
 
 	if (rk_avb_read_perm_attr_flag((uint8_t *)&temp_flag)) {
-		avb_error("Can not read perm_attr_flag!");
+		printf("Can not read perm_attr_flag!");
 		perm_attr_flag = "";
 	} else {
 		perm_attr_flag = temp_flag ? "1" : "0";
@@ -478,7 +478,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 
 	temp_flag = 0;
 	if (rk_avb_read_lock_state((uint8_t *)&temp_flag)) {
-		avb_error("Can not read lock state!");
+		printf("Can not read lock state!");
 		lock_val = "";
 		unlock_dis_val = "";
 	} else {
@@ -488,7 +488,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 
 	temp_flag = 0;
 	if (rk_avb_read_bootloader_locked_flag((uint8_t *)&temp_flag)) {
-		avb_error("Can not read bootloader locked flag!");
+		printf("Can not read bootloader locked flag!");
 		bootloader_locked_flag = "";
 	} else {
 		bootloader_locked_flag = temp_flag ? "1" : "0";
@@ -496,17 +496,17 @@ void rk_avb_get_at_vboot_state(char *buf)
 
 	rollback_indices = malloc(VBOOT_STATE_SIZE);
 	if (!rollback_indices) {
-		avb_error("No buff to malloc!");
+		printf("No buff to malloc!");
 		return;
 	}
 
 	memset(rollback_indices, 0, VBOOT_STATE_SIZE);
 	if (rk_avb_read_all_rollback_index(rollback_indices))
-		avb_error("Can not read avb_min_ver!");
+		printf("Can not read avb_min_ver!");
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	/* bootloader-min-versions */
 	if (rk_avb_get_bootloader_min_version(min_versions))
-		avb_error("Call rk_avb_get_bootloader_min_version error!");
+		printf("Call rk_avb_get_bootloader_min_version error!");
 #endif
 	n = snprintf(buf, VBOOT_STATE_SIZE - 1,
 		     "avb-perm-attr-set=%s\n"
@@ -522,7 +522,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 		     rollback_indices,
 		     min_versions);
 	if (n >= VBOOT_STATE_SIZE) {
-		avb_error("The VBOOT_STATE buf is truncated\n");
+		printf("The VBOOT_STATE buf is truncated\n");
 		buf[VBOOT_STATE_SIZE - 1] = 0;
 	}
 	debug("The vboot state buf is %s\n", buf);
@@ -543,7 +543,7 @@ int rk_avb_get_ab_info(AvbABData* ab_data)
 
 	io_ret = ops->ab_ops->read_ab_metadata(ops->ab_ops, ab_data);
 	if (io_ret != AVB_IO_RESULT_OK) {
-		avb_error("I/O error while loading A/B metadata.\n");
+		printf("I/O error while loading A/B metadata.\n");
 		ret = -1;
 	}
 
@@ -598,7 +598,7 @@ int rk_auth_unlock(void *buffer, char *out_is_trusted)
 
 	ops = avb_ops_user_new();
 	if (ops == NULL) {
-		avb_error("avb_ops_user_new() failed!");
+		printf("avb_ops_user_new() failed!");
 		return -1;
 	}
 
@@ -622,7 +622,7 @@ int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len)
 
 	ops = avb_ops_user_new();
 	if (ops == NULL) {
-		avb_error("avb_ops_user_new() failed!");
+		printf("avb_ops_user_new() failed!");
 		return -1;
 	}
 
