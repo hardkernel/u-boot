@@ -4,6 +4,8 @@
  */
 
 #include <common.h>
+
+#ifdef CONFIG_TPL_BUILD
 #include <debug_uart.h>
 #include <dm.h>
 #include <dt-structs.h>
@@ -878,3 +880,13 @@ int sdram_init(void)
 
 	return 0;
 }
+
+#else
+
+/* return: 0 = success, other = fail */
+int sdram_init(void)
+{
+	return (-1);
+}
+
+#endif /* CONFIG_TPL_BUILD */
