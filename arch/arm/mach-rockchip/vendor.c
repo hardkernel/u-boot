@@ -272,6 +272,11 @@ re_write:
 		if (s_flash_info.blk_offset >= s_flash_info.part_size)
 			s_flash_info.blk_offset = 0;
 		s_flash_info.page_offset = 0;
+		/*
+		 * The spi NOR driver only erase 4KB while write data, and here need to
+		 * erase one block for vendor storage request.
+		 */
+		blk_derase(dev_desc, s_flash_info.part_offset + s_flash_info.blk_offset, s_flash_info.blk_size);
 	}
 
 	dev_desc->op_flag |= BLK_MTD_CONT_WRITE;
