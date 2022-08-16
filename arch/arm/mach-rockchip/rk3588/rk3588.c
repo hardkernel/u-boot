@@ -4,6 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <dm.h>
+#include <misc.h>
 #include <mmc.h>
 #include <spl.h>
 #include <asm/io.h>
@@ -930,6 +932,295 @@ int arch_cpu_init(void)
 }
 #endif
 
+#define BAD_CPU(mask, n)	((mask) & (1 << (n)))
+#define BAD_RKVENC(mask, n)	((mask) & (1 << (n)))
+
+static void fdt_rm_path(void *blob, const char *path)
+{
+	fdt_del_node(blob, fdt_path_offset(blob, path));
+}
+
+static void fdt_rm_cooling_map(const void *blob, u8 cpu_mask)
+{
+	int map1, map2;
+	int cpub1_phd;
+	int cpub3_phd;
+	int node;
+	u32 *pp;
+
+	node = fdt_path_offset(blob, "/cpus/cpu@500");
+	cpub1_phd = fdtdec_get_uint(blob, node, "phandle", -1);
+	node = fdt_path_offset(blob, "/cpus/cpu@700");
+	cpub3_phd = fdtdec_get_uint(blob, node, "phandle", -1);
+
+	if (BAD_CPU(cpu_mask, 4)) {
+		map1 = fdt_path_offset(blob, "/thermal-zones/soc-thermal/cooling-maps/map1");
+		if (map1 > 0) {
+			if (BAD_CPU(cpu_mask, 5)) {
+				debug("rm: cooling-device map1\n");
+				fdt_del_node((void *)blob, map1);
+			} else {
+				pp = (u32 *)fdt_getprop(blob, map1, "cooling-device", NULL);
+				if (pp) {
+					pp[0] = cpu_to_fdt32(cpub1_phd);
+					debug("fix: cooling-device cpub0->cpub1\n");
+				}
+			}
+		}
+	}
+
+	if (BAD_CPU(cpu_mask, 6)) {
+		map2 = fdt_path_offset(blob, "/thermal-zones/soc-thermal/cooling-maps/map2");
+		if (map2 > 0) {
+			if (BAD_CPU(cpu_mask, 7)) {
+				debug("rm: cooling-device map2\n");
+				fdt_del_node((void *)blob, map2);
+			} else {
+				pp = (u32 *)fdt_getprop(blob, map2, "cooling-device", NULL);
+				if (pp) {
+					pp[0] = cpu_to_fdt32(cpub3_phd);
+					debug("fix: cooling-device cpub2->cpub3\n");
+				}
+			}
+		}
+	}
+}
+
+static void fdt_rm_cpu_affinity(const void *blob, u8 cpu_mask)
+{
+	int i, remain, arm_pmu;
+	u32 new_aff[8];
+	u32 *aff;
+
+	arm_pmu = fdt_path_offset(blob, "/arm-pmu");
+	if (arm_pmu > 0) {
+		aff = (u32 *)fdt_getprop(blob, arm_pmu, "interrupt-affinity", NULL);
+		if (!aff)
+			return;
+
+		for (i = 0, remain = 0; i < 8; i++) {
+			if (!BAD_CPU(cpu_mask, i)) {
+				new_aff[remain++] = aff[i];
+				debug("new_aff: 0x%08x\n", (u32)aff[i]);
+			}
+		}
+
+		fdt_setprop((void *)blob, arm_pmu, "interrupt-affinity", new_aff, remain * 4);
+	}
+}
+
+static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
+{
+	const char *cpu_node_name[] = {
+		"cpu@0", "cpu@100", "cpu@200", "cpu@300",
+		"cpu@400", "cpu@500", "cpu@600", "cpu@700",
+	};
+	const char *cluster_core_name[] = {
+		"core0", "core1", "core2", "core3",
+		"core0", "core1", "core0", "core1",
+	};
+	const char *cluster_core, *cpu_node;
+	int root_cpus, cpu;
+	int cluster0;
+	int cluster1;
+	int cluster2;
+	int cluster;
+	int i;
+
+	root_cpus = fdt_path_offset(blob, "/cpus");
+	if (root_cpus < 0)
+		return;
+
+	cluster0 = fdt_path_offset(blob, "/cpus/cpu-map/cluster0");
+	if (cluster0 < 0)
+		return;
+
+	cluster1 = fdt_path_offset(blob, "/cpus/cpu-map/cluster1");
+	if (cluster1 < 0)
+		return;
+
+	cluster2 = fdt_path_offset(blob, "/cpus/cpu-map/cluster2");
+	if (cluster2 < 0)
+		return;
+
+	for (i = 0; i < 8; i++) {
+		if (!BAD_CPU(cpu_mask, i))
+			continue;
+
+		if (i < 4)
+			cluster = cluster0;
+		else if (i < 6)
+			cluster = cluster1;
+		else
+			cluster = cluster2;
+
+		cpu_node = cpu_node_name[i];
+		cluster_core = cluster_core_name[i];
+		debug("rm: %s, %s\n", cpu_node, cluster_core);
+
+		cpu = fdt_subnode_offset(blob, cluster, cluster_core);
+		if (cpu > 0)
+			fdt_del_node((void *)blob, cpu);
+
+		cpu = fdt_subnode_offset(blob, root_cpus, cpu_node);
+		if (cpu > 0)
+			fdt_del_node((void *)blob, cpu);
+	}
+
+	if (BAD_CPU(cpu_mask, 4) && BAD_CPU(cpu_mask, 5)) {
+		debug("rm: cpu cluster1\n");
+		fdt_del_node((void *)blob, cluster1);
+	}
+
+	if (BAD_CPU(cpu_mask, 6) && BAD_CPU(cpu_mask, 7)) {
+		debug("rm: cpu cluster2\n");
+		fdt_del_node((void *)blob, cluster2);
+	}
+}
+
+static void fdt_rm_cpus(const void *blob, u8 cpu_mask)
+{
+	/*
+	 * policy:
+	 *
+	 * 1. both of cores within the same cluster should be normal, otherwise
+	 *    remove both of them.
+	 * 2. if core4~7 are all normal, remove core6 and core7 anyway.
+	 */
+	if (BAD_CPU(cpu_mask, 4) || BAD_CPU(cpu_mask, 5))
+		cpu_mask |= BIT(4) | BIT(5);
+	if (BAD_CPU(cpu_mask, 6) || BAD_CPU(cpu_mask, 7))
+		cpu_mask |= BIT(6) | BIT(7);
+
+	if (!BAD_CPU(cpu_mask, 4) & !BAD_CPU(cpu_mask, 5) &&
+	    !BAD_CPU(cpu_mask, 6) & !BAD_CPU(cpu_mask, 7))
+		cpu_mask |= BIT(6) | BIT(7);
+
+	fdt_rm_cooling_map(blob, cpu_mask);
+	fdt_rm_cpu_affinity(blob, cpu_mask);
+	fdt_rm_cpu(blob, cpu_mask);
+}
+
+static void fdt_rm_gpu(void *blob)
+{
+	/*
+	 * policy:
+	 *
+	 * Remove GPU by default.
+	 */
+	fdt_rm_path(blob, "/gpu@fb000000");
+	fdt_rm_path(blob, "/thermal-zones/soc-thermal/cooling-maps/map3");
+	debug("rm: gpu\n");
+}
+
+static void fdt_rm_rkvdec01(void *blob)
+{
+	/*
+	 * policy:
+	 *
+	 * Remove rkvdec0 and rkvdec1 by default.
+	 */
+	fdt_rm_path(blob, "/rkvdec-core@fdc38000");
+	fdt_rm_path(blob, "/iommu@fdc38700");
+	fdt_rm_path(blob, "/rkvdec-core@fdc48000");
+	fdt_rm_path(blob, "/iommu@fdc48700");
+	debug("rm: rkvdec0, rkvdec1\n");
+}
+
+static void fdt_rm_rkvenc01(void *blob, u8 mask)
+{
+	/*
+	 * policy:
+	 *
+	 * 1. remove bad.
+	 * 2. if both of rkvenc0 and rkvenc1 are normal, remove rkvenc1 by default.
+	 */
+	if (!BAD_RKVENC(mask, 0) && !BAD_RKVENC(mask, 1)) {
+		/* rkvenc1 */
+		fdt_rm_path(blob, "/rkvenc-core@fdbe0000");
+		fdt_rm_path(blob, "/iommu@fdbef000");
+		debug("rm: rkvenv1\n");
+	} else {
+		if (BAD_RKVENC(mask, 0)) {
+			fdt_rm_path(blob, "/rkvenc-core@fdbd0000");
+			fdt_rm_path(blob, "/iommu@fdbdf000");
+			debug("rm: rkvenv0\n");
+
+		}
+		if (BAD_RKVENC(mask, 1)) {
+			fdt_rm_path(blob, "/rkvenc-core@fdbe0000");
+			fdt_rm_path(blob, "/iommu@fdbef000");
+			debug("rm: rkvenv1\n");
+		}
+	}
+}
+
+#define CHIP_ID_OFF	2
+#define IP_STATE_OFF	29
+
+static int fdt_fixup_modules(void *blob)
+{
+	struct udevice *dev;
+	u8 ip_state[3];
+	u8 chip_id[2];
+	u8 rkvenc_mask;
+	u8 cpu_mask;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_otp), &dev);
+	if (ret) {
+		printf("can't get otp device, ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = misc_read(dev, CHIP_ID_OFF, &chip_id, sizeof(chip_id));
+	if (ret) {
+		printf("can't read chip id, ret=%d\n", ret);
+		return ret;
+	}
+
+	debug("# chip: rk%02x%02x\n", chip_id[0], chip_id[1]);
+
+	/* only rk3582 goes further */
+	if (!(chip_id[0] == 0x35 && chip_id[1] == 0x82))
+		return 0;
+
+	ret = misc_read(dev, IP_STATE_OFF, &ip_state, sizeof(ip_state));
+	if (ret) {
+		printf("can't read ip state, ret=%d\n", ret);
+		return ret;
+	}
+
+	/* ip_state[0]: bit0~7 */
+	cpu_mask = ip_state[0];
+	/* ip_state[2]: bit0,2 */
+	rkvenc_mask = (ip_state[2] & 0x1) | ((ip_state[2] & 0x4) >> 1);
+#if 0
+	/* ip_state[1]: bit1~4 */
+	gpu_mask = (ip_state[1] & 0x1e) >> 1;
+	/* ip_state[1]: bit6,7 */
+	rkvdec_mask = (ip_state[1] & 0xc0) >> 6;
+#endif
+
+	debug("hwmask: 0x%02x, 0x%02x, 0x%02x\n", ip_state[0], ip_state[1], ip_state[2]);
+	debug("swmask: 0x%02x, 0x%02x\n", cpu_mask, rkvenc_mask);
+
+	/*
+	 * RK3582 Policy: gpu/rkvdec are removed by default, the same for other
+	 * IP under some condition.
+	 *
+	 * So don't use pattern like "if (rkvenc_mask) then fdt_rm_rkvenc01()",
+	 * just go through all of them as this chip is rk3582.
+	 */
+	fdt_rm_gpu(blob);
+	fdt_rm_rkvdec01(blob);
+	fdt_rm_rkvenc01(blob, rkvenc_mask);
+	fdt_rm_cpus(blob, cpu_mask);
+
+	return 0;
+}
+
 int rk_board_fdt_fixup(const void *blob)
 {
 	int node;
@@ -942,6 +1233,8 @@ int rk_board_fdt_fixup(const void *blob)
 			writel(0x00000100, RK3588_PHY_CONFIG);
 		}
 	}
+
+	fdt_fixup_modules((void *)blob);
 
 	return 0;
 }
