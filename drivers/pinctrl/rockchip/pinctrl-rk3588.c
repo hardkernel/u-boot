@@ -32,10 +32,17 @@ static int rk3588_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
 	if (bank->bank_num == 0) {
 		if ((pin >= RK_PB4) && (pin <= RK_PD7)) {
 			if (mux < 8) {
-				reg += 0x4000 - 0xC; /* PMU2_IOC_BASE */
+				u32 reg0 = 0;
+
+				reg0 = reg + 0x4000 - 0xC; /* PMU2_IOC_BASE */
 				data = (mask << (bit + 16));
 				data |= (mux & mask) << bit;
-				ret = regmap_write(regmap, reg, data);
+				ret = regmap_write(regmap, reg0, data);
+
+				reg0 = reg + 0x8000; /* BUS_IOC_BASE */
+				data = (mask << (bit + 16));
+				regmap = priv->regmap_base;
+				regmap_write(regmap, reg0, data);
 			} else {
 				u32 reg0 = 0;
 
