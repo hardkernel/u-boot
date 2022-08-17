@@ -174,9 +174,10 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 				cmd_timeout += cmd_timeout;
 				printf("timeout increasing to: %u ms.\n",
 				       cmd_timeout);
+				sdhci_writel(host, SDHCI_INT_ALL_MASK, SDHCI_INT_STATUS);
 			} else {
 				puts("timeout.\n");
-				return -ECOMM;
+				/* remove timeout return error and try to send command */
 			}
 		}
 		time++;
