@@ -44,8 +44,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU2_IOC_BASE			0xfd5f4000
 
 #define BUS_IOC_BASE			0xfd5f8000
+#define BUS_IOC_GPIO2A_IOMUX_SEL_L	0x40
 #define BUS_IOC_GPIO2B_IOMUX_SEL_L	0x48
 #define BUS_IOC_GPIO2D_IOMUX_SEL_L	0x58
+#define BUS_IOC_GPIO2D_IOMUX_SEL_H	0x5c
 #define BUS_IOC_GPIO3A_IOMUX_SEL_L	0x60
 
 #define VCCIO3_5_IOC_BASE		0xfd5fa000
@@ -910,7 +912,17 @@ int arch_cpu_init(void)
 	writel(0x00030003, PMU1CRU_BASE + PMU1CRU_SOFTRST_CON04);
 
 	spl_board_sd_iomux_save();
+#else /* U-Boot */
+	/* uboot: config iomux */
+#ifdef CONFIG_ROCKCHIP_EMMC_IOMUX
+	/* Set emmc iomux for good extention if the emmc is not the boot device */
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
 #endif
+
+#endif
+
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
 	writel(0x00080008, USBGRF_BASE + USB_GRF_USB3OTG0_CON1);
 
