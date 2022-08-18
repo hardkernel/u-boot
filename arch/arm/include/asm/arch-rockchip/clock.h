@@ -12,6 +12,13 @@
 #define RKCLK_PLL_MODE_NORMAL		1
 #define RKCLK_PLL_MODE_DEEP		2
 
+/*
+ * PLL flags
+ */
+#define ROCKCHIP_PLL_SYNC_RATE		BIT(0)
+/* normal mode only. now only for pll_rk3036, pll_rk3328 type */
+#define ROCKCHIP_PLL_FIXED_MODE		BIT(1)
+
 enum {
 	ROCKCHIP_SYSCON_NOC,
 	ROCKCHIP_SYSCON_GRF,

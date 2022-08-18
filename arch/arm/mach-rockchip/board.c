@@ -921,13 +921,13 @@ int board_do_bootm(int argc, char * const argv[])
 
 		if (!sysmem_alloc_base(MEM_ANDROID, (ulong)hdr, size))
 			return -ENOMEM;
-
+if (0) {
 		ret = bootm_image_populate_dtb(img);
 		if (ret) {
 			printf("bootm can't read dtb, ret=%d\n", ret);
 			return ret;
 		}
-
+}
 		ret = android_image_memcpy_separate(hdr, &load_addr);
 		if (ret) {
 			printf("board do bootm failed, ret=%d\n", ret);

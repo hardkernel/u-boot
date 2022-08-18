@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2020 Fuzhou Rockchip Electronics Co., Ltd
- * Author: Elaine Zhang <zhangqing@rock-chips.com>
+ * Author: Joseph Chen <chenjh@rock-chips.com>
  */
 
 #include <common.h>
