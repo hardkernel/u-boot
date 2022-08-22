@@ -70,6 +70,27 @@
 #define TRNG_v1_VERSION_CODE			0x46BC
 /* end of TRNG V1 register define */
 
+/* start of TRNG V2 register define */
+#define TRNG_V2_CTRL				0x0010
+#define TRNG_V2_CTRL_INST_REQ			BIT(0)
+#define TRNG_V2_CTRL_RESEED_REQ			BIT(1)
+#define TRNG_V2_CTRL_TEST_REQ			BIT(2)
+#define TRNG_V2_CTRL_SW_DRNG_REQ		BIT(3)
+#define TRNG_V2_CTRL_SW_TRNG_REQ		BIT(4)
+
+#define TRNG_V2_STATE				0x0014
+#define TRNG_V2_STATE_INST_ACK			BIT(0)
+#define TRNG_V2_STATE_RESEED_ACK		BIT(1)
+#define TRNG_V2_STATE_TEST_ACK			BIT(2)
+#define TRNG_V2_STATE_SW_DRNG_ACK		BIT(3)
+#define TRNG_V2_STATE_SW_TRNG_ACK		BIT(4)
+
+/* DRNG_DATA_0 ~ DNG_DATA_7 */
+#define TRNG_V2_DRNG_DATA_0			0x0070
+#define TRNG_V2_DRNG_DATA_7			0x008C
+
+/* end of TRNG V2 register define */
+
 #define RK_RNG_TIME_OUT	50000  /* max 50ms */
 
 #define trng_write(pdata, pos, val)	writel(val, (pdata)->base + (pos))
@@ -228,6 +249,49 @@ exit:
 	return retval;
 }
 
+static int rk_trngv2_init(struct udevice *dev)
+{
+	struct rk_rng_platdata *pdata = dev_get_priv(dev);
+	u32 reg = 0;
+
+	rk_clrreg(pdata->base + TRNG_V2_CTRL, 0xffff);
+
+	reg = trng_read(pdata, TRNG_V2_STATE);
+	trng_write(pdata, TRNG_V2_STATE, reg);
+
+	return 0;
+}
+
+static int rk_trngv2_rng_read(struct udevice *dev, void *data, size_t len)
+{
+	struct rk_rng_platdata *pdata = dev_get_priv(dev);
+	u32 reg = 0;
+	int retval;
+
+	if (len > RK_HW_RNG_MAX)
+		return -EINVAL;
+
+	reg = TRNG_V2_CTRL_SW_DRNG_REQ;
+
+	rk_clrsetreg(pdata->base + TRNG_V2_CTRL, 0xffff, reg);
+
+	retval = readl_poll_timeout(pdata->base + TRNG_V2_STATE, reg,
+				    (reg & TRNG_V2_STATE_SW_DRNG_ACK),
+				    RK_RNG_TIME_OUT);
+	if (retval)
+		goto exit;
+
+	trng_write(pdata, TRNG_V2_STATE, reg);
+
+	rk_rng_read_regs(pdata->base + TRNG_V2_DRNG_DATA_0, data, len);
+
+exit:
+	/* close TRNG */
+	rk_clrreg(pdata->base + TRNG_V2_CTRL, 0xffff);
+
+	return retval;
+}
+
 static int rockchip_rng_read(struct udevice *dev, void *data, size_t len)
 {
 	unsigned char *buf = data;
@@ -295,6 +359,11 @@ static const struct rk_rng_soc_data rk_trngv1_soc_data = {
 	.rk_rng_read = rk_trngv1_rng_read,
 };
 
+static const struct rk_rng_soc_data rk_trngv2_soc_data = {
+	.rk_rng_init = rk_trngv2_init,
+	.rk_rng_read = rk_trngv2_rng_read,
+};
+
 static const struct dm_rng_ops rockchip_rng_ops = {
 	.read = rockchip_rng_read,
 };
@@ -311,6 +380,10 @@ static const struct udevice_id rockchip_rng_match[] = {
 	{
 		.compatible = "rockchip,trngv1",
 		.data = (ulong)&rk_trngv1_soc_data,
+	},
+	{
+		.compatible = "rockchip,trngv2",
+		.data = (ulong)&rk_trngv2_soc_data,
 	},
 	{},
 };
