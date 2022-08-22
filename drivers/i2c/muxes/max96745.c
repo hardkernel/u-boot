@@ -52,14 +52,8 @@ static int max96745_power_on(struct max96745_priv *priv)
 
 	if (dm_gpio_is_valid(&priv->enable_gpio)) {
 		dm_gpio_set_value(&priv->enable_gpio, 1);
-	} else {
-		ret = dm_i2c_reg_clrset(priv->dev, 0x0010, RESET_ALL,
-					FIELD_PREP(RESET_ALL, 1));
-		if (ret < 0)
-			return ret;
+		mdelay(200);
 	}
-
-	mdelay(200);
 
 	ret = dm_i2c_reg_clrset(priv->dev, 0x0076, DIS_REM_CC,
 				FIELD_PREP(DIS_REM_CC, 1));
