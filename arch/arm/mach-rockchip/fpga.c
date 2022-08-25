@@ -72,9 +72,6 @@ static void fpga_init_atags(void)
 	t_tos.version = 0;
 	strcpy(t_tos.tee_mem.name, "op-tee");
 #ifdef CONFIG_ARM64
-	t_tos.tee_mem.phy_addr = SZ_2M;
-	t_tos.tee_mem.size = SZ_4M;
-#else
 	t_tos.tee_mem.phy_addr = 0x8400000; /* 132M offset */
 	t_tos.tee_mem.size = 0x1e00000;     /* 30M size */
 #endif
