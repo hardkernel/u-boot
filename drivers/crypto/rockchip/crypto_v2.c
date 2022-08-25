@@ -763,6 +763,11 @@ static void ccm_aad_padding(u32 aad_len, u8 *padding, u32 *padding_size)
 {
 	u32 i;
 
+	if (aad_len == 0) {
+		*padding_size = 0;
+		return;
+	}
+
 	i = aad_len < (0x10000 - 0x100) ? 2 : 6;
 
 	if (i == 2) {
@@ -779,7 +784,7 @@ static void ccm_aad_padding(u32 aad_len, u8 *padding, u32 *padding_size)
 	*padding_size = i;
 }
 
-static int ccm_compose_aad_iv(u8 *aad_iv, u32 data_len, u32 tag_size)
+static int ccm_compose_aad_iv(u8 *aad_iv, u32 data_len, u32 aad_len, u32 tag_size)
 {
 	aad_iv[0] |= ((u8)(((tag_size - 2) / 2) & 7) << 3);
 
@@ -788,7 +793,8 @@ static int ccm_compose_aad_iv(u8 *aad_iv, u32 data_len, u32 tag_size)
 	aad_iv[14] = (u8)(data_len >> 8);
 	aad_iv[15] = (u8)data_len;
 
-	aad_iv[0] |= 0x40;	//set aad flag
+	if (aad_len)
+		aad_iv[0] |= 0x40;	//set aad flag
 
 	return 0;
 }
@@ -958,12 +964,15 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 			if (!aad_tmp)
 				goto exit;
 
-			/* read iv data from reg */
-			get_iv_reg(key_chn, aad_tmp, AES_BLOCK_SIZE);
-			ccm_compose_aad_iv(aad_tmp, tmp_len, tag_len);
-			memcpy(aad_tmp + AES_BLOCK_SIZE, padding, padding_size);
+			/* clear last block */
 			memset(aad_tmp + aad_tmp_len - AES_BLOCK_SIZE,
 			       0x00, AES_BLOCK_SIZE);
+
+			/* read iv data from reg */
+			get_iv_reg(key_chn, aad_tmp, AES_BLOCK_SIZE);
+			ccm_compose_aad_iv(aad_tmp, tmp_len, aad_len, tag_len);
+			memcpy(aad_tmp + AES_BLOCK_SIZE, padding, padding_size);
+
 			memcpy(aad_tmp + AES_BLOCK_SIZE + padding_size,
 			       aad, aad_len);
 		} else {
