@@ -67,6 +67,31 @@ void charger_led_off(void)
 	gpio_free(CHG_LED);
 }
 
+int check_charge_exit_key(void)
+{
+	int m_left,m_right;
+	int exit = 0;
+
+	gpio_request(KEY_MENU_LEFT, "menu_left");
+	gpio_request(KEY_MENU_RIGHT, "menu_right");
+
+	gpio_direction_input(KEY_MENU_LEFT);
+	gpio_direction_input(KEY_MENU_RIGHT);
+
+	//key active low
+	m_left = !gpio_get_value(KEY_MENU_LEFT);
+	m_right = !gpio_get_value(KEY_MENU_RIGHT);
+
+	if (m_left && m_right) {
+		exit = 1;
+		printf("Charge Exit. Normal Boot\n");
+	} else {
+		exit = 0;
+	}
+	return exit;
+}
+
+
 static int rk818_i2c_write(int32_t command, uint8_t val)
 {
 	int ret = 0;
@@ -166,7 +191,7 @@ int odroid_charge_enable(struct pmic *p_fg)
 int board_check_power(void)
 {
 	int pwron_src, bootmode;
-	int cnt = 0;
+	unsigned int cap = 0, offset=0;
 
 	// check pwr on source
 	pwron_src = odroid_check_pwron_src();
@@ -174,13 +199,32 @@ int board_check_power(void)
 	printf("PWRON source : %d\n",pwron_src);
 
 	if ((pwron_src != PWRON_KEY) && (bootmode == BOOTMODE_NORMAL)) {
+		/* RK817 BOOST, OTG_POWER(USB A-type VBUS) disable */
+		rk817_i2c_write(RK817_POWER_EN3, 0xf0);
 		printf("battery charge state\n");
 		while(1) {
-			gou_bmp_display(DISP_BATT_0+cnt);
-			mdelay(1000);
+			cap = get_battery_cap();
+			printf("rk818_bat: capacity=[%d]\n",cap);
+			if (cap < 25)
+				offset = DISP_BATT_0;
+			else if (cap < 60)
+				offset = DISP_BATT_1;
+			else if (cap < 95)
+				offset = DISP_BATT_2;
+			else
+				offset = DISP_BATT_3;
+
+			gou_bmp_display(offset);
+			mdelay(750);
 			charger_led_bilnk(0);
-			cnt++;
-			if (cnt >= DISP_BATT_3) cnt=0;
+			if ( offset < DISP_BATT_3)
+				gou_bmp_display(offset+1);
+			else gou_bmp_display(offset);
+			mdelay(750);
+			charger_led_bilnk(0);
+
+			if(check_charge_exit_key())
+				break;
 			if(!is_charging())
 				run_command("poweroff", 0);
 		}
@@ -194,6 +238,9 @@ void odroid_pmic_init(void)
 {
 	printf("enter odroid_pmic_init.\n");
 
+	/* RK817 DCDC, LDO reset */
+	rk817_i2c_write(RK817_SYS_CFG(3), 0x64);
+
 #if defined(CONFIG_POWER_RK818)
 	int ret = -1;
 
@@ -203,6 +250,11 @@ void odroid_pmic_init(void)
 	rk818_i2c_write(RK818_BUCK1_ON_VSEL, 0x1a);
 	/* RK818 BUCK2(vdd_ee) : 0.875V */
 	rk818_i2c_write(RK818_BUCK2_ON_VSEL, 0x0d);
+	/* RK818 LDO9(vddio_c) uSD IO voltage : 3.3V */
+	rk818_i2c_write(RK818_LDO9_ON_VSEL, 0xaf);
+
+	/* RK818 BUCK,LDO9,SWITCH enable */
+	rk818_i2c_write(RK818_DCDC_EN_REG, 0x6f);
 	/* RK818 LDO7,LDO5 enable */
 	/* RK818 LDO1,LDO2,LDO3,LDO4,LDO6,LDO8 disable */
 	rk818_i2c_write(RK818_LDO_EN_REG, 0x50);
@@ -211,11 +263,11 @@ void odroid_pmic_init(void)
 	if (ret >= 0) printf("pmic:rk818 init complete.\n");
 	else printf("pmic:rk818 init fail....\n");
 
-	if(is_power_low()) {
+	if(is_power_low() && is_charging()) {
 		while(1) {
 			if(!is_power_low())
 				break;
-			mdelay(500);
+			mdelay(750);
 			charger_led_bilnk(1);
 			if(!is_charging())
 				run_command("poweroff", 0);

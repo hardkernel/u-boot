@@ -321,7 +321,7 @@ int board_late_init(void)
 	} else {
 		if (board_check_power() < 0) {
 			gou_bmp_display(DISP_BATT_LOW);
-			mdelay(1000);
+			mdelay(2000);
 			run_command("poweroff", 0);
 		}
 	}

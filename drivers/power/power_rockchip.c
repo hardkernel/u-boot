@@ -21,7 +21,8 @@ extern void pmic_rk818_power_on(void);
 extern void pmic_rk818_power_off(void);
 #endif
 
-int low_power_level = 3;
+unsigned int low_power_level = 1;
+unsigned int low_power_voltage = 3470;
 
 int get_power_bat_status(struct battery *battery)
 {
@@ -39,6 +40,20 @@ int get_power_bat_status(struct battery *battery)
 	}
 
 	return 0;
+}
+
+/*
+return cap: bat capacity
+*/
+unsigned int get_battery_cap(void)
+{
+	int ret;
+	struct battery battery;
+	memset(&battery,0, sizeof(battery));
+	ret = get_power_bat_status(&battery);
+	if (ret < 0)
+		return 0;
+	return battery.capacity;
 }
 
 /*
@@ -64,9 +79,7 @@ int is_charging(void)
 {
 	int ret;
 	struct battery battery;
-
 	memset(&battery,0, sizeof(battery));
-
 	ret = get_power_bat_status(&battery);
 	if (ret < 0)
 		return 0;
@@ -88,10 +101,12 @@ int is_power_low(void)
 	if (ret < 0)
 		return 0;
 
+	printf("rk818_bat: capacity=[%d], bat_voltage=[%d]\n",
+				battery.capacity,battery.voltage_uV);
 	if (battery.capacity < low_power_level)
 		return 1;
 
-	return (battery.voltage_uV < CONFIG_SYSTEM_ON_VOL_THRESD) ? 1 : 0;
+	return (battery.voltage_uV < low_power_voltage) ? 1 : 0;
 }
 
 int pmic_init(unsigned char  bus)

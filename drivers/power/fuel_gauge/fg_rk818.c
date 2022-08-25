@@ -151,7 +151,7 @@ static int dbg_enable = 0;
 #define NTC_40UA_MAX_MEASURE	55000
 #define NTC_20UA_MAX_MEASURE	110000
 
-#define ZERO_MIN_VOLTAGE	3800
+#define ZERO_MIN_VOLTAGE	3700
 
 #define TS1_NOT_READY		0xabcdabcd
 
@@ -910,7 +910,6 @@ static bool is_rk818_bat_first_poweron(struct battery_info *di)
 		rk818_bat_write(RK818_GGSTS_REG, buf);
 		return true;
 	}
-
 	return false;
 }
 
@@ -1707,11 +1706,10 @@ static struct power_fg fg_ops = {
 	.fg_battery_update = rk818_bat_update,
 };
 
-
 static u32 rk818_ocv_table[] = {
-	3280, 3675, 3689, 3716, 3740, 3756, 3768, 3780,
-	3793, 3807, 3827, 3853, 3896, 3937, 3974, 4007,
-	4066, 4110, 4161, 4217, 4250,
+	3480, 3599, 3671, 3701, 3728, 3746, 3762,
+	3772, 3781, 3792, 3816, 3836, 3866, 3910,
+	3942, 3971, 4002, 4050, 4088, 4132, 4200,
 };
 
 static int rk818_bat_set_info(struct battery_info *di)
@@ -1738,7 +1736,7 @@ static int rk818_bat_set_info(struct battery_info *di)
 	di->sample_res 		= 10; /* "sample_res" */
 	di->max_soc_offset 	= 60; /* "max_soc_offset" */
 	di->virtual_power 	= 0; /* "virtual_power" */
-//	di->ts2_vol_multi 	= /* "ts2_vol_multi" */
+//	di->ts2_vol_multi 	= 0; /* "ts2_vol_multi" */
 	di->bat_res 		= 180; /* "bat_res" */
 
 	di->res_div = (di->sample_res == SAMPLE_RES_20mR) ?

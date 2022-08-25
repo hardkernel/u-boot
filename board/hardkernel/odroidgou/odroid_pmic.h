@@ -12,6 +12,7 @@
 #define RK818_BUCK1_ON_VSEL	0x2f
 #define RK818_BUCK2_ON_VSEL	0x33
 #define RK818_BUCK4_ON_VSEL	0x38
+#define RK818_LDO9_ON_VSEL	0x54
 #define RK818_DCDC_EN_REG	0x23
 #define RK818_LDO_EN_REG	0x24
 
@@ -23,6 +24,11 @@
 #define RK817_POWER_EN1		0xb2
 #define RK817_POWER_EN2		0xb3
 #define RK817_POWER_EN3		0xb4
+
+#define RK817_SYS_CFG(i)	(0xf1 + (i))
+
+#define KEY_MENU_LEFT	GPIOEE(GPIOX_17)
+#define KEY_MENU_RIGHT	GPIOEE(GPIOX_16)
 
 enum pwron_src {
 	PWRON_KEY = 0,
