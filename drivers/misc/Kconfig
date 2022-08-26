@@ -92,6 +92,12 @@ config SPL_ROCKCHIP_HW_DECOMPRESS
 	  This driver support Decompress IP built-in Rockchip SoC, support
 	  LZ4, GZIP, PNG, ZLIB.
 
+config ROCKCHIP_SECURE_OTP
+	bool "Rockchip Secure OTP Support"
+	depends on MISC && !OPTEE_CLIENT
+	help
+	  Support read & write secure otp.
+
 config SPL_ROCKCHIP_SECURE_OTP
 	bool "Rockchip Secure OTP Support in spl"
 	depends on SPL_MISC
