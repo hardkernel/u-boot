@@ -27,6 +27,10 @@ DECLARE_GLOBAL_DATA_PTR;
 /* Change to 1 to output registers at the start of each transaction */
 #define DEBUG_RK_SPI	0
 
+struct rockchip_spi_quirks {
+	u32 max_baud_div_in_cpha;
+};
+
 struct rockchip_spi_platdata {
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	struct dtd_rockchip_rk3288_spi of_plat;
@@ -50,6 +54,9 @@ struct rockchip_spi_priv {
 	uint input_rate;
 	uint cr0;
 	u32 rsd;			/* Rx sample delay cycles */
+
+	/* quirks */
+	u32 max_baud_div_in_cpha;
 };
 
 #define SPI_FIFO_DEPTH		32
@@ -105,6 +112,12 @@ static void rkspi_set_clk(struct rockchip_spi_priv *priv, uint speed)
 
 	debug("spi speed %u, div %u\n", speed, clk_div);
 
+	/* the maxmum divisor is 4 for mode1/3 spi master case for quirks */
+	if (priv->max_baud_div_in_cpha && clk_div > priv->max_baud_div_in_cpha && priv->mode & SPI_CPHA) {
+		clk_div = priv->max_baud_div_in_cpha;
+		clk_set_rate(&priv->clk, 4 * speed);
+		speed = clk_get_rate(&priv->clk);
+	}
 	clrsetbits_le32(&priv->regs->baudr, 0xffff, clk_div);
 	priv->last_speed_hz = speed;
 }
@@ -260,6 +273,7 @@ static int rockchip_spi_probe(struct udevice *bus)
 {
 	struct rockchip_spi_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_spi_priv *priv = dev_get_priv(bus);
+	struct rockchip_spi_quirks *quirks_cfg;
 	int ret;
 
 	debug("%s: probe\n", __func__);
@@ -287,6 +301,9 @@ static int rockchip_spi_probe(struct udevice *bus)
 	priv->input_rate = ret;
 	debug("%s: rate = %u\n", __func__, priv->input_rate);
 	priv->bits_per_word = 8;
+	quirks_cfg = (struct rockchip_spi_quirks *)dev_get_driver_data(bus);
+	if (quirks_cfg)
+		priv->max_baud_div_in_cpha = quirks_cfg->max_baud_div_in_cpha;
 
 	return 0;
 }
