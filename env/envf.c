@@ -243,8 +243,14 @@ static int envf_init_vars(void)
 		if (!strcmp(p, "bootargs")) {
 			printf("%s\n", EMSG_ARGS);
 			run_command("download", 0);
+#ifdef CONFIG_FIT_SIGNATURE
+		} else if (!strcmp(p, "sys_bootargs")) {
+			/* Do nothing, ignore 'sys_bootargs' from env.img */
+#endif
+		} else {
+			envf_list[envf_num++] = p;
 		}
-		envf_list[envf_num++] = p;
+
 		p = strtok(NULL, " ");
 	}
 
