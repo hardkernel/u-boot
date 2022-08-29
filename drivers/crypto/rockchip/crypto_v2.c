@@ -397,7 +397,7 @@ static int rk_hash_direct_calc(void *hw_data, const u8 *data,
 
 	if (!(*started_flag)) {
 		lli->user_define |=
-			(LLI_USER_STRING_START | LLI_USER_CPIHER_START);
+			(LLI_USER_STRING_START | LLI_USER_CIPHER_START);
 		crypto_write((u32)virt_to_phys(lli), CRYPTO_DMA_LLI_ADDR);
 		crypto_write((CRYPTO_HASH_ENABLE << CRYPTO_WRITE_MASK_SHIFT) |
 			     CRYPTO_HASH_ENABLE, CRYPTO_HASH_CTL);
@@ -931,7 +931,7 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 		data_desc->dma_ctrl |= LLI_DMA_CTRL_DST_DONE;
 	}
 
-	data_desc->user_define = LLI_USER_CPIHER_START |
+	data_desc->user_define = LLI_USER_CIPHER_START |
 				 LLI_USER_STRING_START |
 				 LLI_USER_STRING_LAST |
 				 (key_chn << 4);
@@ -946,7 +946,7 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 
 		memset(aad_desc, 0x00, sizeof(*aad_desc));
 		aad_desc->next_addr = (u32)virt_to_phys(data_desc);
-		aad_desc->user_define = LLI_USER_CPIHER_START |
+		aad_desc->user_define = LLI_USER_CIPHER_START |
 					 LLI_USER_STRING_START |
 					 LLI_USER_STRING_LAST |
 					 LLI_USER_STRING_AAD |
