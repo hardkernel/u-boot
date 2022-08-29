@@ -931,12 +931,14 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 		data_desc->dma_ctrl |= LLI_DMA_CTRL_DST_DONE;
 	}
 
+	data_desc->user_define = LLI_USER_CPIHER_START |
+				 LLI_USER_STRING_START |
+				 LLI_USER_STRING_LAST |
+				 (key_chn << 4);
+	crypto_write((u32)virt_to_phys(data_desc), CRYPTO_DMA_LLI_ADDR);
+
 	if (rk_mode == RK_MODE_CCM || rk_mode == RK_MODE_GCM) {
 		u32 aad_tmp_len = 0;
-
-		data_desc->user_define = LLI_USER_STRING_START |
-					 LLI_USER_STRING_LAST |
-					 (key_chn << 4);
 
 		aad_desc = align_malloc(sizeof(*aad_desc), LLI_ADDR_ALIGN_SIZE);
 		if (!aad_desc)
@@ -994,15 +996,15 @@ static int hw_cipher_crypt(const u8 *in, u8 *out, u64 len,
 
 		aad_desc->src_addr = (u32)virt_to_phys(aad_tmp);
 		aad_desc->src_len  = aad_tmp_len;
-		crypto_write((u32)virt_to_phys(aad_desc), CRYPTO_DMA_LLI_ADDR);
-		cache_op_inner(DCACHE_AREA_CLEAN, aad_tmp, aad_tmp_len);
-		cache_op_inner(DCACHE_AREA_CLEAN, aad_desc, sizeof(*aad_desc));
-	} else {
-		data_desc->user_define = LLI_USER_CPIHER_START |
-					 LLI_USER_STRING_START |
-					 LLI_USER_STRING_LAST |
-					 (key_chn << 4);
-		crypto_write((u32)virt_to_phys(data_desc), CRYPTO_DMA_LLI_ADDR);
+
+		if (aad_tmp_len) {
+			data_desc->user_define = LLI_USER_STRING_START |
+						 LLI_USER_STRING_LAST |
+						 (key_chn << 4);
+			crypto_write((u32)virt_to_phys(aad_desc), CRYPTO_DMA_LLI_ADDR);
+			cache_op_inner(DCACHE_AREA_CLEAN, aad_tmp, aad_tmp_len);
+			cache_op_inner(DCACHE_AREA_CLEAN, aad_desc, sizeof(*aad_desc));
+		}
 	}
 
 	cache_op_inner(DCACHE_AREA_CLEAN, data_desc, sizeof(*data_desc));
@@ -1245,6 +1247,9 @@ int rk_crypto_ae(struct udevice *dev, u32 algo, u32 mode,
 	int ret;
 
 	if (!IS_AE_MODE(rk_mode))
+		return -EINVAL;
+
+	if (len == 0)
 		return -EINVAL;
 
 	if (algo != CRYPTO_AES && algo != CRYPTO_SM4)
