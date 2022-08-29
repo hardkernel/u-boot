@@ -133,7 +133,7 @@ void mtd_blk_map_partitions(struct blk_desc *desc)
 	for (i = 1; i < MAX_SEARCH_PARTITIONS; i++) {
 		ret = part_get_info(desc, i, &info);
 		if (ret != 0)
-			continue;
+			break;
 
 		if (mtd_blk_map_table_init(desc,
 					   info.start << 9,
