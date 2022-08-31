@@ -108,6 +108,10 @@ extern int designware_initialize(ulong base_addr, u32 interface);
 
 int board_eth_init(bd_t *bis)
 {
+	run_command("gpio clear GPIOZ_15", 0);
+	mdelay(100);
+	run_command("gpio input GPIOZ_15", 0);
+
 #ifdef ETHERNET_EXTERNAL_PHY
 	dwmac_meson_cfg_drive_strength();
 	setup_net_chip_ext();
