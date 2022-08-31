@@ -1178,6 +1178,7 @@ int eqos_init(struct udevice *dev)
 
 	if (limit < 0) {
 		pr_err("EQOS_DMA_MODE_SWR stuck");
+		ret = -EAGAIN;
 		goto err_stop_resets;
 	}
 
@@ -1207,6 +1208,7 @@ int eqos_init(struct udevice *dev)
 		 eqos->config->ops->eqos_get_interface(dev));
 		if (!eqos->phy) {
 			pr_err("phy_connect() failed");
+			ret = -ENODEV;
 			goto err_stop_resets;
 		}
 
@@ -1233,6 +1235,7 @@ int eqos_init(struct udevice *dev)
 
 	if (!eqos->phy->link) {
 		pr_err("No link");
+		ret = -EINVAL;
 		goto err_shutdown_phy;
 	}
 
