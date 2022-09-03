@@ -70,6 +70,66 @@ bool fuel_gauge_get_chrg_online(struct udevice *dev)
 	return ops->get_chrg_online(dev);
 }
 
+int fuel_gauge_get_temperature(struct udevice *dev, int *temp)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->get_temperature)
+		return -ENOSYS;
+
+	return ops->get_temperature(dev, temp);
+}
+
+int charger_set_charger_voltage(struct udevice *dev, int uV)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_charger_voltage)
+		return -ENOSYS;
+
+	return ops->set_charger_voltage(dev, uV);
+}
+
+int charger_set_current(struct udevice *dev, int ichrg_uA)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_charger_current)
+		return -ENOSYS;
+
+	return ops->set_charger_current(dev, ichrg_uA);
+}
+
+int charger_set_iprechg_current(struct udevice *dev, int iprechrg_uA)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_iprechg_current)
+		return -ENOSYS;
+
+	return ops->set_iprechg_current(dev, iprechrg_uA);
+}
+
+int charger_set_enable(struct udevice *dev)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_charger_enable)
+		return -ENOSYS;
+
+	return ops->set_charger_enable(dev);
+}
+
+int charger_set_disable(struct udevice *dev)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_charger_disable)
+		return -ENOSYS;
+
+	return ops->set_charger_disable(dev);
+}
+
 UCLASS_DRIVER(fuel_guage) = {
 	.id		= UCLASS_FG,
 	.name		= "fuel_gauge",
