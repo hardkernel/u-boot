@@ -177,7 +177,14 @@ static int rkusb_do_reset(struct fsg_common *common,
 static int rkusb_do_test_unit_ready(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
-	common->residue = 0x06 << 24; /* Max block xfer support from host */
+	struct blk_desc *desc = &ums[common->lun].block_dev;
+
+	if ((desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) ||
+	    desc->if_type == IF_TYPE_SPINOR)
+		common->residue = 0x03 << 24; /* 128KB Max block xfer for SPI Nor */
+	else
+		common->residue = 0x06 << 24; /* Max block xfer support from host */
+
 	common->data_dir = DATA_DIR_NONE;
 	bh->state = BUF_STATE_EMPTY;
 
