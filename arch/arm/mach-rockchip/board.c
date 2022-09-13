@@ -167,6 +167,8 @@ static int rockchip_set_serialno(void)
 			if ((serialno_str[i] >= 'a' && serialno_str[i] <= 'z') ||
 			    (serialno_str[i] >= 'A' && serialno_str[i] <= 'Z') ||
 			    (serialno_str[i] >= '0' && serialno_str[i] <= '9'))
+				continue;
+			else
 				break;
 		}
 
