@@ -465,7 +465,26 @@ static const struct spinand_info gigadevice_spinand_table[] = {
 				     gd5fxgq4xa_ecc_get_status)),
 };
 
+static int gigadevice_spinand_set_ds(struct spinand_device *spinand, u8 ds_io)
+{
+	struct spi_mem_op op = SPINAND_SET_FEATURE_OP(0xD0,
+						      spinand->scratchbuf);
+
+	*spinand->scratchbuf = (ds_io & 0x3) << 5;
+	return spi_mem_exec_op(spinand->slave, &op);
+}
+
+static int gigadevice_spinand_init(struct spinand_device *spinand)
+{
+	/* GD5F1GQ5UExxG */
+	if (spinand->id.data[1] == 0x51)
+		gigadevice_spinand_set_ds(spinand, 3);
+
+	return 0;
+}
+
 static const struct spinand_manufacturer_ops gigadevice_spinand_manuf_ops = {
+	.init = gigadevice_spinand_init,
 };
 
 const struct spinand_manufacturer gigadevice_spinand_manufacturer = {
