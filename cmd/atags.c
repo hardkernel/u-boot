@@ -172,6 +172,13 @@ static void atags_print_tag(struct tag *t)
 		printf("  pagesize = 0x%x\n", t->u.core.pagesize);
 		printf("   rootdev = 0x%x\n", t->u.core.rootdev);
 		break;
+	case ATAG_PSTORE:
+		printf("[pstore]:\n");
+		printf("     magic = 0x%x\n", t->hdr.magic);
+		printf("      size = 0x%x\n\n", t->hdr.size << 2);
+		for (i = 0; i < ARRAY_SIZE(t->u.pstore.buf); i++)
+			printf("  table[%d] = 0x%x@0x%x\n", i, t->u.pstore.buf[i].size, t->u.pstore.buf[i].addr);
+		break;
 	default:
 		printf("%s: magic(%x) is not support\n", __func__, t->hdr.magic);
 	}

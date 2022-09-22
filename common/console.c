@@ -21,6 +21,10 @@
 #include <watchdog.h>
 #include <vsprintf.h>
 
+#ifdef CONFIG_PSTORE
+#include <asm/arch/pstore.h>
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 static int on_console(const char *name, const char *value, enum env_op op,
@@ -515,6 +519,10 @@ void putc(const char c)
 {
 	if (!gd || gd->flags & GD_FLG_DISABLE_CONSOLE)
 		return;
+
+#ifdef CONFIG_PSTORE
+	putc_to_ram(c);
+#endif
 
 #ifdef CONFIG_DEBUG_UART
 	/* if we don't have a console yet, use the debug UART */
