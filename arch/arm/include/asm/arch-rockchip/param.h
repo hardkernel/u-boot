@@ -79,4 +79,12 @@ int param_parse_pre_serial(int *flags);
  */
 int param_parse_pubkey_fuse_programmed(void);
 
+#ifdef CONFIG_PSTORE
+/**
+ * param_parse_pstore() - Parse and Init pstore according to pre-loader atags.
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int param_parse_pstore(void);
+#endif
 #endif

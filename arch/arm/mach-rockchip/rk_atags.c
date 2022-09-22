@@ -253,6 +253,9 @@ int atags_set_tag(u32 magic, void *tagdata)
 	case ATAG_BOOT1_PARAM:
 		size = tag_size(tag_boot1p);
 		break;
+	case ATAG_PSTORE:
+		size = tag_size(tag_pstore);
+		break;
 	};
 
 	if (!size)

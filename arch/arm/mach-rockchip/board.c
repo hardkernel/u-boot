@@ -710,7 +710,9 @@ int board_init_f_boot_flags(void)
 	int boot_flags = 0;
 
 	arch_fpga_init();
-
+#ifdef CONFIG_PSTORE
+	param_parse_pstore();
+#endif
 	param_parse_pre_serial(&boot_flags);
 
 	/* The highest priority to turn off (override) console */

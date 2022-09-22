@@ -995,6 +995,27 @@ config TRUST_SHA_MODE
 	  0: none; 1: sha1; 2: sha256 RK big endian; 3: sha256 little endian.
 endif
 
+config PSTORE
+	bool "Print log to linux pstore buffer"
+	default n
+	help
+	  This enable Print uboot log to linux pstore buffer which address
+	  is default 0x110000 for most soc.
+
+config PERSISTENT_RAM_ADDR
+	hex "Linux pstore buffer address"
+	default 0x0
+	depends on PSTORE
+	help
+	  This select linux pstore buffer address for uboot.
+
+config PERSISTENT_RAM_SIZE
+	hex "Linux pstore buffer size"
+	default 0x0
+	depends on PSTORE
+	help
+	  This select linux pstore buffer size for uboot.
+
 source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3066/Kconfig"

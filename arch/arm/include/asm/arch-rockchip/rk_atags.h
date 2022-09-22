@@ -20,6 +20,7 @@
 #define ATAG_PUB_KEY		0x54410056
 #define ATAG_SOC_INFO		0x54410057
 #define ATAG_BOOT1_PARAM	0x54410058
+#define ATAG_PSTORE		0x54410059
 #define ATAG_MAX		0x544100ff
 
 /* Tag size and offset */
@@ -173,6 +174,15 @@ struct tag_boot1p {
 	u32 hash;
 } __packed;
 
+struct tag_pstore {
+	u32 version;
+	struct {
+		u32 addr;
+		u32 size;
+	} buf[16];
+	u32 hash;
+} __packed;
+
 struct tag_core {
 	u32 flags;
 	u32 pagesize;
@@ -198,6 +208,7 @@ struct tag {
 		struct tag_pub_key	pub_key;
 		struct tag_soc_info	soc;
 		struct tag_boot1p	boot1p;
+		struct tag_pstore	pstore;
 	} u;
 } __aligned(4);
 

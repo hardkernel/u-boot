@@ -23,6 +23,7 @@
 #include <asm/arch/boot_mode.h>
 #include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
+#include <asm/arch/param.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -215,6 +216,10 @@ int board_fit_config_name_match(const char *name)
 int board_init_f_boot_flags(void)
 {
 	int boot_flags = 0;
+
+#ifdef CONFIG_PSTORE
+       param_parse_pstore();
+#endif
 
 	/* pre-loader serial */
 #if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \
