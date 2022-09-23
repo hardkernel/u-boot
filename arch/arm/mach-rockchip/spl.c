@@ -19,6 +19,7 @@
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 #include <asm/arch/rk_atags.h>
 #endif
+#include <asm/arch/pcie_ep_boot.h>
 #include <asm/arch/sdram.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch-rockchip/sys_proto.h>
@@ -175,6 +176,9 @@ void board_init_f(ulong dummy)
 	printascii("U-Boot SPL board init");
 #endif
 	gd->sys_start_tick = get_ticks();
+#ifdef CONFIG_SPL_PCIE_EP_SUPPORT
+	rockchip_pcie_ep_init();
+#endif
 #ifdef CONFIG_SPL_FRAMEWORK
 	ret = spl_early_init();
 	if (ret) {
@@ -197,6 +201,9 @@ void board_init_f(ulong dummy)
 
 	arch_cpu_init();
 	rk_board_init_f();
+#ifdef CONFIG_SPL_RAM_DEVICE
+	rockchip_pcie_ep_get_firmware();
+#endif
 #if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM) && !defined(CONFIG_SPL_BOARD_INIT)
 	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
 #endif
