@@ -1213,7 +1213,7 @@ define filechk_version.h
 endef
 
 define filechk_timestamp.h
-	(LC_ALL=C date +'#define U_BOOT_DATE "%b %d %C%y"'; \
+	(LC_ALL=C date +'#define U_BOOT_DATE "%b-%d-%C%y"'; \
 	LC_ALL=C date +'#define U_BOOT_TIME "%T"')
 endef
 

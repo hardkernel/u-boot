@@ -13,6 +13,8 @@
 #include <asm/errno.h>
 #include <vsprintf.h>
 #include <linux/kernel.h>
+#include <version.h>
+
 #include <../odroid-common/odroid-common.h>
 #include "display.h"
 
@@ -30,6 +32,10 @@ static int boot_partition(void)
 
 int gou_display_env_init(void)
 {
+	char str[64];
+	sprintf(str, "%s", U_BOOT_DATE);
+	setenv("uboot_version", str);
+
 	setenv("display_width", simple_itoa(480));
 	setenv("display_height", simple_itoa(854));
 	setenv("fb_width", simple_itoa(480));
