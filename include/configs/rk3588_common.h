@@ -57,12 +57,12 @@
  *	the image header will use the 0x180000~0x200000, which is
  *	overlap with share memory region 0x100000~0x200000.
  *
- * compressed kernel:   84M ~ 131M
+ * compressed kernel:   84M ~ 130M
  */
 #define ENV_MEM_LAYOUT_SETTINGS \
 	"scriptaddr=0x00500000\0" \
 	"pxefile_addr_r=0x00600000\0" \
-	"fdt_addr_r=0x0a100000\0" \
+	"fdt_addr_r=0x08300000\0" \
 	"kernel_addr_r=0x00400000\0" \
 	"kernel_addr_c=0x05480000\0" \
 	"ramdisk_addr_r=0x0a200000\0"
