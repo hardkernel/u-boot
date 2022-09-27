@@ -514,7 +514,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			}
 		} else {
 			SYSMEM_E("Failed to alloc \"%s\" expect at 0x%08lx - 0x%08lx "
-				 "but at 0x%08lx - x%08lx\n",
+				 "but at 0x%08lx - 0x%08lx\n",
 				 name, (ulong)base, (ulong)(base + size),
 				 (ulong)paddr, (ulong)(paddr + size));
 			/* Free what we don't want allocated region */
