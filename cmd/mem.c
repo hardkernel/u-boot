@@ -84,7 +84,6 @@ static int do_mem_md(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	bytes = size * length;
-	invalidate_dcache_range(addr, addr+bytes);
 	buf = map_sysmem(addr, bytes);
 
 	/* Print the lines. */
@@ -164,7 +163,6 @@ static int do_mem_mw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		buf += size;
 	}
 	unmap_sysmem(start);
-	flush_dcache_range(addr, addr+bytes);
 	return 0;
 }
 
