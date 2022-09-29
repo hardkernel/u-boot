@@ -58,6 +58,7 @@ config FPGA_MMC
 config FPGA_RAM
 	bool "FPGA board with RAM"
 	depends on FPGA_ROCKCHIP
+	select SPL_RAM_SUPPORT
 	select DM_RAMDISK
 	select RAMDISK_RO
 endmenu
