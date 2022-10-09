@@ -20,6 +20,7 @@
 #define PMU_PWRDN_CON			0xff000018
 #define GRF_CPU_CON1			0xff140504
 
+#define USBPHY_GRF_BASE			0xff2c0000
 #define VIDEO_PHY_BASE			0xff2e0000
 #define FW_DDR_CON_REG			0xff534040
 #define SERVICE_CORE_ADDR		0xff508000
@@ -249,6 +250,16 @@ int arch_cpu_init(void)
 	rk_clrreg(GRF_CPU_CON1, 1 << 7);
 
 	grf_vccio6_vsel_init();
+
+	if (soc_is_px30s()) {
+		/* set usb2phy parameter */
+		writel(0x04, USBPHY_GRF_BASE + 0x8000);
+		writel(0x46, USBPHY_GRF_BASE + 0x8004);
+		writel(0xdb, USBPHY_GRF_BASE + 0x8008);
+		writel(0x04, USBPHY_GRF_BASE + 0x8400);
+		writel(0x46, USBPHY_GRF_BASE + 0x8404);
+		writel(0xdb, USBPHY_GRF_BASE + 0x8408);
+	}
 
 	return 0;
 }
