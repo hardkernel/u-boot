@@ -1150,7 +1150,6 @@ config ARCH_ROCKCHIP
 	select DM_SPI
 	select DM_SPI_FLASH
 	select DM_USB if USB
-	select CMD_ROCKUSB if USB_GADGET_DOWNLOAD
 	select ENABLE_ARM_SOC_BOOT0_HOOK
 	select SYS_NS16550
 	select SPI
@@ -1161,6 +1160,7 @@ config ARCH_ROCKCHIP
 	imply DM_PWM
 	imply DM_REGULATOR
 	imply CMD_FASTBOOT
+	imply CMD_ROCKUSB
 	imply FASTBOOT
 	imply FAT_WRITE
 	imply USB_FUNCTION_FASTBOOT
