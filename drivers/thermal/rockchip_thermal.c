@@ -1122,7 +1122,7 @@ static int rockchip_thermal_probe(struct udevice *dev)
 
 	if (priv->tshut_mode == TSHUT_MODE_GPIO)
 		pinctrl_select_state(dev, "otpout");
-	else
+	else if (soc_is_rk3308())
 		pinctrl_select_state(dev, "gpio");
 
 	tsadc->tsadc_init(dev);
