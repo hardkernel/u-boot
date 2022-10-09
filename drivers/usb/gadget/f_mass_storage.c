@@ -821,7 +821,7 @@ static int do_write(struct fsg_common *common)
 	unsigned int		partial_page;
 	ssize_t			nwritten;
 	int			rc;
-	const char		*cdev_name = common->fsg->function.config->cdev->driver->name;
+	const char		*cdev_name __maybe_unused;
 
 	if (curlun->ro) {
 		curlun->sense_data = SS_WRITE_PROTECTED;
@@ -980,6 +980,7 @@ static int do_write(struct fsg_common *common)
 			return rc;
 	}
 
+	cdev_name = common->fsg->function.config->cdev->driver->name;
 	if (IS_RKUSB_UMS_DNL(cdev_name))
 		rkusb_do_check_parity(common);
 
@@ -2741,9 +2742,11 @@ static int fsg_bind(struct usb_configuration *c, struct usb_function *f)
 		fsg_ss_bulk_out_desc.bEndpointAddress =
 			fsg_fs_bulk_out_desc.bEndpointAddress;
 
+#ifdef CONFIG_CMD_ROCKUSB
 		if (IS_RKUSB_UMS_DNL(c->cdev->driver->name))
 			f->ss_descriptors =
 				usb_copy_descriptors(rkusb_ss_function);
+#endif
 
 		if (unlikely(!f->ss_descriptors)) {
 			free(f->descriptors);
