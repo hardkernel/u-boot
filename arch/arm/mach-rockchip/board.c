@@ -970,7 +970,7 @@ void autoboot_command_fail_handle(void)
 #endif
 
 #ifdef CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE
-	run_command("rockusb 0 ${devtype} ${devnum}", 0);
+	run_command("download", 0);
 	run_command("fastboot usb 0;", 0);
 #endif
 
