@@ -194,8 +194,7 @@ static void power_key_download(struct dm_key_uclass_platdata *uc_key)
 		if (uc_key->trig_cnt >= trig_cnt) {
 			printf("\nEnter download mode by pwrkey\n");
 			irq_handler_disable(uc_key->irq);
-			run_command("rockusb 0 $devtype $devnum", 0);
-			run_command("rbrom", 0);
+			run_command("download", 0);
 		}
 	}
 }
