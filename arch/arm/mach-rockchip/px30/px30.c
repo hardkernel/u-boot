@@ -810,6 +810,22 @@ int rk_board_early_fdt_fixup(const void *blob)
 	return 0;
 }
 
+void do_board_download(void)
+{
+	/*
+	 * Maskrom download can prevent to flash px30s board with px30
+	 * update.img, because px30 ddr.bin can't work on px30s which is
+	 * early than download action.
+	 *
+	 * Let's handle that early than outside generic download.
+	 */
+	if (soc_is_px30s()) {
+		printf("Rockusb is disabled, entering bootrom...\n");
+		flushc();
+		run_command("rbrom", 0);
+	}
+}
+
 #if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_ROCKCHIP_DMC_FSP)
 int rk_board_init(void)
 {
