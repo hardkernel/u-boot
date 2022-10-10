@@ -20,6 +20,11 @@ enum hotkey_t {
 	HK_SYSMEM,
 };
 
+#ifdef CONFIG_ROCKCHIP_HOTKEY
 bool is_hotkey(enum hotkey_t id);
 void hotkey_run(enum hotkey_t id);
+#else
+static inline bool is_hotkey(enum hotkey_t id) { return false; }
+static inline void hotkey_run(enum hotkey_t id) { }
+#endif
 #endif

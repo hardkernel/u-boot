@@ -39,7 +39,7 @@ obj-y += boot_rkimg.o
 obj-y += board.o
 obj-y += iomem.o
 obj-y += memblk.o
-obj-y += hotkey.o
+obj-$(CONFIG_ROCKCHIP_HOTKEY) += hotkey.o
 else
 obj-y += usbplug.o
 endif

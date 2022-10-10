@@ -909,6 +909,12 @@ config ROCKCHIP_NEW_IDB
 	help
 	  The new IDB header was introduced from RK356X.
 
+config ROCKCHIP_HOTKEY
+	bool "Rockchip hotkey"
+	default y
+	help
+	  Define a lot of hotkeys for debug.
+
 config GICV2
 	bool "ARM GICv2"
 
