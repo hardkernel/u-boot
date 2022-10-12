@@ -137,14 +137,15 @@ config PARTITION_TYPE_GUID
 
 config ENV_PARTITION
 	bool "Enable ENV partition table support"
-	depends on PARTITIONS
+	depends on PARTITIONS && ENVF
+	default y
 	help
 	  Say Y here if you would like to use ENV partition table.
 
 config SPL_ENV_PARTITION
 	bool "Enable ENV partition table support in SPL"
-	depends on SPL && PARTITIONS
-	default y if ENV_PARTITION
+	depends on SPL && PARTITIONS && SPL_ENVF
+	default y
 	help
 	  Say Y here if you would like to use ENV partition table in SPL.
 

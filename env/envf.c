@@ -25,7 +25,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ENVF_MAX		64
 
 static ulong env_size, env_offset, env_offset_redund;
+
+#if CONFIG_IS_ENABLED(ENV_PARTITION)
 static const char *part_type[] = { "mtdparts", "blkdevparts", };
+#endif
 
 /*
  * In case of env and env-backup partitions are too large that exceeds the limit
@@ -79,33 +82,6 @@ static int can_find_pmbr(struct blk_desc *dev_desc)
 	return 0;
 }
 #endif
-
-static const char *env_get_string(env_t *env, u32 size, const char *str)
-{
-	const char *dp;
-	u32 env_size;
-
-	dp = (const char *)env->data;
-	env_size = size - ENV_HEADER_SIZE;
-	do {
-		/* skip leading white space */
-		while (*dp == ' ' || *dp == '\t')
-			++dp;
-
-		debug("ENTRY: %s\n", dp);
-		if (strstr(dp, str)) {
-			debug("FIND: %s\n", dp);
-			return dp;
-		}
-
-		/* point to next ENTRY */
-		dp += strlen(dp) + 1;
-	} while (((ulong)dp < (ulong)env->data + env_size) && *dp);
-
-	debug("NOT-FIND: %s\n", str);
-
-	return NULL;
-}
 
 static void envf_init_location(struct blk_desc *desc)
 {
@@ -175,7 +151,7 @@ fail:
 	return ret;
 }
 
-static env_t *envf_read(struct blk_desc *desc)
+static __maybe_unused env_t *envf_read(struct blk_desc *desc)
 {
 	env_t *env = NULL;
 	int ret;
@@ -198,6 +174,34 @@ static env_t *envf_read(struct blk_desc *desc)
 		ret = env_read(desc, env_offset_redund, env_size, &env);
 
 	return env;
+}
+
+#if CONFIG_IS_ENABLED(ENV_PARTITION)
+static const char *env_get_string(env_t *env, u32 size, const char *str)
+{
+	const char *dp;
+	u32 env_size;
+
+	dp = (const char *)env->data;
+	env_size = size - ENV_HEADER_SIZE;
+	do {
+		/* skip leading white space */
+		while (*dp == ' ' || *dp == '\t')
+			++dp;
+
+		debug("ENTRY: %s\n", dp);
+		if (strstr(dp, str)) {
+			debug("FIND: %s\n", dp);
+			return dp;
+		}
+
+		/* point to next ENTRY */
+		dp += strlen(dp) + 1;
+	} while (((ulong)dp < (ulong)env->data + env_size) && *dp);
+
+	debug("NOT-FIND: %s\n", str);
+
+	return NULL;
 }
 
 char *envf_get_part_table(struct blk_desc *desc)
@@ -227,6 +231,7 @@ char *envf_get_part_table(struct blk_desc *desc)
 out:
 	return (char *)list;
 }
+#endif
 
 #ifndef CONFIG_SPL_BUILD
 static int envf_init_vars(void)
@@ -257,7 +262,8 @@ static int envf_init_vars(void)
 	return envf_num;
 }
 
-static int envf_add_bootargs(void)
+#ifdef CONFIG_ENV_PARTITION
+static int envf_add_partition_bootargs(void)
 {
 	char *part_list;
 	char *bootargs;
@@ -283,6 +289,7 @@ static int envf_add_bootargs(void)
 
 	return 0;
 }
+#endif
 
 static int envf_load(void)
 {
@@ -307,7 +314,9 @@ static int envf_load(void)
 		}
 	}
 
-	envf_add_bootargs();
+#ifdef CONFIG_ENV_PARTITION
+	envf_add_partition_bootargs();
+#endif
 
 	return 0;
 }

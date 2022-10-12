@@ -43,7 +43,6 @@ config ENV_IS_NOWHERE
 config ENVF
 	bool "Environment fragment is store in envf partition"
 	depends on ENV_IS_NOWHERE
-	select ENV_PARTITION
 	help
 	  Use this if you want to add a env fragment partition to overlay/store
 	  some specific environments.
@@ -52,7 +51,6 @@ config SPL_ENVF
 	bool "Environment fragment is store in envf partition in SPL"
 	depends on ENVF && SPL
 	default y
-	select SPL_ENV_PARTITION
 	help
 	  Use this if you want to add a env fragment partition to overlay/store
 	  some specific environments in SPL. But now only parse env partition
