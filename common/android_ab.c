@@ -406,7 +406,7 @@ static int get_partition_unique_uuid(char *partition,
 	return 0;
 }
 
-void ab_update_root_uuid(void)
+static void ab_update_root_uuid(void)
 {
 	/*
 	 * In android a/b & avb process, the system.img is mandory and the
@@ -439,6 +439,60 @@ void ab_update_root_uuid(void)
 		strcat(root_partuuid, guid_buf);
 		env_update("bootargs", root_partuuid);
 	}
+}
+
+void ab_update_root_partition(void)
+{
+	char *boot_args = env_get("bootargs");
+	char root_part_dev[64] = {0};
+	disk_partition_t part_info;
+	struct blk_desc *dev_desc;
+	const char *part_type;
+	int part_num;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return;
+
+	if (ab_is_support_dynamic_partition(dev_desc))
+		return;
+
+	/* Get 'system' partition device number. */
+	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_SYSTEM, &part_info);
+	if (part_num < 0) {
+		printf("%s: Failed to get partition '%s'.\n", __func__, ANDROID_PARTITION_SYSTEM);
+		return;
+	}
+
+	/* Get partition type. */
+	part_type = part_get_type(dev_desc);
+	if (!part_type)
+		return;
+
+	/* Judge the partition device type. */
+	switch (dev_desc->if_type) {
+	case IF_TYPE_MMC:
+		if (strstr(part_type, "ENV"))
+			snprintf(root_part_dev, 64, "root=/dev/mmcblk0p%d", part_num);
+		else if (strstr(part_type, "EFI"))
+			ab_update_root_uuid();
+		break;
+	case IF_TYPE_MTD:
+		if (dev_desc->devnum == BLK_MTD_SPI_NAND) {
+			if (strstr(boot_args, "rootfstype=squashfs") || strstr(boot_args, "rootfstype=erofs"))
+				snprintf(root_part_dev, 64, "ubi.mtd=%d root=/dev/ubiblock0_0", part_num - 1);
+			else if (strstr(boot_args, "rootfstype=ubifs"))
+				snprintf(root_part_dev, 64, "ubi.mtd=%d root=ubi0:system", part_num - 1);
+		} else if (dev_desc->devnum == BLK_MTD_SPI_NOR) {
+			snprintf(root_part_dev, 64, "root=/dev/mtdblock%d", part_num - 1);
+		}
+		break;
+	default:
+		printf("%s: Not found part type, failed to set root part device.\n", __func__);
+		return;
+	}
+
+	env_update("bootargs", root_part_dev);
 }
 
 int ab_get_slot_suffix(char *slot_suffix)

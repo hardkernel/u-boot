@@ -1212,10 +1212,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 #endif
 
-#ifdef CONFIG_ANDROID_AB
-	ab_update_root_uuid();
-#endif
-
 	/* Set Android root variables. */
 	env_set_ulong("android_root_devnum", dev_desc->devnum);
 	env_set("android_slotsufix", slot_suffix);
