@@ -103,7 +103,6 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	strcat(slot_info, slot_suffix);
 	env_update("bootargs", slot_info);
-	ab_update_root_uuid();
 #endif
 
 	ret = do_bootm_states(NULL, 0, ARRAY_SIZE(bootm_args), bootm_args,
