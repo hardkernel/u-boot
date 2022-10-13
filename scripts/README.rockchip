@@ -32,6 +32,9 @@ Example usage of scripts/tools for Rockchip
 		./scripts/stacktrace.sh dump.txt spl
 		./scripts/stacktrace.sh dump.txt tpl
 
+	# avbtool.py
+		./avbtool.py info_image --image vbmeta.img
+
 [tools]
 	# resource_tool
 		./tools/resource_tool rk-kernel.dtb logo_kernel.bmp logo.bmp
