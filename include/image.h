@@ -1347,6 +1347,8 @@ static inline int fit_image_check_target_arch(const void *fdt, int node)
 #endif /* CONFIG_FIT */
 
 #if defined(CONFIG_ANDROID_BOOT_IMAGE)
+#include <android_image.h>
+
 struct andr_img_hdr;
 u32 android_bcb_msg_sector_offset(void);
 u32 android_image_major_version(void);
@@ -1368,6 +1370,10 @@ int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_address)
 
 struct andr_img_hdr *populate_andr_img_hdr(struct blk_desc *dev_desc,
 					   disk_partition_t *part_boot);
+int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
+		       const struct vendor_boot_img_hdr_v34 *vendor_boot_hdr,
+		       const struct boot_img_hdr_v34 *init_boot_hdr,
+		       struct andr_img_hdr *hdr, bool save_hdr);
 
 /** android_image_load - Load an Android Image from storage.
  *

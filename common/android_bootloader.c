@@ -462,11 +462,181 @@ static void slot_set_unbootable(AvbABSlotData* slot)
 	slot->successful_boot = 0;
 }
 
+static char *join_str(const char *a, const char *b)
+{
+	size_t len = strlen(a) + strlen(b) + 1 /* null term */;
+	char *ret = (char *)malloc(len);
+
+	if (!ret) {
+		debug("failed to alloc %zu\n", len);
+		return NULL;
+	}
+	strcpy(ret, a);
+	strcat(ret, b);
+
+	return ret;
+}
+
+static size_t get_partition_size(AvbOps *ops, char *name,
+				 const char *slot_suffix)
+{
+	char *partition_name = join_str(name, slot_suffix);
+	uint64_t size = 0;
+	AvbIOResult res;
+
+	if (partition_name == NULL)
+		goto bail;
+
+	res = ops->get_size_of_partition(ops, partition_name, &size);
+	if (res != AVB_IO_RESULT_OK && res != AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION)
+		size = 0;
+bail:
+	if (partition_name)
+		free(partition_name);
+
+	return size;
+}
+
+static int avb_image_distribute_prepare(AvbSlotVerifyData *slot_data,
+					AvbOps *ops, char *slot_suffix)
+{
+	struct AvbOpsData *data = (struct AvbOpsData *)(ops->user_data);
+	size_t vendor_boot_size;
+	size_t init_boot_size;
+	size_t boot_size;
+	void *image_buf;
+
+	boot_size = max(get_partition_size(ops, ANDROID_PARTITION_BOOT, slot_suffix),
+		get_partition_size(ops, ANDROID_PARTITION_RECOVERY, slot_suffix));
+	init_boot_size = get_partition_size(ops,
+				ANDROID_PARTITION_INIT_BOOT, slot_suffix);
+	vendor_boot_size = get_partition_size(ops,
+				ANDROID_PARTITION_VENDOR_BOOT, slot_suffix);
+	image_buf = sysmem_alloc(MEM_AVB_ANDROID,
+				 boot_size + init_boot_size + vendor_boot_size);
+	if (!image_buf) {
+		printf("avb: sysmem alloc failed\n");
+		return -1;
+	}
+
+	data = (struct AvbOpsData *)(ops->user_data);
+	data->slot_suffix = slot_suffix;
+	data->boot.addr = image_buf;
+	data->boot.size = 0;
+	data->vendor_boot.addr = data->boot.addr + boot_size;
+	data->vendor_boot.size = 0;
+	data->init_boot.addr = data->vendor_boot.addr + vendor_boot_size;
+	data->init_boot.size = 0;
+
+	return 0;
+}
+
+static int avb_image_distribute_finish(AvbSlotVerifyData *slot_data,
+				       AvbSlotVerifyFlags flags,
+				       ulong *load_address)
+{
+	struct andr_img_hdr *hdr;
+	ulong load_addr = *load_address;
+	void *vendor_boot_hdr = NULL;
+	void *init_boot_hdr = NULL;
+	void *boot_hdr = NULL;
+	char *part_name;
+	int i, ret;
+
+	for (i = 0; i < slot_data->num_loaded_partitions; i++) {
+		part_name = slot_data->loaded_partitions[i].partition_name;
+		if (!strncmp(ANDROID_PARTITION_BOOT, part_name, 4) ||
+		    !strncmp(ANDROID_PARTITION_RECOVERY, part_name, 8)) {
+			boot_hdr = slot_data->loaded_partitions[i].data;
+		} else if (!strncmp(ANDROID_PARTITION_INIT_BOOT, part_name, 9)) {
+			init_boot_hdr = slot_data->loaded_partitions[i].data;
+		} else if (!strncmp(ANDROID_PARTITION_VENDOR_BOOT, part_name, 11)) {
+			vendor_boot_hdr = slot_data->loaded_partitions[i].data;
+		}
+	}
+
+	/*
+	 *		populate boot_img_hdr_v34
+	 *
+	 * If allow verification error: the images are loaded by
+	 * ops->get_preloaded_partition() which auto populates
+	 * boot_img_hdr_v34.
+	 *
+	 * If not allow verification error: the images are full loaded
+	 * by ops->read_from_partition() which doesn't populate
+	 * boot_img_hdr_v34, we need to fix it here for bootm and
+	 */
+
+	hdr = boot_hdr;
+	if (hdr->header_version >= 3 &&
+	    !(flags & AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR)) {
+		hdr = malloc(sizeof(struct andr_img_hdr));
+		if (!hdr)
+			return -1;
+
+		ret = populate_boot_info(boot_hdr, vendor_boot_hdr,
+					 init_boot_hdr, hdr, true);
+		if (ret < 0) {
+			printf("avb: populate boot info failed, ret=%d\n", ret);
+			return -1;
+		}
+		memcpy(boot_hdr, hdr, sizeof(*hdr));
+	}
+
+	/* distribute ! */
+	load_addr -= hdr->page_size;
+	if (android_image_memcpy_separate(boot_hdr, &load_addr)) {
+		printf("Failed to separate copy android image\n");
+		return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+	}
+
+	*load_address = load_addr;
+
+	return 0;
+}
+
+/*
+ *		AVB Policy.
+ *
+ * == avb with unlock:
+ * Don't process hash verify.
+ * Go pre-loaded path: Loading vendor_boot and init_boot
+ * directly to where they should be, while loading the
+ * boot/recovery. The boot message tells like:
+ * ···
+ * preloaded: distribute image from 'boot_a'
+ * preloaded: distribute image from 'init_boot_a'
+ * preloaded: distribute image from 'vendor_boot_a'
+ * ···
+ *
+ * == avb with lock:
+ * Process hash verify.
+ * Go pre-loaded path: Loading full vendor_boot, init_boot and
+ * boot/recovery one by one to verify, and distributing them to
+ * where they should be by memcpy at last.
+ *
+ * The three images share a large memory buffer that allocated
+ * by sysmem_alloc(), it locate at high memory address that
+ * just lower than SP bottom. The boot message tells like:
+ * ···
+ * preloaded: full image from 'boot_a' at 0xe47f90c0 - 0xe7a4b0c0
+ * preloaded: full image from 'init_boot_a' at 0xeaff90c0 - 0xeb2950c0
+ * preloaded: full image from 'vendor_boot_a' at 0xe87f90c0 - 0xe9f6e0c0
+ * ···
+ */
 static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			       unsigned long *android_load_address,
 			       char *slot_suffix)
 {
-	const char *requested_partitions[1] = {NULL};
+	const char *requested_partitions[] = {
+		boot_partname,
+		NULL,
+		NULL,
+		NULL,
+	};
+	struct blk_desc *dev_desc;
+	struct andr_img_hdr *hdr;
+	disk_partition_t part_info;
 	uint8_t unlocked = true;
 	AvbOps *ops;
 	AvbSlotVerifyFlags flags;
@@ -478,9 +648,29 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	char can_boot = 1;
 	char retry_no_vbmeta_partition = 1;
 	unsigned long load_address = *android_load_address;
-	struct andr_img_hdr *hdr;
+	int ret;
 
-	requested_partitions[0] = boot_partname;
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return AVB_IO_RESULT_ERROR_IO;
+
+	if (part_get_info_by_name(dev_desc, boot_partname, &part_info) < 0) {
+		printf("Could not find \"%s\" partition\n", boot_partname);
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
+
+	hdr = populate_andr_img_hdr(dev_desc, &part_info);
+	if (!hdr) {
+		printf("No valid android hdr\n");
+		return -1;
+	}
+
+	if (hdr->header_version >= 4) {
+		requested_partitions[1] = ANDROID_PARTITION_VENDOR_BOOT;
+		if (((hdr->os_version >> 25) & 0x7f) >= 13)
+			requested_partitions[2] = ANDROID_PARTITION_INIT_BOOT;
+	}
+
 	ops = avb_ops_user_new();
 	if (ops == NULL) {
 		printf("avb_ops_user_new() failed!\n");
@@ -497,7 +687,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	if (unlocked & LOCK_MASK)
 		flags |= AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
 
-	if(load_metadata(ops->ab_ops, &ab_data, &ab_data_orig)) {
+	if (load_metadata(ops->ab_ops, &ab_data, &ab_data_orig)) {
 		printf("Can not load metadata\n");
 		return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
 	}
@@ -509,8 +699,15 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	else
 		slot_index_to_boot = 0;
 
-	if (strcmp(boot_partname, "recovery") == 0)
+	if (strcmp(boot_partname, ANDROID_PARTITION_RECOVERY) == 0)
 		flags |= AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
+
+	/* prepare image buffer */
+	ret = avb_image_distribute_prepare(slot_data, ops, slot_suffix);
+	if (ret < 0) {
+		printf("avb image distribute prepare failed %d\n", ret);
+		return -1;
+	}
 
 retry_verify:
 	verify_result =
@@ -522,7 +719,7 @@ retry_verify:
 			&slot_data);
 	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK &&
 	    verify_result != AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
-		if (retry_no_vbmeta_partition && strcmp(boot_partname, "recovery") == 0) {
+		if (retry_no_vbmeta_partition && strcmp(boot_partname, ANDROID_PARTITION_RECOVERY) == 0) {
 			printf("Verify recovery with vbmeta.\n");
 			flags &= ~AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
 			retry_no_vbmeta_partition = 0;
@@ -597,45 +794,11 @@ retry_verify:
 			strcat(newbootargs, slot_data->cmdline);
 		env_set("bootargs", newbootargs);
 
-		hdr = (void *)slot_data->loaded_partitions->data;
-
-		/*
-		 *		populate boot_img_hdr_v34
-		 *
-		 * If allow verification error: the image is loaded by
-		 * ops->get_preloaded_partition() which auto populates
-		 * boot_img_hdr_v34.
-		 *
-		 * If not allow verification error: the image is full loaded
-		 * by ops->read_from_partition() which doesn't populate
-		 * boot_img_hdr_v34, we need to fix it here.
-		 */
-		if (hdr->header_version >= 3 &&
-		    !(flags & AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR)) {
-			struct andr_img_hdr *v3hdr;
-			struct blk_desc *dev_desc;
-			disk_partition_t part;
-
-			dev_desc = rockchip_get_bootdev();
-			if (!dev_desc)
-				return -1;
-
-			if (part_get_info_by_name(dev_desc,
-						  boot_partname, &part) < 0)
-				return -1;
-
-			v3hdr = populate_andr_img_hdr(dev_desc, &part);
-			if (v3hdr) {
-				memcpy(hdr, v3hdr, sizeof(*v3hdr));
-				free(v3hdr);
-			}
-		}
-
-		/* Reserve page_size */
-		load_address -= hdr->page_size;
-		if (android_image_memcpy_separate(hdr, &load_address)) {
-			printf("Failed to separate copy android image\n");
-			return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+		/* if need, distribute full image to where they should be */
+		ret = avb_image_distribute_finish(slot_data, flags, &load_address);
+		if (ret < 0) {
+			printf("avb image distribute finish failed %d\n", ret);
+			return -1;
 		}
 		*android_load_address = load_address;
 	} else {

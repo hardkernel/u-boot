@@ -13,6 +13,7 @@
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_VENDOR_BOOT "vendor_boot"
+#define ANDROID_PARTITION_INIT_BOOT "init_boot"
 #define ANDROID_PARTITION_MISC "misc"
 #define ANDROID_PARTITION_OEM  "oem"
 #define ANDROID_PARTITION_RECOVERY  "recovery"
@@ -117,7 +118,6 @@ struct andr_img_hdr {
      * we have to partly merge fields from boot_img_hdr_v34 and vendor_boot_img_hdr_v34
      * into this structure to compatible with boot_img_hdr_v012.
      */
-    u32 boot_ramdisk_size;   /* size in bytes */
     u32 vendor_ramdisk_size; /* size in bytes */
     u32 vendor_page_size;
     u32 vendor_header_version;
@@ -134,6 +134,9 @@ struct andr_img_hdr {
     u32 vendor_ramdisk_table_entry_num;
     u32 vendor_ramdisk_table_entry_size;
     u32 vendor_bootconfig_size; /* size in bytes for bootconfig image */
+
+    void *init_boot_buf;
+    void *vendor_boot_buf;
 
     /*
      * Don't define 'char total_cmdline[TOTAL_BOOT_ARGS_SIZE]' to avoid

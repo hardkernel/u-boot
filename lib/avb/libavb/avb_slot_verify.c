@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #include <common.h>
-#include <sysmem.h>
+#include <android_image.h>
 #include <android_avb/avb_slot_verify.h>
 #include <android_avb/avb_chain_partition_descriptor.h>
 #include <android_avb/avb_cmdline.h>
@@ -30,6 +30,7 @@
 #include <android_avb/avb_hash_descriptor.h>
 #include <android_avb/avb_hashtree_descriptor.h>
 #include <android_avb/avb_kernel_cmdline_descriptor.h>
+#include <android_avb/avb_ops_user.h>
 #include <android_avb/avb_sha.h>
 #include <android_avb/avb_util.h>
 #include <android_avb/avb_vbmeta_image.h>
@@ -118,7 +119,7 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
 
   /* Allocate and copy the partition. */
   if (!*out_image_preloaded) {
-    *out_image_buf = sysmem_alloc(MEM_AVB_ANDROID, image_size);
+    *out_image_buf = avb_malloc(image_size);
     if (*out_image_buf == NULL) {
       return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     }
@@ -388,7 +389,7 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
       allow_verification_error);
   if (ret != AVB_SLOT_VERIFY_RESULT_OK) {
     goto out;
-  } else if (image_preloaded) {
+  } else if (allow_verification_error) {
     goto out;
   }
 
@@ -482,7 +483,7 @@ out:
 
 fail:
   if (image_buf != NULL && !image_preloaded) {
-    sysmem_free((phys_addr_t)image_buf);
+    avb_free(image_buf);
   }
   return ret;
 }
@@ -556,7 +557,7 @@ static AvbSlotVerifyResult load_requested_partitions(
 out:
   /* Free the current buffer if any. */
   if (image_buf != NULL && !image_preloaded) {
-    sysmem_free((phys_addr_t)image_buf);
+    avb_free(image_buf);
   }
   /* Buffers that are already saved in slot_data will be handled by the caller
    * even on failure. */
@@ -1662,7 +1663,7 @@ void avb_slot_verify_data_free(AvbSlotVerifyData* data) {
         avb_free(loaded_partition->partition_name);
       }
       if (loaded_partition->data != NULL && !loaded_partition->preloaded) {
-        sysmem_free((phys_addr_t)loaded_partition->data);
+        avb_free(loaded_partition->data);
       }
     }
     avb_free(data->loaded_partitions);

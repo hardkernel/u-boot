@@ -81,10 +81,9 @@ static AvbIOResult get_size_of_partition(AvbOps *ops,
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
-	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0) {
-		printf("Could not find \"%s\" partition\n", partition);
+	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0)
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
-	}
+
 	*out_size_in_bytes = (part_info.size) * 512;
 	return AVB_IO_RESULT_OK;
 }
@@ -429,30 +428,90 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 					   size_t* out_num_bytes_preloaded,
 					   int allow_verification_error)
 {
+	struct preloaded_partition *preload_info = NULL;
+	struct AvbOpsData *data = ops->user_data;
 	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
 	ulong load_addr;
-	int ret;
+	AvbIOResult ret;
 
-	/* no need go further */
-	if (!allow_verification_error)
-		return AVB_IO_RESULT_OK;
-
-	printf("get image from preloaded partition...\n");
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc)
-	    return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+		return AVB_IO_RESULT_ERROR_IO;
 
-	load_addr = env_get_ulong("kernel_addr_r", 16, 0);
-	if (!load_addr)
-		return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0) {
+		printf("Could not find \"%s\" partition\n", partition);
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
 
-	ret = android_image_load_by_partname(dev_desc, partition, &load_addr);
-	if (!ret) {
-		*out_pointer = (u8 *)load_addr;
-		*out_num_bytes_preloaded = num_bytes; /* return what it expects */
+	if (!allow_verification_error) {
+		if (!strncmp(partition, ANDROID_PARTITION_BOOT, 4) ||
+		    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8))
+			preload_info = &data->boot;
+		else if (!strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11))
+			preload_info = &data->vendor_boot;
+		else if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9))
+			preload_info = &data->init_boot;
+
+		if (!preload_info) {
+			printf("Error: unknown full load partition '%s'\n", partition);
+			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+		}
+
+		printf("preloaded: full image from '%s' at 0x%08lx - 0x%08lx\n",
+		       partition, (ulong)preload_info->addr,
+		       (ulong)preload_info->addr + num_bytes);
+
+		/* If the partition hasn't yet been preloaded, do it now.*/
+		if (preload_info->size == 0) {
+			ret = ops->read_from_partition(ops, partition,
+						       0, num_bytes,
+						       preload_info->addr,
+						       &preload_info->size);
+			if (ret != AVB_IO_RESULT_OK)
+				return ret;
+		}
+		*out_pointer = preload_info->addr;
+		*out_num_bytes_preloaded = preload_info->size;
 		ret = AVB_IO_RESULT_OK;
 	} else {
-		ret = AVB_IO_RESULT_ERROR_IO;
+		if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9) ||
+		    !strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11) ||
+		    !strncmp(partition, ANDROID_PARTITION_BOOT, 4) ||
+		    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8)) {
+			printf("preloaded: distribute image from '%s'\n", partition);
+		} else {
+			printf("Error: unknown preloaded partition '%s'\n", partition);
+			return AVB_IO_RESULT_ERROR_OOM;
+		}
+
+		/*
+		 * Already preloaded during boot/recovery loading,
+		 * here we just return a dummy buffer.
+		 */
+		if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9) ||
+		    !strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11)) {
+			*out_pointer = (u8 *)avb_malloc(ARCH_DMA_MINALIGN);
+			*out_num_bytes_preloaded = num_bytes; /* return what it expects */
+			return AVB_IO_RESULT_OK;
+		}
+
+		/*
+		 * only boot/recovery partition can reach here
+		 * and init/vendor_boot are loaded at this round.
+		 */
+		load_addr = env_get_ulong("kernel_addr_r", 16, 0);
+		if (!load_addr)
+			return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+
+		ret = android_image_load_by_partname(dev_desc, partition, &load_addr);
+		if (!ret) {
+			*out_pointer = (u8 *)load_addr;
+			*out_num_bytes_preloaded = num_bytes; /* return what it expects */
+			ret = AVB_IO_RESULT_OK;
+		} else {
+			ret = AVB_IO_RESULT_ERROR_IO;
+		}
 	}
 
 	return ret;
