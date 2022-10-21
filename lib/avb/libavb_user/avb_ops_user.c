@@ -489,7 +489,8 @@ AvbIOResult validate_public_key_for_partition(AvbOps *ops,
 
 AvbOps *avb_ops_user_new(void)
 {
-	AvbOps *ops;
+	AvbOps *ops = NULL;
+	struct AvbOpsData *ops_data = NULL;
 
 	ops = calloc(1, sizeof(AvbOps));
 	if (!ops) {
@@ -510,8 +511,20 @@ AvbOps *avb_ops_user_new(void)
 		free(ops);
 		goto out;
 	}
+
+	ops_data = calloc(1, sizeof(struct AvbOpsData));
+	if (!ops_data) {
+		printf("Error allocating memory for AvbOpsData.\n");
+		free(ops->atx_ops);
+		free(ops->ab_ops);
+		free(ops);
+		goto out;
+	}
+
 	ops->ab_ops->ops = ops;
 	ops->atx_ops->ops = ops;
+	ops_data->ops = ops;
+	ops->user_data = ops_data;
 
 	ops->read_from_partition = read_from_partition;
 	ops->write_to_partition = write_to_partition;
@@ -533,12 +546,14 @@ AvbOps *avb_ops_user_new(void)
 	ops->atx_ops->set_key_version = avb_set_key_version;
 	ops->atx_ops->get_random = rk_get_random;
 
-out:
 	return ops;
+out:
+	return NULL;
 }
 
 void avb_ops_user_free(AvbOps *ops)
 {
+	free(ops->user_data);
 	free(ops->ab_ops);
 	free(ops->atx_ops);
 	free(ops);
