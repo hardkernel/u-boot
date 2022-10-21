@@ -684,8 +684,9 @@ static int part_get_info_by_name_option(struct blk_desc *dev_desc,
 					disk_partition_t *info,
 					bool strict)
 {
+	__maybe_unused char name_slot[32] = {0};
 	struct part_driver *part_drv;
-	char name_slot[32] = {0};
+	const char *full_name = name;
 	int none_slot_try = 1;
 	int ret, i;
 
@@ -695,37 +696,35 @@ static int part_get_info_by_name_option(struct blk_desc *dev_desc,
 
 	if (strict) {
 		none_slot_try = 0;
-		strcpy(name_slot, name);
 		goto lookup;
 	}
 
+	/* 1. Query partition with A/B slot suffix */
 #if defined(CONFIG_ANDROID_AB) || defined(CONFIG_SPL_AB)
-	char *name_suffix = (char *)name + strlen(name) - 2;
+	char *slot = (char *)name + strlen(name) - 2;
 
-	/* Fix can not find partition with suffix "_a" & "_b". If with them, clear */
-	if (!memcmp(name_suffix, "_a", strlen("_a")) ||
-	    !memcmp(name_suffix, "_b", strlen("_b")))
-		memset(name_suffix, 0, 2);
+	if (!strcmp(slot, "_a") || !strcmp(slot, "_b"))
+		goto lookup;
 #endif
 #if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_SPL_BUILD)
-	/* 1. Query partition with A/B slot suffix */
 	if (rk_avb_append_part_slot(name, name_slot))
 		return -1;
+	full_name = name_slot;
 #elif defined(CONFIG_SPL_AB) && defined(CONFIG_SPL_BUILD)
 	if (spl_ab_append_part_slot(dev_desc, name, name_slot))
 		return -1;
-#else
-	strcpy(name_slot, name);
+	full_name = name_slot;
 #endif
+
 lookup:
-	debug("## Query partition(%d): %s\n", none_slot_try, name_slot);
+	debug("## Query partition(%d): %s\n", none_slot_try, full_name);
 	for (i = 1; i < part_drv->max_entries; i++) {
 		ret = part_drv->get_info(dev_desc, i, info);
 		if (ret != 0) {
 			/* no more entries in table */
 			break;
 		}
-		if (strcmp(name_slot, (const char *)info->name) == 0) {
+		if (strcmp(full_name, (const char *)info->name) == 0) {
 			/* matched */
 			return i;
 		}
@@ -734,7 +733,7 @@ lookup:
 	/* 2. Query partition without A/B slot suffix if above failed */
 	if (none_slot_try) {
 		none_slot_try = 0;
-		strcpy(name_slot, name);
+		full_name = name;
 		goto lookup;
 	}
 
