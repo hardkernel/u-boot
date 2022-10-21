@@ -470,7 +470,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	uint8_t unlocked = true;
 	AvbOps *ops;
 	AvbSlotVerifyFlags flags;
-	AvbSlotVerifyData *slot_data[1] = {NULL};
+	AvbSlotVerifyData *slot_data = {NULL};
 	AvbSlotVerifyResult verify_result;
 	AvbABData ab_data, ab_data_orig;
 	size_t slot_index_to_boot = 0;
@@ -519,7 +519,7 @@ retry_verify:
 			slot_suffix,
 			flags,
 			AVB_HASHTREE_ERROR_MODE_RESTART,
-			&slot_data[0]);
+			&slot_data);
 	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK &&
 	    verify_result != AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
 		if (retry_no_vbmeta_partition && strcmp(boot_partname, "recovery") == 0) {
@@ -558,7 +558,7 @@ retry_verify:
 		break;
 	}
 
-	if (!slot_data[0]) {
+	if (!slot_data) {
 		can_boot = 0;
 		goto out;
 	}
@@ -569,12 +569,12 @@ retry_verify:
 		int len = 0;
 		char *bootargs, *newbootargs;
 #ifdef CONFIG_ANDROID_AVB_ROLLBACK_INDEX
-		if (rk_avb_update_stored_rollback_indexes_for_slot(ops, slot_data[0]))
+		if (rk_avb_update_stored_rollback_indexes_for_slot(ops, slot_data))
 			printf("Fail to update the rollback indexes.\n");
 #endif
-		if (*slot_data[0]->cmdline) {
-			debug("Kernel command line: %s\n", slot_data[0]->cmdline);
-			len += strlen(slot_data[0]->cmdline);
+		if (slot_data->cmdline) {
+			debug("Kernel command line: %s\n", slot_data->cmdline);
+			len += strlen(slot_data->cmdline);
 		}
 
 		bootargs = env_get("bootargs");
@@ -593,11 +593,11 @@ retry_verify:
 			strcpy(newbootargs, bootargs);
 			strcat(newbootargs, " ");
 		}
-		if (*slot_data[0]->cmdline)
-			strcat(newbootargs, slot_data[0]->cmdline);
+		if (slot_data->cmdline)
+			strcat(newbootargs, slot_data->cmdline);
 		env_set("bootargs", newbootargs);
 
-		hdr = (void *)slot_data[0]->loaded_partitions->data;
+		hdr = (void *)slot_data->loaded_partitions->data;
 
 		/*
 		 *		populate boot_img_hdr_v34
@@ -649,8 +649,8 @@ out:
 		verify_result = AVB_SLOT_VERIFY_RESULT_ERROR_IO;
 	}
 
-	if (slot_data[0] != NULL)
-		avb_slot_verify_data_free(slot_data[0]);
+	if (slot_data != NULL)
+		avb_slot_verify_data_free(slot_data);
 
 	if ((unlocked & LOCK_MASK) && can_boot)
 		return 0;

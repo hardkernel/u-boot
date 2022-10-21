@@ -1004,14 +1004,14 @@ extract_vendor_boot_image_v34_header(struct blk_desc *dev_desc,
 }
 
 static int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
-			      const struct vendor_boot_img_hdr_v34 *vendor_hdr,
+			      const struct vendor_boot_img_hdr_v34 *vendor_boot_hdr,
 			      struct andr_img_hdr *hdr)
 {
 	memset(hdr->magic, 0, ANDR_BOOT_MAGIC_SIZE);
 	memcpy(hdr->magic, boot_hdr->magic, ANDR_BOOT_MAGIC_SIZE);
 
 	hdr->kernel_size = boot_hdr->kernel_size;
-	/* don't use vendor_hdr->kernel_addr, we prefer "hdr + hdr->page_size" */
+	/* don't use vendor_boot_hdr->kernel_addr, we prefer "hdr + hdr->page_size" */
 	hdr->kernel_addr = ANDROID_IMAGE_DEFAULT_KERNEL_ADDR;
 	/* generic ramdisk: immediately following the vendor ramdisk */
 	hdr->boot_ramdisk_size = boot_hdr->ramdisk_size;
@@ -1024,7 +1024,7 @@ static int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
 	hdr->second_size = 0;
 	hdr->second_addr = 0;
 
-	hdr->tags_addr = vendor_hdr->tags_addr;
+	hdr->tags_addr = vendor_boot_hdr->tags_addr;
 
 	/* fixed in v3 */
 	hdr->page_size = 4096;
@@ -1032,7 +1032,7 @@ static int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
 	hdr->os_version = boot_hdr->os_version;
 
 	memset(hdr->name, 0, ANDR_BOOT_NAME_SIZE);
-	strncpy(hdr->name, (const char *)vendor_hdr->name, ANDR_BOOT_NAME_SIZE);
+	strncpy(hdr->name, (const char *)vendor_boot_hdr->name, ANDR_BOOT_NAME_SIZE);
 
 	/* removed in v3 */
 	memset(hdr->cmdline, 0, ANDR_BOOT_ARGS_SIZE);
@@ -1042,14 +1042,14 @@ static int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
 	hdr->recovery_dtbo_offset = 0;
 
 	hdr->header_size = boot_hdr->header_size;
-	hdr->dtb_size = vendor_hdr->dtb_size;
-	hdr->dtb_addr = vendor_hdr->dtb_addr;
+	hdr->dtb_size = vendor_boot_hdr->dtb_size;
+	hdr->dtb_addr = vendor_boot_hdr->dtb_addr;
 
 	/* boot_img_hdr_v34 fields */
-	hdr->vendor_ramdisk_size = vendor_hdr->vendor_ramdisk_size;
-	hdr->vendor_page_size = vendor_hdr->page_size;
-	hdr->vendor_header_version = vendor_hdr->header_version;
-	hdr->vendor_header_size = vendor_hdr->header_size;
+	hdr->vendor_ramdisk_size = vendor_boot_hdr->vendor_ramdisk_size;
+	hdr->vendor_page_size = vendor_boot_hdr->page_size;
+	hdr->vendor_header_version = vendor_boot_hdr->header_version;
+	hdr->vendor_header_size = vendor_boot_hdr->header_size;
 
 	hdr->total_cmdline = calloc(1, TOTAL_BOOT_ARGS_SIZE);
 	if (!hdr->total_cmdline)
@@ -1057,24 +1057,24 @@ static int populate_boot_info(const struct boot_img_hdr_v34 *boot_hdr,
 	strncpy(hdr->total_cmdline, (const char *)boot_hdr->cmdline,
 		sizeof(boot_hdr->cmdline));
 	strncat(hdr->total_cmdline, " ", 1);
-	strncat(hdr->total_cmdline, (const char *)vendor_hdr->cmdline,
-		sizeof(vendor_hdr->cmdline));
+	strncat(hdr->total_cmdline, (const char *)vendor_boot_hdr->cmdline,
+		sizeof(vendor_boot_hdr->cmdline));
 
 	/* new for header v4 */
-	if (vendor_hdr->header_version > 3) {
+	if (vendor_boot_hdr->header_version > 3) {
 		hdr->vendor_ramdisk_table_size =
-				vendor_hdr->vendor_ramdisk_table_size;
+				vendor_boot_hdr->vendor_ramdisk_table_size;
 		hdr->vendor_ramdisk_table_entry_num =
-				vendor_hdr->vendor_ramdisk_table_entry_num;
+				vendor_boot_hdr->vendor_ramdisk_table_entry_num;
 		hdr->vendor_ramdisk_table_entry_size =
-				vendor_hdr->vendor_ramdisk_table_entry_size;
+				vendor_boot_hdr->vendor_ramdisk_table_entry_size;
 		/*
 		 * If we place additional "androidboot.xxx" parameters after
 		 * bootconfig, this field value should be increased,
 		 * but not over than ANDROID_ADDITION_BOOTCONFIG_PARAMS_MAX_SIZE.
 		 */
 		hdr->vendor_bootconfig_size =
-				vendor_hdr->vendor_bootconfig_size;
+				vendor_boot_hdr->vendor_bootconfig_size;
 	} else {
 		hdr->vendor_ramdisk_table_size = 0;
 		hdr->vendor_ramdisk_table_entry_num = 0;
