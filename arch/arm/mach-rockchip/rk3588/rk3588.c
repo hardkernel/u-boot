@@ -1021,9 +1021,6 @@ static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
 	};
 	const char *cluster_core, *cpu_node;
 	int root_cpus, cpu;
-	int cluster0;
-	int cluster1;
-	int cluster2;
 	int cluster;
 	int i;
 
@@ -1031,28 +1028,19 @@ static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
 	if (root_cpus < 0)
 		return;
 
-	cluster0 = fdt_path_offset(blob, "/cpus/cpu-map/cluster0");
-	if (cluster0 < 0)
-		return;
-
-	cluster1 = fdt_path_offset(blob, "/cpus/cpu-map/cluster1");
-	if (cluster1 < 0)
-		return;
-
-	cluster2 = fdt_path_offset(blob, "/cpus/cpu-map/cluster2");
-	if (cluster2 < 0)
-		return;
-
 	for (i = 0; i < 8; i++) {
 		if (!BAD_CPU(cpu_mask, i))
 			continue;
 
 		if (i < 4)
-			cluster = cluster0;
+			cluster = fdt_path_offset(blob, "/cpus/cpu-map/cluster0");
 		else if (i < 6)
-			cluster = cluster1;
+			cluster = fdt_path_offset(blob, "/cpus/cpu-map/cluster1");
 		else
-			cluster = cluster2;
+			cluster = fdt_path_offset(blob, "/cpus/cpu-map/cluster2");
+
+		if (cluster < 0)
+			return;
 
 		cpu_node = cpu_node_name[i];
 		cluster_core = cluster_core_name[i];
@@ -1067,14 +1055,20 @@ static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
 			fdt_del_node((void *)blob, cpu);
 	}
 
+	cluster = fdt_path_offset(blob, "/cpus/cpu-map/cluster1");
 	if (BAD_CPU(cpu_mask, 4) && BAD_CPU(cpu_mask, 5)) {
 		debug("rm: cpu cluster1\n");
-		fdt_del_node((void *)blob, cluster1);
+		fdt_del_node((void *)blob, cluster);
 	}
 
+	cluster = fdt_path_offset(blob, "/cpus/cpu-map/cluster2");
 	if (BAD_CPU(cpu_mask, 6) && BAD_CPU(cpu_mask, 7)) {
 		debug("rm: cpu cluster2\n");
-		fdt_del_node((void *)blob, cluster2);
+		fdt_del_node((void *)blob, cluster);
+	} else {
+		/* rename, otherwise linux only handles cluster0 */
+		if (fdt_path_offset(blob, "/cpus/cpu-map/cluster1") < 0)
+			fdt_set_name((void *)blob, cluster, "cluster1");
 	}
 }
 
@@ -1212,6 +1206,12 @@ static int fdt_fixup_modules(void *blob)
 	 *
 	 * So don't use pattern like "if (rkvenc_mask) then fdt_rm_rkvenc01()",
 	 * just go through all of them as this chip is rk3582.
+	 *
+	 *		FIXUP WARNING!
+	 *
+	 * The node delete changes the fdt structure, a node offset you already
+	 * got before maybe not right by now. Make sure always reading the node
+	 * offset exactly before you are going to use.
 	 */
 	fdt_rm_gpu(blob);
 	fdt_rm_rkvdec01(blob);
