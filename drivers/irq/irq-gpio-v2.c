@@ -270,7 +270,8 @@ static int gpio_irq_get_gpio_level(int gpio_irq)
 	if (gpio >= bank->ngpio)
 		return -EINVAL;
 
-	return gpio_bit_rd(bank->regbase, GPIO_EXT_PORT, offset_to_bit(gpio));
+	/* NOTE: GPIO_EXT_PORT doesn't have _H/_L registers */
+	return readl(bank->regbase + GPIO_EXT_PORT) & offset_to_bit(gpio) ? 1 : 0;
 }
 
 static int gpio_irq_enable(int gpio_irq)
