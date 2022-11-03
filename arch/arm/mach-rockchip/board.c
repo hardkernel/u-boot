@@ -709,7 +709,9 @@ int board_init_f_boot_flags(void)
 {
 	int boot_flags = 0;
 
+#ifdef CONFIG_FPGA_ROCKCHIP
 	arch_fpga_init();
+#endif
 #ifdef CONFIG_PSTORE
 	param_parse_pstore();
 #endif

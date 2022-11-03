@@ -257,11 +257,6 @@ static int setup_mon_len(void)
 	return 0;
 }
 
-__weak int arch_fpga_init(void)
-{
-	return 0;
-}
-
 __weak int arch_cpu_init(void)
 {
 	return 0;

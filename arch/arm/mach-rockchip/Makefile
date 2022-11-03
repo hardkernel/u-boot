@@ -52,9 +52,9 @@ obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o vendor_misc.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o resource_logo.o
 obj-$(CONFIG_ROCKCHIP_HWID_DTB) += resource_hwid.o
 obj-$(CONFIG_ROCKCHIP_DEBUGGER) += rockchip_debugger.o
-obj-$(CONFIG_FPGA_ROCKCHIP) += fpga.o
 endif
 
+obj-$(CONFIG_FPGA_ROCKCHIP) += fpga.o
 obj-$(CONFIG_RAM) += param.o
 obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram.o
 obj-$(CONFIG_SPL_KERNEL_BOOT) += spl_resource_img.o
