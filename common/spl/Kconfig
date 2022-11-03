@@ -852,6 +852,12 @@ config SPL_ATF_NO_PLATFORM_PARAM
 
 	  If your ATF is affected, say Y.
 
+config SPL_ATF_AARCH32_BL33
+	bool "Support BL33 runs as AArch32 mode"
+	depends on SPL_ATF
+	help
+	  This option setup the AArch32 Mode for BL33.
+
 config SPL_OPTEE
 	bool "Support OP-TEE Trusted OS"
 	depends on ARM
