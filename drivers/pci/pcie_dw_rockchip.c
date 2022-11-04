@@ -21,6 +21,38 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define RK_PCIE_DBG			0
+
+#define __pcie_dev_print_emit(fmt, ...) \
+({ \
+	printf(fmt, ##__VA_ARGS__); \
+})
+
+#ifdef dev_err
+#undef dev_err
+#define dev_err(dev, fmt, ...) \
+({ \
+	if (dev) \
+		__pcie_dev_print_emit("%s: " fmt, dev->name, \
+				##__VA_ARGS__); \
+})
+#endif
+
+#ifdef dev_info
+#undef dev_info
+#define dev_info dev_err
+#endif
+
+#ifdef DEBUG
+#define dev_dbg dev_err
+#else
+#define dev_dbg(dev, fmt, ...)					\
+({								\
+	if (0)							\
+		__dev_printk(7, dev, fmt, ##__VA_ARGS__);	\
+})
+#endif
+
 struct rk_pcie {
 	struct udevice	*dev;
 	struct udevice  *vpcie3v3;
@@ -62,7 +94,6 @@ enum {
 #define PCIE_CLIENT_DBG_FIFO_STATUS	0x350
 #define PCIE_CLIENT_DBG_TRANSITION_DATA	0xffff0000
 #define PCIE_CLIENT_DBF_EN		0xffff0003
-#define RK_PCIE_DBG			0
 
 /* PCI DBICS registers */
 #define PCIE_LINK_STATUS_REG		0x80
@@ -165,7 +196,7 @@ static u32 __rk_pcie_read_apb(struct rk_pcie *rk_pcie, void __iomem *base,
 
 	ret = rk_pcie_read(base + reg, size, &val);
 	if (ret)
-		dev_err(rk_pcie->pci->dev, "Read APB address failed\n");
+		dev_err(rk_pcie->dev, "Read APB address failed\n");
 
 	return val;
 }
@@ -177,7 +208,7 @@ static void __rk_pcie_write_apb(struct rk_pcie *rk_pcie, void __iomem *base,
 
 	ret = rk_pcie_write(base + reg, size, val);
 	if (ret)
-		dev_err(rk_pcie->pci->dev, "Write APB address failed\n");
+		dev_err(rk_pcie->dev, "Write APB address failed\n");
 }
 
 static inline u32 rk_pcie_readl_apb(struct rk_pcie *rk_pcie, u32 reg)
@@ -469,10 +500,10 @@ static void rk_pcie_debug_dump(struct rk_pcie *rk_pcie)
 #if RK_PCIE_DBG
 	u32 loop;
 
-	dev_info(rk_pcie->dev, "ltssm = 0x%x\n",
+	dev_err(rk_pcie->dev, "ltssm = 0x%x\n",
 		 rk_pcie_readl_apb(rk_pcie, PCIE_CLIENT_LTSSM_STATUS));
 	for (loop = 0; loop < 64; loop++)
-		dev_info(rk_pcie->dev, "fifo_status = 0x%x\n",
+		dev_err(rk_pcie->dev, "fifo_status = 0x%x\n",
 			 rk_pcie_readl_apb(rk_pcie, PCIE_CLIENT_DBG_FIFO_STATUS));
 #endif
 }
