@@ -190,7 +190,7 @@ static int do_ddr_dq_eye(cmd_tbl_t *cmdtp, int flag, int argc,
 	ddr_type = ((readl(0xfdc2020c)  & (0x3 << 12)) >> 9) |
 		   ((readl(0xfdc20208) >> 13) & 0x7);
 #else
-	printf("Rockchip DDR DQ Eye Tool only support RK356x and RV1126 now.\n");
+	printf("Rockchip DDR DQ Eye Tool only support RK3568/RK3566 and RV1126 now.\n");
 	return CMD_RET_FAILURE;
 #endif
 
