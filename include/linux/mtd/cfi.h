@@ -28,5 +28,6 @@
 #define CFI_MFR_MICRON		0x002C	/* Micron */
 #define CFI_MFR_TOSHIBA		0x0098
 #define CFI_MFR_WINBOND		0x00DA
+#define CFI_MFR_NORMEM		0x0052	/* NORMEM */
 
 #endif /* __MTD_CFI_H__ */

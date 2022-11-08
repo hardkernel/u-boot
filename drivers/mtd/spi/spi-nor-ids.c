@@ -398,5 +398,9 @@ const struct flash_info spi_nor_ids[] = {
 	/* Boya Microelectronics Co., Ltd. */
 	{ INFO("BY25Q256FSEIG", 0x684919, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 #endif
+#ifdef CONFIG_SPI_FLASH_NORMEM
+	/* NORMEM Microelectronics Co., Ltd. */
+	{ INFO("NM25Q128EVB", 0x522118, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+#endif
 	{ },
 };
