@@ -42,7 +42,7 @@ int board_mmc_dm_reinit(struct udevice *dev)
 {
 	struct rockchip_dwmmc_priv *priv = dev_get_priv(dev);
 
-	if (!priv || !&priv->clk)
+	if (!priv)
 		return 0;
 
 	if (!memcmp(dev->name, "dwmmc", strlen("dwmmc")))
