@@ -19,6 +19,50 @@
 
 static bool optee_is_init;
 
+static bool optee_vm_create(uint32_t client_id)
+{
+	ARM_SMC_ARGS ArmSmcArgs = {0};
+
+	ArmSmcArgs.Arg0 = OPTEE_SMC_VM_CREATED;
+	ArmSmcArgs.Arg1 = client_id;
+
+	tee_smc_call(&ArmSmcArgs);
+
+	if (ArmSmcArgs.Arg0 != 0)
+		return false;
+
+	return true;
+}
+
+static bool optee_vm_destroyed(uint32_t client_id)
+{
+	ARM_SMC_ARGS ArmSmcArgs = {0};
+
+	ArmSmcArgs.Arg0 = OPTEE_SMC_VM_DESTROYED;
+	ArmSmcArgs.Arg1 = client_id;
+
+	tee_smc_call(&ArmSmcArgs);
+
+	if (ArmSmcArgs.Arg0 != 0)
+		return false;
+
+	return true;
+}
+
+static bool optee_exchange_capabilities(uint32_t *sec_caps)
+{
+	ARM_SMC_ARGS ArmSmcArgs = {0};
+
+	ArmSmcArgs.Arg0 = OPTEE_SMC_EXCHANGE_CAPABILITIES;
+
+	tee_smc_call(&ArmSmcArgs);
+
+	if (ArmSmcArgs.Arg0 != 0)
+		return false;
+	*sec_caps = ArmSmcArgs.Arg1;
+	return true;
+}
+
 static bool optee_api_revision_is_compatible(void)
 {
 	ARM_SMC_ARGS ArmSmcArgs = {0};
@@ -94,9 +138,11 @@ TEEC_Result TEEC_InitializeContext(const char *name,
 				TEEC_Context *context)
 {
 	TEEC_Result teecresult = TEEC_SUCCESS;
+	uint32_t sec_caps = 0;
 
 	debug("TEEC_InitializeContext Enter: name=%s  context=%s  0x%X\n",
 			name, context->devname, context->fd);
+
 
 	if (context == NULL) {
 		teecresult = TEEC_ERROR_BAD_PARAMETERS;
@@ -109,6 +155,16 @@ TEEC_Result TEEC_InitializeContext(const char *name,
 	}
 
 	memset(context, 0, sizeof(*context));
+
+	/* get optee capabilities */
+	if (!optee_exchange_capabilities(&sec_caps))
+		panic("optee exchange capabilities fail!");
+
+	/* optee vm create */
+	if (sec_caps & OPTEE_SMC_SEC_CAP_VIRTUALIZATION) {
+		if (!optee_vm_create(0))
+			panic("optee vm create fail!");
+	}
 
 exit:
 	debug("TEEC_InitializeContext Exit : teecresult=0x%X\n", teecresult);
@@ -124,6 +180,18 @@ exit:
  */
 TEEC_Result TEEC_FinalizeContext(TEEC_Context *context)
 {
+	uint32_t sec_caps = 0;
+
+	/* get optee capabilities */
+	if (!optee_exchange_capabilities(&sec_caps))
+		panic("optee exchange capabilities fail!");
+
+	/* optee vm destroyed */
+	if (sec_caps & OPTEE_SMC_SEC_CAP_VIRTUALIZATION) {
+		if (!optee_vm_destroyed(0))
+			panic("optee vm destroyed fail!");
+	}
+
 	debug("TEEC_FinalizeContext Enter-Exit: context=0x%zu\n",
 		(size_t)context);
 	return TEEC_SUCCESS;
