@@ -221,8 +221,14 @@ static const struct rockchip_saradc_data rk3588_saradc_data = {
 };
 
 static const struct udevice_id rockchip_saradc_ids[] = {
-	{ .compatible = "rockchip,rk3588-saradc",
-	  .data = (ulong)&rk3588_saradc_data },
+	{
+		.compatible = "rockchip,rk3588-saradc",
+		.data = (ulong)&rk3588_saradc_data
+	},
+	{
+		.compatible = "rockchip,rk3528-saradc",
+		.data = (ulong)&rk3588_saradc_data
+	},
 	{ }
 };
 
