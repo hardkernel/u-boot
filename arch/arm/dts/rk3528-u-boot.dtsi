@@ -113,3 +113,20 @@
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
+
+&firmware {
+	u-boot,dm-pre-reloc;
+};
+
+&scmi {
+	u-boot,dm-pre-reloc;
+};
+
+&scmi_clk {
+	u-boot,dm-pre-reloc;
+};
+
+&scmi_shmem {
+	u-boot,dm-pre-reloc;
+};
+

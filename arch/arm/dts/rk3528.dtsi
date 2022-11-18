@@ -263,7 +263,7 @@
 		status = "disabled";
 	};
 
-	firmware {
+	firmware: firmware {
 		scmi: scmi {
 			compatible = "arm,scmi-smc";
 			shmem = <&scmi_shmem>;
