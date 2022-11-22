@@ -55,21 +55,22 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DWCMSHC_EMMC_DLL_STATUS0	0x840
 #define DWCMSHC_EMMC_DLL_STATUS1	0x844
 #define DWCMSHC_EMMC_DLL_START		BIT(0)
-#define DWCMSHC_EMMC_DLL_RXCLK_SRCSEL	29
 #define DWCMSHC_EMMC_DLL_START_POINT	16
 #define DWCMSHC_EMMC_DLL_START_DEFAULT	5
 #define DWCMSHC_EMMC_DLL_INC_VALUE	2
 #define DWCMSHC_EMMC_DLL_INC		8
 #define DWCMSHC_EMMC_DLL_DLYENA		BIT(27)
 #define DLL_TXCLK_TAPNUM_DEFAULT	0x10
-#define DLL_TXCLK_TAPNUM_90_DEGREES	0x8
-#define DLL_STRBIN_TAPNUM_DEFAULT	0x3
+#define DLL_TXCLK_TAPNUM_90_DEGREES	0x9
+#define DLL_STRBIN_TAPNUM_DEFAULT	0x4
+#define DLL_STRBIN_TAPNUM_FROM_SW	BIT(24)
+#define DLL_STRBIN_DELAY_NUM_SEL	BIT(26)
 #define DLL_TXCLK_TAPNUM_FROM_SW	BIT(24)
 #define DLL_TXCLK_NO_INVERTER		BIT(29)
 #define DWCMSHC_EMMC_DLL_LOCKED		BIT(8)
 #define DWCMSHC_EMMC_DLL_TIMEOUT	BIT(9)
-#define DLL_RXCLK_NO_INVERTER		1
-#define DLL_RXCLK_INVERTER		0
+#define DLL_RXCLK_NO_INVERTER		BIT(29)
+#define DLL_RXCLK_ORI_GATE		BIT(31)
 #define DLL_CMDOUT_TAPNUM_90_DEGREES	0x8
 #define DLL_CMDOUT_TAPNUM_FROM_SW	BIT(24)
 #define DLL_CMDOUT_SRC_CLK_NEG		BIT(28)
@@ -110,6 +111,11 @@ struct sdhci_data {
 	u32 flags;
 #define RK_DLL_CMD_OUT		BIT(1)
 #define RK_RXCLK_NO_INVERTER	BIT(2)
+
+	u8 hs200_tx_tap;
+	u8 hs400_tx_tap;
+	u8 hs400_cmd_tap;
+	u8 hs400_strbin_tap;
 };
 
 static void rk3399_emmc_phy_power_on(struct rockchip_emmc_phy *phy, u32 clock)
@@ -323,7 +329,7 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 {
 	struct rockchip_sdhc *priv = container_of(host, struct rockchip_sdhc, host);
 	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
-	u32 extra;
+	u32 txclk_tapnum, extra;
 	int timeout = 500, ret;
 
 	ret = rockchip_emmc_set_clock(host, clock);
@@ -348,20 +354,34 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 			udelay(1);
 			timeout--;
 		}
-		extra = DWCMSHC_EMMC_DLL_DLYENA;
+		extra = DWCMSHC_EMMC_DLL_DLYENA | DLL_RXCLK_ORI_GATE;
 		if (data->flags & RK_RXCLK_NO_INVERTER)
-			extra |= DLL_RXCLK_NO_INVERTER << DWCMSHC_EMMC_DLL_RXCLK_SRCSEL;
+			extra |= DLL_RXCLK_NO_INVERTER;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
+
+		txclk_tapnum = data->hs200_tx_tap;
+		if ((data->flags & RK_DLL_CMD_OUT) &&
+		    (host->mmc->timing == MMC_TIMING_MMC_HS400 ||
+		    host->mmc->timing == MMC_TIMING_MMC_HS400ES)) {
+			txclk_tapnum = data->hs400_tx_tap;
+
+			extra = DLL_CMDOUT_SRC_CLK_NEG |
+				DLL_CMDOUT_EN_SRC_CLK_NEG |
+				DWCMSHC_EMMC_DLL_DLYENA |
+				data->hs400_cmd_tap |
+				DLL_CMDOUT_TAPNUM_FROM_SW;
+			sdhci_writel(host, extra, DECMSHC_EMMC_DLL_CMDOUT);
+		}
 
 		extra = DWCMSHC_EMMC_DLL_DLYENA |
 			DLL_TXCLK_TAPNUM_FROM_SW |
 			DLL_TXCLK_NO_INVERTER|
-			DLL_TXCLK_TAPNUM_DEFAULT;
-
+			txclk_tapnum;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_TXCLK);
 
 		extra = DWCMSHC_EMMC_DLL_DLYENA |
-			DLL_STRBIN_TAPNUM_DEFAULT;
+			data->hs400_strbin_tap |
+			DLL_STRBIN_TAPNUM_FROM_SW;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_STRBIN);
 	} else {
 		/* Disable cmd conflict check */
@@ -382,7 +402,6 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 static void dwcmshc_sdhci_set_ios_post(struct sdhci_host *host)
 {
 	u16 ctrl;
-	u32 extra;
 	u32 timing = host->mmc->timing;
 
 	if (timing == MMC_TIMING_MMC_HS400 || timing == MMC_TIMING_MMC_HS400ES) {
@@ -395,16 +414,6 @@ static void dwcmshc_sdhci_set_ios_post(struct sdhci_host *host)
 		ctrl = sdhci_readw(host, DWCMSHC_EMMC_CONTROL);
 		ctrl |= DWCMSHC_CARD_IS_EMMC;
 		sdhci_writew(host, ctrl, DWCMSHC_EMMC_CONTROL);
-
-		extra = DLL_CMDOUT_SRC_CLK_NEG |
-			DLL_CMDOUT_EN_SRC_CLK_NEG;
-		sdhci_writel(host, extra, DECMSHC_EMMC_DLL_CMDOUT);
-
-		extra = DWCMSHC_EMMC_DLL_DLYENA |
-			DLL_TXCLK_TAPNUM_FROM_SW |
-			DLL_TXCLK_NO_INVERTER|
-			DLL_TXCLK_TAPNUM_90_DEGREES;
-		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_TXCLK);
 	}
 }
 
@@ -536,13 +545,32 @@ static const struct sdhci_data rk3568_data = {
 	.emmc_set_clock = dwcmshc_sdhci_emmc_set_clock,
 	.get_phy = dwcmshc_emmc_get_phy,
 	.flags = RK_RXCLK_NO_INVERTER,
+	.hs200_tx_tap = 16,
+	.hs400_tx_tap = 8,
+	.hs400_cmd_tap = 8,
+	.hs400_strbin_tap = 3,
 };
 
 static const struct sdhci_data rk3588_data = {
 	.emmc_set_clock = dwcmshc_sdhci_emmc_set_clock,
 	.get_phy = dwcmshc_emmc_get_phy,
 	.set_ios_post = dwcmshc_sdhci_set_ios_post,
-	.flags = RK_DLL_CMD_OUT | RK_RXCLK_NO_INVERTER,
+	.flags = RK_DLL_CMD_OUT,
+	.hs200_tx_tap = 16,
+	.hs400_tx_tap = 9,
+	.hs400_cmd_tap = 8,
+	.hs400_strbin_tap = 3,
+};
+
+static const struct sdhci_data rk3528_data = {
+	.emmc_set_clock = dwcmshc_sdhci_emmc_set_clock,
+	.get_phy = dwcmshc_emmc_get_phy,
+	.set_ios_post = dwcmshc_sdhci_set_ios_post,
+	.flags = RK_DLL_CMD_OUT,
+	.hs200_tx_tap = 12,
+	.hs400_tx_tap = 4,
+	.hs400_cmd_tap = 8,
+	.hs400_strbin_tap = 3,
 };
 
 static const struct udevice_id sdhci_ids[] = {
@@ -553,6 +581,10 @@ static const struct udevice_id sdhci_ids[] = {
 	{
 		.compatible = "snps,dwcmshc-sdhci",
 		.data = (ulong)&rk3568_data,
+	},
+	{
+		.compatible = "rockchip,rk3528-dwcmshc",
+		.data = (ulong)&rk3528_data,
 	},
 	{
 		.compatible = "rockchip,rk3588-dwcmshc",
