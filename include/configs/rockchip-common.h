@@ -158,7 +158,7 @@
 		"setenv devtype spinand; setenv devnum 0;" \
 	"elif rksfc dev 1; then " \
 		"setenv devtype spinor; setenv devnum 1;" \
-	"else" \
+	"else;" \
 		"setenv devtype ramdisk; setenv devnum 0;" \
 	"fi; \0"
 
