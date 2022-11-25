@@ -17,10 +17,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_D		0x04	/* download mde */
 #define CTRL_F		0x06	/* fastboot mode */
 #define CTRL_I		0x09	/* inicall debug for kernel */
+#define CTRL_L		0x0c	/* late shell(cli) on BOOTM_STATE_OS_GO */
 #define CTRL_M		0x0d	/* memory(sysmem/bidram) */
 #define CTRL_P		0x10	/* parameter(cmdline) dump */
 #define CTRL_R		0x12	/* regulator initial state dump */
-#define CTRL_S		0x13	/* shell(cli) on BOOTM_STATE_OS_GO */
 #define CTRL_T		0x14	/* print fdt */
 
 bool is_hotkey(enum hotkey_t id)
@@ -75,7 +75,7 @@ void hotkey_run(enum hotkey_t id)
 			cli_loop();
 		break;
 	case HK_CLI_OS_GO:
-		if (gd->console_evt == CTRL_S)
+		if (gd->console_evt == CTRL_L)
 			cli_loop();
 		break;
 	default:
