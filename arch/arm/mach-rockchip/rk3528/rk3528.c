@@ -19,6 +19,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FW_DDR_MST11_REG 	0x6c
 #define FW_DDR_MST14_REG	0x78
 #define FW_DDR_MST16_REG 	0x80
+#define FW_DDR_MST_REG		0xf0
 
 #define PMU_SGRF_BASE		0xff440000
 #define PMU_SGRF_SOC_CON4	0x10
@@ -452,14 +453,15 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 	/* set the mcu to access ddr memory */
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST11_REG);
 	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST11_REG);
+	/* writel(0x00000000, FIREWALL_DDR_BASE + FW_DDR_MST_REG); */
 	/* set the mcu to secure */
 	writel(0x00200000, PMU_SGRF_BASE + PMU_SGRF_SOC_CON4);
 	/* open mcu_debug_en / mcu_dclk_en / mcu_hclk_en / mcu_sclk_en */
 	writel(0x000f000f, PMU_SGRF_BASE + PMU_SGRF_SOC_CON5);
 	/* set start addr, mcu_code_addr_start */
 	writel(0xffff0000 | (entry_point >> 16), PMU_SGRF_BASE + PMU_SGRF_SOC_CON6);
-	/* mcu_tcm_addr_start */
-	writel(0xffff2000, PMU_SGRF_BASE + PMU_SGRF_SOC_CON11);
+	/* mcu_tcm_addr_start, multiplex pmu sram address */
+	writel(0xffffff10, PMU_SGRF_BASE + PMU_SGRF_SOC_CON11);
 	/* jtag_mcu_m0 gpio2a4/gpio2a5 iomux */
 	/* writel(0x00ff0022, GPIO2_IOC_BASE + 0x44); */
 	/* release the mcu */
