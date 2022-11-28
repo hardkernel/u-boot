@@ -376,6 +376,7 @@ const struct flash_info spi_nor_ids[] = {
 	/* XTX Technology (Shenzhen) Limited */
 	{ INFO("xt25f64f", 0x0b4017, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 	{ INFO("xt25f128b", 0x0b4018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("xt25f256b", 0x0b4019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 #endif
 #ifdef CONFIG_SPI_FLASH_PUYA
 	/* PUYA Semiconductor (Shanghai) Co., Ltd. */
