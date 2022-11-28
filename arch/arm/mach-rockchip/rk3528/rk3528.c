@@ -71,6 +71,13 @@ struct mm_region *mem_map = rk3528_mem_map;
 #define	GPIO3_IOC_BASE			0xFF560000
 #define	GPIO4_IOC_BASE			0xFF550000
 
+#define GPIO1_IOC_GPIO1D_IOMUX_SEL_L	(GPIO1_IOC_BASE + 0x38)
+#define GPIO1_IOC_GPIO1C_DS_2		(GPIO1_IOC_BASE + 0x148)
+#define GPIO1_IOC_GPIO1C_DS_3		(GPIO1_IOC_BASE + 0x14C)
+#define GPIO1_IOC_GPIO1D_DS_0		(GPIO1_IOC_BASE + 0x150)
+#define GPIO1_IOC_GPIO1D_DS_1		(GPIO1_IOC_BASE + 0x154)
+#define GPIO1_IOC_GPIO1D_DS_2		(GPIO1_IOC_BASE + 0x158)
+
 /* uart0 iomux */
 /* gpio4c7 */
 #define UART0_RX_M0			1
@@ -390,6 +397,20 @@ int arch_cpu_init(void)
 	 */
 	writel(QOS_PRIORITY_LEVEL(2, 2), CPU_PRIORITY_REG);
 #endif
+
+	if (readl(GPIO1_IOC_GPIO1D_IOMUX_SEL_L) == 0x1111) {
+	       /*
+		* set the emmc io drive strength:
+		* data and cmd: level 3
+		* clock: level 5
+		*/
+	       writel(0x3F3F0F0F, GPIO1_IOC_GPIO1C_DS_2);
+	       writel(0x3F3F0F0F, GPIO1_IOC_GPIO1C_DS_3);
+	       writel(0x3F3F0F0F, GPIO1_IOC_GPIO1D_DS_0);
+	       writel(0x3F3F0F0F, GPIO1_IOC_GPIO1D_DS_1);
+	       writel(0x3F3F3F0F, GPIO1_IOC_GPIO1D_DS_2);
+	}
+
 #elif defined(CONFIG_SUPPORT_USBPLUG)
 	u32 val;
 
