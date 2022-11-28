@@ -9,11 +9,20 @@
 #include <common.h>
 
 struct rk3528_grf {
-	uint32_t reserved0[0x60028 / 4];
+	uint32_t reserved0[0x40018 / 4];
 
+	/* vpugrf*/
+	uint32_t gmac1_con0;			     /* Address Offset: 0x40018 */
+	uint32_t gmac1_con1;			     /* Address Offset: 0x4001c */
+	uint32_t reserved1[(0x60018 - 0x4001c) / 4 - 1];
+	
 	/* vogrf */
+	uint32_t gmac0_con;                          /* Address Offset: 0x60018 */
+	uint32_t macphy_con0;                        /* Address Offset: 0x6001c */
+	uint32_t macphy_con1;                        /* Address Offset: 0x60020 */
+	uint32_t sdmmc_con0;                         /* Address Offset: 0x60024 */
 	uint32_t sdmmc_con1;                         /* Address Offset: 0x60028 */
-	uint32_t reserved1[(0x70000 - 0x60028) / 4 - 1];
+	uint32_t reserved2[(0x70000 - 0x60028) / 4 - 1];
 
 	/* pmugrf */
 	uint32_t soc_con[8];                         /* Address Offset: 0x70000 */
