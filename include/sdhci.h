@@ -256,6 +256,18 @@ struct sdhci_ops {
 	void	(*set_ios_post)(struct sdhci_host *host);
 	int	(*set_clock)(struct sdhci_host *host, unsigned int clock);
 	void	(*set_clock_ext)(struct sdhci_host *host, u32 div);
+
+	/**
+	 * set_enhanced_strobe() - Set HS400 Enhanced Strobe config
+	 *
+	 * This is called after setting the card speed and mode to
+	 * HS400 ES, and should set any host-specific configuration
+	 * necessary for it.
+	 *
+	 * @host: SDHCI host structure
+	 * Return: 0 if successful, -ve on error
+	 */
+	int	(*set_enhanced_strobe)(struct sdhci_host *host);
 };
 
 struct sdhci_host {

@@ -1011,9 +1011,6 @@ static int mmc_select_hs400(struct mmc *mmc)
 {
 	int ret;
 
-	/* Reduce frequency to HS frequency */
-	mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
-
 	/* Switch card to HS mode */
 	ret = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
 			   EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS, false);
@@ -1022,6 +1019,9 @@ static int mmc_select_hs400(struct mmc *mmc)
 
 	/* Set host controller to HS timing */
 	mmc_set_timing(mmc, MMC_TIMING_MMC_HS);
+
+	/* Reduce frequency to HS frequency */
+	mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
 
 	ret = mmc_send_status(mmc, 1000);
 	if (ret)
@@ -1045,9 +1045,49 @@ static int mmc_select_hs400(struct mmc *mmc)
 
 	return ret;
 }
+
+static int mmc_select_hs400es(struct mmc *mmc)
+{
+	int err;
+
+	/* Switch card to HS mode */
+	err = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+			   EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS, false);
+	if (err)
+		return err;
+
+	/* Set host controller to HS timing */
+	mmc_set_timing(mmc, MMC_TIMING_MMC_HS);
+
+	err = mmc_send_status(mmc, 1000);
+	if (err)
+		return err;
+
+	mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
+
+	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BUS_WIDTH,
+			 EXT_CSD_DDR_BUS_WIDTH_8 |
+			 EXT_CSD_BUS_WIDTH_STROBE);
+	if (err) {
+		printf("switch to bus width for hs400 failed\n");
+		return err;
+	}
+
+	/* Switch card to HS400 */
+	err = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+			   EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS400, false);
+	if (err)
+		return err;
+
+	/* Set host controller to HS400 timing and frequency */
+	mmc_set_timing(mmc, MMC_TIMING_MMC_HS400ES);
+
+	return mmc_set_enhanced_strobe(mmc);
+}
 #else
 static int mmc_select_hs200(struct mmc *mmc) { return 0; }
 static int mmc_select_hs400(struct mmc *mmc) { return 0; }
+static int mmc_select_hs400es(struct mmc *mmc) { return 0; }
 #endif
 
 static u32 mmc_select_card_type(struct mmc *mmc, u8 *ext_csd)
@@ -1139,6 +1179,16 @@ static int mmc_change_freq(struct mmc *mmc)
 		return err;
 
 	avail_type = mmc_select_card_type(mmc, ext_csd);
+
+	if (avail_type & EXT_CSD_CARD_TYPE_HS400ES) {
+		err = mmc_select_bus_width(mmc);
+		if (err > 0 && mmc->bus_width == MMC_BUS_WIDTH_8BIT) {
+			err = mmc_select_hs400es(mmc);
+			mmc_set_bus_speed(mmc, avail_type);
+			if (!err)
+				return err;
+		}
+	}
 
 	if (avail_type & EXT_CSD_CARD_TYPE_HS200)
 		err = mmc_select_hs200(mmc);

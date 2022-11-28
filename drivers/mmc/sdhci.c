@@ -681,11 +681,23 @@ int sdhci_probe(struct udevice *dev)
 	return sdhci_init(mmc);
 }
 
+static int sdhci_set_enhanced_strobe(struct udevice *dev)
+{
+	struct mmc *mmc = mmc_get_mmc_dev(dev);
+	struct sdhci_host *host = mmc->priv;
+
+	if (host->ops && host->ops->set_enhanced_strobe)
+		return host->ops->set_enhanced_strobe(host);
+
+	return -ENOTSUPP;
+}
+
 const struct dm_mmc_ops sdhci_ops = {
 	.card_busy	= sdhci_card_busy,
 	.send_cmd	= sdhci_send_command,
 	.set_ios	= sdhci_set_ios,
 	.execute_tuning = sdhci_execute_tuning,
+	.set_enhanced_strobe = sdhci_set_enhanced_strobe,
 };
 #else
 static const struct mmc_ops sdhci_ops = {
