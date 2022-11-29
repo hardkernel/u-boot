@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
 /*
  * Copyright (c) 2022 Rockchip Electronics Co. Ltd.
  * Author: Joseph Chen <chenjh@rock-chips.com>
@@ -394,6 +394,7 @@
 #define CLK_DEEPSLOW                   512
 #define CLK_DDR_FAIL_SAFE              513
 #define PCLK_PMU_HP_TIMER              514
+#define CLK_PMU_HP_TIMER               515
 #define CLK_PMU_32K_HP_TIMER           516
 #define PCLK_PMU_IOC                   517
 #define PCLK_PMU_CRU                   518
@@ -454,6 +455,9 @@
 #define SCMI_ACLK_TSP                  17
 #define SCMI_HCLK_TSP                  18
 #define SCMI_PCLK_DCF                  19
+#define SCMI_CLK_DDR                   20
+#define SCMI_CLK_CPU                   21
+#define SCMI_CLK_GPU                   22
 
 // CRU_SOFTRST_CON03(Offset:0xA0C)
 #define SRST_NCOREPORESET0             0x00000030
@@ -466,6 +470,7 @@
 #define SRST_NCORESET3                 0x00000037
 #define SRST_NL2RESET                  0x00000038
 #define SRST_ARESETN_M_CORE_BIU        0x00000039
+#define SRST_RESETN_CORE_CRYPTO        0x0000003A
 
 // CRU_SOFTRST_CON05(Offset:0xA14)
 #define SRST_PRESETN_DBG               0x0000005D
@@ -509,7 +514,6 @@
 #define SRST_HRESETN_TRNG_NS           0x000000A3
 #define SRST_PRESETN_UART0             0x000000A7
 #define SRST_SRESETN_UART0             0x000000A8
-#define SRST_RESETN_CORE_CRYPTO        0x000000A9
 #define SRST_RESETN_PKA_CRYPTO         0x000000AA
 #define SRST_ARESETN_CRYPTO            0x000000AB
 #define SRST_HRESETN_CRYPTO            0x000000AC
