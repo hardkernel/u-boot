@@ -1632,6 +1632,11 @@ static ulong rk3528_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_GMAC1_VPU_25M:
 		ret = rk3528_ppll_matrix_set_rate(priv, clk->id, rate);
 		break;
+	case CLK_GMAC1_RMII_VPU:
+	case CLK_GMAC1_SRC_VPU:
+		/* dummy set */
+		ret = rk3528_ppll_matrix_get_rate(priv, clk->id);
+		break;
 	default:
 		return -ENOENT;
 	}
