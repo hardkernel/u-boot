@@ -1192,13 +1192,13 @@ static ulong rk3528_dclk_vop_set_clk(struct rk3528_clk_priv *priv,
 
 	if ((priv->gpll_hz % rate) == 0) {
 		prate = priv->gpll_hz;
-		sel = (DCLK_VOP_SRC_SEL_CLK_GPLL_MUX & sel_mask) << sel_shift;
+		sel = (DCLK_VOP_SRC_SEL_CLK_GPLL_MUX << sel_shift) & sel_mask;
 	} else {
 		prate = priv->cpll_hz;
-		sel = (DCLK_VOP_SRC_SEL_CLK_CPLL_MUX & sel_mask) << sel_shift;
+		sel = (DCLK_VOP_SRC_SEL_CLK_CPLL_MUX << sel_shift) & sel_mask;
 	}
 
-	div = ((DIV_ROUND_UP(prate, rate) - 1) & div_mask) << div_shift;
+	div = ((DIV_ROUND_UP(prate, rate) - 1) << div_shift) & div_mask;
 	rk_clrsetreg(&cru->clksel_con[id], sel, div);
 
 	return rk3528_dclk_vop_get_clk(priv, clk_id);
