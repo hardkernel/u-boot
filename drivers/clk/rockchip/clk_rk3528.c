@@ -1944,14 +1944,14 @@ static void rk3528_clk_init(struct rk3528_clk_priv *priv)
 		if (!ret)
 			priv->gpll_hz = GPLL_HZ;
 	}
-#if 0
+
 	if (priv->ppll_hz != PPLL_HZ) {
 		ret = rockchip_pll_set_rate(&rk3528_pll_clks[PPLL], priv->cru,
 					    PPLL, PPLL_HZ);
 		if (!ret)
 			priv->ppll_hz = PPLL_HZ;
 	}
-#endif
+
 	/* The default rate is 100Mhz, it's not friendly for remote IR module */
 	rk3528_pwm_set_clk(priv, CLK_PWM0, 24000000);
 	rk3528_pwm_set_clk(priv, CLK_PWM1, 24000000);
