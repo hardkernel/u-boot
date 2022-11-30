@@ -203,7 +203,7 @@ static void rk630_phy_t22_config_init(struct phy_device *phydev)
 	/* PHYAFE PDCW optimization */
 	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE6_AFE_PDCW, 0x8880);
 	/* Add PHY Tx mos drive, reduce power noise/jitter */
-	phy_write(phydev, REG_PAGE6_TX_MOS_DRV, 0x888e);
+	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE6_TX_MOS_DRV, 0x888e);
 
 	/* Switch to page 8 */
 	phy_write(phydev, MDIO_DEVAD_NONE, REG_PAGE_SEL, 0x0800);
