@@ -1913,11 +1913,13 @@ U_BOOT_DRIVER(rockchip_rk3528_grf_cru) = {
 	.probe		= rk3528_grfclk_probe,
 };
 
-static void rk3528_clk_init(struct rk3528_clk_priv *priv)
+static int rk3528_clk_init(struct rk3528_clk_priv *priv)
 {
 	int ret;
 
 	priv->sync_kernel = false;
+
+#ifdef CONFIG_SPL_BUILD
 	if (!priv->armclk_enter_hz) {
 		priv->armclk_enter_hz =
 			rockchip_pll_get_rate(&rk3528_pll_clks[APLL],
@@ -1930,7 +1932,29 @@ static void rk3528_clk_init(struct rk3528_clk_priv *priv)
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
 	}
+#else
+	if (!priv->armclk_enter_hz) {
+		struct clk clk;
 
+		ret = rockchip_get_scmi_clk(&clk.dev);
+		if (ret) {
+			printf("Failed to get scmi clk dev\n");
+			return ret;
+		}
+
+		clk.id = SCMI_CLK_CPU;
+		ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
+		if (ret < 0) {
+			printf("Failed to set scmi cpu %dhz\n", CPU_PVTPLL_HZ);
+			return ret;
+		} else {
+			priv->armclk_enter_hz =
+				rockchip_pll_get_rate(&rk3528_pll_clks[APLL],
+						      priv->cru, APLL);
+			priv->armclk_init_hz = CPU_PVTPLL_HZ;
+		}
+	}
+#endif
 	if (priv->cpll_hz != CPLL_HZ) {
 		ret = rockchip_pll_set_rate(&rk3528_pll_clks[CPLL], priv->cru,
 					    CPLL, CPLL_HZ);
@@ -1955,6 +1979,8 @@ static void rk3528_clk_init(struct rk3528_clk_priv *priv)
 	/* The default rate is 100Mhz, it's not friendly for remote IR module */
 	rk3528_pwm_set_clk(priv, CLK_PWM0, 24000000);
 	rk3528_pwm_set_clk(priv, CLK_PWM1, 24000000);
+
+	return 0;
 }
 
 static int rk3528_clk_probe(struct udevice *dev)
@@ -1966,7 +1992,9 @@ static int rk3528_clk_probe(struct udevice *dev)
 	if (IS_ERR(priv->grf))
 		return PTR_ERR(priv->grf);
 
-	rk3528_clk_init(priv);
+	ret = rk3528_clk_init(priv);
+	if (ret)
+		return ret;
 
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
