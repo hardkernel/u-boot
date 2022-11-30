@@ -1644,10 +1644,35 @@ static ulong rk3528_clk_set_rate(struct clk *clk, ulong rate)
 	return ret;
 };
 
+#if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+static int rk3528_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	struct rk3528_clk_priv *priv = dev_get_priv(clk->dev);
+	const char *clock_dev_name = parent->dev->name;
+
+	switch (clk->id) {
+	case DCLK_VOP0:
+		if (!strcmp(clock_dev_name, "inno_hdmi_pll_clk"))
+			/* clk_hdmiphy_pixel_io */
+			rk_clrsetreg(&priv->cru->clksel_con[84], 0x1, 1);
+		else
+			rk_clrsetreg(&priv->cru->clksel_con[84], 0x1, 0);
+		break;
+
+	default:
+		return -ENOENT;
+	}
+
+	return 0;
+}
+#endif
 
 static struct clk_ops rk3528_clk_ops = {
 	.get_rate = rk3528_clk_get_rate,
 	.set_rate = rk3528_clk_set_rate,
+#if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.set_parent = rk3528_clk_set_parent,
+#endif
 };
 
 static ulong rk3528_grfclk_get_rate(struct clk *clk)
