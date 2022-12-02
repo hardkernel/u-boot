@@ -192,6 +192,8 @@
 #define EXT_CSD_HS_TIMING		185	/* R/W */
 #define EXT_CSD_REV			192	/* RO */
 #define EXT_CSD_CARD_TYPE		196	/* RO */
+#define EXT_CSD_CARD_TYPE		196	/* RO */
+#define EXT_CSD_DRIVER_STRENGTH		197	/* RO */
 #define EXT_CSD_SEC_CNT			212	/* RO, 4 bytes */
 #define EXT_CSD_HC_WP_GRP_SIZE		221	/* RO */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
@@ -515,6 +517,7 @@ struct mmc_config {
 	uint f_max;
 	uint b_max;
 	unsigned char part_type;
+	u8 fixed_drv_type;
 };
 
 struct sd_ssr {
@@ -602,6 +605,7 @@ struct mmc {
 #if CONFIG_IS_ENABLED(DM_MMC)
 	struct udevice *dev;	/* Device for this MMC controller */
 #endif
+	u8 raw_driver_strength;
 };
 
 struct mmc_hwpart_conf {
@@ -788,6 +792,8 @@ struct blk_desc *mmc_get_blk_desc(struct mmc *mmc);
  *
  */
 void mmc_gpio_init_direct(void);
+
+#define mmc_driver_type_mask(n)		(1 << (n))
 
 #endif /* _MMC_H_ */
 

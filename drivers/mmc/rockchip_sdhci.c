@@ -564,6 +564,8 @@ static int rockchip_sdhci_probe(struct udevice *dev)
 
 	ret = sdhci_setup_cfg(&plat->cfg, host, 0, EMMC_MIN_FREQ);
 
+	plat->cfg.fixed_drv_type = dev_read_u32_default(dev, "fixed-emmc-driver-type", 0);
+
 	host->mmc = &plat->mmc;
 	if (ret)
 		return ret;
