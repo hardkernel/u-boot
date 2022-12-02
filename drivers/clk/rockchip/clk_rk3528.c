@@ -724,9 +724,9 @@ static ulong rk3528_spi_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	sel = (con & mask) >> shift;
 	if (sel == CLK_SPI1_SEL_CLK_MATRIX_200M_SRC)
 		rate = 200 * MHz;
-	if (sel == CLK_SPI1_SEL_CLK_MATRIX_100M_SRC)
+	else if (sel == CLK_SPI1_SEL_CLK_MATRIX_100M_SRC)
 		rate = 100 * MHz;
-	if (sel == CLK_SPI1_SEL_CLK_MATRIX_50M_SRC)
+	else if (sel == CLK_SPI1_SEL_CLK_MATRIX_50M_SRC)
 		rate = 50 * MHz;
 	else
 		rate = OSC_HZ;
