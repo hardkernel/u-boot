@@ -133,7 +133,7 @@ static const struct rk3528_clk_info clks_dump[] = {
 	RK3528_CLK_DUMP(CLK_MATRIX_300M_SRC,  "clk_300m"),
 	RK3528_CLK_DUMP(CLK_MATRIX_339M_SRC,  "clk_339m"),
 	RK3528_CLK_DUMP(CLK_MATRIX_400M_SRC,  "clk_400m"),
-	RK3528_CLK_DUMP(CLK_MATRIX_500M_SRC,  "clk_600m"),
+	RK3528_CLK_DUMP(CLK_MATRIX_500M_SRC,  "clk_500m"),
 	RK3528_CLK_DUMP(CLK_MATRIX_600M_SRC,  "clk_600m"),
 	RK3528_CLK_DUMP(CLK_PPLL_50M_MATRIX,  "clk_ppll_50m"),
 	RK3528_CLK_DUMP(CLK_PPLL_100M_MATRIX, "clk_ppll_100m"),
@@ -1976,10 +1976,24 @@ static int rk3528_clk_init(struct rk3528_clk_priv *priv)
 			priv->ppll_hz = PPLL_HZ;
 	}
 
+#ifdef CONFIG_SPL_BUILD
+	/* Init to override bootrom config */
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_50M_SRC,   50000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_100M_SRC, 100000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_150M_SRC, 150000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_200M_SRC, 200000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_250M_SRC, 250000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_300M_SRC, 300000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_339M_SRC, 340000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_400M_SRC, 400000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_500M_SRC, 500000000);
+	rk3528_cgpll_matrix_set_rate(priv, CLK_MATRIX_600M_SRC, 600000000);
+	rk3528_cgpll_matrix_set_rate(priv, ACLK_BUS_VOPGL_BIU,  500000000);
+
 	/* The default rate is 100Mhz, it's not friendly for remote IR module */
 	rk3528_pwm_set_clk(priv, CLK_PWM0, 24000000);
 	rk3528_pwm_set_clk(priv, CLK_PWM1, 24000000);
-
+#endif
 	return 0;
 }
 
