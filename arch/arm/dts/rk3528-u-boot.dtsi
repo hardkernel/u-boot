@@ -97,6 +97,7 @@
 	/delete-property/ pinctrl-0;
 	mmc-hs400-1_8v;
 	mmc-hs400-enhanced-strobe;
+	fixed-emmc-driver-type = <1>;
 	status = "okay";
 };
 
