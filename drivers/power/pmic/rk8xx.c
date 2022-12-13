@@ -408,6 +408,9 @@ static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 	val = dev_read_u32_default(dev, "not-save-power-en", 0);
 	rk8xx->not_save_power_en = val;
 
+	val = dev_read_bool(dev, "vsys-off-shutdown");
+	rk8xx->sys_can_sd = val;
+
 	return 0;
 }
 
@@ -541,6 +544,26 @@ static int rk8xx_probe(struct udevice *dev)
 		lp_act_msk = RK8XX_LP_ACTION_MSK;
 		init_data = rk817_init_reg;
 		init_data_num = ARRAY_SIZE(rk817_init_reg);
+
+		/* whether the system voltage can be shutdown in PWR_off mode */
+		if (priv->sys_can_sd) {
+			ret = rk8xx_read(dev, RK817_PMIC_CHRG_TERM, &value, 1);
+			if (ret)
+				return ret;
+			value |= 0x80;
+			ret = rk8xx_write(dev, RK817_PMIC_CHRG_TERM, &value, 1);
+			if (ret)
+				return ret;
+		} else {
+			ret = rk8xx_read(dev, RK817_PMIC_CHRG_TERM, &value, 1);
+			if (ret)
+				return ret;
+			value &= 0x7f;
+			ret = rk8xx_write(dev, RK817_PMIC_CHRG_TERM, &value, 1);
+			if (ret)
+				return ret;
+		}
+
 		/* judge whether save the PMIC_POWER_EN register */
 		if (priv->not_save_power_en)
 			break;
