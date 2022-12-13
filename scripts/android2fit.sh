@@ -61,9 +61,9 @@ function android2fit()
 
 	rm images/ -rf && mkdir -p images/
 	cp ${OUT}/kernel images/
-	cp ${OUT}/resource images/
+	cp ${OUT}/resource images/second
 	cp ${OUT}/ramdisk images/
-	cp ${OUT}/rk-kernel.dtb images/
+	cp ${OUT}/rk-kernel.dtb images/dtb
 	rm ${OUT}/ -rf
 
 	./make.sh fit
