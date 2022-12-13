@@ -21,6 +21,11 @@
 	status = "okay";
 };
 
+&rng {
+	u-boot,dm-spl;
+	status = "okay";
+};
+
 &ioc_grf {
 	u-boot,dm-spl;
 	status = "okay";
