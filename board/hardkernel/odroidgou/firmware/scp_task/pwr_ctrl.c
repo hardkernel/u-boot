@@ -137,10 +137,10 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->sources = val;
 
-	/* Power Key: AO_GPIO[3]*/
+	/* Power Key: AO_GPIO[5]*/
 	gpio = &(p->gpio_info[i]);
 	gpio->wakeup_id = POWER_KEY_WAKEUP_SRC;
-	gpio->gpio_in_idx = GPIOAO_3;
+	gpio->gpio_in_idx = GPIOAO_5;
 	gpio->gpio_in_ao = 1;
 	gpio->gpio_out_idx = -1;
 	gpio->gpio_out_ao = -1;
@@ -228,7 +228,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 			unsigned val = readl(AO_GPIO_I);
 
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
-			if ((val & (1 << 3)) == 0)
+			if ((val & (1 << 5)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
 			else if ((val & (1 << 7)) == 0)
 				exit_reason = RTC_WAKEUP;
