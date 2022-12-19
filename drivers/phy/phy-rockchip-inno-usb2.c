@@ -149,6 +149,7 @@ struct rockchip_usb2phy_cfg {
  *		     primary stage.
  * @grf: General Register Files register base.
  * @usbgrf_base : USB General Register Files register base.
+ * @phy_base: the base address of USB PHY.
  * @phy_rst: phy reset control.
  * @phy_cfg: phy register configuration, assigned by driver data.
  */
@@ -157,6 +158,7 @@ struct rockchip_usb2phy {
 	u8		primary_retries;
 	struct regmap	*grf_base;
 	struct regmap	*usbgrf_base;
+	void __iomem	*phy_base;
 	struct udevice	*vbus_supply[USB2PHY_NUM_PORTS];
 	struct reset_ctl phy_rst;
 	const struct rockchip_usb2phy_cfg	*phy_cfg;
@@ -568,6 +570,11 @@ static int rockchip_usb2phy_probe(struct udevice *dev)
 	u32 reg, index;
 	int ret;
 
+	rphy->phy_base = (void __iomem *)dev_read_addr(dev);
+	if (IS_ERR(rphy->phy_base)) {
+		dev_err(dev, "get the base address of usb phy failed\n");
+	}
+
 	if (!strncmp(parent->name, "root_driver", 11) &&
 	    dev_read_bool(dev, "rockchip,grf")) {
 		ret = uclass_get_device_by_phandle(UCLASS_SYSCON, dev,
@@ -796,6 +803,50 @@ static int rk3328_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 	}
 
 	return 0;
+}
+
+static int rk3528_usb2phy_tuning(struct rockchip_usb2phy *rphy)
+{
+	u32 reg;
+	int ret = 0;
+
+	if (IS_ERR(rphy->phy_base)) {
+		return PTR_ERR(rphy->phy_base);
+	}
+
+	/* Turn off otg port differential receiver in suspend mode */
+	reg = readl(rphy->phy_base + 0x30);
+	writel(reg & ~BIT(2), rphy->phy_base + 0x30);
+
+	/* Turn off host port differential receiver in suspend mode */
+	reg = readl(rphy->phy_base + 0x0430);
+	writel(reg & ~BIT(2), rphy->phy_base + 0x0430);
+
+	/* Set otg port HS eye height to 400mv(default is 450mv) */
+	reg = readl(rphy->phy_base + 0x30);
+	reg &= ~GENMASK(6, 4);
+	reg |= (0x00 << 4);
+	writel(reg, rphy->phy_base + 0x30);
+
+	/* Set host port HS eye height to 400mv(default is 450mv) */
+	reg = readl(rphy->phy_base + 0x430);
+	reg &= ~GENMASK(6, 4);
+	reg |= (0x00 << 4);
+	writel(reg, rphy->phy_base + 0x430);
+
+	/* Choose the Tx fs/ls data as linestate from TX driver for otg port */
+	reg = readl(rphy->phy_base + 0x94);
+	reg &= ~GENMASK(6, 3);
+	reg |= (0x03 << 3);
+	writel(reg, rphy->phy_base + 0x94);
+
+	/* Turn on output clk of phy*/
+	reg = readl(rphy->phy_base + 0x41c);
+	reg &= ~GENMASK(7, 2);
+	reg |= (0x27 << 2);
+	writel(reg, rphy->phy_base + 0x41c);
+
+	return ret;
 }
 
 static int rk3588_usb2phy_tuning(struct rockchip_usb2phy *rphy)
@@ -1342,6 +1393,7 @@ static const struct rockchip_usb2phy_cfg rk3528_phy_cfgs[] = {
 	{
 		.reg = 0xffdf0000,
 		.num_ports	= 2,
+		.phy_tuning	= rk3528_usb2phy_tuning,
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
 				.phy_sus	= { 0x6004c, 8, 0, 0, 0x1d1 },
