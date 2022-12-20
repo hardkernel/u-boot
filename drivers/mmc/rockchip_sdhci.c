@@ -348,9 +348,15 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 	struct rockchip_sdhc *priv = container_of(host, struct rockchip_sdhc, host);
 	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
 	u32 txclk_tapnum, extra, rxclk_tapnum;
+	u16 clock_control;
 	int timeout = 500, ret;
 
 	ret = rockchip_emmc_set_clock(host, clock);
+
+	/* Disable output clock while config DLL */
+	clock_control = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+	clock_control &= ~SDHCI_CLOCK_CARD_EN;
+	sdhci_writew(host, clock_control, SDHCI_CLOCK_CONTROL);
 
 	if (clock >= 100 * MHz) {
 		/* reset DLL */
@@ -370,8 +376,10 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_CTRL);
 
 		while (1) {
-			if (timeout < 0)
-				return -ETIMEDOUT;
+			if (timeout < 0) {
+				ret = -ETIMEDOUT;
+				goto exit;
+			}
 			if (DLL_LOCK_WO_TMOUT((sdhci_readl(host, DWCMSHC_EMMC_DLL_STATUS0))))
 				break;
 			udelay(1);
@@ -437,6 +445,12 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 			data->ddr50_strbin_delay_num << DLL_STRBIN_DELAY_NUM_OFFSET;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_STRBIN);
 	}
+
+exit:
+	/* enable output clock */
+	clock_control = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
+	clock_control |= SDHCI_CLOCK_CARD_EN;
+	sdhci_writew(host, clock_control, SDHCI_CLOCK_CONTROL);
 
 	return ret;
 }
