@@ -467,6 +467,9 @@ static int dwcmshc_sdhci_set_enhanced_strobe(struct sdhci_host *host)
 		vendor &= ~DWCMSHC_ENHANCED_STROBE;
 	sdhci_writel(host, vendor, DWCMSHC_EMMC_CONTROL);
 
+	/* some emmc device need a delay before send command */
+	udelay(100);
+
 	return 0;
 }
 
