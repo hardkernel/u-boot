@@ -507,7 +507,7 @@ int set_armclk_rate(void)
 	clk.id = SCMI_CLK_CPU;
 	ret = clk_set_rate(&clk, rate[0]);
 	if (ret < 0) {
-		printf("Failed to set arm clk, ret=%d\n", ret);
+		printf("Failed to set cpu %dhz, ret=%d\n", rate[0], ret);
 		goto out;
 	}
 out:
