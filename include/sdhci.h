@@ -268,6 +268,7 @@ struct sdhci_ops {
 	 * Return: 0 if successful, -ve on error
 	 */
 	int	(*set_enhanced_strobe)(struct sdhci_host *host);
+	void	(*execute_tuning_end)(struct sdhci_host *host);
 };
 
 struct sdhci_host {
