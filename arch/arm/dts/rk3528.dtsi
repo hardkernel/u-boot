@@ -1950,6 +1950,8 @@
 		resets = <&cru SRST_HRESETN_SDMMC0>;
 		reset-names = "reset";
 		rockchip,use-v2-tuning;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_det &sdmmc_bus4>;
 		status = "disabled";
 	};
 
