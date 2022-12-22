@@ -206,6 +206,31 @@ finish:
 	return 0;
 }
 
+__weak int fit_standalone_release(char *id, uintptr_t entry_point)
+{
+	return 0;
+}
+
+static int standalone_handler(const char *id, u32 entry_point, int data_size)
+{
+	int ret;
+
+	if (!sysmem_alloc_base_by_name(id,
+			(phys_addr_t)entry_point, data_size))
+		return -ENXIO;
+
+	printf("Handle standalone: '%s' at 0x%08x ...", id, entry_point);
+
+	ret = fit_standalone_release((char *)id, entry_point);
+	if (ret) {
+		printf("failed, ret=%d\n", ret);
+		return ret;
+	}
+	printf("OK\n");
+
+	return 0;
+}
+
 static int brought_up_amp(void *fit, int noffset,
 			  boot_cpu_t *bootcpu, int is_linux)
 {
@@ -217,27 +242,38 @@ static int brought_up_amp(void *fit, int noffset,
 	int boot_on;
 	int data_size;
 	int i, ret;
-	u8  arch = -ENODATA;
+	u8 type = -ENODATA;
+	u8 arch = -ENODATA;
 
 	desc = fdt_getprop(fit, noffset, "description", NULL);
 	cpu = fit_get_u32_default(fit, noffset, "cpu", -ENODATA);
 	hyp = fit_get_u32_default(fit, noffset, "hyp", 0);
 	thumb = fit_get_u32_default(fit, noffset, "thumb", 0);
-	load = fit_get_u32_default(fit, noffset, "load", -ENODATA);
+	entry = load = fit_get_u32_default(fit, noffset, "load", -ENODATA);
 	us = fit_get_u32_default(fit, noffset, "udelay", 0);
 	boot_on = fit_get_u32_default(fit, noffset, "boot-on", 1);
 	fit_image_get_arch(fit, noffset, &arch);
+	fit_image_get_type(fit, noffset, &type);
 	fit_image_get_data_size(fit, noffset, &data_size);
 	memset(&args, 0, sizeof(args));
 
-	if (!desc || cpu == -ENODATA || arch == -ENODATA ||
+	/* standalone is simple, just handle it and then exit. Allow failure */
+	if (type == IH_TYPE_STANDALONE) {
+		if (!desc || load == -ENODATA) {
+			AMP_E("standalone: \"desc\" or \"load\" property missing!\n");
+			goto exit;
+		}
+		standalone_handler(desc, load, data_size);
+		goto exit;
+	}
+
+	if (!desc || cpu == -ENODATA || arch == -ENODATA || type == -ENODATA ||
 	    (load == -ENODATA && !is_linux)) {
 		AMP_E("Property missing!\n");
 		return -EINVAL;
 	}
 	aarch64 = (arch == IH_ARCH_ARM) ? 0 : 1;
 	pe_state = PE_STATE(aarch64, hyp, thumb, 0);
-	entry = load;
 
 #ifdef DEBUG
 	AMP_I("       desc: %s\n", desc);
@@ -245,7 +281,7 @@ static int brought_up_amp(void *fit, int noffset,
 	AMP_I("    aarch64: %d\n", aarch64);
 	AMP_I("        hyp: %d\n", hyp);
 	AMP_I("      thumb: %d\n", thumb);
-	AMP_I("      entry: 0x%08x\n", entry);
+	AMP_I("       load: 0x%08x\n", load);
 	AMP_I("   pe_state: 0x%08x\n", pe_state);
 	AMP_I("   linux-os: %d\n\n", is_linux);
 #endif
@@ -294,7 +330,7 @@ static int brought_up_amp(void *fit, int noffset,
 	ret = smc_cpu_on(cpu, pe_state, entry, &args, is_linux);
 	if (ret)
 		return ret;
-
+exit:
 	if (us)
 		udelay(us);
 
@@ -336,7 +372,7 @@ static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 
 	/* === only boot cpu can reach here === */
 
-	if (!g_bootcpu.linux_os) {
+	if (!g_bootcpu.linux_os && g_bootcpu.entry) {
 		flush_dcache_all();
 		AMP_I("Brought up cpu[%x, self] with state 0x%x, entry 0x%08x ...",
 		      (u32)read_mpidr() & 0x0fff, g_bootcpu.state, g_bootcpu.entry);
