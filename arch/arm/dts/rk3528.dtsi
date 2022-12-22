@@ -1951,7 +1951,7 @@
 		reset-names = "reset";
 		rockchip,use-v2-tuning;
 		pinctrl-names = "default";
-		pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_det &sdmmc_bus4>;
+		pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_det &sdmmc_bus4 &sdmmc_pwren>;
 		status = "disabled";
 	};
 

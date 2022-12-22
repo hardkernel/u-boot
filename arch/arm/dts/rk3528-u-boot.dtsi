@@ -193,3 +193,7 @@
 &sdmmc_det {
 	u-boot,dm-spl;
 };
+
+&sdmmc_pwren {
+	u-boot,dm-spl;
+};
