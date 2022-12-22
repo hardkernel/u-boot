@@ -178,6 +178,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&sdmmc_pins {
+	u-boot,dm-spl;
+};
+
 &sdmmc_bus4 {
 	u-boot,dm-spl;
 };
