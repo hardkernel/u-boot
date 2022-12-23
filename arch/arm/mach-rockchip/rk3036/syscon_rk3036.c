@@ -18,4 +18,7 @@ U_BOOT_DRIVER(syscon_rk3036) = {
 	.name = "rk3036_syscon",
 	.id = UCLASS_SYSCON,
 	.of_match = rk3036_syscon_ids,
+#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.bind = dm_scan_fdt_dev,
+#endif
 };
