@@ -73,6 +73,20 @@ static void crypto_flush_cacheline(uint32_t addr, uint32_t size)
 	flush_cache(aligned_input, aligned_len);
 }
 
+static void crypto_invalidate_cacheline(uint32_t addr, uint32_t size)
+{
+	ulong alignment = CONFIG_SYS_CACHELINE_SIZE;
+	ulong aligned_input, aligned_len;
+
+	if (!addr || !size)
+		return;
+
+	/* Must invalidate dcache after crypto DMA write data region */
+	aligned_input = round_down(addr, alignment);
+	aligned_len = round_up(size + (addr - aligned_input), alignment);
+	invalidate_dcache_range(aligned_input, aligned_input + aligned_len);
+}
+
 static uint32_t trusty_base_write_security_data(char *filename,
 						uint32_t filename_size,
 						uint8_t *data,
@@ -1013,6 +1027,8 @@ uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id, rk_cipher_confi
 					CRYPTO_SERVICE_CMD_OEM_OTP_KEY_PHYS_CIPHER,
 					&TeecOperation,
 					&ErrorOrigin);
+
+	crypto_invalidate_cacheline(dst_phys_addr, len);
 
 exit:
 	TEEC_ReleaseSharedMemory(&SharedMem_config);
