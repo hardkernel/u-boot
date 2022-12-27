@@ -262,35 +262,6 @@ static int envf_init_vars(void)
 	return envf_num;
 }
 
-#ifdef CONFIG_ENV_PARTITION
-static int envf_add_partition_bootargs(void)
-{
-	char *part_list;
-	char *bootargs;
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(part_type); i++) {
-		part_list = env_get(part_type[i]);
-		if (part_list)
-			break;
-	}
-	if (!part_list)
-		return -EINVAL;
-
-	bootargs = calloc(1, strlen(part_list) + strlen(part_type[i]) + 2);
-	if (!bootargs)
-		return -ENOMEM;
-
-	strcat(bootargs, part_type[i]);
-	strcat(bootargs, "=");
-	strcat(bootargs, part_list);
-	env_update("bootargs", bootargs);
-	free(bootargs);
-
-	return 0;
-}
-#endif
-
 static int envf_load(void)
 {
 	struct blk_desc *desc;
@@ -313,10 +284,6 @@ static int envf_load(void)
 			return -EINTR;
 		}
 	}
-
-#ifdef CONFIG_ENV_PARTITION
-	envf_add_partition_bootargs();
-#endif
 
 	return 0;
 }

@@ -82,14 +82,7 @@ static int env_init_parts(struct blk_desc *dev_desc, struct list_head *parts_hea
 #if CONFIG_IS_ENABLED(ENVF)
 	parts_list = envf_get_part_table(dev_desc);
 #else
-	const char *parts_prefix[] = { "mtdparts", "blkdevparts", };
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(parts_prefix); i++) {
-		parts_list = env_get(parts_prefix[i]);
-		if (parts_list)
-			break;
-	}
+	parts_list = ENV_PARTITIONS;
 #endif
 	if (!parts_list)
 		return -EINVAL;

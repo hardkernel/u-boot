@@ -1110,16 +1110,39 @@ char *board_fdt_chosen_bootargs(void *fdt)
 #endif
 	}
 
-#ifdef CONFIG_ENVF
-	char * sys_bootargs;
+#if defined(CONFIG_ENVF) || defined(CONFIG_ENV_PARTITION)
+	char *part_type[] = { "mtdparts", "blkdevparts" };
+	char *part_list;
+	char *env;
+	int id = 0;
 
-	sys_bootargs = env_get("sys_bootargs");
-	if (sys_bootargs) {
-		env_update("bootargs", sys_bootargs);
+	env = env_get(part_type[id]);
+	if (!env)
+		env = env_get(part_type[++id]);
+	if (env) {
+		if (!strstr(env, part_type[id])) {
+			part_list = calloc(1, strlen(env) + strlen(part_type[id]) + 2);
+			if (part_list) {
+				strcat(part_list, part_type[id]);
+				strcat(part_list, "=");
+				strcat(part_list, env);
+			}
+		} else {
+			part_list = env;
+		}
+		env_update("bootargs", part_list);
 		if (dump)
-			printf("## sys_bootargs: %s\n\n", sys_bootargs);
+			printf("## parts: %s\n\n", part_list);
+	}
+
+	env = env_get("sys_bootargs");
+	if (env) {
+		env_update("bootargs", env);
+		if (dump)
+			printf("## sys_bootargs: %s\n\n", env);
 	}
 #endif
+
 #ifdef CONFIG_MTD_BLK
 	if (!env_get("mtdparts")) {
 		char *mtd_par_info = mtd_part_parse(NULL);
