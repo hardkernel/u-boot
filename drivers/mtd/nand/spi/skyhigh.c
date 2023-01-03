@@ -14,6 +14,10 @@
 
 #define SPINAND_MFR_SKYHIGH		0x01
 
+#define SKYHIGH_STATUS_ECC_1_2_BITFLIPS	(1 << 4)
+#define SKYHIGH_STATUS_ECC_3_4_BITFLIPS	(2 << 4)
+#define SKYHIGH_STATUS_ECC_UNCOR_ERROR	(3 << 4)
+
 static SPINAND_OP_VARIANTS(read_cache_variants,
 		SPINAND_PAGE_READ_FROM_CACHE_QUADIO_OP(0, 2, NULL, 0),
 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
@@ -53,7 +57,39 @@ static const struct mtd_ooblayout_ops s35ml04g3_ooblayout = {
 	.rfree = s35ml04g3_ooblayout_free,
 };
 
+
+static int s35ml0xg3_ecc_get_status(struct spinand_device *spinand,
+				   u8 status)
+{
+	struct nand_device *nand = spinand_to_nand(spinand);
+
+	switch (status & STATUS_ECC_MASK) {
+	case STATUS_ECC_NO_BITFLIPS:
+		return 0;
+
+	case SKYHIGH_STATUS_ECC_UNCOR_ERROR:
+		return -EBADMSG;
+
+	case SKYHIGH_STATUS_ECC_1_2_BITFLIPS:
+		return 2;
+
+	default:
+		return nand->eccreq.strength;
+	}
+
+	return -EINVAL;
+}
+
 static const struct spinand_info skyhigh_spinand_table[] = {
+	SPINAND_INFO("S35ML02G3",
+		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x25),
+		     NAND_MEMORG(1, 2048, 128, 64, 2048, 2, 1, 1),
+		     NAND_ECCREQ(4, 512),
+		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+					      &write_cache_variants,
+					      &update_cache_variants),
+		     SPINAND_HAS_QE_BIT,
+		     SPINAND_ECCINFO(&s35ml04g3_ooblayout, s35ml0xg3_ecc_get_status)),
 	SPINAND_INFO("S35ML04G3",
 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x35),
 		     NAND_MEMORG(1, 2048, 128, 64, 4096, 2, 1, 1),
@@ -62,7 +98,7 @@ static const struct spinand_info skyhigh_spinand_table[] = {
 					      &write_cache_variants,
 					      &update_cache_variants),
 		     SPINAND_HAS_QE_BIT,
-		     SPINAND_ECCINFO(&s35ml04g3_ooblayout, NULL)),
+		     SPINAND_ECCINFO(&s35ml04g3_ooblayout, s35ml0xg3_ecc_get_status)),
 };
 
 static const struct spinand_manufacturer_ops skyhigh_spinand_manuf_ops = {
