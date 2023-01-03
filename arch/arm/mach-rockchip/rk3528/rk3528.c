@@ -14,6 +14,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define FIREWALL_DDR_BASE	0xff2e0000
+#define FW_DDR_MST1_REG 	0x44
 #define FW_DDR_MST6_REG 	0x58
 #define FW_DDR_MST7_REG 	0x5c
 #define FW_DDR_MST11_REG 	0x6c
@@ -385,6 +386,10 @@ int arch_cpu_init(void)
 	/* Set the sdmmc to access ddr memory */
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST14_REG);
 	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST14_REG);
+
+	/* Set the crypto to access ddr memory */
+	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST1_REG);
+	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST1_REG);
 
 #if defined(CONFIG_ROCKCHIP_SFC)
 	/* Set the fspi to access ddr memory */
