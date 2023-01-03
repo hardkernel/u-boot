@@ -54,6 +54,7 @@ struct rockchip_crypto_priv {
 	char				*clocks;
 	u32				*frequencies;
 	u32				nclocks;
+	u32				freq_nclocks;
 	u32				length;
 	struct rk_hash_ctx		*hw_ctx;
 	struct rk_crypto_soc_data	*soc_data;
@@ -1392,7 +1393,7 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 	if (!priv->clocks)
 		return -ENOMEM;
 
-	priv->nclocks = len / sizeof(u32);
+	priv->nclocks = len / (2 * sizeof(u32));
 	if (dev_read_u32_array(dev, "clocks", (u32 *)priv->clocks,
 			       priv->nclocks)) {
 		printf("Can't read \"clocks\" property\n");
@@ -1400,24 +1401,20 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 		goto exit;
 	}
 
-	if (!dev_read_prop(dev, "clock-frequency", &len)) {
-		printf("Can't find \"clock-frequency\" property\n");
-		ret = -EINVAL;
-		goto exit;
-	}
+	if (dev_read_prop(dev, "clock-frequency", &len)) {
+		priv->frequencies = malloc(len);
+		if (!priv->frequencies) {
+			ret = -ENOMEM;
+			goto exit;
+		}
 
-	priv->frequencies = malloc(len);
-	if (!priv->frequencies) {
-		ret = -ENOMEM;
-		goto exit;
-	}
-
-	priv->nclocks = len / sizeof(u32);
-	if (dev_read_u32_array(dev, "clock-frequency", priv->frequencies,
-			       priv->nclocks)) {
-		printf("Can't read \"clock-frequency\" property\n");
-		ret = -EINVAL;
-		goto exit;
+		priv->freq_nclocks = len / (2 * sizeof(u32));
+		if (dev_read_u32_array(dev, "clock-frequency", priv->frequencies,
+				       priv->freq_nclocks)) {
+			printf("Can't read \"clock-frequency\" property\n");
+			ret = -EINVAL;
+			goto exit;
+		}
 	}
 
 	return 0;
@@ -1437,10 +1434,14 @@ static int rk_crypto_set_clk(struct udevice *dev)
 	struct clk clk;
 	int i, ret;
 
-	if (!priv->clocks && priv->nclocks == 0)
+	ret = clk_set_defaults(dev);
+	if (!ret)
+		return ret;
+
+	if (priv->freq_nclocks == 0)
 		return 0;
 
-	for (i = 0; i < priv->nclocks; i++) {
+	for (i = 0; i < priv->freq_nclocks; i++) {
 		ret = clk_get_by_index(dev, i, &clk);
 		if (ret < 0) {
 			printf("Failed to get clk index %d, ret=%d\n", i, ret);
