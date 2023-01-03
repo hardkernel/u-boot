@@ -18,6 +18,7 @@
 #include <asm-generic/gpio.h>
 #include <asm/arch-rockchip/clock.h>
 #include <linux/iopoll.h>
+#include <linux/ioport.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -672,17 +673,18 @@ static int rockchip_pcie_parse_dt(struct udevice *dev)
 	struct rk_pcie *priv = dev_get_priv(dev);
 	u32 max_link_speed;
 	int ret;
+	struct resource res;
 
-	priv->dbi_base = (void *)dev_read_addr_index(dev, 0);
-	if (!priv->dbi_base)
+	ret = dev_read_resource_byname(dev, "pcie-dbi", &res);
+	if (ret)
 		return -ENODEV;
-
+	priv->dbi_base = (void *)(res.start);
 	dev_dbg(dev, "DBI address is 0x%p\n", priv->dbi_base);
 
-	priv->apb_base = (void *)dev_read_addr_index(dev, 1);
-	if (!priv->apb_base)
+	ret = dev_read_resource_byname(dev, "pcie-apb", &res);
+	if (ret)
 		return -ENODEV;
-
+	priv->apb_base = (void *)(res.start);
 	dev_dbg(dev, "APB address is 0x%p\n", priv->apb_base);
 
 	ret = gpio_request_by_name(dev, "reset-gpios", 0,
