@@ -201,3 +201,8 @@
 &sdmmc_pwren {
 	u-boot,dm-spl;
 };
+
+&secure_otp {
+	u-boot,dm-spl;
+	status = "okay";
+};

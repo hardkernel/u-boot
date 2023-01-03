@@ -1980,6 +1980,14 @@
 		status = "disabled";
 	};
 
+	secure_otp: secure_otp@ffcd0000 {
+		compatible = "rockchip,rk3528-secure-otp";
+		reg = <0x0 0xffcd0000 0x0 0x4000>;
+		secure_conf = <0xff4500c0>;
+		mask_addr = <0x0>;
+		cru_rst_addr = <0xff4a8080>;
+	};
+
 	otp: otp@ffce0000 {
 		compatible = "rockchip,rk3528-otp";
 		reg = <0x0 0xffce0000 0x0 0x4000>;
