@@ -25,7 +25,7 @@
 };
 
 &crypto {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &uart2 {
@@ -37,12 +37,12 @@
 };
 
 &grf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &pmugrf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
@@ -87,12 +87,12 @@
 };
 
 &cru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &pmucru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
@@ -132,7 +132,7 @@
 };
 
 &saradc {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -194,7 +194,7 @@
 	};
 };
 
-&gmac0_clkin{
+&gmac0_clkin {
 	u-boot,dm-pre-reloc;
 };
 
@@ -391,15 +391,15 @@
 };
 
 &gpio2 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pcfg_pull_none_drv_level_1 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pcfg_pull_none_drv_level_2 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 
@@ -416,7 +416,7 @@
 };
 
 &pcfg_pull_none {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &secure_otp {
