@@ -1007,6 +1007,19 @@ static int mmc_select_hs200(struct mmc *mmc)
 	return ret;
 }
 
+static int mmc_switch_to_hs400(struct mmc *mmc)
+{
+	u8 val, fixed_drv_type, card_drv_type, drive_strength;
+
+	fixed_drv_type = mmc->cfg->fixed_drv_type;
+	card_drv_type = mmc->raw_driver_strength | mmc_driver_type_mask(0);
+	drive_strength = (card_drv_type & mmc_driver_type_mask(fixed_drv_type))
+				 ? fixed_drv_type : 0;
+	val = EXT_CSD_TIMING_HS400 | drive_strength << EXT_CSD_DRV_STR_SHIFT;
+
+	return __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_HS_TIMING, val, false);
+}
+
 static int mmc_select_hs400(struct mmc *mmc)
 {
 	int ret;
@@ -1035,8 +1048,7 @@ static int mmc_select_hs400(struct mmc *mmc)
 		return ret;
 
 	/* Switch card to HS400 */
-	ret = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
-			   EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS400, false);
+	ret = mmc_switch_to_hs400(mmc);
 	if (ret)
 		return ret;
 
@@ -1048,7 +1060,6 @@ static int mmc_select_hs400(struct mmc *mmc)
 
 static int mmc_select_hs400es(struct mmc *mmc)
 {
-	u8 val, fixed_drv_type, card_drv_type, drive_strength;
 	int err;
 
 	/* Switch card to HS mode */
@@ -1075,13 +1086,7 @@ static int mmc_select_hs400es(struct mmc *mmc)
 	}
 
 	/* Switch card to HS400 */
-	fixed_drv_type = mmc->cfg->fixed_drv_type;
-	card_drv_type = mmc->raw_driver_strength | mmc_driver_type_mask(0);
-	drive_strength = (card_drv_type & mmc_driver_type_mask(fixed_drv_type))
-				 ? fixed_drv_type : 0;
-	val = EXT_CSD_TIMING_HS400 | drive_strength << EXT_CSD_DRV_STR_SHIFT;
-	err = __mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
-			   EXT_CSD_HS_TIMING, val, false);
+	err = mmc_switch_to_hs400(mmc);
 	if (err)
 		return err;
 
