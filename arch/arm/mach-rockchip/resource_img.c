@@ -101,12 +101,6 @@ struct resource_entry {
 };
 
 LIST_HEAD(entrys_head);
-LIST_HEAD(entrys_dtbs_head);
-
-__weak int board_resource_dtb_accepted(char *dtb_name)
-{
-	return 1;
-}
 
 int resource_image_check_header(void *rsce_hdr)
 {
@@ -154,10 +148,7 @@ static int add_file_to_list(struct resource_entry *entry, int rsce_base, bool ra
 	file->hash_size = entry->hash_size;
 	file->ram = ram;
 	memcpy(file->hash, entry->hash, entry->hash_size);
-	INIT_LIST_HEAD(&file->dtbs);
 	list_add_tail(&file->link, &entrys_head);
-	if (strstr(file->name, DTB_SUFFIX) && board_resource_dtb_accepted(file->name))
-		list_add_tail(&file->dtbs, &entrys_dtbs_head);
 	debug("ENTRY: addr: %p, name: %18s, base: 0x%08x, offset: 0x%08x, size: 0x%08x\n",
 	      entry, file->name, file->rsce_base, file->f_offset, file->f_size);
 
@@ -189,7 +180,6 @@ int resource_replace_entry(const char *f_name, uint32_t base,
 		file = list_entry(node, struct resource_file, link);
 		if (!strcmp(file->name, entry->name)) {
 			list_del(&file->link);
-			list_del(&file->dtbs);
 			free(file);
 			break;
 		}
@@ -215,7 +205,6 @@ int resource_create_ram_list(struct blk_desc *dev_desc, void *rsce_hdr)
 	}
 
 	list_del_init(&entrys_head);
-	list_del_init(&entrys_dtbs_head);
 	data = (void *)((ulong)hdr + hdr->c_offset * dev_desc->blksz);
 	for (e_num = 0; e_num < hdr->e_nums; e_num++) {
 		size = e_num * hdr->e_blks * dev_desc->blksz;
@@ -515,37 +504,6 @@ int rockchip_read_resource_file(void *buf, const char *name, int offset, int len
 	return ret;
 }
 
-static struct resource_file *get_default_dtb(void)
-{
-	struct resource_file *target_file = NULL;
-	struct resource_file *file;
-	struct list_head *node;
-	int num = 0;
-
-	if (list_empty(&entrys_head)) {
-		if (resource_init_list())
-			return NULL;
-	}
-
-	list_for_each(node, &entrys_dtbs_head) {
-		num++;
-		file = list_entry(node, struct resource_file, dtbs);
-		if (strcmp(file->name, DEFAULT_DTB_FILE))
-			target_file = file;
-	}
-
-	/*
-	 * two possible case:
-	 *	case 1. rk-kernel.dtb only
-	 *	case 2. targe_file(s) + rk-kernel.dtb(maybe they are the same),
-	 *		use (last)target_file as result one.
-	 */
-	if (num > 2)
-		printf("Error: find duplicate(%d) dtbs\n", num);
-
-	return target_file ? : get_file_info(DEFAULT_DTB_FILE);
-}
-
 int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 {
 	struct resource_file *file = NULL;
@@ -556,7 +514,7 @@ int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 #endif
 	/* If no dtb matches hardware id(GPIO/ADC), use the default */
 	if (!file)
-		file = get_default_dtb();
+		file = get_file_info(DEFAULT_DTB_FILE);
 
 	if (!file)
 		return -ENODEV;
@@ -606,14 +564,6 @@ static int do_dump_resource(cmd_tbl_t *cmdtp, int flag,
 		       file->name, file->rsce_base + file->f_offset, file->f_size);
 	}
 
-#ifdef CONFIG_ROCKCHIP_HWID_DTB
-	printf("DTBs:\n");
-	list_for_each(node, &entrys_dtbs_head) {
-		file = list_entry(node, struct resource_file, dtbs);
-		printf("	%s: 0x%08x(sector),0x%08x(bytes)\n",
-		       file->name, file->rsce_base + file->f_offset, file->f_size);
-	}
-#endif
 	return 0;
 }
 

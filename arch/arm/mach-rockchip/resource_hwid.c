@@ -272,8 +272,8 @@ struct resource_file *resource_read_hwid_dtb(void)
 			return NULL;
 	}
 
-	list_for_each(node, &entrys_dtbs_head) {
-		file = list_entry(node, struct resource_file, dtbs);
+	list_for_each(node, &entrys_head) {
+		file = list_entry(node, struct resource_file, link);
 		if (!strstr(file->name, DTB_SUFFIX))
 			continue;
 
