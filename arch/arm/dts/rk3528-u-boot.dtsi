@@ -21,11 +21,6 @@
 	status = "okay";
 };
 
-&rng {
-	u-boot,dm-spl;
-	status = "okay";
-};
-
 &ioc_grf {
 	u-boot,dm-spl;
 	status = "okay";
@@ -107,7 +102,7 @@
 };
 
 &saradc {
-	u-boot,dm-spl;
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -138,7 +133,7 @@
 };
 
 &pinctrl {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
@@ -151,15 +146,15 @@
 };
 
 &gpio2 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pcfg_pull_none_drv_level_1 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pcfg_pull_none_drv_level_2 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pcfg_pull_up_drv_level_1 {
@@ -175,7 +170,7 @@
 };
 
 &pcfg_pull_none {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &sdmmc_pins {
