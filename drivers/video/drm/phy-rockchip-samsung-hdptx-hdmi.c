@@ -1974,7 +1974,7 @@ static int rockchip_hdptx_phy_hdmi_bind(struct udevice *parent)
 	subnode = ofnode_find_subnode(parent->node, "clk-port");
 	if (!ofnode_valid(subnode)) {
 		free(str);
-		printf("%s: no subnode for %s", __func__, parent->name);
+		printf("%s: no subnode for %s\n", __func__, parent->name);
 		return -ENXIO;
 	}
 

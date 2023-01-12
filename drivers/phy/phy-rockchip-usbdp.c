@@ -949,7 +949,7 @@ static int rockchip_udphy_bind(struct udevice *parent)
 
 	dev_for_each_subnode(subnode, parent) {
 		if (!ofnode_valid(subnode)) {
-			printf("%s: no subnode for %s", __func__, parent->name);
+			printf("%s: no subnode for %s\n", __func__, parent->name);
 			return -ENXIO;
 		}
 
