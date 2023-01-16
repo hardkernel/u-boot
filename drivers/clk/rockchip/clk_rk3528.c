@@ -243,27 +243,27 @@ static ulong rk3528_ppll_matrix_get_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_PPLL_50M_MATRIX:
 	case CLK_GMAC1_RMII_VPU:
-		mask = PCEICRU_CLKSEL_CON01_CLK_MATRIX_50M_SRC_DIV_MASK;
-		shift = PCEICRU_CLKSEL_CON01_CLK_MATRIX_50M_SRC_DIV_SHIFT;
+		mask = PCIE_CLK_MATRIX_50M_SRC_DIV_MASK;
+		shift = PCIE_CLK_MATRIX_50M_SRC_DIV_SHIFT;
 		reg = &cru->pcieclksel_con[1];
 		break;
 
 	case CLK_PPLL_100M_MATRIX:
-		mask = PCEICRU_CLKSEL_CON01_CLK_MATRIX_100M_SRC_DIV_MASK;
-		shift = PCEICRU_CLKSEL_CON01_CLK_MATRIX_100M_SRC_DIV_SHIFT;
+		mask = PCIE_CLK_MATRIX_100M_SRC_DIV_MASK;
+		shift = PCIE_CLK_MATRIX_100M_SRC_DIV_SHIFT;
 		reg = &cru->pcieclksel_con[1];
 		break;
 
 	case CLK_PPLL_125M_MATRIX:
 	case CLK_GMAC1_SRC_VPU:
-		mask = CRU_CLKSEL_CON60_CLK_MATRIX_125M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON60_CLK_MATRIX_125M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_125M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_125M_SRC_DIV_SHIFT;
 		reg = &cru->clksel_con[60];
 		break;
 
 	case CLK_GMAC1_VPU_25M:
-		mask = CRU_CLKSEL_CON60_CLK_MATRIX_25M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON60_CLK_MATRIX_25M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_25M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_25M_SRC_DIV_SHIFT;
 		reg = &cru->clksel_con[60];
 		break;
 	default:
@@ -285,27 +285,27 @@ static ulong rk3528_ppll_matrix_set_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_PPLL_50M_MATRIX:
 		id = 1;
-		mask = PCEICRU_CLKSEL_CON01_CLK_MATRIX_50M_SRC_DIV_MASK;
-		shift = PCEICRU_CLKSEL_CON01_CLK_MATRIX_50M_SRC_DIV_SHIFT;
+		mask = PCIE_CLK_MATRIX_50M_SRC_DIV_MASK;
+		shift = PCIE_CLK_MATRIX_50M_SRC_DIV_SHIFT;
 		is_pciecru = 1;
 		break;
 
 	case CLK_PPLL_100M_MATRIX:
 		id = 1;
-		mask = PCEICRU_CLKSEL_CON01_CLK_MATRIX_100M_SRC_DIV_MASK;
-		shift = PCEICRU_CLKSEL_CON01_CLK_MATRIX_100M_SRC_DIV_SHIFT;
+		mask = PCIE_CLK_MATRIX_100M_SRC_DIV_MASK;
+		shift = PCIE_CLK_MATRIX_100M_SRC_DIV_SHIFT;
 		is_pciecru = 1;
 		break;
 
 	case CLK_PPLL_125M_MATRIX:
 		id = 60;
-		mask = CRU_CLKSEL_CON60_CLK_MATRIX_125M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON60_CLK_MATRIX_125M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_125M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_125M_SRC_DIV_SHIFT;
 		break;
 	case CLK_GMAC1_VPU_25M:
 		id = 60;
-		mask = CRU_CLKSEL_CON60_CLK_MATRIX_25M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON60_CLK_MATRIX_25M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_25M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_25M_SRC_DIV_SHIFT;
 		break;
 	default:
 		return -ENOENT;
@@ -333,76 +333,76 @@ static ulong rk3528_cgpll_matrix_get_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_MATRIX_50M_SRC:
 		con = 0;
-		mask = CRU_CLKSEL_CON00_CLK_MATRIX_50M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON00_CLK_MATRIX_50M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_50M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_50M_SRC_DIV_SHIFT;
 		is_gpll_parent = 0;
 		break;
 
 	case CLK_MATRIX_100M_SRC:
 		con = 0;
-		mask = CRU_CLKSEL_CON00_CLK_MATRIX_100M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON00_CLK_MATRIX_100M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_100M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_100M_SRC_DIV_SHIFT;
 		is_gpll_parent = 0;
 		break;
 
 	case CLK_MATRIX_150M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_150M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_150M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_150M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_150M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_200M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_200M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_200M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_200M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_200M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_250M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_DIV_SHIFT;
-		sel_mask = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_SEL_SHIFT;
+		mask = CLK_MATRIX_250M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_250M_SRC_DIV_SHIFT;
+		sel_mask = CLK_MATRIX_250M_SRC_SEL_MASK;
+		sel_shift = CLK_MATRIX_250M_SRC_SEL_SHIFT;
 		break;
 
 	case CLK_MATRIX_300M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_300M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_300M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_300M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_300M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_339M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_339M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_339M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_339M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_339M_SRC_DIV_SHIFT;
 		is_halfdiv = 1;
 		break;
 
 	case CLK_MATRIX_400M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_400M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_400M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_400M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_400M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_500M_SRC:
 		con = 3;
-		mask = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_DIV_SHIFT;
-		sel_mask = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_SEL_SHIFT;
+		mask = CLK_MATRIX_500M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_500M_SRC_DIV_SHIFT;
+		sel_mask = CLK_MATRIX_500M_SRC_SEL_MASK;
+		sel_shift = CLK_MATRIX_500M_SRC_SEL_SHIFT;
 		break;
 
 	case CLK_MATRIX_600M_SRC:
 		con = 4;
-		mask = CRU_CLKSEL_CON04_CLK_MATRIX_600M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON04_CLK_MATRIX_600M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_600M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_600M_SRC_DIV_SHIFT;
 		break;
 
 	case ACLK_BUS_VOPGL_ROOT:
 	case ACLK_BUS_VOPGL_BIU:
 		con = 43;
-		mask = CRU_CLKSEL_CON43_ACLK_BUS_VOPGL_ROOT_DIV_MASK;
-		shift = CRU_CLKSEL_CON43_ACLK_BUS_VOPGL_ROOT_DIV_SHIFT;
+		mask = ACLK_BUS_VOPGL_ROOT_DIV_MASK;
+		shift = ACLK_BUS_VOPGL_ROOT_DIV_SHIFT;
 		break;
 
 	default:
@@ -440,76 +440,76 @@ static ulong rk3528_cgpll_matrix_set_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_MATRIX_50M_SRC:
 		con = 0;
-		mask = CRU_CLKSEL_CON00_CLK_MATRIX_50M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON00_CLK_MATRIX_50M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_50M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_50M_SRC_DIV_SHIFT;
 		is_gpll_parent = 0;
 		break;
 
 	case CLK_MATRIX_100M_SRC:
 		con = 0;
-		mask = CRU_CLKSEL_CON00_CLK_MATRIX_100M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON00_CLK_MATRIX_100M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_100M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_100M_SRC_DIV_SHIFT;
 		is_gpll_parent = 0;
 		break;
 
 	case CLK_MATRIX_150M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_150M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_150M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_150M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_150M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_200M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_200M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_200M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_200M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_200M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_250M_SRC:
 		con = 1;
-		mask = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_DIV_SHIFT;
-		sel_mask = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON01_CLK_MATRIX_250M_SRC_SEL_SHIFT;
+		mask = CLK_MATRIX_250M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_250M_SRC_DIV_SHIFT;
+		sel_mask = CLK_MATRIX_250M_SRC_SEL_MASK;
+		sel_shift = CLK_MATRIX_250M_SRC_SEL_SHIFT;
 		break;
 
 	case CLK_MATRIX_300M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_300M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_300M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_300M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_300M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_339M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_339M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_339M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_339M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_339M_SRC_DIV_SHIFT;
 		is_halfdiv = 1;
 		break;
 
 	case CLK_MATRIX_400M_SRC:
 		con = 2;
-		mask = CRU_CLKSEL_CON02_CLK_MATRIX_400M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON02_CLK_MATRIX_400M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_400M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_400M_SRC_DIV_SHIFT;
 		break;
 
 	case CLK_MATRIX_500M_SRC:
 		con = 3;
-		mask = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_DIV_SHIFT;
-		sel_mask = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON03_CLK_MATRIX_500M_SRC_SEL_SHIFT;
+		mask = CLK_MATRIX_500M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_500M_SRC_DIV_SHIFT;
+		sel_mask = CLK_MATRIX_500M_SRC_SEL_MASK;
+		sel_shift = CLK_MATRIX_500M_SRC_SEL_SHIFT;
 		break;
 
 	case CLK_MATRIX_600M_SRC:
 		con = 4;
-		mask = CRU_CLKSEL_CON04_CLK_MATRIX_600M_SRC_DIV_MASK;
-		shift = CRU_CLKSEL_CON04_CLK_MATRIX_600M_SRC_DIV_SHIFT;
+		mask = CLK_MATRIX_600M_SRC_DIV_MASK;
+		shift = CLK_MATRIX_600M_SRC_DIV_SHIFT;
 		break;
 
 	case ACLK_BUS_VOPGL_ROOT:
 	case ACLK_BUS_VOPGL_BIU:
 		con = 43;
-		mask = CRU_CLKSEL_CON43_ACLK_BUS_VOPGL_ROOT_DIV_MASK;
-		shift = CRU_CLKSEL_CON43_ACLK_BUS_VOPGL_ROOT_DIV_SHIFT;
+		mask = ACLK_BUS_VOPGL_ROOT_DIV_MASK;
+		shift = ACLK_BUS_VOPGL_ROOT_DIV_SHIFT;
 		break;
 
 	default:
@@ -553,51 +553,51 @@ static ulong rk3528_i2c_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case CLK_I2C0:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_I2C0_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_I2C0_SEL_SHIFT;
+		mask = CLK_I2C0_SEL_MASK;
+		shift = CLK_I2C0_SEL_SHIFT;
 		break;
 
 	case CLK_I2C1:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_I2C1_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_I2C1_SEL_SHIFT;
+		mask = CLK_I2C1_SEL_MASK;
+		shift = CLK_I2C1_SEL_SHIFT;
 		break;
 
 	case CLK_I2C2:
 		id = 0;
-		mask = PMUCRU_CLKSEL_CON0_CLK_I2C2_SEL_MASK;
-		shift = PMUCRU_CLKSEL_CON0_CLK_I2C2_SEL_SHIFT;
+		mask = CLK_I2C2_SEL_MASK;
+		shift = CLK_I2C2_SEL_SHIFT;
 		is_pmucru = 1;
 		break;
 
 	case CLK_I2C3:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_I2C3_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_I2C3_SEL_SHIFT;
+		mask = CLK_I2C3_SEL_MASK;
+		shift = CLK_I2C3_SEL_SHIFT;
 		break;
 
 	case CLK_I2C4:
 		id = 85;
-		mask = CRU_CLKSEL_CON85_CLK_I2C4_SEL_MASK;
-		shift = CRU_CLKSEL_CON85_CLK_I2C4_SEL_SHIFT;
+		mask = CLK_I2C4_SEL_MASK;
+		shift = CLK_I2C4_SEL_SHIFT;
 		break;
 
 	case CLK_I2C5:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_I2C5_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_I2C5_SEL_SHIFT;
+		mask = CLK_I2C5_SEL_MASK;
+		shift = CLK_I2C5_SEL_SHIFT;
 		break;
 
 	case CLK_I2C6:
 		id = 64;
-		mask = CRU_CLKSEL_CON64_CLK_I2C6_SEL_MASK;
-		shift = CRU_CLKSEL_CON64_CLK_I2C6_SEL_SHIFT;
+		mask = CLK_I2C6_SEL_MASK;
+		shift = CLK_I2C6_SEL_SHIFT;
 		break;
 
 	case CLK_I2C7:
 		id = 86;
-		mask = CRU_CLKSEL_CON86_CLK_I2C7_SEL_MASK;
-		shift = CRU_CLKSEL_CON86_CLK_I2C7_SEL_SHIFT;
+		mask = CLK_I2C7_SEL_MASK;
+		shift = CLK_I2C7_SEL_SHIFT;
 		break;
 
 	default:
@@ -640,50 +640,50 @@ static ulong rk3528_i2c_set_clk(struct rk3528_clk_priv *priv, ulong clk_id,
 	switch (clk_id) {
 	case CLK_I2C0:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_I2C0_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_I2C0_SEL_SHIFT;
+		mask = CLK_I2C0_SEL_MASK;
+		shift = CLK_I2C0_SEL_SHIFT;
 		break;
 
 	case CLK_I2C1:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_I2C1_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_I2C1_SEL_SHIFT;
+		mask = CLK_I2C1_SEL_MASK;
+		shift = CLK_I2C1_SEL_SHIFT;
 		break;
 
 	case CLK_I2C2:
 		id = 0;
-		mask = PMUCRU_CLKSEL_CON0_CLK_I2C2_SEL_MASK;
-		shift = PMUCRU_CLKSEL_CON0_CLK_I2C2_SEL_SHIFT;
+		mask = CLK_I2C2_SEL_MASK;
+		shift = CLK_I2C2_SEL_SHIFT;
 		is_pmucru = 1;
 		break;
 
 	case CLK_I2C3:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_I2C3_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_I2C3_SEL_SHIFT;
+		mask = CLK_I2C3_SEL_MASK;
+		shift = CLK_I2C3_SEL_SHIFT;
 		break;
 
 	case CLK_I2C4:
 		id = 85;
-		mask = CRU_CLKSEL_CON85_CLK_I2C4_SEL_MASK;
-		shift = CRU_CLKSEL_CON85_CLK_I2C4_SEL_SHIFT;
+		mask = CLK_I2C4_SEL_MASK;
+		shift = CLK_I2C4_SEL_SHIFT;
 		break;
 
 	case CLK_I2C5:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_I2C5_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_I2C5_SEL_SHIFT;
+		mask = CLK_I2C5_SEL_MASK;
+		shift = CLK_I2C5_SEL_SHIFT;
 
 	case CLK_I2C6:
 		id = 64;
-		mask = CRU_CLKSEL_CON64_CLK_I2C6_SEL_MASK;
-		shift = CRU_CLKSEL_CON64_CLK_I2C6_SEL_SHIFT;
+		mask = CLK_I2C6_SEL_MASK;
+		shift = CLK_I2C6_SEL_SHIFT;
 		break;
 
 	case CLK_I2C7:
 		id = 86;
-		mask = CRU_CLKSEL_CON86_CLK_I2C7_SEL_MASK;
-		shift = CRU_CLKSEL_CON86_CLK_I2C7_SEL_SHIFT;
+		mask = CLK_I2C7_SEL_MASK;
+		shift = CLK_I2C7_SEL_SHIFT;
 		break;
 
 	default:
@@ -707,14 +707,14 @@ static ulong rk3528_spi_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case CLK_SPI0:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_SPI0_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_SPI0_SEL_SHIFT;
+		mask = CLK_SPI0_SEL_MASK;
+		shift = CLK_SPI0_SEL_SHIFT;
 		break;
 
 	case CLK_SPI1:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_SPI1_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_SPI1_SEL_SHIFT;
+		mask = CLK_SPI1_SEL_MASK;
+		shift = CLK_SPI1_SEL_SHIFT;
 		break;
 	default:
 		return -ENOENT;
@@ -752,14 +752,14 @@ static ulong rk3528_spi_set_clk(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_SPI0:
 		id = 79;
-		mask = CRU_CLKSEL_CON79_CLK_SPI0_SEL_MASK;
-		shift = CRU_CLKSEL_CON79_CLK_SPI0_SEL_SHIFT;
+		mask = CLK_SPI0_SEL_MASK;
+		shift = CLK_SPI0_SEL_SHIFT;
 		break;
 
 	case CLK_SPI1:
 		id = 63;
-		mask = CRU_CLKSEL_CON63_CLK_SPI1_SEL_MASK;
-		shift = CRU_CLKSEL_CON63_CLK_SPI1_SEL_SHIFT;
+		mask = CLK_SPI1_SEL_MASK;
+		shift = CLK_SPI1_SEL_SHIFT;
 		break;
 	default:
 		return -ENOENT;
@@ -779,14 +779,14 @@ static ulong rk3528_pwm_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case CLK_PWM0:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PWM0_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PWM0_SEL_SHIFT;
+		mask = CLK_PWM0_SEL_MASK;
+		shift = CLK_PWM0_SEL_SHIFT;
 		break;
 
 	case CLK_PWM1:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PWM1_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PWM1_SEL_SHIFT;
+		mask = CLK_PWM1_SEL_MASK;
+		shift = CLK_PWM1_SEL_SHIFT;
 		break;
 
 	default:
@@ -821,14 +821,14 @@ static ulong rk3528_pwm_set_clk(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_PWM0:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PWM0_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PWM0_SEL_SHIFT;
+		mask = CLK_PWM0_SEL_MASK;
+		shift = CLK_PWM0_SEL_SHIFT;
 		break;
 
 	case CLK_PWM1:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PWM1_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PWM1_SEL_SHIFT;
+		mask = CLK_PWM1_SEL_MASK;
+		shift = CLK_PWM1_SEL_SHIFT;
 		break;
 
 	default:
@@ -848,18 +848,18 @@ static ulong rk3528_adc_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	con = readl(&cru->clksel_con[74]);
 	switch (clk_id) {
 	case CLK_SARADC:
-		div = (con & CRU_CLKSEL_CON74_CLK_SARADC_DIV_MASK) >>
-			CRU_CLKSEL_CON74_CLK_SARADC_DIV_SHIFT;
+		div = (con & CLK_SARADC_DIV_MASK) >>
+			CLK_SARADC_DIV_SHIFT;
 		break;
 
 	case CLK_TSADC_TSEN:
-		div = (con & CRU_CLKSEL_CON74_CLK_TSADC_TSEN_DIV_MASK) >>
-			CRU_CLKSEL_CON74_CLK_TSADC_TSEN_DIV_SHIFT;
+		div = (con & CLK_TSADC_TSEN_DIV_MASK) >>
+			CLK_TSADC_TSEN_DIV_SHIFT;
 		break;
 
 	case CLK_TSADC:
-		div = (con & CRU_CLKSEL_CON74_CLK_TSADC_DIV_MASK) >>
-			CRU_CLKSEL_CON74_CLK_TSADC_DIV_SHIFT;
+		div = (con & CLK_TSADC_DIV_MASK) >>
+			CLK_TSADC_DIV_SHIFT;
 		break;
 
 	default:
@@ -877,18 +877,18 @@ static ulong rk3528_adc_set_clk(struct rk3528_clk_priv *priv,
 
 	switch (clk_id) {
 	case CLK_SARADC:
-		mask = CRU_CLKSEL_CON74_CLK_SARADC_DIV_MASK;
-		shift =	CRU_CLKSEL_CON74_CLK_SARADC_DIV_SHIFT;
+		mask = CLK_SARADC_DIV_MASK;
+		shift =	CLK_SARADC_DIV_SHIFT;
 		break;
 
 	case CLK_TSADC_TSEN:
-		mask = CRU_CLKSEL_CON74_CLK_TSADC_TSEN_DIV_MASK;
-		shift =	CRU_CLKSEL_CON74_CLK_TSADC_TSEN_DIV_SHIFT;
+		mask = CLK_TSADC_TSEN_DIV_MASK;
+		shift =	CLK_TSADC_TSEN_DIV_SHIFT;
 		break;
 
 	case CLK_TSADC:
-		mask = CRU_CLKSEL_CON74_CLK_TSADC_DIV_MASK;
-		shift =	CRU_CLKSEL_CON74_CLK_TSADC_DIV_SHIFT;
+		mask = CLK_TSADC_DIV_MASK;
+		shift =	CLK_TSADC_DIV_SHIFT;
 		break;
 
 	default:
@@ -911,14 +911,14 @@ static ulong rk3528_crypto_get_rate(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case CLK_CORE_CRYPTO:
 		id = 43;
-		mask = CRU_CLKSEL_CON43_CLK_CORE_CRYPTO_SEL_MASK;
-		shift = CRU_CLKSEL_CON43_CLK_CORE_CRYPTO_SEL_SHIFT;
+		mask = CLK_CORE_CRYPTO_SEL_MASK;
+		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
 		break;
 
 	case CLK_PKA_CRYPTO:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PKA_CRYPTO_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PKA_CRYPTO_SEL_SHIFT;
+		mask = CLK_PKA_CRYPTO_SEL_MASK;
+		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
 		break;
 
 	default:
@@ -957,14 +957,14 @@ static ulong rk3528_crypto_set_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case CLK_CORE_CRYPTO:
 		id = 43;
-		mask = CRU_CLKSEL_CON43_CLK_CORE_CRYPTO_SEL_MASK;
-		shift = CRU_CLKSEL_CON43_CLK_CORE_CRYPTO_SEL_SHIFT;
+		mask = CLK_CORE_CRYPTO_SEL_MASK;
+		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
 		break;
 
 	case CLK_PKA_CRYPTO:
 		id = 44;
-		mask = CRU_CLKSEL_CON44_CLK_PKA_CRYPTO_SEL_MASK;
-		shift = CRU_CLKSEL_CON44_CLK_PKA_CRYPTO_SEL_SHIFT;
+		mask = CLK_PKA_CRYPTO_SEL_MASK;
+		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
 		break;
 
 	default:
@@ -983,10 +983,10 @@ static ulong rk3528_sdmmc_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	ulong prate;
 
 	con = readl(&cru->clksel_con[85]);
-	div = (con & CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_DIV_MASK) >>
-		CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_DIV_SHIFT;
-	sel = (con & CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_SEL_MASK) >>
-		CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_SEL_SHIFT;
+	div = (con & CCLK_SRC_SDMMC0_DIV_MASK) >>
+		CCLK_SRC_SDMMC0_DIV_SHIFT;
+	sel = (con & CCLK_SRC_SDMMC0_SEL_MASK) >>
+		CCLK_SRC_SDMMC0_SEL_SHIFT;
 
 	if (sel == CCLK_SRC_SDMMC0_SEL_CLK_GPLL_MUX)
 		prate = priv->gpll_hz;
@@ -1017,10 +1017,10 @@ static ulong rk3528_sdmmc_set_clk(struct rk3528_clk_priv *priv,
 
 	assert(div - 1 <= 31);
 	rk_clrsetreg(&cru->clksel_con[85],
-		     CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_SEL_MASK |
-		     CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_DIV_MASK,
-		     sel << CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_SEL_SHIFT |
-		     (div - 1) << CRU_CLKSEL_CON85_CCLK_SRC_SDMMC0_DIV_SHIFT);
+		     CCLK_SRC_SDMMC0_SEL_MASK |
+		     CCLK_SRC_SDMMC0_DIV_MASK,
+		     sel << CCLK_SRC_SDMMC0_SEL_SHIFT |
+		     (div - 1) << CCLK_SRC_SDMMC0_DIV_SHIFT);
 
 	return rk3528_sdmmc_get_clk(priv, clk_id);
 }
@@ -1031,10 +1031,10 @@ static ulong rk3528_sfc_get_clk(struct rk3528_clk_priv *priv)
 	u32 div, sel, con, parent;
 
 	con = readl(&cru->clksel_con[61]);
-	div = (con & CRU_CLKSEL_CON61_SCLK_SFC_DIV_MASK) >>
-		CRU_CLKSEL_CON61_SCLK_SFC_DIV_SHIFT;
-	sel = (con & CRU_CLKSEL_CON61_SCLK_SFC_SEL_MASK) >>
-		CRU_CLKSEL_CON61_SCLK_SFC_SEL_SHIFT;
+	div = (con & SCLK_SFC_DIV_MASK) >>
+		SCLK_SFC_DIV_SHIFT;
+	sel = (con & SCLK_SFC_SEL_MASK) >>
+		SCLK_SFC_SEL_SHIFT;
 	if (sel == SCLK_SFC_SEL_CLK_GPLL_MUX)
 		parent = priv->gpll_hz;
 	else if (sel == SCLK_SFC_SEL_CLK_CPLL_MUX)
@@ -1063,10 +1063,10 @@ static ulong rk3528_sfc_set_clk(struct rk3528_clk_priv *priv, ulong rate)
 
 	assert(div - 1 <= 63);
 	rk_clrsetreg(&cru->clksel_con[61],
-		     CRU_CLKSEL_CON61_SCLK_SFC_SEL_MASK |
-		     CRU_CLKSEL_CON61_SCLK_SFC_DIV_MASK,
-		     sel << CRU_CLKSEL_CON61_SCLK_SFC_SEL_SHIFT |
-		     (div - 1) << CRU_CLKSEL_CON61_SCLK_SFC_DIV_SHIFT);
+		     SCLK_SFC_SEL_MASK |
+		     SCLK_SFC_DIV_MASK,
+		     sel << SCLK_SFC_SEL_SHIFT |
+		     (div - 1) << SCLK_SFC_DIV_SHIFT);
 
 	return rk3528_sfc_get_clk(priv);
 }
@@ -1077,10 +1077,10 @@ static ulong rk3528_emmc_get_clk(struct rk3528_clk_priv *priv)
 	u32 div, sel, con, parent;
 
 	con = readl(&cru->clksel_con[62]);
-	div = (con & CRU_CLKSEL_CON62_CCLK_SRC_EMMC_DIV_MASK) >>
-		CRU_CLKSEL_CON62_CCLK_SRC_EMMC_DIV_SHIFT;
-	sel = (con & CRU_CLKSEL_CON62_CCLK_SRC_EMMC_SEL_MASK) >>
-		CRU_CLKSEL_CON62_CCLK_SRC_EMMC_SEL_SHIFT;
+	div = (con & CCLK_SRC_EMMC_DIV_MASK) >>
+		CCLK_SRC_EMMC_DIV_SHIFT;
+	sel = (con & CCLK_SRC_EMMC_SEL_MASK) >>
+		CCLK_SRC_EMMC_SEL_SHIFT;
 
 	if (sel == CCLK_SRC_EMMC_SEL_CLK_GPLL_MUX)
 		parent = priv->gpll_hz;
@@ -1110,10 +1110,10 @@ static ulong rk3528_emmc_set_clk(struct rk3528_clk_priv *priv, ulong rate)
 
 	assert(div - 1 <= 31);
 	rk_clrsetreg(&cru->clksel_con[62],
-		     CRU_CLKSEL_CON62_CCLK_SRC_EMMC_SEL_MASK |
-		     CRU_CLKSEL_CON62_CCLK_SRC_EMMC_DIV_MASK,
-		     sel << CRU_CLKSEL_CON62_CCLK_SRC_EMMC_SEL_SHIFT |
-		     (div - 1) << CRU_CLKSEL_CON62_CCLK_SRC_EMMC_DIV_SHIFT);
+		     CCLK_SRC_EMMC_SEL_MASK |
+		     CCLK_SRC_EMMC_DIV_MASK,
+		     sel << CCLK_SRC_EMMC_SEL_SHIFT |
+		     (div - 1) << CCLK_SRC_EMMC_DIV_SHIFT);
 
 	return rk3528_emmc_get_clk(priv);
 }
@@ -1129,19 +1129,19 @@ static ulong rk3528_dclk_vop_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case DCLK_VOP0:
 		id = 32;
-		sel_mask = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_SEL_SHIFT;
+		sel_mask = DCLK_VOP_SRC0_SEL_MASK;
+		sel_shift = DCLK_VOP_SRC0_SEL_SHIFT;
 		/* FIXME if need src: clk_hdmiphy_pixel_io */
-		div_mask = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_DIV_MASK;
-		div_shift = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_DIV_SHIFT;
+		div_mask = DCLK_VOP_SRC0_DIV_MASK;
+		div_shift = DCLK_VOP_SRC0_DIV_SHIFT;
 		break;
 
 	case DCLK_VOP1:
 		id = 33;
-		sel_mask = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_SEL_SHIFT;
-		div_mask = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_DIV_MASK;
-		div_shift = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_DIV_SHIFT;
+		sel_mask = DCLK_VOP_SRC1_SEL_MASK;
+		sel_shift = DCLK_VOP_SRC1_SEL_SHIFT;
+		div_mask = DCLK_VOP_SRC1_DIV_MASK;
+		div_shift = DCLK_VOP_SRC1_DIV_SHIFT;
 		break;
 
 	default:
@@ -1171,19 +1171,19 @@ static ulong rk3528_dclk_vop_set_clk(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case DCLK_VOP0:
 		id = 32;
-		sel_mask = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_SEL_SHIFT;
+		sel_mask = DCLK_VOP_SRC0_SEL_MASK;
+		sel_shift = DCLK_VOP_SRC0_SEL_SHIFT;
 		/* FIXME if need src: clk_hdmiphy_pixel_io */
-		div_mask = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_DIV_MASK;
-		div_shift = CRU_CLKSEL_CON32_DCLK_VOP_SRC0_DIV_SHIFT;
+		div_mask = DCLK_VOP_SRC0_DIV_MASK;
+		div_shift = DCLK_VOP_SRC0_DIV_SHIFT;
 		break;
 
 	case DCLK_VOP1:
 		id = 33;
-		sel_mask = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_SEL_MASK;
-		sel_shift = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_SEL_SHIFT;
-		div_mask = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_DIV_MASK;
-		div_shift = CRU_CLKSEL_CON33_DCLK_VOP_SRC1_DIV_SHIFT;
+		sel_mask = DCLK_VOP_SRC1_SEL_MASK;
+		sel_shift = DCLK_VOP_SRC1_SEL_SHIFT;
+		div_mask = DCLK_VOP_SRC1_DIV_MASK;
+		div_shift = DCLK_VOP_SRC1_DIV_SHIFT;
 		break;
 
 	default:
@@ -1214,66 +1214,66 @@ static ulong rk3528_uart_get_rate(struct rk3528_clk_priv *priv, ulong clk_id)
 	switch (clk_id) {
 	case SCLK_UART0:
 		id = 6;
-		sel_shift = CRU_CLKSEL_CON06_SCLK_UART0_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON06_SCLK_UART0_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON04_CLK_UART0_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON04_CLK_UART0_SRC_DIV_MASK;
+		sel_shift = SCLK_UART0_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART0_SRC_SEL_MASK;
+		div_shift = CLK_UART0_SRC_DIV_SHIFT;
+		div_mask = CLK_UART0_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART1:
 		id = 8;
-		sel_shift = CRU_CLKSEL_CON08_SCLK_UART1_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON08_SCLK_UART1_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON06_CLK_UART1_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON06_CLK_UART1_SRC_DIV_MASK;
+		sel_shift = SCLK_UART1_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART1_SRC_SEL_MASK;
+		div_shift = CLK_UART1_SRC_DIV_SHIFT;
+		div_mask = CLK_UART1_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART2:
 		id = 10;
-		sel_shift = CRU_CLKSEL_CON10_SCLK_UART2_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON10_SCLK_UART2_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON08_CLK_UART2_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON08_CLK_UART2_SRC_DIV_MASK;
+		sel_shift = SCLK_UART2_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART2_SRC_SEL_MASK;
+		div_shift = CLK_UART2_SRC_DIV_SHIFT;
+		div_mask = CLK_UART2_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART3:
 		id = 12;
-		sel_shift = CRU_CLKSEL_CON12_SCLK_UART3_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON12_SCLK_UART3_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON10_CLK_UART3_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON10_CLK_UART3_SRC_DIV_MASK;
+		sel_shift = SCLK_UART3_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART3_SRC_SEL_MASK;
+		div_shift = CLK_UART3_SRC_DIV_SHIFT;
+		div_mask = CLK_UART3_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART4:
 		id = 14;
-		sel_shift = CRU_CLKSEL_CON14_SCLK_UART4_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON14_SCLK_UART4_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON12_CLK_UART4_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON12_CLK_UART4_SRC_DIV_MASK;
+		sel_shift = SCLK_UART4_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART4_SRC_SEL_MASK;
+		div_shift = CLK_UART4_SRC_DIV_SHIFT;
+		div_mask = CLK_UART4_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART5:
 		id = 16;
-		sel_shift = CRU_CLKSEL_CON16_SCLK_UART5_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON16_SCLK_UART5_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON14_CLK_UART5_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON14_CLK_UART5_SRC_DIV_MASK;
+		sel_shift = SCLK_UART5_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART5_SRC_SEL_MASK;
+		div_shift = CLK_UART5_SRC_DIV_SHIFT;
+		div_mask = CLK_UART5_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART6:
 		id = 18;
-		sel_shift = CRU_CLKSEL_CON18_SCLK_UART6_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON18_SCLK_UART6_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON16_CLK_UART6_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON16_CLK_UART6_SRC_DIV_MASK;
+		sel_shift = SCLK_UART6_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART6_SRC_SEL_MASK;
+		div_shift = CLK_UART6_SRC_DIV_SHIFT;
+		div_mask = CLK_UART6_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART7:
 		id = 20;
-		sel_shift = CRU_CLKSEL_CON20_SCLK_UART7_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON20_SCLK_UART7_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON18_CLK_UART7_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON18_CLK_UART7_SRC_DIV_MASK;
+		sel_shift = SCLK_UART7_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART7_SRC_SEL_MASK;
+		div_shift = CLK_UART7_SRC_DIV_SHIFT;
+		div_mask = CLK_UART7_SRC_DIV_MASK;
 		break;
 
 	default:
@@ -1326,66 +1326,66 @@ static ulong rk3528_uart_set_rate(struct rk3528_clk_priv *priv,
 	switch (clk_id) {
 	case SCLK_UART0:
 		id = 6;
-		sel_shift = CRU_CLKSEL_CON06_SCLK_UART0_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON06_SCLK_UART0_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON04_CLK_UART0_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON04_CLK_UART0_SRC_DIV_MASK;
+		sel_shift = SCLK_UART0_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART0_SRC_SEL_MASK;
+		div_shift = CLK_UART0_SRC_DIV_SHIFT;
+		div_mask = CLK_UART0_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART1:
 		id = 8;
-		sel_shift = CRU_CLKSEL_CON08_SCLK_UART1_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON08_SCLK_UART1_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON06_CLK_UART1_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON06_CLK_UART1_SRC_DIV_MASK;
+		sel_shift = SCLK_UART1_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART1_SRC_SEL_MASK;
+		div_shift = CLK_UART1_SRC_DIV_SHIFT;
+		div_mask = CLK_UART1_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART2:
 		id = 10;
-		sel_shift = CRU_CLKSEL_CON10_SCLK_UART2_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON10_SCLK_UART2_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON08_CLK_UART2_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON08_CLK_UART2_SRC_DIV_MASK;
+		sel_shift = SCLK_UART2_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART2_SRC_SEL_MASK;
+		div_shift = CLK_UART2_SRC_DIV_SHIFT;
+		div_mask = CLK_UART2_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART3:
 		id = 12;
-		sel_shift = CRU_CLKSEL_CON12_SCLK_UART3_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON12_SCLK_UART3_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON10_CLK_UART3_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON10_CLK_UART3_SRC_DIV_MASK;
+		sel_shift = SCLK_UART3_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART3_SRC_SEL_MASK;
+		div_shift = CLK_UART3_SRC_DIV_SHIFT;
+		div_mask = CLK_UART3_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART4:
 		id = 14;
-		sel_shift = CRU_CLKSEL_CON14_SCLK_UART4_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON14_SCLK_UART4_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON12_CLK_UART4_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON12_CLK_UART4_SRC_DIV_MASK;
+		sel_shift = SCLK_UART4_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART4_SRC_SEL_MASK;
+		div_shift = CLK_UART4_SRC_DIV_SHIFT;
+		div_mask = CLK_UART4_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART5:
 		id = 16;
-		sel_shift = CRU_CLKSEL_CON16_SCLK_UART5_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON16_SCLK_UART5_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON14_CLK_UART5_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON14_CLK_UART5_SRC_DIV_MASK;
+		sel_shift = SCLK_UART5_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART5_SRC_SEL_MASK;
+		div_shift = CLK_UART5_SRC_DIV_SHIFT;
+		div_mask = CLK_UART5_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART6:
 		id = 18;
-		sel_shift = CRU_CLKSEL_CON18_SCLK_UART6_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON18_SCLK_UART6_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON16_CLK_UART6_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON16_CLK_UART6_SRC_DIV_MASK;
+		sel_shift = SCLK_UART6_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART6_SRC_SEL_MASK;
+		div_shift = CLK_UART6_SRC_DIV_SHIFT;
+		div_mask = CLK_UART6_SRC_DIV_MASK;
 		break;
 
 	case SCLK_UART7:
 		id = 20;
-		sel_shift = CRU_CLKSEL_CON20_SCLK_UART7_SRC_SEL_SHIFT;
-		sel_mask = CRU_CLKSEL_CON20_SCLK_UART7_SRC_SEL_MASK;
-		div_shift = CRU_CLKSEL_CON18_CLK_UART7_SRC_DIV_SHIFT;
-		div_mask = CRU_CLKSEL_CON18_CLK_UART7_SRC_DIV_MASK;
+		sel_shift = SCLK_UART7_SRC_SEL_SHIFT;
+		sel_mask = SCLK_UART7_SRC_SEL_MASK;
+		div_shift = CLK_UART7_SRC_DIV_SHIFT;
+		div_mask = CLK_UART7_SRC_DIV_MASK;
 		break;
 
 	default:
