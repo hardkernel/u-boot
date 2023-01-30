@@ -537,6 +537,16 @@ static int rk8xx_probe(struct udevice *dev)
 		break;
 	case RK809_ID:
 	case RK817_ID:
+		if (device_is_compatible(dev, "rockchip,rk809") && (priv->variant != RK809_ID)) {
+			dev_err(dev, "the dts is RK809, the hardware is RK817\n");
+			run_command("download", 0);
+		}
+
+		if (device_is_compatible(dev, "rockchip,rk817") && (priv->variant != RK817_ID)) {
+			dev_err(dev, "the dts is RK817, the hardware is RK809\n");
+			run_command("download", 0);
+		}
+
 		on_source = RK817_ON_SOURCE;
 		off_source = RK817_OFF_SOURCE;
 		pwron_key = RK817_PWRON_KEY;
