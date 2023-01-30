@@ -444,6 +444,10 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 			DLL_STRBIN_DELAY_NUM_SEL |
 			data->ddr50_strbin_delay_num << DLL_STRBIN_DELAY_NUM_OFFSET;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_STRBIN);
+
+		/* Reset last tuning data while re-init */
+		if (clock < 1 * MHz)
+			priv->hs200_rx_tap = 0;
 	}
 
 exit:
