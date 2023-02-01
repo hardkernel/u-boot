@@ -178,6 +178,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 			} else {
 				puts("timeout.\n");
 				/* remove timeout return error and try to send command */
+				break;
 			}
 		}
 		time++;
