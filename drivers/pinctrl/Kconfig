@@ -145,14 +145,6 @@ config PINCTRL_MAX96745
 	  This option is to enable the pinctrl driver for Maxim
 	  MAX96745.
 
-config PINCTRL_MAX96752F
-	bool "Maxim MAX96752F pinctrl driver"
-	depends on DM && I2C_MUX_MAX96752F
-	select PINCONF
-	help
-	  This option is to enable the pinctrl driver for Maxim
-	  MAX96752F.
-
 config PINCTRL_MAX96755F
 	bool "Maxim MAX96755F pinctrl driver"
 	depends on DM && I2C_MUX_MAX96755F
