@@ -113,6 +113,7 @@ obj-y += input/
 obj-y += soc/
 obj-$(CONFIG_REMOTEPROC) += remoteproc/
 obj-y += thermal/
+obj-y += ufs/
 
 obj-$(CONFIG_MACH_PIC32) += ddr/microchip/
 endif

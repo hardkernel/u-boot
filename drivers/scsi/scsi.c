@@ -172,6 +172,7 @@ static ulong scsi_read(struct blk_desc *block_dev, lbaint_t blknr,
 	      block_dev->devnum, start, blks, (unsigned long)buffer);
 	do {
 		pccb->pdata = (unsigned char *)buf_addr;
+		pccb->dma_dir = DMA_FROM_DEVICE;
 #ifdef CONFIG_SYS_64BIT_LBA
 		if (start > SCSI_LBA48_READ) {
 			unsigned long blocks;
@@ -247,6 +248,7 @@ static ulong scsi_write(struct blk_desc *block_dev, lbaint_t blknr,
 	      __func__, block_dev->devnum, start, blks, (unsigned long)buffer);
 	do {
 		pccb->pdata = (unsigned char *)buf_addr;
+		pccb->dma_dir = DMA_TO_DEVICE;
 		if (blks > SCSI_MAX_WRITE_BLK) {
 			pccb->datalen = (block_dev->blksz *
 					 SCSI_MAX_WRITE_BLK);
@@ -395,6 +397,7 @@ static int scsi_read_capacity(struct udevice *dev, struct scsi_cmd *pccb,
 	pccb->msgout[0] = SCSI_IDENTIFY; /* NOT USED */
 
 	pccb->datalen = 16;
+	pccb->dma_dir = DMA_FROM_DEVICE;
 	if (scsi_exec(dev, pccb))
 		return 1;
 
@@ -500,6 +503,7 @@ static int scsi_detect_dev(struct udevice *dev, int target, int lun,
 	pccb->lun = lun;
 	pccb->pdata = (unsigned char *)&tempbuff;
 	pccb->datalen = 512;
+	pccb->dma_dir = DMA_FROM_DEVICE;
 	scsi_setup_inquiry(pccb);
 	if (scsi_exec(dev, pccb)) {
 		if (pccb->contr_stat == SCSI_SEL_TIME_OUT) {
