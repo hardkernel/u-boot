@@ -181,6 +181,9 @@ static int rockchip_saradc_probe(struct udevice *dev)
 	if (IS_ERR_VALUE(ret))
 		return ret;
 
+	/* Wait until pll stable */
+	mdelay(5);
+
 	priv->active_channel = -1;
 
 	return 0;
