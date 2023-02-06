@@ -1204,7 +1204,7 @@
 		};
 	};
 
-	sdmmc0 {
+	sdmmc0_pins: sdmmc0-pins {
 		sdmmc0_bus4: sdmmc0-bus4 {
 			rockchip,pins =
 				/* sdmmc0_d0 */
