@@ -99,6 +99,8 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 			return -EIO;
 		}
 
+		memcpy((void *)(meta_p->load + SENSOR_IQ_BIN_OFFSET), data, ITEM_SIZE);
+
 		if (rk_meta_iq_decom((meta_p->load + meta_p->comp_off),
 				     (unsigned long)(data + meta_p->comp_off -
 							MAX_META_SEGMENT_SIZE),
@@ -106,11 +108,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 			debug("%s: Failed to decompress.\n", __func__);
 			return -EIO;
 		}
-		/* update decompress gz's file size */
-		unsigned int *p_len = (unsigned int *)
-			(meta_p->load + MAX_META_SEGMENT_SIZE + MAX_HEAD_SIZE);
-		*p_len = (u32)len;
-		/* TODO: update decompress gz's file crc32 */
+
 	} else {
 		if (info->read(info, sector + (MAX_META_SEGMENT_SIZE / info->bl_len),
 			       DIV_ROUND_UP(meta.comp_size, info->bl_len),
