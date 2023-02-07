@@ -1074,14 +1074,16 @@ config PERSISTENT_RAM_ADDR
 	default 0x0
 	depends on PSTORE
 	help
-	  This select linux pstore buffer address for uboot.
+	  This select linux pstore buffer address for U-Boot. When value is
+	  0, U-Boot auto gets this address from preloader atags.
 
 config PERSISTENT_RAM_SIZE
 	hex "Linux pstore buffer size"
 	default 0x0
-	depends on PSTORE
+	depends on (PERSISTENT_RAM_ADDR != 0)
 	help
-	  This select linux pstore buffer size for uboot.
+	  This select linux pstore buffer size for U-Boot, the value must be
+	  set if PERSISTENT_RAM_ADDR != 0.
 
 source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
