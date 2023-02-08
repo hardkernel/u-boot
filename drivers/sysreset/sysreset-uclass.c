@@ -49,9 +49,6 @@ static void sysreset_walk_reboot_mode(const char *mode)
 	struct sysreset_ops *ops;
 	struct udevice *dev;
 
-	if (!mode)
-		return;
-
 	for (uclass_first_device(UCLASS_SYSRESET, &dev);
 	     dev;
 	     uclass_next_device(&dev)) {
