@@ -33,6 +33,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SYS_SGRF_SOC_CON3	0x000c
 #define SYS_SGRF_SOC_CON4	0x0010
 #define SYS_SGRF_SOC_CON9	0x0024
+#define SYS_SGRF_SOC_CON10	0x0028
 #define SYS_SGRF_SOC_CON12	0x0030
 #define SYS_SGRF_FW_SLV_CON0	0x0080
 #define SYS_SGRF_FW_SLV_CON1	0x0084
@@ -673,8 +674,10 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 	writel(0x80008000, SYS_SGRF_BASE + SYS_SGRF_SOC_CON3);
 	/* set start addr, mcu_code_addr_start */
 	writel(0xffff0000 | (entry_point >> 16), SYS_SGRF_BASE + SYS_SGRF_SOC_CON9);
+	/* set start addr, mcu_experi_addr_start */
+	writel(0xffffa000, SYS_SGRF_BASE + SYS_SGRF_SOC_CON10);
 	/* mcu_cache_peripheral_addr */
-	writel(0xfc000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
+	writel(0xa0000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
 	writel(0xffb40000, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
 	/* jtag_m1 gpio1b5/gpio1b6 iomux */
 	/* writel(0x0ff00220, 0xff06000c); */
