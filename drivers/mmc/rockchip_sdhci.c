@@ -272,21 +272,7 @@ static int rockchip_emmc_set_clock(struct sdhci_host *host, unsigned int clock)
 	clk |= SDHCI_CLOCK_INT_EN;
 	sdhci_writew(host, clk, SDHCI_CLOCK_CONTROL);
 
-	/* Wait max 20 ms */
-	timeout = 20;
-	while (!((clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL))
-		& SDHCI_CLOCK_INT_STABLE)) {
-		if (timeout == 0) {
-			printf("%s: Internal clock never stabilised.\n",
-			       __func__);
-			return -EBUSY;
-		}
-		timeout--;
-		udelay(1000);
-	}
-	clk |= SDHCI_CLOCK_CARD_EN;
-	sdhci_writew(host, clk, SDHCI_CLOCK_CONTROL);
-	host->clock = clock;
+	sdhci_enable_clk(host, clk);
 
 	return 0;
 }

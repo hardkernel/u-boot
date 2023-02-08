@@ -292,6 +292,7 @@ struct sdhci_host {
 	struct mmc_config cfg;
 };
 
+void sdhci_enable_clk(struct sdhci_host *host, u16 clk);
 int sdhci_set_clock(struct sdhci_host *host, unsigned int clock);
 
 #ifdef CONFIG_MMC_SDHCI_IO_ACCESSORS
