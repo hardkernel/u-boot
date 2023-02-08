@@ -967,7 +967,7 @@ static ulong rk3562_crypto_set_rate(struct rk3562_clk_priv *priv, ulong clk_id,
 	case CLK_PKA_CRYPTO:
 		mask = CLK_PKA_CRYPTO_SEL_MASK;
 		shift =	CLK_PKA_CRYPTO_SEL_SHIFT;
-		if (rate == 200 * MHz)
+		if (rate == 300 * MHz)
 			sel = CLK_PKA_CRYPTO_SEL_300M;
 		else if (rate == 200 * MHz)
 			sel = CLK_PKA_CRYPTO_SEL_200M;
