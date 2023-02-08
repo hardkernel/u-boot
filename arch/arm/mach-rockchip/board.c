@@ -56,6 +56,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_ARM64
+static ulong orig_images_ep;
+#endif
+
 __weak int rk_board_late_init(void)
 {
 	return 0;
@@ -624,6 +628,9 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 	 * But relocation is in board_quiesce_devices() until all decompress
 	 * done, mainly for saving boot time.
 	 */
+
+	orig_images_ep = images->ep;
+
 	if (data[10] == 0x00) {
 		if (round_down(images->ep, SZ_2M) != images->ep)
 			images->ep = round_down(images->ep, SZ_2M);
@@ -1070,15 +1077,13 @@ void board_quiesce_devices(void *images)
 #endif
 #ifdef CONFIG_ARM64
 	bootm_headers_t *bootm_images = (bootm_headers_t *)images;
-	ulong kernel_addr;
 
 	/* relocate kernel after decompress cleanup */
-	kernel_addr = env_get_ulong("kernel_addr_r", 16, 0);
-	if (kernel_addr != bootm_images->ep) {
-		memmove((char *)bootm_images->ep, (const char *)kernel_addr,
+	if (orig_images_ep && orig_images_ep != bootm_images->ep) {
+		memmove((char *)bootm_images->ep, (const char *)orig_images_ep,
 			bootm_images->os.image_len);
 		printf("== DO RELOCATE == Kernel from 0x%08lx to 0x%08lx\n",
-		       kernel_addr, bootm_images->ep);
+		       orig_images_ep, bootm_images->ep);
 	}
 #endif
 
