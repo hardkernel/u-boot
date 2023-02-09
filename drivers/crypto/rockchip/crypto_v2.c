@@ -1407,8 +1407,7 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 			ret = -ENOMEM;
 			goto exit;
 		}
-
-		priv->freq_nclocks = len / (2 * sizeof(u32));
+		priv->freq_nclocks = len / sizeof(u32);
 		if (dev_read_u32_array(dev, "clock-frequency", priv->frequencies,
 				       priv->freq_nclocks)) {
 			printf("Can't read \"clock-frequency\" property\n");
@@ -1434,10 +1433,11 @@ static int rk_crypto_set_clk(struct udevice *dev)
 	struct clk clk;
 	int i, ret;
 
-	ret = clk_set_defaults(dev);
-	if (!ret)
-		return ret;
+	/* use standard "assigned-clock-rates" props */
+	if (dev_read_size(dev, "assigned-clock-rates") > 0)
+		return clk_set_defaults(dev);
 
+	/* use "clock-frequency" props */
 	if (priv->freq_nclocks == 0)
 		return 0;
 
