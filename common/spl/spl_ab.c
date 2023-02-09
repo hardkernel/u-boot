@@ -319,3 +319,38 @@ int spl_ab_decrease_tries(struct blk_desc *dev_desc)
 out:
 	return ret;
 }
+
+/*
+ * If boot A/B system fail, tries-remaining decrease 1
+ * and do reset automatically if still bootable.
+ */
+int spl_ab_decrease_reset(struct blk_desc *dev_desc)
+{
+	AvbABData ab_data;
+	int ret;
+
+	ret = spl_ab_data_read(dev_desc, &ab_data, "misc");
+	if (ret)
+		return ret;
+
+	/* If current device cannot boot, return and try other devices. */
+	if (!spl_slot_is_bootable(&ab_data.slots[0]) &&
+	    !spl_slot_is_bootable(&ab_data.slots[1])) {
+		printf("A/B: no bootable slot\n");
+		return -ENODEV;
+	}
+
+	/* If current device still can boot, decrease and do reset. */
+	ret = spl_ab_decrease_tries(dev_desc);
+	if (ret)
+		return ret;
+
+	printf("A/B: slot boot fail, do reset\n");
+	do_reset(NULL, 0, 0, NULL);
+
+	/*
+	 * Only do_reset() fail will arrive here, return a
+	 * negative number, then enter maskrom in the caller.
+	 */
+	return -EINVAL;
+}
