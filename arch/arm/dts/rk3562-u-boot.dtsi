@@ -152,6 +152,26 @@
 	status = "okay";
 };
 
+&gpio0 {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio1 {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio2 {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio3 {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio4 {
+	u-boot,dm-pre-reloc;
+};
+
 &pcfg_pull_up_drv_level_2 {
 	u-boot,dm-spl;
 	status = "okay";
@@ -160,10 +180,6 @@
 &pcfg_pull_up {
 	u-boot,dm-spl;
 	status = "okay";
-};
-
-&gpio1 {
-	u-boot,dm-spl;
 };
 
 &u2phy {
