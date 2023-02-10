@@ -32,8 +32,8 @@
 };
 
 &crypto {
-	clocks = <&cru CLK_CORE_CRYPTO>, <&cru CLK_PKA_CRYPTO>;
-	clock-names = "sclk_crypto", "apkclk_crypto";
+	clocks = <&scmi_clk SCMI_CORE_CRYPTO>, <&scmi_clk SCMI_PKA_CRYPTO>;
+	clock-names = "sclk", "pka";
 	clock-frequency = <200000000>, <300000000>;
 	u-boot,dm-spl;
 	status = "okay";
@@ -117,19 +117,19 @@
 };
 
 &firmware {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &scmi {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &scmi_clk {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &scmi_shmem {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pinctrl {
