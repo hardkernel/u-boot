@@ -901,81 +901,6 @@ static ulong rk3528_adc_set_clk(struct rk3528_clk_priv *priv,
 	return rk3528_adc_get_clk(priv, clk_id);
 }
 
-
-static ulong rk3528_crypto_get_rate(struct rk3528_clk_priv *priv, ulong clk_id)
-{
-	struct rk3528_cru *cru = priv->cru;
-	u32 id, sel, con, mask, shift;
-	ulong rate;
-
-	switch (clk_id) {
-	case CLK_CORE_CRYPTO:
-		id = 43;
-		mask = CLK_CORE_CRYPTO_SEL_MASK;
-		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
-		break;
-
-	case CLK_PKA_CRYPTO:
-		id = 44;
-		mask = CLK_PKA_CRYPTO_SEL_MASK;
-		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
-		break;
-
-	default:
-		return -ENOENT;
-	}
-
-	con = readl(&cru->clksel_con[id]);
-	sel = (con & mask) >> shift;
-	if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_300M_SRC)
-		rate = 300 * MHz;
-	else if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_200M_SRC)
-		rate = 200 * MHz;
-	else if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_100M_SRC)
-		rate = 100 * MHz;
-	else
-		rate = OSC_HZ;
-
-	return rate;
-}
-
-static ulong rk3528_crypto_set_rate(struct rk3528_clk_priv *priv,
-				    ulong clk_id, ulong rate)
-{
-	struct rk3528_cru *cru = priv->cru;
-	u32 id, sel, mask, shift;
-
-	if (rate == 300 * MHz)
-		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_300M_SRC;
-	else if (rate == 200 * MHz)
-		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_200M_SRC;
-	else if (rate == 100 * MHz)
-		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_100M_SRC;
-	else
-		sel = CLK_CORE_CRYPTO_SEL_XIN_OSC0_FUNC;
-
-	switch (clk_id) {
-	case CLK_CORE_CRYPTO:
-		id = 43;
-		mask = CLK_CORE_CRYPTO_SEL_MASK;
-		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
-		break;
-
-	case CLK_PKA_CRYPTO:
-		id = 44;
-		mask = CLK_PKA_CRYPTO_SEL_MASK;
-		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
-		break;
-
-	default:
-		return -ENOENT;
-	}
-
-	rk_clrsetreg(&cru->clksel_con[id], mask, sel << shift);
-
-	return rk3528_crypto_get_rate(priv, clk_id);
-}
-
 static ulong rk3528_sdmmc_get_clk(struct rk3528_clk_priv *priv, ulong clk_id)
 {
 	struct rk3528_cru *cru = priv->cru;
@@ -1493,10 +1418,6 @@ static ulong rk3528_clk_get_rate(struct clk *clk)
 	case SCLK_UART7:
 		rate = rk3528_uart_get_rate(priv, clk->id);
 		break;
-	case CLK_CORE_CRYPTO:
-	case CLK_PKA_CRYPTO:
-		rate = rk3528_crypto_get_rate(priv, clk->id);
-		break;
 	case CLK_MATRIX_50M_SRC:
 	case CLK_MATRIX_100M_SRC:
 	case CLK_MATRIX_150M_SRC:
@@ -1608,10 +1529,6 @@ static ulong rk3528_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_UART6:
 	case SCLK_UART7:
 		ret = rk3528_uart_set_rate(priv, clk->id, rate);
-		break;
-	case CLK_CORE_CRYPTO:
-	case CLK_PKA_CRYPTO:
-		ret = rk3528_crypto_set_rate(priv, clk->id, rate);
 		break;
 	case CLK_MATRIX_50M_SRC:
 	case CLK_MATRIX_100M_SRC:
@@ -2081,3 +1998,131 @@ U_BOOT_DRIVER(rockchip_rk3528_cru) = {
 	.probe		= rk3528_clk_probe,
 };
 
+/* spl scmi clk */
+#ifdef CONFIG_SPL_BUILD
+
+static ulong rk3528_crypto_get_rate(struct rk3528_clk_priv *priv, struct clk *clk)
+{
+	struct rk3528_cru *cru = priv->cru;
+	u32 id, sel, con, mask, shift;
+	ulong rate;
+
+	switch (clk->id) {
+	case SCMI_CORE_CRYPTO:
+		id = 43;
+		mask = CLK_CORE_CRYPTO_SEL_MASK;
+		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
+		break;
+
+	case SCMI_PKA_CRYPTO:
+		id = 44;
+		mask = CLK_PKA_CRYPTO_SEL_MASK;
+		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
+		break;
+
+	default:
+		return -ENOENT;
+	}
+
+	con = readl(&cru->clksel_con[id]);
+	sel = (con & mask) >> shift;
+	if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_300M_SRC)
+		rate = 300 * MHz;
+	else if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_200M_SRC)
+		rate = 200 * MHz;
+	else if (sel == CLK_CORE_CRYPTO_SEL_CLK_MATRIX_100M_SRC)
+		rate = 100 * MHz;
+	else
+		rate = OSC_HZ;
+
+	return rate;
+}
+
+static ulong rk3528_crypto_set_rate(struct rk3528_clk_priv *priv,
+				    struct clk *clk, ulong rate)
+{
+	struct rk3528_cru *cru = priv->cru;
+	u32 id, sel, mask, shift;
+
+	if (rate == 300 * MHz)
+		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_300M_SRC;
+	else if (rate == 200 * MHz)
+		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_200M_SRC;
+	else if (rate == 100 * MHz)
+		sel = CLK_CORE_CRYPTO_SEL_CLK_MATRIX_100M_SRC;
+	else
+		sel = CLK_CORE_CRYPTO_SEL_XIN_OSC0_FUNC;
+
+	switch (clk->id) {
+	case SCMI_CORE_CRYPTO:
+		id = 43;
+		mask = CLK_CORE_CRYPTO_SEL_MASK;
+		shift = CLK_CORE_CRYPTO_SEL_SHIFT;
+		break;
+
+	case SCMI_PKA_CRYPTO:
+		id = 44;
+		mask = CLK_PKA_CRYPTO_SEL_MASK;
+		shift = CLK_PKA_CRYPTO_SEL_SHIFT;
+		break;
+
+	default:
+		return -ENOENT;
+	}
+
+	rk_clrsetreg(&cru->clksel_con[id], mask, sel << shift);
+
+	return rk3528_crypto_get_rate(priv, clk);
+}
+
+static ulong rk3528_clk_scmi_get_rate(struct clk *clk)
+{
+	struct rk3528_clk_priv *priv = dev_get_priv(clk->dev);
+
+	switch (clk->id) {
+	case SCMI_CORE_CRYPTO:
+	case SCMI_PKA_CRYPTO:
+		return rk3528_crypto_get_rate(priv, clk);
+	default:
+		return -ENOENT;
+	}
+};
+
+static ulong rk3528_clk_scmi_set_rate(struct clk *clk, ulong rate)
+{
+	struct rk3528_clk_priv *priv = dev_get_priv(clk->dev);
+
+	switch (clk->id) {
+	case SCMI_CORE_CRYPTO:
+	case SCMI_PKA_CRYPTO:
+		return rk3528_crypto_set_rate(priv, clk, rate);
+	default:
+		return -ENOENT;
+	}
+
+	return 0;
+};
+
+static int rk3528_scmi_clk_ofdata_to_platdata(struct udevice *dev)
+{
+	struct rk3528_clk_priv *priv = dev_get_priv(dev);
+
+	priv->cru = (struct rk3528_cru *)0xff4a0000;
+
+	return 0;
+}
+
+/* A fake scmi driver for SPL/TPL where smccc agent is not available. */
+static const struct clk_ops scmi_clk_ops = {
+	.get_rate = rk3528_clk_scmi_get_rate,
+	.set_rate = rk3528_clk_scmi_set_rate,
+};
+
+U_BOOT_DRIVER(scmi_clock) = {
+	.name = "scmi_clk",
+	.id = UCLASS_CLK,
+	.ops = &scmi_clk_ops,
+	.priv_auto_alloc_size = sizeof(struct rk3528_clk_priv),
+	.ofdata_to_platdata = rk3528_scmi_clk_ofdata_to_platdata,
+};
+#endif
