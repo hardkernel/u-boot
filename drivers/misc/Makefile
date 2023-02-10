@@ -87,4 +87,8 @@ ifdef CONFIG_ROCKCHIP_RK3528
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3528-secure-otp.o
 endif
 
+ifdef CONFIG_ROCKCHIP_RK3562
+obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3562-secure-otp.o
+endif
+
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_HW_DECOMPRESS) += rockchip_decompress.o
