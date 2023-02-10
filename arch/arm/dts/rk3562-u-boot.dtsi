@@ -14,6 +14,16 @@
 		stdout-path = &uart2;
 		u-boot,spl-boot-order = &sdmmc0, &sdhci, &spi_nand, &spi_nor;
 	};
+
+	secure-otp@ff920000 {
+		compatible = "rockchip,rk3562-secure-otp";
+		reg = <0x0 0xff920000 0x0 0x4000>;
+		secure_conf = <0xff020034>;
+		mask_addr = <0x0>;
+		cru_rst_addr = <0xff130438>;
+		u-boot,dm-spl;
+		status = "okay";
+	};
 };
 
 &sys_grf {
