@@ -15,10 +15,12 @@
 		u-boot,spl-boot-order = &sdmmc, &spi_nand, &spi_nor, &nandc, &emmc;
 	};
 
-	secure_otp: secure_otp@0xff5d0000 {
+	secure-otp@ff5d0000 {
 		compatible = "rockchip,rv1126-secure-otp";
 		reg = <0xff5d0000 0x4000>;
 		secure_conf = <0xfe0a0008>;
+		u-boot,dm-spl;
+		status = "okay";
 	};
 };
 
@@ -147,11 +149,6 @@
 };
 
 &hw_decompress {
-	u-boot,dm-spl;
-	status = "okay";
-};
-
-&secure_otp {
 	u-boot,dm-spl;
 	status = "okay";
 };
