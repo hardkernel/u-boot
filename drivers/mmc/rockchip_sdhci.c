@@ -78,12 +78,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DLL_TXCLK_NO_INVERTER		BIT(29)
 #define DWCMSHC_EMMC_DLL_LOCKED		BIT(8)
 #define DWCMSHC_EMMC_DLL_TIMEOUT	BIT(9)
-
-#define DLL_RXCLK_TAPNUM_FROM_SW	BIT(24)
 #define DLL_RXCLK_NO_INVERTER		BIT(29)
 #define DLL_RXCLK_ORI_GATE		BIT(31)
-#define DLL_RXCLK_MAX_TAP		32
-
 #define DLL_CMDOUT_TAPNUM_90_DEGREES	0x8
 #define DLL_CMDOUT_TAPNUM_FROM_SW	BIT(24)
 #define DLL_CMDOUT_SRC_CLK_NEG		BIT(28)
@@ -116,7 +112,6 @@ struct rockchip_sdhc {
 	void *base;
 	struct rockchip_emmc_phy *phy;
 	struct clk emmc_clk;
-	u8 hs200_rx_tap;
 };
 
 struct sdhci_data {
@@ -127,7 +122,6 @@ struct sdhci_data {
 	u32 flags;
 #define RK_DLL_CMD_OUT		BIT(1)
 #define RK_RXCLK_NO_INVERTER	BIT(2)
-#define RK_RXCLK_SW_TUNING	BIT(3)
 
 	u8 hs200_tx_tap;
 	u8 hs400_tx_tap;
@@ -347,7 +341,7 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 {
 	struct rockchip_sdhc *priv = container_of(host, struct rockchip_sdhc, host);
 	struct sdhci_data *data = (struct sdhci_data *)dev_get_driver_data(priv->dev);
-	u32 txclk_tapnum, extra, rxclk_tapnum;
+	u32 txclk_tapnum, extra;
 	u16 clock_control;
 	int timeout = 500, ret;
 
@@ -385,19 +379,9 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 			udelay(1);
 			timeout--;
 		}
-
-		rxclk_tapnum = priv->hs200_rx_tap;
-		if ((data->flags & RK_RXCLK_NO_INVERTER) &&
-		    host->mmc->timing == MMC_TIMING_MMC_HS400) {
-			extra = data->hs200_tx_tap - data->hs400_tx_tap;
-			if (rxclk_tapnum + extra < DLL_RXCLK_MAX_TAP)
-				rxclk_tapnum += extra;
-		}
 		extra = DWCMSHC_EMMC_DLL_DLYENA | DLL_RXCLK_ORI_GATE;
 		if (data->flags & RK_RXCLK_NO_INVERTER)
 			extra |= DLL_RXCLK_NO_INVERTER;
-		if (data->flags & RK_RXCLK_SW_TUNING && priv->hs200_rx_tap)
-			extra |= DLL_RXCLK_TAPNUM_FROM_SW | rxclk_tapnum;
 		sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
 
 		txclk_tapnum = data->hs200_tx_tap;
@@ -432,7 +416,7 @@ static int dwcmshc_sdhci_emmc_set_clock(struct sdhci_host *host, unsigned int cl
 
 		/* reset the clock phase when the frequency is lower than 100MHz */
 		sdhci_writel(host, DWCMSHC_EMMC_DLL_BYPASS | DWCMSHC_EMMC_DLL_START, DWCMSHC_EMMC_DLL_CTRL);
-		sdhci_writel(host, DLL_RXCLK_ORI_GATE, DWCMSHC_EMMC_DLL_RXCLK);
+		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_RXCLK);
 		sdhci_writel(host, 0, DWCMSHC_EMMC_DLL_TXCLK);
 		sdhci_writel(host, 0, DECMSHC_EMMC_DLL_CMDOUT);
 		/*
@@ -471,30 +455,6 @@ static int dwcmshc_sdhci_set_enhanced_strobe(struct sdhci_host *host)
 	udelay(100);
 
 	return 0;
-}
-
-static void dwcmshc_sdhci_execute_tuning_end(struct sdhci_host *host)
-{
-	struct rockchip_sdhc *priv = container_of(host, struct rockchip_sdhc, host);
-	int rx_delay, dll_lock_num;
-	u32 extra;
-	u16 ctrl;
-
-	rx_delay = (sdhci_readl(host, DWCMSHC_EMMC_DLL_STATUS1) >> 8) & 0xFF;
-	dll_lock_num = sdhci_readl(host, DWCMSHC_EMMC_DLL_STATUS0) & 0xFF;
-
-	/* reset tuning */
-	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-	ctrl &= ~SDHCI_CTRL_TUNED_CLK;
-	ctrl &= ~SDHCI_CTRL_EXEC_TUNING;
-	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
-
-	priv->hs200_rx_tap = rx_delay * 16 / dll_lock_num;
-	extra = sdhci_readl(host, DWCMSHC_EMMC_DLL_RXCLK);
-	extra &= DLL_RXCLK_NO_INVERTER;
-	extra |= DWCMSHC_EMMC_DLL_DLYENA | DLL_RXCLK_ORI_GATE |
-		 DLL_RXCLK_TAPNUM_FROM_SW | priv->hs200_rx_tap;
-	sdhci_writel(host, extra, DWCMSHC_EMMC_DLL_RXCLK);
 }
 
 static void dwcmshc_sdhci_set_ios_post(struct sdhci_host *host)
@@ -616,9 +576,6 @@ static int rockchip_sdhci_probe(struct udevice *dev)
 	else if (dev_read_bool(dev, "mmc-hs400-1_8v"))
 		host->host_caps |= MMC_MODE_HS400;
 
-	if (data->flags && RK_RXCLK_SW_TUNING)
-		rockchip_sdhci_ops.execute_tuning_end = dwcmshc_sdhci_execute_tuning_end;
-
 	if (data->set_enhanced_strobe && dev_read_bool(dev, "mmc-hs400-enhanced-strobe"))
 		host->host_caps |= MMC_MODE_HS400ES;
 
@@ -689,10 +646,10 @@ static const struct sdhci_data rk3528_data = {
 	.get_phy = dwcmshc_emmc_get_phy,
 	.set_ios_post = dwcmshc_sdhci_set_ios_post,
 	.set_enhanced_strobe = dwcmshc_sdhci_set_enhanced_strobe,
-	.flags = RK_DLL_CMD_OUT | RK_RXCLK_NO_INVERTER | RK_RXCLK_SW_TUNING,
+	.flags = RK_DLL_CMD_OUT | RK_RXCLK_NO_INVERTER,
 	.hs200_tx_tap = 12,
-	.hs400_tx_tap = 6,
-	.hs400_cmd_tap = 6,
+	.hs400_tx_tap = 4,
+	.hs400_cmd_tap = 4,
 	.hs400_strbin_tap = 3,
 	.ddr50_strbin_delay_num = 10,
 };
@@ -702,7 +659,7 @@ static const struct sdhci_data rk3562_data = {
 	.get_phy = dwcmshc_emmc_get_phy,
 	.set_ios_post = dwcmshc_sdhci_set_ios_post,
 	.set_enhanced_strobe = dwcmshc_sdhci_set_enhanced_strobe,
-	.flags = RK_DLL_CMD_OUT | RK_RXCLK_NO_INVERTER | RK_RXCLK_SW_TUNING,
+	.flags = RK_DLL_CMD_OUT | RK_RXCLK_NO_INVERTER,
 	.hs200_tx_tap = 12,
 	.hs400_tx_tap = 6,
 	.hs400_cmd_tap = 6,

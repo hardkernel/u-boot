@@ -644,7 +644,6 @@ static int sdhci_execute_tuning(struct mmc *mmc, u32 opcode)
 {
 #endif
 	struct sdhci_host *host = mmc->priv;
-	int ret;
 	u16 ctrl;
 
 	/*
@@ -672,12 +671,7 @@ static int sdhci_execute_tuning(struct mmc *mmc, u32 opcode)
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
 	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
 
-	ret = __sdhci_execute_tuning(host, opcode);
-	
-	if (!ret && host->ops && host->ops->execute_tuning_end)
-		host->ops->execute_tuning_end(host);
-
-	return ret;
+	return __sdhci_execute_tuning(host, opcode);
 }
 
 #ifdef CONFIG_DM_MMC
