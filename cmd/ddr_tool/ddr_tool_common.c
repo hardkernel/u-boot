@@ -84,6 +84,13 @@ void get_print_available_addr(ulong *start_adr, ulong *length, int print_en)
 	for (i = 0; i < max_bank; i++) {
 		start_adr[i] = gd->bd->bi_dram[i].start;
 		length[i] = gd->bd->bi_dram[i].size;
+#if defined(CONFIG_ROCKCHIP_RV1126)
+		/* On RV1126, writing data to 0x00600000 will cause a crash. */
+		if (start_adr[i] == 0 && length[i] > 0x00700000) {
+			start_adr[i] = 0x00700000;
+			length[i] -= 0x00700000;
+		}
+#endif
 	}
 
 	length[max_bank - 1] = (gd->start_addr_sp - RESERVED_SP_SIZE -
