@@ -499,6 +499,7 @@ static int charge_extrem_low_power(struct udevice *dev)
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	struct udevice *fg = priv->fg;
 	int voltage, soc, charging = 1;
+	int first_poll_fg = 1;
 	static int timer_initialized;
 
 	voltage = fuel_gauge_get_voltage(fg);
@@ -506,6 +507,11 @@ static int charge_extrem_low_power(struct udevice *dev)
 		return -EINVAL;
 
 	while (voltage < pdata->low_power_voltage + 50) {
+		if (!first_poll_fg)
+			mdelay(FUEL_GAUGE_POLL_MS);
+
+		first_poll_fg = 0;
+
 		/* Check charger online */
 		charging = fg_charger_get_chrg_online(dev);
 		if (charging <= 0) {
