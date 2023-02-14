@@ -13,8 +13,8 @@
  * See other comments in that file.
  *
  */
-#ifndef _CMD_MEMTESTER_H
-#define _CMD_MEMTESTER_H
+#ifndef __CMD_DDR_TOOL_MEMTESTER_MEMTESTER_H
+#define __CMD_DDR_TOOL_MEMTESTER_MEMTESTER_H
 #include <linux/types.h>
 
 /* extern declarations. */
@@ -25,4 +25,4 @@ extern off_t physaddrbase;
 int doing_memtester(unsigned long *arg, unsigned long testenable,
 		    unsigned long loops, unsigned long err_exit,
 		    unsigned long fix_bit, unsigned long fix_level);
-#endif /* _CMD_MEMTESTER_H */
+#endif /* __CMD_DDR_TOOL_MEMTESTER_MEMTESTER_H */

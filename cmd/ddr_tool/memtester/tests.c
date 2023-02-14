@@ -17,7 +17,7 @@
 #include "memtester.h"
 #include "sizes.h"
 #include "types.h"
-#include "io_map.h"
+#include "../io_map.h"
 
 union {
 	unsigned char bytes[UL_LEN / 8];

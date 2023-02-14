@@ -4,8 +4,8 @@
  */
 
 /* Function declaration. */
-#ifndef _CMD_MEMTESTER_DDR_TOOL_COMMON_H
-#define _CMD_MEMTESTER_DDR_TOOL_COMMON_H
+#ifndef __CMD_DDR_TOOL_DDR_TOOL_COMMON_H
+#define __CMD_DDR_TOOL_DDR_TOOL_COMMON_H
 
 /* reserved 1MB for stack */
 #define RESERVED_SP_SIZE		0x100000
@@ -17,4 +17,4 @@ void print_memory(void *addr, ulong size);
 void get_print_available_addr(ulong *start_adr, ulong *length, int print_en);
 int judge_test_addr(ulong *arg, ulong *start_adr, ulong *length);
 int set_vdd_logic(u32 uv);
-#endif /* _CMD_MEMTESTER_DDR_TOOL_COMMON_H */
+#endif /* __CMD_DDR_TOOL_DDR_TOOL_COMMON_H */

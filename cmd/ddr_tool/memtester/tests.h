@@ -15,6 +15,9 @@
  *
  */
 
+#ifndef __CMD_DDR_TOOL_MEMTESTER_TESTS_H
+#define __CMD_DDR_TOOL_MEMTESTER_TESTS_H
+
 /* Function declaration. */
 
 int test_stuck_address(u32v *bufa, size_t count);
@@ -54,3 +57,5 @@ int test_8bit_wide_random(u32v *bufa, u32v *bufb, size_t count,
 int test_16bit_wide_random(u32v *bufa, u32v *bufb, size_t count,
 			   ul fix_bit, ul fix_level);
 #endif
+
+#endif /* __CMD_DDR_TOOL_MEMTESTER_TESTS_H */

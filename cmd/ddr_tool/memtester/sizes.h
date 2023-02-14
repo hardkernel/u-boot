@@ -12,8 +12,8 @@
  * This file contains some macro definitions for handling 32/64 bit platforms.
  *
  */
-#ifndef __MEMTESTER_SIZES_H
-#define __MEMTESTER_SIZES_H
+#ifndef __CMD_DDR_TOOL_MEMTESTER_SIZES_H
+#define __CMD_DDR_TOOL_MEMTESTER_SIZES_H
 
 #include <common.h>
 
@@ -26,4 +26,4 @@
 #define CHECKERBOARD2 0xaaaaaaaa
 #define UL_BYTE(x) ((x | x << 8 | x << 16 | x << 24))
 
-#endif /* __MEMTESTER_SIZES_H */
+#endif /* __CMD_DDR_TOOL_MEMTESTER_SIZES_H */

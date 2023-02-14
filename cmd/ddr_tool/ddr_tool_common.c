@@ -5,7 +5,7 @@
 
 #include <common.h>
 #include <power/regulator.h>
-#include "ddr_tester_common.h"
+#include "ddr_tool_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 

@@ -20,8 +20,8 @@
 #include "sizes.h"
 #include "types.h"
 #include "tests.h"
-#include "io_map.h"
-#include "ddr_tester_common.h"
+#include "../ddr_tool_common.h"
+#include "../io_map.h"
 
 #define EXIT_FAIL_NONSTARTER    0x01
 #define EXIT_FAIL_ADDRESSLINES  0x02
