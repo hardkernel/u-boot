@@ -424,7 +424,8 @@ static ulong rk3528_cgpll_matrix_get_rate(struct rk3528_clk_priv *priv,
 
 	div = (readl(&cru->clksel_con[con]) & mask) >> shift;
 
-	return is_halfdiv ? DIV_TO_RATE(prate * 2, (3 + 2 * div) + 1) : DIV_TO_RATE(prate, div);
+	/* NOTE: '-1' to balance the DIV_TO_RATE() 'div+1' */
+	return is_halfdiv ? DIV_TO_RATE(prate * 2, (3 + 2 * div) - 1) : DIV_TO_RATE(prate, div);
 }
 
 static ulong rk3528_cgpll_matrix_set_rate(struct rk3528_clk_priv *priv,
@@ -532,7 +533,8 @@ static ulong rk3528_cgpll_matrix_set_rate(struct rk3528_clk_priv *priv,
 	}
 
 	if (is_halfdiv)
-		div = DIV_ROUND_UP((prate * 2) - (3 * rate), 2 * rate);
+		/* NOTE: '+1' to balance the following rk_clrsetreg() 'div-1' */
+		div = DIV_ROUND_UP((prate * 2) - (3 * rate), 2 * rate) + 1;
 	else
 		div = DIV_ROUND_UP(prate, rate);
 
