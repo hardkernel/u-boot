@@ -53,9 +53,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PERI_GRF_BASE		0xff040000
 #define PERI_GRF_AUDIO_CON	0x0070
 
+#define PIPEPHY_GRF_BASE	0xff098000
+#define PIPEPHY_PIPE_CON5	0x0014
+
 #define TOP_CRU_BASE		0xff100000
 #define TOP_CRU_GATE_CON23	0x035c
-#define TOP_CRU_SOFTRST_CON17	0x0444
 #define TOP_CRU_SOFTRST_CON23	0x045c
 #define TOP_CRU_CM0_GATEMASK	0x0680
 
@@ -608,8 +610,8 @@ int arch_cpu_init(void)
 	writel(val & 0x00ffffff, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
 #endif
 
-	/* Assert reset the combphy_pu to save power and de-assert reset it in kernel */
-	writel(0x00080008, TOP_CRU_BASE + TOP_CRU_SOFTRST_CON17);
+	/* Assert reset the pipe phy to save power and de-assert when in use */
+	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
 
 #ifndef CONFIG_TPL_BUILD
 	qos_priority_init();
