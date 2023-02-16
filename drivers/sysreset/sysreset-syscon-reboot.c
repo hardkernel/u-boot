@@ -21,15 +21,16 @@ static const struct command static_defined_command[] = {
 	{ .name = "bootrom", .magic = BOOT_BROM_DOWNLOAD, }
 };
 
-static int syscon_reboot_request_by_mode(struct udevice *dev, const char *str)
+static int syscon_reboot_request_by_mode(struct udevice *dev, const char *mode)
 {
 	const char *prefix = CMD_PREFIX;
-	const char *mode;
 	char *command;
 	u32 magic;
 	int i;
 
-	mode = str ? str : "normal";
+	if (!mode)
+		return 0;
+
 	command = calloc(1, strlen(mode) + sizeof(prefix));
 	if (!command)
 		return -ENOMEM;
@@ -37,8 +38,8 @@ static int syscon_reboot_request_by_mode(struct udevice *dev, const char *str)
 	strcat(command, prefix);
 	strcat(command, mode);
 
-	magic = dev_read_u32_default(dev, command, -EINVAL);
-	if (magic == -EINVAL) {
+	magic = dev_read_u32_default(dev, command, BOOT_NORMAL);
+	if (magic == BOOT_NORMAL) {
 		for (i = 0; i < ARRAY_SIZE(static_defined_command); i++) {
 			if (!strcmp(static_defined_command[i].name, mode)) {
 				magic = static_defined_command[i].magic;
@@ -47,7 +48,7 @@ static int syscon_reboot_request_by_mode(struct udevice *dev, const char *str)
 		}
 	}
 
-	debug("## Reboot mode: %s(%x)\n\n", mode, magic);
+	printf("## Reboot mode: %s(%x)\n\n", mode, magic);
 
 	writel(magic, CONFIG_ROCKCHIP_BOOT_MODE_REG);
 	free(command);
