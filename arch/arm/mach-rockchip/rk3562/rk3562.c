@@ -66,10 +66,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU1_CRU_SOFTRST_CON02	0x0208
 #define PMU1_CRU_CM0_GATEMASK	0x0420
 
-#define VPU_IOC_BASE		0xff060000
-#define GPIO1A_IOMUX_SEL_0	0x0
-#define GPIO1A_IOMUX_SEL_1	0x4
-#define GPIO1B_IOMUX_SEL_0	0x8
+#define GPIO1A_IOMUX_SEL_L	0x0
+#define GPIO1A_IOMUX_SEL_H	0x4
+#define GPIO1B_IOMUX_SEL_L	0x8
 
 #define PMU_BASE_ADDR		0xff258000
 #define PMU2_BIU_IDLE_SFTCON0	0x110
@@ -628,9 +627,9 @@ int arch_cpu_init(void)
 	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST4_REG);
 
 	/* Set emmc iomux */
-	writel(0xffff1111, VPU_IOC_BASE + GPIO1A_IOMUX_SEL_0);
-	writel(0xffff1111, VPU_IOC_BASE + GPIO1A_IOMUX_SEL_1);
-	writel(0x0fff0111, VPU_IOC_BASE + GPIO1B_IOMUX_SEL_0);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_H);
+	writel(0x0fff0111, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
 
 #if defined(CONFIG_ROCKCHIP_SFC)
 	/* Set the fspi to access ddr memory */
@@ -638,8 +637,8 @@ int arch_cpu_init(void)
 	writel(val & 0x00ffffff, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
 
 	/* Set fspi iomux */
-	writel(0xffff2222, VPU_IOC_BASE + GPIO1A_IOMUX_SEL_0);
-	writel(0x00ff0022, VPU_IOC_BASE + GPIO1B_IOMUX_SEL_0);
+	writel(0xffff2222, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
+	writel(0x00ff0022, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
 #endif
 
 #endif
