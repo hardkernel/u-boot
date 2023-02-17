@@ -443,6 +443,25 @@ static int rk3562_combphy_cfg(struct rockchip_combphy_priv *priv)
 	clk_set_rate(&priv->ref_clk, 100000000);
 	param_write(priv->phy_grf, &cfg->pipe_clk_100m, true);
 
+	if (priv->mode == PHY_TYPE_PCIE) {
+		/* PLL KVCO tuning fine */
+		val = readl(priv->mmio + (0x20 << 2));
+		val &= ~(0x7 << 2);
+		val |= 0x2 << 2;
+		writel(val, priv->mmio + (0x20 << 2));
+
+		/* Enable controlling random jitter, aka RMJ */
+		writel(0x4, priv->mmio + (0xb << 2));
+
+		val = readl(priv->mmio + (0x5 << 2));
+		val &= ~(0x3 << 6);
+		val |= 0x1 << 6;
+		writel(val, priv->mmio + (0x5 << 2));
+
+		writel(0x32, priv->mmio + (0x11 << 2));
+		writel(0xf0, priv->mmio + (0xa << 2));
+	}
+
 	if (dev_read_bool(priv->dev, "rockchip,enable-ssc")) {
 		val = readl(priv->mmio + (0x7 << 2));
 		val |= BIT(4);
