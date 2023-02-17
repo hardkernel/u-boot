@@ -68,10 +68,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU1_CRU_SOFTRST_CON02	0x0208
 #define PMU1_CRU_CM0_GATEMASK	0x0420
 
-#define GPIO1A_IOMUX_SEL_L	0x0
-#define GPIO1A_IOMUX_SEL_H	0x4
-#define GPIO1B_IOMUX_SEL_L	0x8
-
 #define PMU_BASE_ADDR		0xff258000
 #define PMU2_BIU_IDLE_SFTCON0	0x110
 #define PMU2_BIU_IDLE_ACK_STS0	0x120
@@ -146,7 +142,18 @@ struct mm_region *mem_map = rk3562_mem_map;
 
 #define	GPIO0_IOC_BASE			0xFF080000
 #define	GPIO1_IOC_BASE			0xFF060000
+#define	GPIO1A_IOMUX_SEL_L		0x0
+#define	GPIO1A_IOMUX_SEL_H		0x4
+#define	GPIO1B_IOMUX_SEL_L		0x8
+#define	GPIO1_IOC_GPIO1A_DS0		0x200
+#define	GPIO1_IOC_GPIO1A_DS1		0x204
+#define	GPIO1_IOC_GPIO1B_DS0		0x210
+
 #define	GPIO2_IOC_BASE			0xFF060000
+#define	GPIO2_IOC_IO_VSEL0		0x300
+/* GPIO2_IOC_IO_VSEL0 */
+#define	POC_VCCIO2_VD_3V3		BIT(12)
+
 #define	GPIO3_IOC_BASE			0xFF070000
 #define	GPIO4_IOC_BASE			0xFF070000
 
@@ -602,14 +609,32 @@ int arch_cpu_init(void)
 	/* Set SAIx_MCLK as output default */
 	writel(0x0a100a10, PERI_GRF_BASE + PERI_GRF_AUDIO_CON);
 
+	/* Assert reset the pipe phy to save power and de-assert when in use */
+	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
+
 #if defined(CONFIG_ROCKCHIP_SFC)
 	/* Set the fspi to access ddr memory */
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
 	writel(val & 0x00ffffff, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
-#endif
 
-	/* Assert reset the pipe phy to save power and de-assert when in use */
-	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
+	/*
+	 * Fix fspi io ds level:
+	 *
+	 * level 2 for 1V8
+	 * level 3 for 3V3
+	 */
+	if (readl(GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L) == 0x2222) {
+		if (readl(GPIO2_IOC_BASE + GPIO2_IOC_IO_VSEL0) & POC_VCCIO2_VD_3V3) {
+			writel(0x3f3f0f0f, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1A_DS0);
+			writel(0x3f3f0f0f, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1A_DS1);
+			writel(0x3f3f0f0f, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1B_DS0);
+		} else {
+			writel(0x3f3f0707, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1A_DS0);
+			writel(0x3f3f0707, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1A_DS1);
+			writel(0x3f3f0707, GPIO1_IOC_BASE + GPIO1_IOC_GPIO1B_DS0);
+		}
+	}
+#endif
 
 	qos_priority_init();
 
