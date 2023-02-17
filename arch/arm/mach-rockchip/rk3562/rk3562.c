@@ -586,11 +586,9 @@ static void qos_priority_init(void)
 	writel(QOS_PRIORITY_LEVEL(2, 2), DMA2DDR_PRIORITY_REG);
 	writel(QOS_PRIORITY_LEVEL(2, 2), PCIE_PRIORITY_REG);
 }
-#endif
 
 int arch_cpu_init(void)
 {
-#if defined(CONFIG_SPL_BUILD)
 	u32 val;
 
 	/* Set the emmc to access ddr memory */
@@ -613,41 +611,11 @@ int arch_cpu_init(void)
 	/* Assert reset the pipe phy to save power and de-assert when in use */
 	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
 
-#ifndef CONFIG_TPL_BUILD
 	qos_priority_init();
-#endif
 
-#elif defined(CONFIG_SUPPORT_USBPLUG)
-	u32 val;
-
-	/* Set the usb to access ddr memory */
-	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST3_REG);
-	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST3_REG);
-
-	/* Set the emmc to access ddr memory */
-	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST4_REG);
-	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST4_REG);
-
-	/* Set emmc iomux */
-	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
-	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_H);
-	writel(0x0fff0111, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
-
-#if defined(CONFIG_ROCKCHIP_SFC)
-	/* Set the fspi to access ddr memory */
-	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
-	writel(val & 0x00ffffff, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
-
-	/* Set fspi iomux */
-	writel(0xffff2222, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
-	writel(0x00ff0022, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
-#endif
-
-#endif
 	return 0;
 }
 
-#ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
 	u32 val;
