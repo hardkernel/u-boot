@@ -478,7 +478,7 @@ void ab_update_root_partition(void)
 			ab_update_root_uuid();
 		break;
 	case IF_TYPE_MTD:
-		if (dev_desc->devnum == BLK_MTD_SPI_NAND) {
+		if (dev_desc->devnum == BLK_MTD_NAND || dev_desc->devnum == BLK_MTD_SPI_NAND) {
 			if (strstr(boot_args, "rootfstype=squashfs") || strstr(boot_args, "rootfstype=erofs"))
 				snprintf(root_part_dev, 64, "ubi.mtd=%d root=/dev/ubiblock0_0", part_num - 1);
 			else if (strstr(boot_args, "rootfstype=ubifs"))
