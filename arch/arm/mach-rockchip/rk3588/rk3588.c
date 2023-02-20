@@ -883,8 +883,15 @@ int arch_cpu_init(void)
 	secure_reg &= 0xffff0000;
 	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
 
-	/* Select clk_tx source as default for i2s2/i2s3 */
-	writel(0x03400340, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
+	/*
+	 * Select clk_tx source as default for i2s2/i2s3
+	 * Set I2Sx_MCLK as input default
+	 *
+	 * It's safe to set mclk as input default to avoid high freq glitch
+	 * which may make devices work unexpected. And then enabled by
+	 * kernel stage or any state where user use it.
+	 */
+	writel(0x03c703c7, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
 
 	if (readl(BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L) == 0x2222) {
 		/* Set the fspi m0 io ds level to 55ohm */
