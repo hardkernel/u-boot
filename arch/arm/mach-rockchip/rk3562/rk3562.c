@@ -606,8 +606,14 @@ int arch_cpu_init(void)
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST6_REG);
 	writel(val & 0xff0000ff, FIREWALL_DDR_BASE + FW_DDR_MST6_REG);
 
-	/* Set SAIx_MCLK as output default */
-	writel(0x0a100a10, PERI_GRF_BASE + PERI_GRF_AUDIO_CON);
+	/*
+	 * Set SAIx_MCLK as input default
+	 *
+	 * It's safe to set mclk as input default to avoid high freq glitch
+	 * which may make devices work unexpected. And then enabled by
+	 * kernel stage or any state where user use it.
+	 */
+	writel(0x0a100000, PERI_GRF_BASE + PERI_GRF_AUDIO_CON);
 
 	/* Assert reset the pipe phy to save power and de-assert when in use */
 	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
