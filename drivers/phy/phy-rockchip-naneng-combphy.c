@@ -63,6 +63,7 @@ struct rockchip_combphy_grfcfg {
 	struct combphy_reg pipe_xpcs_phy_ready;
 	struct combphy_reg u3otg0_port_en;
 	struct combphy_reg u3otg1_port_en;
+	struct combphy_reg pipe_phy_grf_reset;
 };
 
 struct rockchip_combphy_cfg {
@@ -180,6 +181,7 @@ static int rockchip_combphy_set_mode(struct rockchip_combphy_priv *priv)
 static int rockchip_combphy_init(struct phy *phy)
 {
 	struct rockchip_combphy_priv *priv = dev_get_priv(phy->dev);
+	const struct rockchip_combphy_grfcfg *cfg = priv->cfg->grfcfg;
 	int ret;
 
 	ret = clk_enable(&priv->ref_clk);
@@ -192,6 +194,9 @@ static int rockchip_combphy_init(struct phy *phy)
 
 	reset_deassert(&priv->phy_rst);
 
+	if (cfg->pipe_phy_grf_reset.enable)
+		param_write(priv->phy_grf, &cfg->pipe_phy_grf_reset, false);
+
 	return 0;
 
 err_clk:
@@ -203,9 +208,13 @@ err_clk:
 static int rockchip_combphy_exit(struct phy *phy)
 {
 	struct rockchip_combphy_priv *priv = dev_get_priv(phy->dev);
+	const struct rockchip_combphy_grfcfg *cfg = priv->cfg->grfcfg;
 
-	clk_disable(&priv->ref_clk);
+	if (cfg->pipe_phy_grf_reset.enable)
+		param_write(priv->phy_grf, &cfg->pipe_phy_grf_reset, true);
+
 	reset_assert(&priv->phy_rst);
+	clk_disable(&priv->ref_clk);
 
 	return 0;
 }
@@ -492,6 +501,7 @@ static const struct rockchip_combphy_grfcfg rk3562_combphy_grfcfgs = {
 	.con1_for_pcie		= { 0x0004, 15, 0, 0x00, 0x0000 },
 	.con2_for_pcie		= { 0x0008, 15, 0, 0x00, 0x0101 },
 	.con3_for_pcie		= { 0x000c, 15, 0, 0x00, 0x0200 },
+	.pipe_phy_grf_reset	= { 0x0014, 1, 0, 0x3, 0x1 },
 	/* pipe-grf */
 	.u3otg0_port_en		= { 0x0094, 15, 0, 0x0181, 0x1100 },
 };
