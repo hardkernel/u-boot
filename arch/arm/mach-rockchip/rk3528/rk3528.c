@@ -22,6 +22,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FW_DDR_MST16_REG 	0x80
 #define FW_DDR_MST_REG		0xf0
 
+#define VENC_GRF_BASE		0xff320000
+#define VENC_GRF_CON1		0x4
+
+#define VPU_GRF_BASE		0xff340000
+#define VPU_GRF_CON4		0x14
+
 #define PMU_SGRF_BASE		0xff440000
 #define PMU_SGRF_SOC_CON4	0x10
 #define PMU_SGRF_SOC_CON5	0x14
@@ -377,6 +383,17 @@ int arch_cpu_init(void)
 {
 #if defined(CONFIG_SPL_BUILD)
 	u32 val;
+
+	/*
+	 * Select clk_tx source as default for i2s2/i2s3
+	 * Set I2Sx_MCLK as input default
+	 *
+	 * It's safe to set mclk as input default to avoid high freq glitch
+	 * which may make devices work unexpected. And then enabled by
+	 * kernel stage or any state where user use it.
+	 */
+	writel(0x00020002, VPU_GRF_BASE + VPU_GRF_CON4);
+	writel(0x40004000, VENC_GRF_BASE + VENC_GRF_CON1);
 
 	/* Set the emmc to access ddr memory */
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST6_REG);
