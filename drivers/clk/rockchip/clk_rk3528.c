@@ -1839,6 +1839,21 @@ static int rk3528_clk_init(struct rk3528_clk_priv *priv)
 	priv->sync_kernel = false;
 
 #ifdef CONFIG_SPL_BUILD
+	/*
+	 * BOOTROM:
+	 *	CPU 1902/2(postdiv1)=546M
+	 *	CPLL 996/2(postdiv1)=498M
+	 *	GPLL 1188/2(postdiv1)=594M
+	 *	   |-- clk_matrix_200m_src_div=1 => rate: 300M
+	 *	   |-- clk_matrix_300m_src_div=2 => rate: 200M
+	 *
+	 * Avoid overclocking when change GPLL rate:
+	 *	Change clk_matrix_200m_src_div to 5.
+	 *	Change clk_matrix_300m_src_div to 3.
+	 */
+	writel(0x01200120, &priv->cru->clksel_con[1]);
+	writel(0x00030003, &priv->cru->clksel_con[2]);
+
 	if (!priv->armclk_enter_hz) {
 		priv->armclk_enter_hz =
 			rockchip_pll_get_rate(&rk3528_pll_clks[APLL],
