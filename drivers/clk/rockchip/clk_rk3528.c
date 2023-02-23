@@ -216,13 +216,13 @@ static int rk3528_armclk_set_clk(struct rk3528_clk_priv *priv, ulong new_rate)
 		rk_clrsetreg(&cru->clksel_con[40], RK3528_DIV_PCLK_DBG_MASK,
 			     rate->pclk_div << RK3528_DIV_PCLK_DBG_SHIFT);
 
-		rk_clrsetreg(&cru->clksel_con[5], RK3528_DIV_ACLK_M_CORE_MASK,
+		rk_clrsetreg(&cru->clksel_con[39], RK3528_DIV_ACLK_M_CORE_MASK,
 			     rate->aclk_div << RK3528_DIV_ACLK_M_CORE_SHIFT);
 	} else if (old_rate < new_rate) {
 		rk_clrsetreg(&cru->clksel_con[40], RK3528_DIV_PCLK_DBG_MASK,
 			     rate->pclk_div << RK3528_DIV_PCLK_DBG_SHIFT);
 
-		rk_clrsetreg(&cru->clksel_con[5], RK3528_DIV_ACLK_M_CORE_MASK,
+		rk_clrsetreg(&cru->clksel_con[39], RK3528_DIV_ACLK_M_CORE_MASK,
 			     rate->aclk_div << RK3528_DIV_ACLK_M_CORE_SHIFT);
 
 		if (rockchip_pll_set_rate(&rk3528_pll_clks[APLL],
