@@ -142,14 +142,14 @@ static void *fit_get_blob(struct blk_desc *dev_desc,
 {
 	__maybe_unused int conf_noffset;
 	disk_partition_t part;
-	char *part_name;
+	char *part_name = PART_BOOT;
 	void *fit, *fdt;
 	int blk_num;
 
+#ifndef CONFIG_ANDROID_AB
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
 		part_name = PART_RECOVERY;
-	else
-		part_name = PART_BOOT;
+#endif
 
 	if (part_get_info_by_name(dev_desc, part_name, &part) < 0) {
 		FIT_I("No %s partition\n", part_name);
@@ -292,9 +292,9 @@ static int fit_image_get_subnode(const void *fit, int noffset, const char *name)
 	return -ENOENT;
 }
 
-static int fit_image_load_one(const void *fit, struct blk_desc *dev_desc,
-			      disk_partition_t *part, char *prop_name,
-			      void *data, int check_hash)
+int fit_image_load_one(const void *fit, struct blk_desc *dev_desc,
+		       disk_partition_t *part, char *prop_name,
+		       void *data, int check_hash)
 {
 	u32 blk_num, blk_off;
 	int offset, size;
@@ -404,65 +404,37 @@ static void fit_msg(const void *fit)
 }
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-static int fit_image_load_resource(const void *fit, struct blk_desc *dev_desc,
-				   disk_partition_t *part, ulong *addr)
+ulong fit_image_init_resource(struct blk_desc *dev_desc,
+			      disk_partition_t *out_part,
+			      ulong *out_blk_offset)
 {
-	int offset, size;
-	int ret;
-	void *data;
-
-	ret = fdt_image_get_offset_size(fit, FIT_MULTI_PROP, &offset, &size);
-	if (ret)
-		return ret;
-
-	data = malloc(ALIGN(size, dev_desc->blksz));
-	if (!data)
-		return -ENOMEM;
-
-	*addr = (ulong)data;
-
-	return fit_image_load_one(fit, dev_desc, part, FIT_MULTI_PROP,
-				  data, IS_ENABLED(CONFIG_FIT_SIGNATURE));
-}
-
-int fit_image_init_resource(void)
-{
-	struct blk_desc *dev_desc;
 	disk_partition_t part;
+	int noffset, pos;
 	int ret = 0;
 	void *fit;
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		FIT_I("No dev_desc!\n");
+	if (!dev_desc)
 		return -ENODEV;
-	}
 
 	fit = fit_get_blob(dev_desc, &part, true);
 	if (!fit)
 		return -EINVAL;
 
-#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-	ulong rsce;
+	noffset = fit_default_conf_get_node(fit, FIT_MULTI_PROP);
+	if (noffset < 0)
+		return noffset;
 
-	ret = fit_image_load_resource(fit, dev_desc, &part, &rsce);
-	if (ret) {
-		FIT_I("Failed to load resource\n");
-		free(fit);
+	ret = fit_image_get_data_position(fit, noffset, &pos);
+	if (ret < 0)
 		return ret;
-	}
 
-	ret = resource_create_ram_list(dev_desc, (void *)rsce);
-	if (ret) {
-		FIT_I("Failed to create resource list\n");
-		free(fit);
-		return ret;
-	}
-#endif
+	*out_part = part;
+	*out_blk_offset = DIV_ROUND_UP(pos, dev_desc->blksz);
+
 	fit_msg(fit);
 	free(fit);
 
-	return ret;
+	return 0;
 }
 #else
 int fit_image_read_dtb(void *fdt_addr)

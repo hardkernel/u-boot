@@ -100,6 +100,49 @@ u32 android_bcb_msg_sector_offset(void)
 #endif
 }
 
+#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+int android_image_init_resource(struct blk_desc *desc,
+				disk_partition_t *out_part,
+				ulong *out_blk_offset)
+{
+	struct andr_img_hdr *hdr = NULL;
+	const char *part_name = ANDROID_PARTITION_BOOT;
+	disk_partition_t part;
+	ulong offset;
+	int ret = 0;
+
+	if (!desc)
+		return -ENODEV;
+
+#ifndef CONFIG_ANDROID_AB
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
+		part_name = ANDROID_PARTITION_RECOVERY;
+#endif
+	if (part_get_info_by_name(desc, part_name, &part) < 0)
+		return -ENOENT;
+
+	hdr = populate_andr_img_hdr(desc, &part);
+	if (!hdr)
+		return -EINVAL;
+
+	if (hdr->header_version >= 2 && hdr->dtb_size)
+		env_update("bootargs", "androidboot.dtb_idx=0");
+
+	if (hdr->header_version <= 2) {
+		offset = hdr->page_size +
+			ALIGN(hdr->kernel_size, hdr->page_size) +
+			ALIGN(hdr->ramdisk_size, hdr->page_size);
+		*out_part = part;
+		*out_blk_offset = DIV_ROUND_UP(offset, desc->blksz);
+	} else {
+		ret = -EINVAL;
+	}
+	free(hdr);
+
+	return ret;
+}
+#endif
+
 static ulong android_image_get_kernel_addr(const struct andr_img_hdr *hdr)
 {
 	/*

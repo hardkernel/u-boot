@@ -12,7 +12,8 @@
 void *uimage_load_bootables(void);
 int uimage_sysmem_free_each(image_header_t *img, u32 ramdisk_sz);
 int uimage_sysmem_reserve_each(image_header_t *hdr, u32 *ramdisk_sz);
-int uimage_init_resource(void);
-
+int uimage_init_resource(struct blk_desc *dev_desc,
+			 disk_partition_t *out_part,
+			 ulong *out_blk_offset);
 #endif
 

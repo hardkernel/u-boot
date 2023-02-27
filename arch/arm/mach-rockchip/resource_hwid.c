@@ -267,12 +267,7 @@ struct resource_file *resource_read_hwid_dtb(void)
 
 	hwid_init_data();
 
-	if (list_empty(&entrys_head)) {
-		if (resource_init_list())
-			return NULL;
-	}
-
-	list_for_each(node, &entrys_head) {
+	list_for_each(node, &entry_head) {
 		file = list_entry(node, struct resource_file, link);
 		if (!strstr(file->name, DTB_SUFFIX))
 			continue;
