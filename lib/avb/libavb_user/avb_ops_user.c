@@ -452,14 +452,17 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 			preload_info = &data->vendor_boot;
 		else if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9))
 			preload_info = &data->init_boot;
+		else if (!strncmp(partition, ANDROID_PARTITION_RESOURCE, 8))
+			preload_info = &data->resource;
 
 		if (!preload_info) {
 			printf("Error: unknown full load partition '%s'\n", partition);
 			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 		}
 
-		printf("preloaded: full image from '%s' at 0x%08lx - 0x%08lx\n",
-		       partition, (ulong)preload_info->addr,
+		printf("preloaded: %sfull image from '%s' at 0x%08lx - 0x%08lx\n",
+		       preload_info->size ? "pre-" : "", partition,
+		       (ulong)preload_info->addr,
 		       (ulong)preload_info->addr + num_bytes);
 
 		/* If the partition hasn't yet been preloaded, do it now.*/
@@ -478,7 +481,8 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 		if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9) ||
 		    !strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11) ||
 		    !strncmp(partition, ANDROID_PARTITION_BOOT, 4) ||
-		    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8)) {
+		    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8) ||
+		    !strncmp(partition, ANDROID_PARTITION_RESOURCE, 8)) {
 			printf("preloaded: distribute image from '%s'\n", partition);
 		} else {
 			printf("Error: unknown preloaded partition '%s'\n", partition);
@@ -490,7 +494,8 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 		 * here we just return a dummy buffer.
 		 */
 		if (!strncmp(partition, ANDROID_PARTITION_INIT_BOOT, 9) ||
-		    !strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11)) {
+		    !strncmp(partition, ANDROID_PARTITION_VENDOR_BOOT, 11) ||
+		    !strncmp(partition, ANDROID_PARTITION_RESOURCE, 8)) {
 			*out_pointer = (u8 *)avb_malloc(ARCH_DMA_MINALIGN);
 			*out_num_bytes_preloaded = num_bytes; /* return what it expects */
 			return AVB_IO_RESULT_OK;

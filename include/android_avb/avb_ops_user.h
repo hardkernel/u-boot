@@ -74,9 +74,9 @@ struct AvbOpsData {
 	const char *devnum;
 	const char *slot_suffix;
 	struct preloaded_partition boot;
-	struct preloaded_partition recovery;
 	struct preloaded_partition vendor_boot;
 	struct preloaded_partition init_boot;
+	struct preloaded_partition resource;
 };
 
 #ifdef __cplusplus
