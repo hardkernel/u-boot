@@ -483,7 +483,7 @@ static void board_debug_init(void)
 		printf("Cmd interface: disabled\n");
 }
 
-#if defined(CONFIG_MTD_BLK) && defined(CONFIG_USING_KERNEL_DTB)
+#ifdef CONFIG_MTD_BLK
 static void board_mtd_blk_map_partitions(void)
 {
 	struct blk_desc *dev_desc;
@@ -497,43 +497,31 @@ static void board_mtd_blk_map_partitions(void)
 int board_init(void)
 {
 	board_debug_init();
-	/* optee select security level */
-#ifdef CONFIG_OPTEE_CLIENT
-	trusty_select_security_level();
-#endif
-
 #ifdef DEBUG
 	soc_clk_dump();
 #endif
-
-#ifdef CONFIG_USING_KERNEL_DTB
 #ifdef CONFIG_MTD_BLK
 	board_mtd_blk_map_partitions();
 #endif
+#ifdef CONFIG_OPTEE_CLIENT
+	trusty_select_security_level();
+#endif
+#ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
 	early_download();
 
-	/*
-	 * pmucru isn't referenced on some platforms, so pmucru driver can't
-	 * probe that the "assigned-clocks" is unused.
-	 */
 	clks_probe();
 #ifdef CONFIG_DM_REGULATOR
-	if (regulators_enable_boot_on(is_hotkey(HK_REGULATOR)))
-		debug("%s: Can't enable boot on regulator\n", __func__);
+	regulators_enable_boot_on(is_hotkey(HK_REGULATOR));
 #endif
-
 #ifdef CONFIG_ROCKCHIP_IO_DOMAIN
 	io_domain_init();
 #endif
-
 	set_armclk_rate();
-
 #ifdef CONFIG_DM_DVFS
 	dvfs_init(true);
 #endif
-
 #ifdef CONFIG_ANDROID_AB
 	if (ab_decrease_tries())
 		printf("Decrease ab tries count fail!\n");
