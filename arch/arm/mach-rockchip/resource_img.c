@@ -309,6 +309,29 @@ static int resource_init(struct blk_desc *desc,
 {
 	printf("RESC: '%s', blk@0x%08lx\n", part->name, part->start + blk_offset);
 
+#ifdef CONFIG_ANDROID_AVB
+	char hdr[512];
+	ulong buf = 0;
+	int ret;
+
+	if (blk_dread(desc, part->start, 1, hdr) != 1)
+		return -EIO;
+
+	/* only handle android boot/recovery.img and resource.img, ignore fit */
+	if (!android_image_check_header((void *)hdr) ||
+	    !resource_check_header((void *)hdr)) {
+		ret = android_image_verify_resource((const char *)part->name, &buf);
+		if (ret) {
+			printf("RESC: '%s', avb verify fail: %d\n", part->name, ret);
+			return ret;
+		}
+
+		/* already full load in ram ? */
+		if (buf && !resource_check_header((void *)buf))
+			return resource_setup_ram_list(desc, (void *)buf);
+	}
+#endif
+
 	return resource_setup_blk_list(desc, part->start + blk_offset);
 }
 
