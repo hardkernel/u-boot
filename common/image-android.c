@@ -6,8 +6,9 @@
 
 #include <common.h>
 #include <image.h>
-#include <android_image.h>
+#include <android_ab.h>
 #include <android_bootloader.h>
+#include <android_image.h>
 #include <malloc.h>
 #include <mapmem.h>
 #include <errno.h>
@@ -37,23 +38,63 @@ DECLARE_GLOBAL_DATA_PTR;
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
 static u32 android_kernel_comp_type = IH_COMP_NONE;
 
-u32 android_image_major_version(void)
+static int android_version_init(void)
 {
-	/* MSB 7-bits */
-	return gd->bd->bi_andr_version >> 25 & 0x7f;
+	struct andr_img_hdr *hdr = NULL;
+	struct blk_desc *desc;
+	const char *part_name = PART_BOOT;
+	disk_partition_t part;
+	int os_version;
+
+	desc = rockchip_get_bootdev();
+	if (!desc) {
+		printf("No bootdev\n");
+		return -1;
+	}
+
+#ifdef CONFIG_ANDROID_AB
+	part_name = ab_can_find_recovery_part() ? PART_RECOVERY : PART_BOOT;
+#endif
+	if (part_get_info_by_name(desc, part_name, &part) < 0)
+		return -1;
+
+	hdr = populate_andr_img_hdr(desc, &part);
+	if (!hdr)
+		return -1;
+
+	os_version = hdr->os_version;
+	if (os_version)
+		printf("Android %u.%u, Build %u.%u, v%d\n",
+		       (os_version >> 25) & 0x7f, (os_version >> 18) & 0x7F,
+		       ((os_version >> 4) & 0x7f) + 2000, os_version & 0x0F,
+		       hdr->header_version);
+	free(hdr);
+
+	return (os_version >> 25) & 0x7f;
 }
 
 u32 android_bcb_msg_sector_offset(void)
 {
+	static int android_version = -1;	/* static */
+
 	/*
-	 * Rockchip platforms defines BCB message at the 16KB offset of
-	 * misc partition while the Google defines it at 0x00 offset.
+	 * get android os version:
 	 *
-	 * From Android-Q, the 0x00 offset is mandary on Google VTS, so that
-	 * this is a compatibility according to android image 'os_version'.
+	 * There are two types of misc.img:
+	 *	Rockchip platforms defines BCB message at the 16KB offset of
+	 *	misc.img except for the Android version >= 10. Because Google
+	 *	defines it at 0x00 offset, and from Android-10 it becoms mandary
+	 *	on Google VTS.
+	 *
+	 * So we must get android 'os_version' to identify which type we
+	 * are using, then we could able to use rockchip_get_boot_mode()
+	 * which reads BCB from misc.img.
 	 */
 #ifdef CONFIG_RKIMG_BOOTLOADER
-	return (android_image_major_version() >= 10) ? 0x00 : 0x20;
+	if (android_version < 0)
+		android_version = android_version_init();
+
+	return (android_version >= 10) ? 0x00 : 0x20;
 #else
 	return 0x00;
 #endif
