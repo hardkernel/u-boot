@@ -19,6 +19,7 @@
 #include <key.h>
 #include <mmc.h>
 #include <malloc.h>
+#include <mtd_blk.h>
 #include <nvme.h>
 #include <scsi.h>
 #include <stdlib.h>
@@ -269,6 +270,9 @@ struct blk_desc *rockchip_get_bootdev(void)
 
 	printf("PartType: %s\n", part_get_type(dev_desc));
 
+#ifdef CONFIG_MTD_BLK
+	mtd_blk_map_partitions(dev_desc);
+#endif
 	return dev_desc;
 }
 

@@ -483,25 +483,11 @@ static void board_debug_init(void)
 		printf("Cmd interface: disabled\n");
 }
 
-#ifdef CONFIG_MTD_BLK
-static void board_mtd_blk_map_partitions(void)
-{
-	struct blk_desc *dev_desc;
-
-	dev_desc = rockchip_get_bootdev();
-	if (dev_desc)
-		mtd_blk_map_partitions(dev_desc);
-}
-#endif
-
 int board_init(void)
 {
 	board_debug_init();
 #ifdef DEBUG
 	soc_clk_dump();
-#endif
-#ifdef CONFIG_MTD_BLK
-	board_mtd_blk_map_partitions();
 #endif
 #ifdef CONFIG_OPTEE_CLIENT
 	trusty_select_security_level();
