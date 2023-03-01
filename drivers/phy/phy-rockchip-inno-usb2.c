@@ -805,6 +805,17 @@ static int rk3328_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 	return 0;
 }
 
+static int rv1106_usb2phy_tuning(struct rockchip_usb2phy *rphy)
+{
+	u32 reg;
+
+	/* Set HS disconnect detect mode to single ended detect mode */
+	reg = readl(rphy->phy_base + 0x70);
+	writel(reg | BIT(2), rphy->phy_base + 0x70);
+
+	return 0;
+}
+
 static int rk3528_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 {
 	u32 reg;
@@ -1348,6 +1359,7 @@ static const struct rockchip_usb2phy_cfg rv1106_phy_cfgs[] = {
 	{
 		.reg = 0xff3e0000,
 		.num_ports	= 1,
+		.phy_tuning	= rv1106_usb2phy_tuning,
 		.clkout_ctl	= { 0x0058, 4, 4, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
