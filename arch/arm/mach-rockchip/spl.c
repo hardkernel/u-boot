@@ -368,7 +368,10 @@ void spl_next_stage(struct spl_image_info *spl)
 		spl->next_stage = SPL_NEXT_STAGE_KERNEL;
 		break;
 	default:
-		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		if ((reg_boot_mode & REBOOT_FLAG) != REBOOT_FLAG)
+			spl->next_stage = SPL_NEXT_STAGE_KERNEL;
+		else
+			spl->next_stage = SPL_NEXT_STAGE_UBOOT;
 	}
 }
 #endif
