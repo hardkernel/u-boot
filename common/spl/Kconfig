@@ -900,6 +900,13 @@ config SPL_KERNEL_BOOT
 	help
 	  Enable boot kernel in SPL.
 
+config SPL_KERNEL_BOOT_PREBUILT
+	bool "Enable boot kernel in SPL with prebuilt program"
+	depends on SPL_KERNEL_BOOT
+	default y
+	help
+	  Enable boot kernel in SPL with prebuilt program.
+
 config SPL_KERNEL_BOOT_SECTOR
 	hex "Sector address to load kernel in SPL"
 	depends on SPL_KERNEL_BOOT
