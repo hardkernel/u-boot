@@ -1742,20 +1742,48 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 };
 
 static const struct udevice_id rockchip_usb2phy_ids[] = {
+#ifdef CONFIG_ROCKCHIP_RK1808
 	{ .compatible = "rockchip,rk1808-usb2phy", .data = (ulong)&rk1808_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3036
 	{ .compatible = "rockchip,rk3036-usb2phy", .data = (ulong)&rk3036_phy_cfgs },
+#endif
+#if defined CONFIG_ROCKCHIP_RK3128 || defined CONFIG_ROCKCHIP_RK3126
 	{ .compatible = "rockchip,rk3128-usb2phy", .data = (ulong)&rk312x_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK322X
 	{ .compatible = "rockchip,rk322x-usb2phy", .data = (ulong)&rk322x_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3308
 	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3308_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3328
 	{ .compatible = "rockchip,rk3328-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3368
 	{ .compatible = "rockchip,rk3368-usb2phy", .data = (ulong)&rk3368_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3399
 	{ .compatible = "rockchip,rk3399-usb2phy", .data = (ulong)&rk3399_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3528
 	{ .compatible = "rockchip,rk3528-usb2phy", .data = (ulong)&rk3528_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3562
 	{ .compatible = "rockchip,rk3562-usb2phy", .data = (ulong)&rk3562_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3568
 	{ .compatible = "rockchip,rk3568-usb2phy", .data = (ulong)&rk3568_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RK3588
 	{ .compatible = "rockchip,rk3588-usb2phy", .data = (ulong)&rk3588_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RV1106
 	{ .compatible = "rockchip,rv1106-usb2phy", .data = (ulong)&rv1106_phy_cfgs },
+#endif
+#ifdef CONFIG_ROCKCHIP_RV1108
 	{ .compatible = "rockchip,rv1108-usb2phy", .data = (ulong)&rv1108_phy_cfgs },
+#endif
 	{ }
 };
 
