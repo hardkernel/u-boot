@@ -301,6 +301,7 @@ int init_kernel_dtb(void)
 #endif
 	ulong fdt_addr = 0;
 	int ret = -ENODEV;
+	int init_resource = 0;
 
 	printf("DM: v%d\n", IS_ENABLED(CONFIG_USING_KERNEL_DTB_V2) ? 2 : 1);
 
@@ -318,7 +319,7 @@ int init_kernel_dtb(void)
 	}
 
 	if (IS_ENABLED(CONFIG_EMBED_KERNEL_DTB_ALWAYS)) {
-		resource_init_list();
+		init_resource = 1;
 		printf("Always embed kernel dtb\n");
 		goto dtb_embed;
 	}
@@ -392,6 +393,9 @@ dtb_okay:
 	ret = boot_fdt_add_sysmem_rsv_regions((void *)gd->fdt_blob);
 	if (ret)
 		return ret;
+
+	if (init_resource)
+		resource_init_list();
 
 	return 0;
 }
