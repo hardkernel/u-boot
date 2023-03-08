@@ -37,11 +37,13 @@ uint64_t key_timer(uint64_t base)
 	return (cntpct > base) ? (cntpct - base) : 0;
 }
 
+#ifdef CONFIG_ADC
 static int key_adc_event(struct dm_key_uclass_platdata *uc_key, int adcval)
 {
 	return (adcval <= uc_key->max && adcval >= uc_key->min) ?
 		KEY_PRESS_DOWN : KEY_PRESS_NONE;
 }
+#endif
 
 static int key_gpio_event(struct dm_key_uclass_platdata *uc_key)
 {
@@ -108,9 +110,10 @@ int key_is_pressed(int event)
 
 static int key_core_read(struct dm_key_uclass_platdata *uc_key)
 {
-	unsigned int adcval;
-
 	if (uc_key->type == ADC_KEY) {
+#ifdef CONFIG_ADC
+		unsigned int adcval;
+
 		if (adc_channel_single_shot("saradc",
 					    uc_key->channel, &adcval)) {
 			KEY_ERR("%s failed to read saradc\n", uc_key->name);
@@ -118,6 +121,9 @@ static int key_core_read(struct dm_key_uclass_platdata *uc_key)
 		}
 
 		return key_adc_event(uc_key, adcval);
+#else
+		return KEY_NOT_EXIST;
+#endif
 	}
 
 	return (uc_key->code == KEY_POWER) ?
