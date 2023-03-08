@@ -414,6 +414,34 @@ static void cmdline_handle(void)
 	}
 }
 
+static void scan_run_cmd(void)
+{
+	char *config = CONFIG_ROCKCHIP_CMD;
+	char *cmd, *key;
+
+	key = strchr(config, ' ');
+	if (!key)
+		return;
+
+	cmd = strdup(config);
+	cmd[key - config] = 0;
+	key++;
+
+	if (!strcmp(key, "-")) {
+		run_command(cmd, 0);
+	} else {
+#ifdef CONFIG_DM_KEY
+		ulong map;
+
+		map = simple_strtoul(key, NULL, 10);
+		if (key_is_pressed(key_read(map))) {
+			printf("## Key<%ld> pressed... run cmd '%s'\n", map, cmd);
+			run_command(cmd, 0);
+		}
+#endif
+	}
+}
+
 int board_late_init(void)
 {
 #ifdef CONFIG_ROCKCHIP_SET_ETHADDR
@@ -423,7 +451,7 @@ int board_late_init(void)
 	rockchip_set_serialno();
 #endif
 	setup_download_mode();
-
+	scan_run_cmd();
 #ifdef CONFIG_ROCKCHIP_USB_BOOT
 	boot_from_udisk();
 #endif

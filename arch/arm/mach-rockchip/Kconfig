@@ -976,6 +976,16 @@ config ROCKCHIP_HOTKEY
 	help
 	  Define a lot of hotkeys for debug.
 
+config ROCKCHIP_CMD
+	string "Rockchip specific command"
+	default ""
+	help
+	  It defines a command to be run when the key is pressed if assigned.
+	  String format: "cmd key".
+	  @cmd: any U-Boot cmd.
+	  @key: any key map id, '-' standard for ignore.
+	  e.g. "sd_update 115", 115 is KEY_VOLUMEUP.
+
 config GICV2
 	bool "ARM GICv2"
 
