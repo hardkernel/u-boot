@@ -1058,7 +1058,9 @@ static int gpio_post_bind(struct udevice *dev)
 UCLASS_DRIVER(gpio) = {
 	.id		= UCLASS_GPIO,
 	.name		= "gpio",
+#ifndef CONFIG_GPIO_NO_UC_FLAG_SEQ_ALIAS
 	.flags		= DM_UC_FLAG_SEQ_ALIAS,
+#endif
 	.post_probe	= gpio_post_probe,
 	.post_bind	= gpio_post_bind,
 	.pre_remove	= gpio_pre_remove,

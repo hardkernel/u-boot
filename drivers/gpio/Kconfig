@@ -24,6 +24,15 @@ config GPIO_HOG
 	  is a mechanism providing automatic GPIO request and config-
 	  uration as part of the gpio-controller's driver probe function.
 
+config GPIO_NO_UC_FLAG_SEQ_ALIAS
+	bool "Disable GPIO uclass sequence themselves with aliases"
+	depends on USING_KERNEL_DTB
+	default n
+	help
+	  Disable GPIO uclass sequence, this is a workaround when kernel
+	  dtb feature is enabled. Avoid gpio device probe failed when
+	  alloc req_seq both for gpio devices from U-Boot and kernel dtb.
+
 config ALTERA_PIO
 	bool "Altera PIO driver"
 	depends on DM_GPIO
