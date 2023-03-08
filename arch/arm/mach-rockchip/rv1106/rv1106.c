@@ -538,15 +538,3 @@ int rk_board_scan_bootdev(void)
 }
 #endif
 
-int rk_board_late_init(void)
-{
-#if defined(CONFIG_CMD_SCRIPT_UPDATE)
-	struct blk_desc *desc;
-
-	desc = rockchip_get_bootdev();
-	if (desc && desc->if_type == IF_TYPE_MMC && desc->devnum == 1)
-		run_command("sd_update", 0);
-#endif
-	return 0;
-}
-
