@@ -112,8 +112,28 @@
 	u-boot,dm-spl;
 };
 
+&gpio0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&gpio1 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&gpio2 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &gpio3 {
 	u-boot,dm-spl;
+	status = "okay";
+};
+
+&gpio4 {
+	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
