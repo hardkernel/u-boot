@@ -43,8 +43,7 @@
 	pinctrl-0 = <&emmc_bus8
 		     &emmc_clk
 		     &emmc_cmd
-		     &emmc_datastrobe
-		     &emmc_rstnout>;
+		     &emmc_datastrobe>;
 	non-removable;
 	cap-mmc-hw-reset;
 };

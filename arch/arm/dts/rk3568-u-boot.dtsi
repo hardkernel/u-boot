@@ -380,6 +380,10 @@
 &pinctrl {
 	u-boot,dm-pre-reloc;
 	status = "okay";
+
+	emmc {
+		u-boot,dm-spl;
+	};
 };
 
 &gpio0 {
@@ -426,4 +430,24 @@
 &wdt {
 	u-boot,dm-pre-reloc;
 	status = "okay";
+};
+
+&emmc_bus8 {
+	u-boot,dm-spl;
+};
+
+&emmc_clk {
+	u-boot,dm-spl;
+};
+
+&emmc_cmd {
+	u-boot,dm-spl;
+};
+
+&emmc_datastrobe {
+	u-boot,dm-spl;
+};
+
+&emmc_rstnout {
+	u-boot,dm-spl;
 };
