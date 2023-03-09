@@ -590,6 +590,8 @@
 	grf: syscon@20008000 {
 		compatible = "rockchip,rk3128-grf", "syscon";
 		reg = <0x20008000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		lvds: lvds {
 			compatible = "rockchip,rk3126-lvds";
