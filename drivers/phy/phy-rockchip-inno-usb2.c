@@ -1675,6 +1675,8 @@ static const struct rockchip_usb2phy_cfg rk3588_phy_cfgs[] = {
 				.ls_det_en	= { 0x0080, 0, 0, 0, 1 },
 				.ls_det_st	= { 0x0084, 0, 0, 0, 1 },
 				.ls_det_clr	= { 0x0088, 0, 0, 0, 1 },
+				.utmi_avalid	= { 0x00c0, 7, 7, 0, 1 },
+				.utmi_bvalid	= { 0x00c0, 6, 6, 0, 1 },
 				.utmi_iddig	= { 0x00c0, 5, 5, 0, 1 },
 				.utmi_ls	= { 0x00c0, 10, 9, 0, 1 },
 			}
