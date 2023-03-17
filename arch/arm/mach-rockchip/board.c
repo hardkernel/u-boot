@@ -412,6 +412,9 @@ static void cmdline_handle(void)
 				env_set("reboot_mode", "normal");
 		}
 	}
+
+	if (rockchip_get_boot_mode() == BOOT_MODE_QUIESCENT)
+		env_update("bootargs", "androidboot.quiescent=1 pwm_bl.quiescent=1");
 }
 
 static void scan_run_cmd(void)
@@ -459,7 +462,8 @@ int board_late_init(void)
 	charge_display();
 #endif
 #ifdef CONFIG_DRM_ROCKCHIP
-	rockchip_show_logo();
+	if (rockchip_get_boot_mode() != BOOT_MODE_QUIESCENT)
+		rockchip_show_logo();
 #endif
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 	rockchip_eink_show_uboot_logo();
