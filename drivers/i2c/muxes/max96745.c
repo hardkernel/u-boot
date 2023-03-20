@@ -13,11 +13,17 @@
 struct max96745_priv {
 	struct udevice *dev;
 	struct gpio_desc enable_gpio;
+	bool idle_disc;
 };
 
 static int max96745_select(struct udevice *mux, struct udevice *bus,
 			   uint channel)
 {
+	struct max96745_priv *priv = dev_get_priv(mux);
+
+	if (!priv->idle_disc)
+		return 0;
+
 	if (channel == 1)
 		dm_i2c_reg_clrset(mux, 0x0086, DIS_REM_CC,
 				  FIELD_PREP(DIS_REM_CC, 0));
@@ -31,6 +37,11 @@ static int max96745_select(struct udevice *mux, struct udevice *bus,
 static int max96745_deselect(struct udevice *mux, struct udevice *bus,
 			     uint channel)
 {
+	struct max96745_priv *priv = dev_get_priv(mux);
+
+	if (!priv->idle_disc)
+		return 0;
+
 	if (channel == 1)
 		dm_i2c_reg_clrset(mux, 0x0086, DIS_REM_CC,
 				  FIELD_PREP(DIS_REM_CC, 1));
@@ -55,15 +66,17 @@ static int max96745_power_on(struct max96745_priv *priv)
 		mdelay(200);
 	}
 
-	ret = dm_i2c_reg_clrset(priv->dev, 0x0076, DIS_REM_CC,
-				FIELD_PREP(DIS_REM_CC, 1));
-	if (ret < 0)
-		return ret;
+	if (priv->idle_disc) {
+		ret = dm_i2c_reg_clrset(priv->dev, 0x0076, DIS_REM_CC,
+					FIELD_PREP(DIS_REM_CC, 1));
+		if (ret < 0)
+			return ret;
 
-	ret = dm_i2c_reg_clrset(priv->dev, 0x0086, DIS_REM_CC,
-				FIELD_PREP(DIS_REM_CC, 1));
-	if (ret < 0)
-		return ret;
+		ret = dm_i2c_reg_clrset(priv->dev, 0x0086, DIS_REM_CC,
+					FIELD_PREP(DIS_REM_CC, 1));
+		if (ret < 0)
+			return ret;
+	}
 
 	return 0;
 }
@@ -78,6 +91,7 @@ static int max96745_probe(struct udevice *dev)
 		return ret;
 
 	priv->dev = dev;
+	priv->idle_disc = dev_read_bool(dev, "i2c-mux-idle-disconnect");
 
 	ret = gpio_request_by_name(dev, "enable-gpios", 0,
 				   &priv->enable_gpio, GPIOD_IS_OUT);
