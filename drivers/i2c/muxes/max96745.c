@@ -66,6 +66,11 @@ static int max96745_power_on(struct max96745_priv *priv)
 		mdelay(200);
 	}
 
+	/* Set for I2C Fast-mode speed */
+	ret = dm_i2c_reg_write(priv->dev, 0x0070, 0x16);
+	if (ret < 0)
+		return ret;
+
 	if (priv->idle_disc) {
 		ret = dm_i2c_reg_clrset(priv->dev, 0x0076, DIS_REM_CC,
 					FIELD_PREP(DIS_REM_CC, 1));
