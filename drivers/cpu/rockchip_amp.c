@@ -134,7 +134,7 @@ static int load_linux_for_nonboot_cpu(u32 cpu, u32 aarch64, u32 load,
 	flush_dcache_all();
 
 	/* fixup: ramdisk/fdt/entry depend on U-Boot */
-	*entry = env_get_ulong("kernel_addr_r", 16, 0);
+	*entry = (u32)images.ep;
 
 	return 0;
 }
