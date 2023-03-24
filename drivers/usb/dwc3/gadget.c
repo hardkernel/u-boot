@@ -2482,7 +2482,6 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
 	while (left > 0) {
 		union dwc3_event event;
 
-		invalidate_dcache_range((uintptr_t)evt->buf, evt->length);
 		event.raw = *(u32 *) (evt->buf + evt->lpos);
 
 		dwc3_process_event_entry(dwc, &event);
@@ -2538,6 +2537,7 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
 	u32 reg;
 
 	evt = dwc->ev_buffs[buf];
+	dwc3_invalidate_cache((uintptr_t)evt->buf, evt->length);
 
 	count = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(buf));
 	count &= DWC3_GEVNTCOUNT_MASK;
