@@ -27,6 +27,10 @@ fi
 # nodes
 function gen_uboot_node()
 {
+	if [ -z ${UBOOT_LOAD_ADDR} ]; then
+		return
+	fi
+
 	UBOOT="u-boot-nodtb.bin"
 	echo "		uboot {
 			description = \"U-Boot\";
@@ -53,10 +57,16 @@ function gen_uboot_node()
 				algo = \"sha256\";
 			};
 		};"
+
+	LOADABLE_UBOOT="\"uboot\", "
 }
 
 function gen_fdt_node()
 {
+	if [ -z ${UBOOT_LOAD_ADDR} ]; then
+		return
+	fi
+
 	echo "		fdt {
 			description = \"U-Boot dtb\";
 			data = /incbin/(\"./u-boot.dtb\");
@@ -67,12 +77,19 @@ function gen_fdt_node()
 				algo = \"sha256\";
 			};
 		};"
+
+	FDT_SIGN=", \"fdt\""
+	FDT="fdt = \"fdt\"${PROP_KERN_DTB};"
 };
 
 function gen_kfdt_node()
 {
+	if [ -z ${UBOOT_LOAD_ADDR} ]; then
+		return
+	fi
+
 	KERN_DTB=`sed -n "/CONFIG_EMBED_KERNEL_DTB_PATH=/s/CONFIG_EMBED_KERNEL_DTB_PATH=//p" .config | tr -d '"'`
-	if [ -z "${KERN_DTB}" ]; then
+	if [ -z ${KERN_DTB} ]; then
 		return;
 	fi
 
@@ -135,7 +152,9 @@ function gen_bl31_node()
 		};"
 		fi
 
-		if [ ${NUM} -gt 1 ]; then
+		if [ ${NUM} -eq 2 ]; then
+			LOADABLE_ATF=${LOADABLE_ATF}"\"atf-${NUM}\""
+		elif [ ${NUM} -gt 2 ]; then
 			LOADABLE_ATF=${LOADABLE_ATF}", \"atf-${NUM}\""
 		fi
 		NUM=`expr ${NUM} + 1`
@@ -179,7 +198,7 @@ function gen_bl32_node()
 		};"
 	LOADABLE_OPTEE=", \"optee\""
 	FIRMWARE_OPTEE="firmware = \"optee\";"
-	FIRMWARE_SIGN=", \"firmware\""
+	FIRMWARE_SIGN="\"firmware\""
 }
 
 function gen_mcu_node()
@@ -325,14 +344,14 @@ echo "	};
 			description = \"${PLATFORM}\";
 			rollback-index = <0x0>;
 			firmware = \"atf-1\";
-			loadables = \"uboot\"${LOADABLE_ATF}${LOADABLE_OPTEE}${LOADABLE_OTHER};
+			loadables = ${LOADABLE_UBOOT}${LOADABLE_ATF}${LOADABLE_OPTEE}${LOADABLE_OTHER};
 			${STANDALONE_MCU}
-			fdt = \"fdt\"${PROP_KERN_DTB};
+			${FDT}
 			signature {
 				algo = \"sha256,rsa2048\";
 				${ALGO_PADDING}
 				key-name-hint = \"dev\";
-				sign-images = \"fdt\", \"firmware\", \"loadables\"${STANDALONE_SIGN};
+				sign-images = \"firmware\", \"loadables\"${FDT_SIGN}${STANDALONE_SIGN};
 			};
 		};
 	};
@@ -346,6 +365,16 @@ PLATFORM=`sed -n "/CONFIG_DEFAULT_DEVICE_TREE/p" .config | awk -F "=" '{ print $
 if grep  -q '^CONFIG_FIT_ENABLE_RSASSA_PSS_SUPPORT=y' .config ; then
         ALGO_PADDING="                          padding = \"pss\";"
 fi
+if [ ! -z "${LOADABLE_UBOOT}" ] || [ ! -z "${LOADABLE_OTHER}" ]; then
+	LOADABLE_UBOOT="\"uboot\""
+	LOADABLES="loadables = ${LOADABLE_UBOOT}${LOADABLE_OTHER};"
+	if [ -z ${FIRMWARE_SIGN} ]; then
+		LOADABLES_SIGN="\"loadables\""
+	else
+		LOADABLES_SIGN=", \"loadables\""
+	fi
+fi
+
 echo "	};
 
 	configurations {
@@ -354,14 +383,14 @@ echo "	};
 			description = \"${PLATFORM}\";
 			rollback-index = <0x0>;
 			${FIRMWARE_OPTEE}
-			loadables = \"uboot\"${LOADABLE_OTHER};
+			${LOADABLES}
 			${STANDALONE_MCU}
-			fdt = \"fdt\"${PROP_KERN_DTB};
+			${FDT}
 			signature {
 				algo = \"sha256,rsa2048\";
 				${ALGO_PADDING}
 				key-name-hint = \"dev\";
-				sign-images = \"fdt\", \"loadables\"${FIRMWARE_SIGN}${STANDALONE_SIGN};
+				sign-images = ${FIRMWARE_SIGN}${LOADABLES_SIGN}${FDT_SIGN}${STANDALONE_SIGN};
 			};
 		};
 	};
