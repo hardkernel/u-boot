@@ -2175,6 +2175,7 @@ int fit_image_load_index(bootm_headers_t *images, ulong addr,
 		fit_image_check_os(fit, noffset, IH_OS_ARM_TRUSTED_FIRMWARE) ||
 		fit_image_check_os(fit, noffset, IH_OS_OP_TEE) ||
 		fit_image_check_os(fit, noffset, IH_OS_U_BOOT) ||
+		fit_image_check_os(fit, noffset, IH_OS_QNX) ||
 		fit_image_check_os(fit, noffset, IH_OS_OPENRTOS);
 
 	/*
