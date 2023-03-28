@@ -229,6 +229,12 @@ static const struct rockchip_saradc_data rk3562_saradc_data = {
 	.clk_rate = 1000000,
 };
 
+static const struct rockchip_saradc_data rk1106_saradc_data = {
+	.num_bits = 10,
+	.num_channels = 2,
+	.clk_rate = 1000000,
+};
+
 static const struct udevice_id rockchip_saradc_ids[] = {
 	{
 		.compatible = "rockchip,rk3588-saradc",
@@ -241,6 +247,10 @@ static const struct udevice_id rockchip_saradc_ids[] = {
 	{
 		.compatible = "rockchip,rk3562-saradc",
 		.data = (ulong)&rk3562_saradc_data
+	},
+	{
+		.compatible = "rockchip,rv1106-saradc",
+		.data = (ulong)&rk1106_saradc_data
 	},
 	{ }
 };
