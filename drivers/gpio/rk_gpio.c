@@ -155,7 +155,8 @@ static int rockchip_gpio_probe(struct udevice *dev)
 		dev_read_alias_seq(dev, &id);
 
 	if (id < 0 || id >= pctrl_priv->ctrl->nr_banks) {
-		dev_err(dev, "bank id invalid\n");
+		dev_err(dev, "nr_banks=%d, bank id=%d invalid\n",
+			pctrl_priv->ctrl->nr_banks, id);
 		return -EINVAL;
 	}
 
