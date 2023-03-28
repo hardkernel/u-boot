@@ -10,6 +10,7 @@
 #include <boot_rkimg.h>
 #include <nand.h>
 #include <part.h>
+#include <fdt_support.h>
 
 /* tag for vendor check */
 #define VENDOR_TAG		0x524B5644
@@ -20,6 +21,9 @@
 /* align to 64 bytes */
 #define VENDOR_BTYE_ALIGN	0x3F
 #define VENDOR_BLOCK_SIZE	512
+
+#define PAGE_ALGIN_SIZE		(4096uL)
+#define PAGE_ALGIN_MASK		(~(PAGE_ALGIN_SIZE - 1))
 
 /* --- Emmc define --- */
 /* Starting address of the Vendor in memory. */
@@ -494,12 +498,15 @@ int vendor_storage_init(void)
 	bootdev_type = dev_desc->if_type;
 
 	/* Always use, no need to release */
-	buffer = (u8 *)malloc(size);
+	buffer = (u8 *)malloc(size + PAGE_ALGIN_SIZE);
 	if (!buffer) {
 		printf("[Vendor ERROR]:Malloc failed!\n");
 		ret = -ENOMEM;
 		goto out;
 	}
+	/* buffer align to page size kerenl reserved memory */
+	buffer = (u8 *)((ulong)buffer & PAGE_ALGIN_MASK) + PAGE_ALGIN_SIZE;
+
 	/* Pointer initialization */
 	vendor_info.hdr = (struct vendor_hdr *)buffer;
 	vendor_info.item = (struct vendor_item *)(buffer + sizeof(struct vendor_hdr));
@@ -564,6 +571,29 @@ out:
 		bootdev_type = 0;
 
 	return ret;
+}
+
+void vendor_storage_fixup(void *blob)
+{
+	unsigned long size;
+	unsigned long start;
+	ulong offset;
+
+	/* init vendor storage */
+	if (!bootdev_type) {
+		if (vendor_storage_init() < 0)
+			return;
+	}
+
+	offset = fdt_node_offset_by_compatible(blob, 0, "rockchip,vendor-storage-rm");
+	if (offset >= 0) {
+		start = (unsigned long)vendor_info.hdr;
+		size = (unsigned long)((void *)vendor_info.version2 - (void *)vendor_info.hdr);
+		size += 4;
+		fdt_update_reserved_memory(blob, "rockchip,vendor-storage-rm",
+					   (u64)start,
+					   (u64)size);
+	}
 }
 
 /*

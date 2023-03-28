@@ -570,6 +570,10 @@ int board_fdt_fixup(void *blob)
 	rockchip_display_fixup(blob);
 #endif
 
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	vendor_storage_fixup(blob);
+#endif
+
 	return rk_board_fdt_fixup(blob);
 }
 
