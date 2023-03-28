@@ -44,6 +44,11 @@
 		spi3 = &spi3;
 		spi4 = &spi4;
 		spi5 = &sfc;
+		gpio0 = &gpio0;
+		gpio1 = &gpio1;
+		gpio2 = &gpio2;
+		gpio3 = &gpio3;
+		gpio4 = &gpio4;
 	};
 
 	cpus {
