@@ -278,6 +278,9 @@ config FIT_PRINT
 	  Say y here if you want to enable fit image structure and data
 	  print.
 
+config FIT_OMIT_UBOOT
+	bool "Omit u-boot-nodtb.bin and u-boot.dtb when output uboot.itb"
+
 if SPL
 
 config SPL_FIT
