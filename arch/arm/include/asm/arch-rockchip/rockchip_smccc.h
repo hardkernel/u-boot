@@ -101,6 +101,8 @@ int sip_smc_set_suspend_mode(unsigned long ctrl,
 			     unsigned long config1,
 			     unsigned long config2);
 
+int sip_smc_remotectl_config(unsigned long func, unsigned long data);
+
 /*
  * sip_smc_amp_cfg() - config AMP
  */

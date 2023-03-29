@@ -61,6 +61,15 @@ int sip_smc_set_suspend_mode(unsigned long ctrl,
 	return res.a0;
 }
 
+int sip_smc_remotectl_config(unsigned long func, unsigned long data)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_REMOTECTL_CFG, func, data, 0);
+
+	return res.a0;
+}
+
 int sip_smc_amp_cfg(unsigned long func, unsigned long arg0, unsigned long arg1,
 		    unsigned long arg2)
 {
