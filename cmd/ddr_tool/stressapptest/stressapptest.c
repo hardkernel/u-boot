@@ -521,6 +521,12 @@ static int get_page_addr(struct page *page_list,
 	for (int i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		if ((start_adr[i] == 0 && length[i] == 0) || page >= sat->page_num)
 			break;
+		if (start_adr[i] + length[i] < sat->total_start_addr)
+			continue;
+		if (start_adr[i] < sat->total_start_addr) {
+			length[i] -= sat->total_start_addr - start_adr[i];
+			start_adr[i] = sat->total_start_addr;
+		}
 
 		used_length = 0;
 		while (page < sat->page_num &&
@@ -1181,6 +1187,7 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 
 	sat.total_test_size_mb = 32;
 	sat.block_size_byte = 4096;
+	sat.total_start_addr = 0x0;
 
 	printf("StressAppTest in U-Boot, " __version__ "\n");
 
@@ -1197,7 +1204,13 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 			sat.total_test_size_mb = 32;
 	}
 	if (argc > 3) {
-		if (strict_strtoul(argv[3], 0, &page_size_kb) < 0)
+		if (strict_strtoul(argv[3], 0, &sat.total_start_addr) < 0)
+			return CMD_RET_USAGE;
+		if (sat.total_start_addr < 0x1)
+			sat.total_start_addr = 0x0;
+	}
+	if (argc > 4) {
+		if (strict_strtoul(argv[4], 0, &page_size_kb) < 0)
 			return CMD_RET_USAGE;
 		if (page_size_kb < 1)
 			page_size_kb = 1024;
@@ -1214,13 +1227,15 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 	return doing_stressapptest();
 }
 
-U_BOOT_CMD(stressapptest,	4,	1,	do_stressapptest,
-	   "StressAppTest for Rockship\n",
-	   "\narg1: test time in second, null or 0 for 20s.\n"
-	   "arg2: test size in MB, null or 0 for 32MB.\n"
-	   "arg3: test page size in Byte, null or 0 for 1024kB(1MB).\n"
+U_BOOT_CMD(stressapptest,	5,	1,	do_stressapptest,
+	   "StressAppTest for Rockchip\n",
+	   "\narg1: test time in second, default value is 20s.\n"
+	   "arg2: test size in MB, default value is 32MB.\n"
+	   "arg3: start addr for test.\n"
+	   "arg4: test page size in kB, default value is 1024kB(1MB).\n"
 	   "example:\n"
 	   "	stressapptest: test for 20s, test size is 32MB, each page size is 1MB (32 pages).\n"
 	   "	stressapptest 43200 64: test for 12h, test size is 64MB, each page size is 1MB (64 pages).\n"
-	   "	stressapptest 43200 16 512: test for 12h, test size is 16MB, each page size is 512kB (32 pages).\n"
+	   "	stressapptest 86400 1024 0x80000000: test for 24h, test size is 1024MB, start addr for test is 0x80000000, each page size is 1MB (1024 pages).\n"
+	   "	stressapptest 43200 16 0x40000000 512: test for 12h, test size is 16MB, start addr for test is 0x40000000, each page size is 512kB (32 pages).\n"
 );

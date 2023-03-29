@@ -20,6 +20,7 @@
 #define __CMD_DDR_TOOL_STRESSAPPTEST_STRESSAPPTEST_H
 
 struct stressapptest_params {
+	ulong total_start_addr;
 	ulong total_test_size_mb;
 	/* total_test_size = page_size * page_num */
 	ulong page_size_byte;
