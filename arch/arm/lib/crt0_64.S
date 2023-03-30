@@ -70,7 +70,7 @@ ENTRY(_main)
 	 * Enable instruction cache (if required), stack pointer,
 	 * data access alignment checks and SError.
 	 */
-#ifdef CONFIG_SPL_BUILD
+#ifndef CONFIG_SYS_ICACHE_OFF
 	mov x1, #CR_I
 #else
 	mov x1, #0
