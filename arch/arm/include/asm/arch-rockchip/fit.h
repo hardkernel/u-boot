@@ -15,8 +15,6 @@ void *fit_image_load_bootables(ulong *size);
 int fit_image_pre_process(const void *fit);
 int fit_image_fail_process(const void *fit);
 int fit_image_read_dtb(void *fdt_addr);
-ulong fit_image_init_resource(struct blk_desc *dev_desc,
-			      disk_partition_t *out_part,
-			      ulong *out_blk_offset);
+ulong fit_image_init_resource(struct blk_desc *dev_desc);
 
 #endif

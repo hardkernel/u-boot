@@ -201,6 +201,7 @@ static void *fit_get_blob(struct blk_desc *dev_desc,
 	printf("%s: ", fdt_get_name(fit, conf_noffset, NULL));
 	if (fit_config_verify(fit, conf_noffset)) {
 		puts("\n");
+		/* don't remove this failure handle */
 		run_command("download", 0);
 		hang();
 	}
@@ -292,9 +293,9 @@ static int fit_image_get_subnode(const void *fit, int noffset, const char *name)
 	return -ENOENT;
 }
 
-int fit_image_load_one(const void *fit, struct blk_desc *dev_desc,
-		       disk_partition_t *part, char *prop_name,
-		       void *data, int check_hash)
+static int fit_image_load_one(const void *fit, struct blk_desc *dev_desc,
+			      disk_partition_t *part, char *prop_name,
+			      void *data, int check_hash)
 {
 	u32 blk_num, blk_off;
 	int offset, size;
@@ -404,32 +405,40 @@ static void fit_msg(const void *fit)
 }
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-ulong fit_image_init_resource(struct blk_desc *dev_desc,
-			      disk_partition_t *out_part,
-			      ulong *out_blk_offset)
+ulong fit_image_init_resource(struct blk_desc *dev_desc)
 {
 	disk_partition_t part;
-	int noffset, pos;
+	void *fit, *buf;
+	int offset, size;
 	int ret = 0;
-	void *fit;
 
 	if (!dev_desc)
 		return -ENODEV;
 
 	fit = fit_get_blob(dev_desc, &part, true);
 	if (!fit)
+		return -EAGAIN;
+
+	ret = fdt_image_get_offset_size(fit, FIT_MULTI_PROP, &offset, &size);
+	if (ret)
 		return -EINVAL;
 
-	noffset = fit_default_conf_get_node(fit, FIT_MULTI_PROP);
-	if (noffset < 0)
-		return noffset;
+	buf = memalign(ARCH_DMA_MINALIGN, ALIGN(size, dev_desc->blksz));
+	if (!buf)
+		return -ENOMEM;
 
-	ret = fit_image_get_data_position(fit, noffset, &pos);
-	if (ret < 0)
+	printf("RESC: '%s', blk@0x%08lx\n", part.name,
+	       part.start + ((FIT_ALIGN(fdt_totalsize(fit)) + offset) / dev_desc->blksz));
+	ret = fit_image_load_one(fit, dev_desc, &part, FIT_MULTI_PROP, buf, 1);
+	if (ret)
 		return ret;
 
-	*out_part = part;
-	*out_blk_offset = DIV_ROUND_UP(pos, dev_desc->blksz);
+	ret = resource_setup_ram_list(dev_desc, buf);
+	if (ret) {
+		FIT_I("Failed to setup resource ram list, ret=%d\n", ret);
+		free(fit);
+		return ret;
+	}
 
 	fit_msg(fit);
 	free(fit);

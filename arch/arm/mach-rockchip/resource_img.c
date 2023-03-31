@@ -148,6 +148,45 @@ static int resource_add_file(const char *name, u32 size,
 	return 0;
 }
 
+static int resource_setup_list(struct blk_desc *desc, ulong blk_start,
+			       void *resc_hdr, bool in_ram)
+{
+	struct resource_img_hdr *hdr = resc_hdr;
+	struct resource_entry *et;
+	u32 i, stride;
+	void *pos;
+
+	pos = (void *)hdr + hdr->c_offset * desc->blksz;
+	stride = hdr->e_blks * desc->blksz;
+
+	for (i = 0; i < hdr->e_nums; i++) {
+		et = pos + (i * stride);
+		if (memcmp(et->tag, ENTRY_TAG, ENTRY_TAG_SIZE))
+			continue;
+
+		resource_add_file(et->name, et->size,
+				  blk_start, et->blk_offset,
+				  et->hash, et->hash_size, in_ram);
+	}
+
+	return 0;
+}
+
+int resource_setup_ram_list(struct blk_desc *desc, void *hdr)
+{
+	if (!desc)
+		return -ENODEV;
+
+	if (resource_check_header(hdr)) {
+		printf("RESC: invalid\n");
+		return -EINVAL;
+	}
+
+	/* @blk_start: set as 'hdr' point addr, to be used in byte */
+	return resource_setup_list(desc, (ulong)hdr, hdr, true);
+}
+
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
 /*
  * Add logo.bmp and logo_kernel.bmp from "logo" parititon
  *
@@ -213,44 +252,6 @@ static int resource_setup_logo_bmp(struct blk_desc *desc)
 	return ret;
 }
 
-static int resource_setup_list(struct blk_desc *desc, ulong blk_start,
-			       void *resc_hdr, bool in_ram)
-{
-	struct resource_img_hdr *hdr = resc_hdr;
-	struct resource_entry *et;
-	u32 i, stride;
-	void *pos;
-
-	pos = (void *)hdr + hdr->c_offset * desc->blksz;
-	stride = hdr->e_blks * desc->blksz;
-
-	for (i = 0; i < hdr->e_nums; i++) {
-		et = pos + (i * stride);
-		if (memcmp(et->tag, ENTRY_TAG, ENTRY_TAG_SIZE))
-			continue;
-
-		resource_add_file(et->name, et->size,
-				  blk_start, et->blk_offset,
-				  et->hash, et->hash_size, in_ram);
-	}
-
-	return 0;
-}
-
-int resource_setup_ram_list(struct blk_desc *desc, void *hdr)
-{
-	if (!desc)
-		return -ENODEV;
-
-	if (resource_check_header(hdr)) {
-		printf("RESC: invalid\n");
-		return -EINVAL;
-	}
-
-	/* @blk_start: set as 'hdr' point addr, to be used in byte */
-	return resource_setup_list(desc, (ulong)hdr, hdr, true);
-}
-
 static int resource_setup_blk_list(struct blk_desc *desc, ulong blk_start)
 {
 	struct resource_img_hdr *hdr;
@@ -311,7 +312,7 @@ static int resource_init(struct blk_desc *desc,
 
 #ifdef CONFIG_ANDROID_AVB
 	char hdr[512];
-	ulong buf = 0;
+	ulong resc_buf = 0;
 	int ret;
 
 	if (blk_dread(desc, part->start, 1, hdr) != 1)
@@ -320,15 +321,18 @@ static int resource_init(struct blk_desc *desc,
 	/* only handle android boot/recovery.img and resource.img, ignore fit */
 	if (!android_image_check_header((void *)hdr) ||
 	    !resource_check_header((void *)hdr)) {
-		ret = android_image_verify_resource((const char *)part->name, &buf);
+		ret = android_image_verify_resource((const char *)part->name, &resc_buf);
 		if (ret) {
 			printf("RESC: '%s', avb verify fail: %d\n", part->name, ret);
 			return ret;
 		}
 
-		/* already full load in ram ? */
-		if (buf && !resource_check_header((void *)buf))
-			return resource_setup_ram_list(desc, (void *)buf);
+		/*
+		 * unlock=0: resc_buf is valid and file was already full load in ram.
+		 * unlock=1: resc_buf is 0.
+		 */
+		if (resc_buf && !resource_check_header((void *)resc_buf))
+			return resource_setup_ram_list(desc, (void *)resc_buf);
 	}
 #endif
 
@@ -349,15 +353,12 @@ static int resource_default(struct blk_desc *desc,
 
 	return 0;
 }
+#endif
 
 static int resource_scan(void)
 {
 	struct blk_desc *desc = rockchip_get_bootdev();
-	disk_partition_t part;
-	ulong blk_offset;
-	int found = 0;
-	char hdr[512];
-	char name[32];
+	__maybe_unused int ret;
 
 	if (!desc) {
 		printf("RESC: No bootdev\n");
@@ -367,23 +368,24 @@ static int resource_scan(void)
 	if (!list_empty(&entry_head))
 		return 0;
 
-#ifdef CONFIG_ANDROID_BOOT_IMAGE
-	if (!found && !android_image_init_resource(desc, &part, &blk_offset))
-		found = 1;
-#endif
 #ifdef CONFIG_ROCKCHIP_FIT_IMAGE
-	if (!found && !fit_image_init_resource(desc, &part, &blk_offset))
-		found = 1;
+	ret = fit_image_init_resource(desc);
+	if (!ret || ret != -EAGAIN)
+		return ret;
 #endif
 #ifdef CONFIG_ROCKCHIP_UIMAGE
-	if (!found && !uimage_init_resource(desc, &part, &blk_offset))
-		found = 1;
+	ret = uimage_init_resource(desc);
+	if (!ret || ret != -EAGAIN)
+		return ret;
 #endif
-	/*
-	 * found: validate it and use default one if invalid.
-	 * not-found: use default one.
-	 */
-	if (found) {
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	disk_partition_t part;
+	ulong blk_offset;
+	char hdr[512];
+	char name[32];
+
+	/* partition priority: boot/recovery > resource */
+	if (!android_image_init_resource(desc, &part, &blk_offset)) {
 		if (blk_dread(desc, part.start + blk_offset, 1, hdr) != 1)
 			return -EIO;
 
@@ -399,7 +401,10 @@ static int resource_scan(void)
 			return -ENOENT;
 	}
 
+	/* now, 'part' can be boot/recovery/resource */
 	return resource_init(desc, &part, blk_offset);
+#endif
+	return -ENOENT;
 }
 
 static struct resource_file *resource_get_file(const char *name)

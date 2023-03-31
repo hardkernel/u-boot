@@ -184,17 +184,17 @@ int uimage_sysmem_free_each(image_header_t *img, u32 ramdisk_sz)
 }
 
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
-int uimage_init_resource(struct blk_desc *dev_desc,
-			 disk_partition_t *out_part,
-			 ulong *out_blk_offset)
+int uimage_init_resource(struct blk_desc *dev_desc)
 {
 	disk_partition_t part;
+	ulong data, offset, size;
 	image_header_t *hdr;
 	char *part_name = PART_BOOT;
-	ulong data, size;
+	int ret, idx = 3;
+	void *buf;
 
 	if (!dev_desc)
-		return ENODEV;
+		return -ENODEV;
 
 #ifndef CONFIG_ANDROID_AB
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
@@ -207,15 +207,28 @@ int uimage_init_resource(struct blk_desc *dev_desc,
 
 	hdr = uimage_get_hdr(dev_desc, &part);
 	if (!hdr)
-		return -ENODEV;
+		return -EAGAIN;
 
-	image_multi_getimg(hdr, 3, &data, &size);
+	image_multi_getimg(hdr, idx, &data, &size);
+	offset = data - (ulong)hdr;
 	free(hdr);
 
-	*out_part = part;
-	*out_blk_offset = DIV_ROUND_UP(data, dev_desc->blksz);
+	buf = memalign(ARCH_DMA_MINALIGN, ALIGN(size, dev_desc->blksz));
+	if (!buf)
+		return -ENOMEM;
+
+	printf("RESC: '%s', blk@0x%08lx\n", part.name,
+	       part.start + (offset / dev_desc->blksz));
+	ret = uimage_load_one(dev_desc, &part, offset, size, buf);
+	if (ret)
+		return ret;
+
+	ret = resource_setup_ram_list(dev_desc, buf);
+	if (ret) {
+		UIMG_I("Failed to setup resource ram list, ret=%d\n", ret);
+		return ret;
+	}
 
 	return 0;
 }
 #endif
-
