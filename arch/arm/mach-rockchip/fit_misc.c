@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <boot_rkimg.h>
+#include <malloc.h>
 #include <misc.h>
 #ifdef CONFIG_SPL_BUILD
 #include <spl.h>
@@ -167,6 +168,33 @@ void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 		} else {
 			printf("   Using fdt from load-in fdt\n");
 		}
+	}
+#endif
+
+#ifndef CONFIG_SPL_BUILD
+	if (fit_image_check_type(fit, node, IH_TYPE_FIRMWARE)) {
+		const char *uname;
+		char *old, *new;
+		size_t len;
+
+		uname = fdt_get_name(fit, node, NULL);
+		if (strcmp("bootargs", uname))
+			return;
+
+		old = env_get("bootargs");
+		if (!old)
+			return;
+
+		len = strlen(old) + (*src_len) + 2;
+		new = calloc(1, len);
+		if (new) {
+			strcpy(new, old);
+			strcat(new, " ");
+			strcat(new, (char *)(*src_addr));
+			env_set("bootargs", new);
+			free(new);
+		}
+
 	}
 #endif
 }
