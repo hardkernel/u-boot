@@ -68,9 +68,6 @@
 };
 
 &crypto {
-	clocks = <&scmi_clk CLK_CORE_CRYPTO>, <&scmi_clk CLK_PKA_CRYPTO>;
-	clock-names = "sclk", "pka";
-	clock-frequency = <200000000>, <300000000>;
 	u-boot,dm-spl;
 	status = "okay";
 };
