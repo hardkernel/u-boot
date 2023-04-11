@@ -222,6 +222,18 @@
 		reg = <0x20000110 0x24>;
 		#reset-cells = <1>;
 	};
+
+	sfc: sfc@1020c000 {
+		compatible ="rockchip,rksfc","rockchip,sfc";
+		reg = <0x1020c000 0x8000>;
+		interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru SCLK_SFC>, <&cru HCLK_SFC>;
+		clock-names = "clk_sfc", "hclk_sfc";
+		assigned-clocks = <&cru SCLK_SFC>;
+		assigned-clock-rates = <60000000>;
+		status = "disabled";
+	};
+
 	nandc: nandc@10500000 {
 		compatible = "rockchip,rk-nandc";
 		reg = <0x10500000 0x4000>;
