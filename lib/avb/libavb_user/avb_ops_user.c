@@ -280,6 +280,7 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	if (out_is_unlocked) {
 #ifdef CONFIG_OPTEE_CLIENT
+		uint8_t vboot_flag = 0;
 		int ret;
 
 		ret = trusty_read_lock_state((uint8_t *)out_is_unlocked);
@@ -290,7 +291,16 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 		case TEE_ERROR_GENERIC:
 		case TEE_ERROR_NO_DATA:
 		case TEE_ERROR_ITEM_NOT_FOUND:
-			*out_is_unlocked = 1;
+			if (trusty_read_vbootkey_enable_flag(&vboot_flag)) {
+				printf("Can't read vboot flag\n");
+				return AVB_IO_RESULT_ERROR_IO;
+			}
+
+			if (vboot_flag)
+				*out_is_unlocked = 0;
+			else
+				*out_is_unlocked = 1;
+
 			if (trusty_write_lock_state(*out_is_unlocked)) {
 				printf("%s: init lock state error\n", __FILE__);
 				ret = AVB_IO_RESULT_ERROR_IO;
