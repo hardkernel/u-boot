@@ -56,11 +56,15 @@
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 #include <rk_eink.h>
 #endif
+
 #ifdef CONFIG_SERDES_DISPLAY
 #include <serdes-display-core.h>
 #include <serdes-display-gpio.h>
 #endif
-DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_ROCKCHIP_MINIDUMP
+#include <rk_mini_dump.h>
+#endif
 
 #ifdef CONFIG_ARM64
 static ulong orig_images_ep;
@@ -470,6 +474,11 @@ int board_late_init(void)
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	charge_display();
 #endif
+
+#ifdef CONFIG_ROCKCHIP_MINIDUMP
+	rk_minidump_init();
+#endif
+
 #ifdef CONFIG_DRM_ROCKCHIP
 	if (rockchip_get_boot_mode() != BOOT_MODE_QUIESCENT)
 		rockchip_show_logo();
