@@ -1460,6 +1460,9 @@ static ulong rk3562_clk_get_rate(struct clk *clk)
 	case CLK_MAC100_50M_MATRIX:
 		rate = rk3562_gmac_get_rate(priv, clk->id);
 		break;
+	case CLK_WDTNS:
+		rate = OSC_HZ;
+		break;
 	default:
 		return -ENOENT;
 	}
