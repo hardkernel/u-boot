@@ -89,6 +89,10 @@ DECLARE_GLOBAL_DATA_PTR;
 #define HDMIRX_NODE_FDT_PATH		"/hdmirx-controller@fdee0000"
 #define RK3588_PHY_CONFIG		0xfdee00c0
 
+#define VOP_M0_PRIORITY_REG		0xfdf82008
+#define VOP_M1_PRIORITY_REG		0xfdf82208
+#define QOS_PRIORITY_LEVEL(h, l)	((((h) & 7) << 8) | ((l) & 7))
+
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 
@@ -936,7 +940,14 @@ int arch_cpu_init(void)
 	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
 	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
 #endif
-
+	/*
+	 * set VOP M0 and VOP M1 to priority 0x303,then
+	 * Peri > VOP/MCU > ISP/VICAP > other
+	 * Note: VOP priority can only be modified during the u-boot stage,
+	 * 	 as VOP default power down, and power up after trust.
+	 */
+	writel(QOS_PRIORITY_LEVEL(3, 3), VOP_M0_PRIORITY_REG);
+	writel(QOS_PRIORITY_LEVEL(3, 3), VOP_M1_PRIORITY_REG);
 #endif
 
 	/* Select usb otg0 phy status to 0 that make rockusb can work at high-speed */
