@@ -48,6 +48,7 @@ SCRIPT_SPL="${SRCTREE}/scripts/spl.sh"
 SCRIPT_UBOOT="${SRCTREE}/scripts/uboot.sh"
 SCRIPT_LOADER="${SRCTREE}/scripts/loader.sh"
 SCRIPT_DECOMP="${SRCTREE}/scripts/decomp.sh"
+SCRIPT_CHECKCONFIG="${SRCTREE}/scripts/check-rkconfig.sh"
 CC_FILE=".cc"
 REP_DIR="./rep"
 #########################################################################################################
@@ -768,6 +769,9 @@ function pack_images()
 
 function finish()
 {
+	# check special config
+	${SCRIPT_CHECKCONFIG}
+
 	echo
 	if [ "${ARG_BOARD}" == "" ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
