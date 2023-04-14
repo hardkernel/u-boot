@@ -874,16 +874,22 @@ config USING_KERNEL_DTB_V2
 	    - U-Boot: only some necessary U-Boot devices(storage, crypto...) in dm tree.
 	    - kernel: all the devices(except the U-Boot only) in dm tree.
 
+config EMBED_KERNEL_DTB
+	bool "Enable embedded dtb support"
+	default n
+	help
+	  Enable embedded dtb support.
+
 config EMBED_KERNEL_DTB_PATH
-	string "Embeded kernel dtb file path"
-	depends on USING_KERNEL_DTB
+	string "Embedded kernel dtb file path"
+	depends on EMBED_KERNEL_DTB && USING_KERNEL_DTB
 	default "dts/kern.dtb"
 	help
 	  This file will auto be appended to the u-boot.bin.
 
 config EMBED_KERNEL_DTB_ALWAYS
-	bool "Always using embed kernel dtb"
-	depends on USING_KERNEL_DTB
+	bool "Always using embedded kernel dtb"
+	depends on EMBED_KERNEL_DTB && USING_KERNEL_DTB
 	default n
 	help
 	  Allow fallback to always use a prepared kernel dtb even USING_KERNEL_DTB
