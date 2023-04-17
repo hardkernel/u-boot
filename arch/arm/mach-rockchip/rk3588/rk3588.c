@@ -19,20 +19,31 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FIREWALL_DDR_BASE		0xfe030000
 #define FW_DDR_MST5_REG			0x54
 #define FW_DDR_MST13_REG		0x74
+#define FW_DDR_MST19_REG		0x8c
 #define FW_DDR_MST21_REG		0x94
 #define FW_DDR_MST26_REG		0xa8
 #define FW_DDR_MST27_REG		0xac
 #define FIREWALL_SYSMEM_BASE		0xfe038000
 #define FW_SYSM_MST5_REG		0x54
 #define FW_SYSM_MST13_REG		0x74
+#define FW_SYSM_MST19_REG		0x8c
 #define FW_SYSM_MST21_REG		0x94
 #define FW_SYSM_MST26_REG		0xa8
 #define FW_SYSM_MST27_REG		0xac
+#define PMU1_SGRF_BASE			0xfd582000
+#define PMU1_SGRF_SOC_CON0		0x0
+#define PMU1_SGRF_SOC_CON6		0x18
+#define PMU1_SGRF_SOC_CON7		0x1c
+#define PMU1_SGRF_SOC_CON8		0x20
+#define PMU1_SGRF_SOC_CON9		0x24
+#define PMU1_SGRF_SOC_CON10		0x28
+#define PMU1_SGRF_SOC_CON13		0x34
 #define SYS_GRF_BASE			0xfd58c000
 #define SYS_GRF_SOC_CON6		0x0318
 #define USBGRF_BASE			0xfd5ac000
 #define USB_GRF_USB3OTG0_CON1		0x001c
 #define BUS_SGRF_BASE			0xfd586000
+#define BUS_SGRF_SOC_CON2		0x08
 #define BUS_SGRF_FIREWALL_CON18		0x288
 #define PMU_BASE			0xfd8d0000
 #define PMU_PWR_GATE_SFTCON1		0x8150
@@ -66,9 +77,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #define EMMC_IOC_GPIO2D_DS_H		0x5c
 
 #define CRU_BASE			0xfd7c0000
+#define CRU_GPLL_CON1			0x01c4
 #define CRU_SOFTRST_CON77		0x0b34
+#define CRU_GLB_RST_CON			0x0c10
 
 #define PMU1CRU_BASE			0xfd7f0000
+#define PMU1CRU_SOFTRST_CON00		0x0a00
 #define PMU1CRU_SOFTRST_CON03		0x0a0c
 #define PMU1CRU_SOFTRST_CON04		0x0a10
 
@@ -1245,31 +1259,36 @@ int rk_board_fdt_fixup(const void *blob)
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
-	/* gpll enable */
-	writel(0x00f00042, 0xfd7c01c4);
+	u32 val;
+
+	/* pmu m0 configuration: */
+	/* set gpll */
+	writel(0x00f00042, CRU_BASE + CRU_GPLL_CON1);
+	/* set pmu mcu to access ddr memory */
+	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST19_REG);
+	writel(val & 0x0000ffff, FIREWALL_DDR_BASE + FW_DDR_MST19_REG);
+	/* set pmu mcu to access system memory */
+	val = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST19_REG);
+	writel(val & 0x000000ff, FIREWALL_SYSMEM_BASE + FW_SYSM_MST19_REG);
+	/* set pmu mcu to secure */
+	writel(0x00080000, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON0);
 	/* set start addr, pmu_mcu_code_addr_start */
-	writel(0xFFFF0000 | (entry_point >> 16), 0xFD582024);
-	/* pmu_mcu_sram_addr_start */
-	writel(0xFFFF2000, 0xFD582028);
-	/* pmu_mcu_tcm_addr_start */
-	writel(0xFFFF2000, 0xFD582034);
-	/* set mcu secure */
-	writel(0x00080000, 0xFD582000);
+	writel(0xFFFF0000 | (entry_point >> 16), PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON9);
+	/* set pmu_mcu_sram_addr_start */
+	writel(0xFFFF2000, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON10);
+	/* set pmu_mcu_tcm_addr_start */
+	writel(0xFFFF2000, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON13);
 	/* set cache cache_peripheral_addr */
-	writel(0xffff0000, 0xFD582018);
-	writel(0xffffee00, 0xFD58201c);
-	writel(0x00ff00ff, 0xFD582020);  /* 0xf0000000 ~ 0xfee00000 */
-	/* mcupmu access DDR secure control, each bit for a region. */
-	writel(0x0000ffff, 0xFE03008C);
-	/* mcupmu access DDR secure control, each bit for a region. */
-	writel(0x000000ff, 0xFE03808C);
-	/* PMU WDT reset system enable */
-	writel(0x02000200, 0xFD586008);
-	/* WDT trigger global reset. */
-	writel(0x08400840, 0xFD7C0C10);
-	/* Spl helps to load the mcu image, but not need to release
-	 * mcu for rk3588.
-	 */
+	/* 0xf0000000 ~ 0xfee00000 */
+	writel(0xffff0000, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON6);
+	writel(0xffffee00, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON7);
+	writel(0x00ff00ff, PMU1_SGRF_BASE + PMU1_SGRF_SOC_CON8);
+	/* enable PMU WDT reset system */
+	writel(0x02000200, BUS_SGRF_BASE + BUS_SGRF_SOC_CON2);
+	/* select WDT trigger global reset. */
+	writel(0x08400840, CRU_BASE + CRU_GLB_RST_CON);
+	/* release pmu mcu */
+	/* writel(0x20000000, PMU1CRU_BASE + PMU1CRU_SOFTRST_CON00); */
 
 	return 0;
 }
