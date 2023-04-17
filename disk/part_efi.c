@@ -963,7 +963,8 @@ int is_valid_gpt_buf(struct blk_desc *dev_desc, void *buf)
 		       dev_desc->blksz);
 
 	if ((le64_to_cpu(gpt_h->alternate_lba) + 1)
-			!= cpu_to_le64(dev_desc->lba)) {
+			!= cpu_to_le64(dev_desc->lba) &&
+			le64_to_cpu(gpt_h->last_usable_lba) != FACTORY_UNKNOWN_LBA) {
 		printf("%s: failed checking '%s'\n", __func__,
 		       "invalid GPT Disk Size");
 		return -1;
