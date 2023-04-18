@@ -1885,6 +1885,10 @@ static int mmc_startup(struct mmc *mmc)
 	mmc->erase_grp_size = 1;
 	mmc->part_config = MMCPART_NOAVAILABLE;
 	if (!IS_SD(mmc) && (mmc->version >= MMC_VERSION_4)) {
+		/* select high speed to reduce initialization time */
+		mmc_select_hs(mmc);
+		mmc_set_clock(mmc, MMC_HIGH_52_MAX_DTR);
+
 		/* check  ext_csd version and capacity */
 		err = mmc_send_ext_csd(mmc, ext_csd);
 		if (err)
