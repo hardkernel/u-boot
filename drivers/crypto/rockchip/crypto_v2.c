@@ -1563,7 +1563,11 @@ static int rockchip_crypto_probe(struct udevice *dev)
 	if (ret)
 		return ret;
 
+	rk_crypto_enable_clk(dev);
+
 	hw_crypto_reset();
+
+	rk_crypto_disable_clk(dev);
 
 	return 0;
 }
