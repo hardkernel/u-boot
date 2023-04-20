@@ -107,7 +107,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 				     (unsigned long)(data + meta_p->comp_off -
 							MAX_META_SEGMENT_SIZE),
 					 meta.comp_size, &len)) {
-			debug("%s: Failed to decompress.\n", __func__);
+			printf("%s: Failed to decompress.\n", __func__);
 			return -EIO;
 		}
 
@@ -125,6 +125,7 @@ int spl_load_meta(struct spl_image_info *spl_image, struct spl_load_info *info)
 	flush_cache(meta_p->load, meta_p->size);
 	rk_meta_process();
 
+	printf("\nMeta: ok\n");
 	return 0;
 }
 
