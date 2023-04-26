@@ -2484,8 +2484,7 @@ static int modify_ddr34_bw_byte_map(u8 rg_result, struct rv1126_sdram_params *sd
 	return 0;
 }
 
-static int sdram_init_(struct dram_info *dram,
-		       struct rv1126_sdram_params *sdram_params, u32 post_init)
+int sdram_init_(struct dram_info *dram, struct rv1126_sdram_params *sdram_params, u32 post_init)
 {
 	void __iomem *pctl_base = dram->pctl;
 	void __iomem *phy_base = dram->phy;
