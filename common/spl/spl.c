@@ -710,7 +710,7 @@ ulong spl_relocate_stack_gd(void)
 /* cleanup before jump to next stage */
 void spl_cleanup_before_jump(struct spl_image_info *spl_image)
 {
-	ulong us;
+	ulong us, tt_us;
 
 	spl_board_prepare_for_jump(spl_image);
 
@@ -738,5 +738,6 @@ void spl_cleanup_before_jump(struct spl_image_info *spl_image)
 	isb();
 
 	us = (get_ticks() - gd->sys_start_tick) / 24UL;
-	printf("Total: %ld.%ld ms\n\n", us / 1000, us % 1000);
+	tt_us = get_ticks() / (COUNTER_FREQUENCY / 1000000);
+	printf("Total: %ld.%ld/%ld.%ld ms\n\n", us / 1000, us % 1000, tt_us / 1000, tt_us % 1000);
 }
