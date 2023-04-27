@@ -87,6 +87,7 @@ const struct flash_info spi_nor_ids[] = {
 	{ INFO("en25s64",    0x1c3817, 0, 64 * 1024,  128, SECT_4K) },
 	{ INFO("en25qh256a", 0x1c7019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 	{ INFO("en25qx256a", 0x1c7119, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
+	{ INFO("en25qx128a", 0x1c7118, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 #endif
 #ifdef CONFIG_SPI_FLASH_GIGADEVICE	/* GIGADEVICE */
 	/* GigaDevice */
@@ -142,6 +143,11 @@ const struct flash_info spi_nor_ids[] = {
 	},
 	{
 		INFO("gd25lb512m", 0xc8671a, 0, 64 * 1024, 1024,
+			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
+			SPI_NOR_4B_OPCODES | SPI_NOR_HAS_LOCK)
+	},
+	{
+		INFO("gd55lb01ge", 0xc8671b, 0, 64 * 1024, 2048,
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
 			SPI_NOR_4B_OPCODES | SPI_NOR_HAS_LOCK)
 	},
@@ -399,6 +405,7 @@ const struct flash_info spi_nor_ids[] = {
 	/* FUDAN MICRO (Shanghai) Co., Ltd. */
 	{ INFO("FM25Q128A", 0xA14018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 	{ INFO("FM25Q64", 0xA14017, 0, 64 * 1024, 128, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("FM25Q256I3", 0xA14019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 #endif
 #ifdef CONFIG_SPI_FLASH_DOSILICON
 	/* Dosilicon Co., Ltd. */
