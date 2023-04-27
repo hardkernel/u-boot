@@ -625,7 +625,11 @@ static u32 page_rand_pick(struct page *page_list, bool valid,
 {
 	u32 pick;
 
-	pick = rand() % (sat->page_num / sat->cpu_num) * sat->cpu_num + cpu_id;
+	pick = rand() % sat->page_num;
+	pick = pick / sat->cpu_num * sat->cpu_num + cpu_id;
+	if (pick >= sat->page_num)
+		pick = cpu_id;
+
 	while (page_list[pick].valid != valid) {
 		pick += sat->cpu_num;
 		if (pick >= sat->page_num)
