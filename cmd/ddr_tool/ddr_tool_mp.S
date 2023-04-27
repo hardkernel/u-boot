@@ -143,15 +143,6 @@ icache_invalid:
 	ic	iallu
 	ret
 
-	.type	get_cpu_id, %function
-get_cpu_id:
-	mrs	x1, mpidr_el1
-	ubfx	x1, x1, #0, #8	/* Aff0 */
-	mrs	x2, mpidr_el1
-	ubfx	x2, x2, #8, #8	/* Aff1 */
-	add	x0, x1, x2
-	ret
-
 	.align	7
 	.type	lock_byte_mutex, %function
 lock_byte_mutex:

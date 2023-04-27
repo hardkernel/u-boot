@@ -621,12 +621,10 @@ static void page_init(struct pattern *pattern_list,
 }
 
 static u32 page_rand_pick(struct page *page_list, bool valid,
-			  struct stressapptest_params *sat)
+			  struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 pick;
-	u32 cpu_id;
 
-	cpu_id = get_cpu_id();
 	pick = rand() % (sat->page_num / sat->cpu_num) * sat->cpu_num + cpu_id;
 	while (page_list[pick].valid != valid) {
 		pick += sat->cpu_num;
@@ -685,7 +683,7 @@ static u32 block_inv_mis_search(void *dst_addr, struct pattern *src_pattern,
 }
 
 static u32 block_inv_check(void *dst_addr, struct pattern *src_pattern,
-			   struct stressapptest_params *sat)
+			   struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 *dst_mem;
 	u32 err = 0;
@@ -743,7 +741,7 @@ static u32 block_inv_check(void *dst_addr, struct pattern *src_pattern,
 
 		lock_byte_mutex(&print_mutex);
 		printf("(CPU%d, Pattern: %s, inv: %d, repeat: %d)\n\n",
-		       get_cpu_id(), src_pattern->pat->name, src_pattern->inv,
+		       cpu_id, src_pattern->pat->name, src_pattern->inv,
 		       src_pattern->repeat);
 		unlock_byte_mutex(&print_mutex);
 	}
@@ -787,13 +785,13 @@ static void page_inv_down(void *src_addr, struct stressapptest_params *sat)
 	}
 }
 
-static u32 page_inv(struct stressapptest_params *sat)
+static u32 page_inv(struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 src;
 	void *dst_block_addr;
 	u32 err = 0;
 
-	src = page_rand_pick(page_list, 1, sat);	/* pick a valid page */
+	src = page_rand_pick(page_list, 1, sat, cpu_id);	/* pick a valid page */
 	dst_block_addr = page_list[src].base_addr;
 
 	for (int i = 0; i < 4; i++) {
@@ -804,7 +802,7 @@ static u32 page_inv(struct stressapptest_params *sat)
 	}
 
 	for (int i = 0; i < sat->block_num; i++) {
-		err += block_inv_check(dst_block_addr, page_list[src].pattern, sat);
+		err += block_inv_check(dst_block_addr, page_list[src].pattern, sat, cpu_id);
 		dst_block_addr += sat->block_size_byte;
 	}
 
@@ -873,7 +871,7 @@ static u32 block_copy_mis_search(void *dst_addr, void *src_addr,
 static u32 block_copy_check(void *dst_addr, void *src_addr,
 			    struct adler_sum *adler_sum,
 			    struct pattern *src_pattern,
-			    struct stressapptest_params *sat)
+			    struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 err = 0;
 
@@ -885,7 +883,7 @@ static u32 block_copy_check(void *dst_addr, void *src_addr,
 
 		lock_byte_mutex(&print_mutex);
 		printf("(CPU%d, Pattern: %s, inv: %d, repeat: %d)\n\n",
-		       get_cpu_id(), src_pattern->pat->name, src_pattern->inv,
+		       cpu_id, src_pattern->pat->name, src_pattern->inv,
 		       src_pattern->repeat);
 		unlock_byte_mutex(&print_mutex);
 	}
@@ -895,7 +893,7 @@ static u32 block_copy_check(void *dst_addr, void *src_addr,
 
 static u32 block_copy(void *dst_addr, void *src_addr,
 		      struct pattern *src_pattern,
-		      struct stressapptest_params *sat)
+		      struct stressapptest_params *sat, u8 cpu_id)
 {
 	u64 *dst_mem;
 	u64 *src_mem;
@@ -956,10 +954,10 @@ static u32 block_copy(void *dst_addr, void *src_addr,
 		printf("This will probably never happen.\n");
 #endif
 
-	return block_copy_check(dst_addr, src_addr, &adler_sum, src_pattern, sat);
+	return block_copy_check(dst_addr, src_addr, &adler_sum, src_pattern, sat, cpu_id);
 }
 
-static u32 page_copy(struct stressapptest_params *sat)
+static u32 page_copy(struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 dst;
 	u32 src;
@@ -967,15 +965,15 @@ static u32 page_copy(struct stressapptest_params *sat)
 	void *src_block_addr;
 	u32 err = 0;
 
-	dst = page_rand_pick(page_list, 0, sat);	/* pick a empty page */
+	dst = page_rand_pick(page_list, 0, sat, cpu_id);	/* pick a empty page */
 	dst_block_addr = page_list[dst].base_addr;
-	src = page_rand_pick(page_list, 1, sat);	/* pick a valid page */
+	src = page_rand_pick(page_list, 1, sat, cpu_id);	/* pick a valid page */
 	src_block_addr = page_list[src].base_addr;
 	flush_dcache_all();
 
 	for (int i = 0; i < sat->block_num; i++) {
 		err += block_copy(dst_block_addr, src_block_addr,
-				  page_list[src].pattern, sat);
+				  page_list[src].pattern, sat, cpu_id);
 		dst_block_addr += sat->block_size_byte;
 		src_block_addr += sat->block_size_byte;
 	}
@@ -1005,12 +1003,8 @@ void secondary_main(void)
 	udelay(100);
 
 	flush_dcache_all();
-	cpu_id = get_cpu_id();
-	if (cpu_id != sat.cpu_num) {
-		printf("Note: Cannot get correct CPU ID, CPU%d is identified as CPU%d.\n",
-		       sat.cpu_num, cpu_id);
-		cpu_id = sat.cpu_num;
-	}
+
+	cpu_id = sat.cpu_num;
 	cpu_init_finish[cpu_id] = 1;
 	printf("CPU%d start OK.\n", cpu_id);
 
@@ -1027,9 +1021,9 @@ void secondary_main(void)
 			flush_dcache_all();
 			while (run_time_us() < test_time_us) {
 				if (rand() % 2 == 0)
-					cpu_copy_err[cpu_id] += page_copy(&sat);
+					cpu_copy_err[cpu_id] += page_copy(&sat, cpu_id);
 				else
-					cpu_inv_err[cpu_id] += page_inv(&sat);
+					cpu_inv_err[cpu_id] += page_inv(&sat, cpu_id);
 			}
 			test++;
 			cpu_test_finish[cpu_id] = 1;
@@ -1129,9 +1123,9 @@ static int doing_stressapptest(void)
 
 	while (run_time_us() < test_time_us) {
 		if (rand() % 2 == 0)
-			cpu_copy_err[0] += page_copy(&sat);
+			cpu_copy_err[0] += page_copy(&sat, 0);
 		else
-			cpu_inv_err[0] += page_inv(&sat);
+			cpu_inv_err[0] += page_inv(&sat, 0);
 
 		/* Print every 10 seconds */
 		now_10s = (u32)(run_time_us() / 1000000 / 10);

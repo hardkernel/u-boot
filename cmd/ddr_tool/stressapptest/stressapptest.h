@@ -66,6 +66,5 @@ struct page {
 extern void secondary_init(void);
 extern void lock_byte_mutex(u32 *flag);
 extern u32 unlock_byte_mutex(u32 *flag);
-extern u32 get_cpu_id(void);
 
 #endif /* __CMD_DDR_TOOL_STRESSAPPTEST_STRESSAPPTEST_H */
