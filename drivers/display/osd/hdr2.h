@@ -18,20 +18,33 @@ You should have received a copy of the GNU General Public License along
 Description:
 */
 
-#ifndef _RENDER_API_H_
-#define _RENDER_API_H_
+#ifndef __HDR2_H__
+#define __HDR2_H__
 
-#include "minui.h"
+enum hdr_module_sel {
+	VD1_HDR = 0x1,
+	VD2_HDR = 0x2,
+	OSD1_HDR = 0x4,
+	VDIN0_HDR = 0x8,
+	VDIN1_HDR = 0x10,
+	DI_HDR = 0x20,
+	HDR_MAX
+};
 
-void set_fastboot_flag(int flag);
-int screen_init(void);
-void screen_uninit(void);
-int gr_init_ext_font(const char* font, GRFont** dest);
-int surface_loadbmp(GRSurface** surface, const char* filename);
-void surface_disaplay(GRSurface* surface, int sx, int sy, int dx, int dy);
-void screen_setcolor(unsigned int color);
-void screen_drawtextline(const GRFont* font, int x, int y, const char *s, bool bold);
-void screen_fillrect(int x, int y, int w, int h);
-void screen_update(void);
+enum hdr_process_sel {
+	HDR_BYPASS = 0x1,
+	HDR_SDR = 0x2,
+	SDR_HDR = 0x4,
+	HLG_BYPASS = 0x8,
+	HLG_SDR = 0x10,
+	HLG_HDR = 0x20,
+	SDR_HLG = 0X40,
+	HDRPLUS_SDR = 0x80,
+	HDR_OFF = 0x100,
+	HDR_p_MAX
+};
+
+extern void hdr_func(enum hdr_module_sel module_sel,
+	enum hdr_process_sel hdr_process_select);
 
 #endif

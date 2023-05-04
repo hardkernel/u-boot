@@ -27,6 +27,8 @@
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
+#include <amlogic/fb.h>
+#include <video_fb.h>
 
 #define VOUT_LOG_DBG 0
 #define VOUT_LOG_TAG "[VOUT]"
@@ -226,6 +228,14 @@ static const vout_set_t vout_sets[] = {
 		.viu_color_fmt     = VPP_CM_YUV,
 		.viu_mux           = VIU_MUX_ENCP,
 	},
+	{ /* VMODE_480x320p60hz */
+		.name              = "480x320p60hz",
+		.mode              = VMODE_480x320p60hz,
+		.width             = 480,
+		.height            = 320,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
+	},
 	{ /* VMODE_640x480p60hz */
 		.name              = "640x480p60hz",
 		.mode              = VMODE_640x480p60hz,
@@ -266,6 +276,14 @@ static const vout_set_t vout_sets[] = {
 		.viu_color_fmt     = VPP_CM_YUV,
 		.viu_mux           = VIU_MUX_ENCP,
 	},
+	{ /* VMODE_1024x600p60hz */
+		.name              = "1024x600p60hz",
+		.mode              = VMODE_1024x600p60hz,
+		.width             = 1024,
+		.height            = 600,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
+	},
 	{ /* VMODE_1024x768p60hz */
 		.name              = "1024x768p60hz",
 		.mode              = VMODE_1024x768p60hz,
@@ -279,6 +297,14 @@ static const vout_set_t vout_sets[] = {
 		.mode              = VMODE_1152x864p75hz,
 		.width             = 1152,
 		.height            = 864,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
+	},
+	{ /* VMODE_1280x480p60hz */
+		.name              = "1280x480p60hz",
+		.mode              = VMODE_1280x480p60hz,
+		.width             = 1280,
+		.height            = 480,
 		.viu_color_fmt     = VPP_CM_YUV,
 		.viu_mux           = VIU_MUX_ENCP,
 	},
@@ -410,18 +436,6 @@ static const vout_set_t vout_sets[] = {
 		.viu_color_fmt     = VPP_CM_YUV,
 		.viu_mux           = VIU_MUX_ENCP,
 	},
-	{ /* VMODE_2560x1600p60hz */
-		.name              = "2560x1600p60hz",
-		.mode              = VMODE_2560x1600p60hz,
-		.width             = 2560,
-		.height            = 1600,
-	},
-	{ /* VMODE_2560x1440p60hz */
-		.name              = "2560x1440p60hz",
-		.mode              = VMODE_2560x1440p60hz,
-		.width             = 2560,
-		.height            = 1440,
-	},
 	{ /* VMODE_2560x1080p60hz */
 		.name              = "2560x1080p60hz",
 		.mode              = VMODE_2560x1080p60hz,
@@ -430,17 +444,29 @@ static const vout_set_t vout_sets[] = {
 		.viu_color_fmt     = VPP_CM_YUV,
 		.viu_mux           = VIU_MUX_ENCP,
 	},
-	{ /* VMODE_1024x600p60hz */
-		.name              = "1024x600p60hz",
-		.mode              = VMODE_1024x600p60hz,
-		.width             = 1024,
-		.height            = 600,
+	{ /* VMODE_2560x1440p60hz */
+		.name              = "2560x1440p60hz",
+		.mode              = VMODE_2560x1440p60hz,
+		.width             = 2560,
+		.height            = 1440,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
 	},
-	{ /* VMODE_480x320p60hz */
-		.name              = "480x320p60hz",
-		.mode              = VMODE_480x320p60hz,
-		.width             = 480,
-		.height            = 320,
+	{ /* VMODE_2560x1600p60hz */
+		.name              = "2560x1600p60hz",
+		.mode              = VMODE_2560x1600p60hz,
+		.width             = 2560,
+		.height            = 1600,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
+	},
+	{ /* VMODE_3440x1440p60hz */
+		.name              = "3440x1440p60hz",
+		.mode              = VMODE_3440x1440p60hz,
+		.width             = 3440,
+		.height            = 1440,
+		.viu_color_fmt     = VPP_CM_YUV,
+		.viu_mux           = VIU_MUX_ENCP,
 	},
 };
 
@@ -565,15 +591,20 @@ static int vout_find_field_height_by_name(const char* name)
 	return height;
 }
 
+static unsigned int vout_env2uint(const char *name, int base)
+{
+	return (unsigned int)getenv_ulong(name, base, 0);
+}
+
 static void vout_vinfo_init(ulong width, ulong height, ulong field_height)
 {
 	vout_info.width = width;
 	vout_info.height = height;
 	vout_info.field_height = field_height;
 	vout_info.vd_base = (void *)get_fb_addr();
-	vout_info.vl_bpix = simple_strtoul(getenv("display_bpp"), NULL, 10);
-	vout_info.vd_color_fg = simple_strtoul(getenv("display_color_fg"), NULL, 0);
-	vout_info.vd_color_bg = simple_strtoul(getenv("display_color_bg"), NULL, 0);
+	vout_info.vl_bpix = (unsigned char)vout_env2uint("display_bpp", 10);
+	vout_info.vd_color_fg = vout_env2uint("display_color_fg", 0);
+	vout_info.vd_color_bg = vout_env2uint("display_color_bg", 0);
 }
 
 static void vout_axis_init(ulong w, ulong h)
@@ -592,11 +623,17 @@ static void vout_vmode_init(void)
 	ulong width = 0;
 	ulong height = 0;
 	ulong field_height = 0;
+	uint index = 0;
 #ifdef CONFIG_AML_LCD
 	struct aml_lcd_drv_s *lcd_drv;
 #endif
 
-	outputmode = getenv("outputmode");
+	index = get_osd_layer();
+	if (index < VIU2_OSD1)
+		outputmode = getenv("outputmode");
+	else
+		outputmode = getenv("outputmode2");
+
 	vmode = vout_find_mode_by_name(outputmode);
 	vout_set_current_vmode(vmode);
 	switch (vmode) {
@@ -614,7 +651,10 @@ static void vout_vmode_init(void)
 		field_height = vout_find_field_height_by_name(outputmode);
 		break;
 	}
-	vout_reg_write(VPP_POSTBLEND_H_SIZE, width);
+
+	if (index < VIU2_OSD1)
+		vout_reg_write(VPP_POSTBLEND_H_SIZE, width);
+
 	vout_axis_init(width, height);
 
 	vout_vinfo_init(width, height, field_height);
@@ -715,7 +755,102 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("panel_y", def_y);
 		axis[2] = getenv_int("panel_w", def_w);
 		axis[3] = getenv_int("panel_h", def_h);
-	} else {
+	} else if (strncmp(mode, "480x320p",8) == 0) {
+        axis[0] = getenv_int("480x320p_x", def_x);
+        axis[1] = getenv_int("480x320p_y", def_y);
+        axis[2] = getenv_int("480x320p_w", def_w);
+        axis[3] = getenv_int("480x320p_h", def_h);
+	} else if (strncmp(mode, "640x480p",8) == 0) {
+        axis[0] = getenv_int("640x480p_x", def_x);
+        axis[1] = getenv_int("640x480p_y", def_y);
+        axis[2] = getenv_int("640x480p_w", def_w);
+        axis[3] = getenv_int("640x480p_h", def_h);
+    } else if (strncmp(mode, "800x480p",8) == 0) {
+        axis[0] = getenv_int("800x480p_x", def_x);
+        axis[1] = getenv_int("800x480p_y", def_y);
+        axis[2] = getenv_int("800x480p_w", def_w);
+        axis[3] = getenv_int("800x480p_h", def_h);
+    } else if (strncmp(mode, "800x600p",8) == 0) {
+        axis[0] = getenv_int("800x600p_x", def_x);
+        axis[1] = getenv_int("800x600p_y", def_y);
+        axis[2] = getenv_int("800x600p_w", def_w);
+        axis[3] = getenv_int("800x600p_h", def_h);
+    } else if (strncmp(mode, "1024x600p",9) == 0) {
+        axis[0] = getenv_int("1024x600p_x", def_x);
+        axis[1] = getenv_int("1024x600p_y", def_y);
+        axis[2] = getenv_int("1024x600p_w", def_w);
+        axis[3] = getenv_int("1024x600p_h", def_h);
+    } else if (strncmp(mode, "1024x768p",9) == 0) {
+        axis[0] = getenv_int("1024x768p_x", def_x);
+        axis[1] = getenv_int("1024x768p_y", def_y);
+        axis[2] = getenv_int("1024x768p_w", def_w);
+        axis[3] = getenv_int("1024x768p_h", def_h);
+    } else if (strncmp(mode, "1280x480p",9) == 0) {
+        axis[0] = getenv_int("1280x480p_x", def_x);
+        axis[1] = getenv_int("1280x480p_y", def_y);
+        axis[2] = getenv_int("1280x480p_w", def_w);
+        axis[3] = getenv_int("1280x480p_h", def_h);
+    } else if (strncmp(mode, "1280x800p",9) == 0) {
+        axis[0] = getenv_int("1280x800p_x", def_x);
+        axis[1] = getenv_int("1280x800p_y", def_y);
+        axis[2] = getenv_int("1280x800p_w", def_w);
+        axis[3] = getenv_int("1280x800p_h", def_h);
+    } else if (strncmp(mode, "1280x1024p",10) == 0) {
+        axis[0] = getenv_int("1280x1024p_x", def_x);
+        axis[1] = getenv_int("1280x1024p_y", def_y);
+        axis[2] = getenv_int("1280x1024p_w", def_w);
+        axis[3] = getenv_int("1280x1024p_h", def_h);
+    } else if (strncmp(mode, "1360x786p",9) == 0) {
+        axis[0] = getenv_int("1360x786p_x", def_x);
+        axis[1] = getenv_int("1360x786p_y", def_y);
+        axis[2] = getenv_int("1360x786p_w", def_w);
+        axis[3] = getenv_int("1360x786p_h", def_h);
+    } else if (strncmp(mode, "1440x900p",9) == 0) {
+        axis[0] = getenv_int("1440x900p_x", def_x);
+        axis[1] = getenv_int("1440x900p_y", def_y);
+        axis[2] = getenv_int("1440x900p_w", def_w);
+        axis[3] = getenv_int("1440x900p_h", def_h);
+    } else if (strncmp(mode, "1600x900p",9) == 0) {
+        axis[0] = getenv_int("1600x900p_x", def_x);
+        axis[1] = getenv_int("1600x900p_y", def_y);
+        axis[2] = getenv_int("1600x900p_w", def_w);
+        axis[3] = getenv_int("1600x900p_h", def_h);
+    } else if (strncmp(mode, "1600x1200p",10) == 0) {
+        axis[0] = getenv_int("1600x1200p_x", def_x);
+        axis[1] = getenv_int("1600x1200p_y", def_y);
+        axis[2] = getenv_int("1600x1200p_w", def_w);
+        axis[3] = getenv_int("1600x1200p_h", def_h);
+    } else if (strncmp(mode, "1680x1050p",10) == 0) {
+        axis[0] = getenv_int("1680x1050p_x", def_x);
+        axis[1] = getenv_int("1680x1050p_y", def_y);
+        axis[2] = getenv_int("1680x1050p_w", def_w);
+        axis[3] = getenv_int("1680x1050p_h", def_h);
+    } else if (strncmp(mode, "1920x1200p",10) == 0) {
+        axis[0] = getenv_int("1920x1200p_x", def_x);
+        axis[1] = getenv_int("1920x1200p_y", def_y);
+        axis[2] = getenv_int("1920x1200p_w", def_w);
+        axis[3] = getenv_int("1920x1200p_h", def_h);
+    } else if (strncmp(mode, "2560x1080p",10) == 0) {
+        axis[0] = getenv_int("2560x1080p_x", def_x);
+        axis[1] = getenv_int("2560x1080p_y", def_y);
+        axis[2] = getenv_int("2560x1080p_w", def_w);
+        axis[3] = getenv_int("2560x1080p_h", def_h);
+    } else if (strncmp(mode, "2560x1440p",10) == 0) {
+        axis[0] = getenv_int("2560x1440p_x", def_x);
+        axis[1] = getenv_int("2560x1440p_y", def_y);
+        axis[2] = getenv_int("2560x1440p_w", def_w);
+        axis[3] = getenv_int("2560x1440p_h", def_h);
+    } else if (strncmp(mode, "2560x1600p",10) == 0) {
+        axis[0] = getenv_int("2560x1600p_x", def_x);
+        axis[1] = getenv_int("2560x1600p_y", def_y);
+        axis[2] = getenv_int("2560x1600p_w", def_w);
+        axis[3] = getenv_int("2560x1600p_h", def_h);
+	} else if (strncmp(mode, "3440x1440p",10) == 0) {
+        axis[0] = getenv_int("3440x1440p_x", def_x);
+        axis[1] = getenv_int("3440x1440p_y", def_y);
+        axis[2] = getenv_int("3440x1440p_w", def_w);
+        axis[3] = getenv_int("3440x1440p_h", def_h);
+    } else {
 		axis[0] = getenv_int("1080p_x", def_x);
 		axis[1] = getenv_int("1080p_y", def_y);
 		axis[2] = getenv_int("1080p_w", def_w);
@@ -765,15 +900,20 @@ void vout_vinfo_dump(void)
 	vout_log("vinfo.vd_color_bg: %d\n", info->vd_color_bg);
 }
 
+static unsigned int vout_viu1_mux = VIU_MUX_MAX;
+static unsigned int vout_viu2_mux = VIU_MUX_MAX;
 void vout_viu_mux(int viu_sel, int venc_sel)
 {
-	unsigned int mux_bit = 0xff;
 	unsigned int clk_bit = 0xff, clk_sel = 0;
 	unsigned int viu2_valid = 0;
+	unsigned int vout_viu_sel = 0xf;
 
 	switch (get_cpu_id().family_id) {
 	case MESON_CPU_MAJOR_ID_G12A:
 	case MESON_CPU_MAJOR_ID_G12B:
+	case MESON_CPU_MAJOR_ID_TL1:
+	case MESON_CPU_MAJOR_ID_TM2:
+	case MESON_CPU_MAJOR_ID_SM1:
 		viu2_valid = 1;
 		break;
 	default:
@@ -787,19 +927,24 @@ void vout_viu_mux(int viu_sel, int venc_sel)
 			vout_hiu_setb(HHI_VPU_CLKC_CNTL, 2, 9, 3);
 			vout_hiu_setb(HHI_VPU_CLKC_CNTL, 1, 0, 1);
 			vout_hiu_setb(HHI_VPU_CLKC_CNTL, 1, 8, 3);
-			mux_bit = 2;
 			clk_sel = 1;
 		}
+		if (venc_sel == vout_viu1_mux)
+			vout_viu1_mux = VIU_MUX_MAX;
+		vout_viu2_mux = venc_sel;
 		break;
 	case VOUT_VIU1_SEL:
 		if (viu2_valid)
 			vout_hiu_setb(HHI_VPU_CLKC_CNTL, 0, 8, 1);
-		mux_bit = 0;
 		clk_sel = 0;
+		if (venc_sel == vout_viu2_mux)
+			vout_viu2_mux = VIU_MUX_MAX;
+		vout_viu1_mux = venc_sel;
 		break;
 	default:
 		break;
 	}
+	vout_viu_sel = (vout_viu1_mux | (vout_viu2_mux << 2));
 
 	switch (venc_sel) {
 	case VIU_MUX_ENCL:
@@ -815,10 +960,7 @@ void vout_viu_mux(int viu_sel, int venc_sel)
 		break;
 	}
 
-	vout_reg_setb(VPU_VIU_VENC_MUX_CTRL, 0xf, 0, 4);
-	if (mux_bit < 0xff)
-		vout_reg_setb(VPU_VIU_VENC_MUX_CTRL, venc_sel, mux_bit, 2);
-
+	vout_reg_setb(VPU_VIU_VENC_MUX_CTRL, vout_viu_sel, 0, 4);
 	if (viu2_valid) {
 		if (clk_bit < 0xff)
 			vout_reg_setb(VPU_VENCX_CLK_CTRL, clk_sel, clk_bit, 1);

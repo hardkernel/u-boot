@@ -63,6 +63,12 @@
 #ifndef DOLBY_CORE3_CLKGATE_CTRL
 #define DOLBY_CORE3_CLKGATE_CTRL                   (0x36f0)
 #endif
+#ifndef DOLBY_TM2_TV_CLKGATE_CTRL
+#define DOLBY_TM2_TV_CLKGATE_CTRL                  (0x43f1)
+#endif
+#ifndef DOLBY_CORE1_1_CLKGATE_CTRL
+#define DOLBY_CORE1_1_CLKGATE_CTRL                 (0x44f2)
+#endif
 
 
 #endif

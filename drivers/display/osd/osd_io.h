@@ -28,6 +28,30 @@
 
 #define REG_ADDR_CBUS(reg)              (REG_BASE_CBUS + REG_OFFSET_CBUS(reg))
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
+#define REG_ADDR_HIU(reg)               (reg + 0L)
+
+static inline unsigned int osd_hiu_read(unsigned int _reg)
+{
+	unsigned int val = 0;
+
+	val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
+
+	return val;
+};
+
+static inline void osd_hiu_write(unsigned int _reg, unsigned int _value)
+{
+	*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
+};
+
+static inline void osd_hiu_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	osd_hiu_write(_reg, ((osd_hiu_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
 
 static inline u32 osd_cbus_read(u32 reg)
 {
@@ -39,7 +63,6 @@ static inline void osd_cbus_write(u32 reg,
 {
 	*(volatile unsigned int *)REG_ADDR_CBUS(reg) = (val);
 }
-
 
 static inline u32 osd_reg_read(u32 reg)
 {

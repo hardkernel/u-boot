@@ -61,5 +61,4 @@ struct matrix_s {
 	u16 offset[3];
 	u16 right_shift;
 };
-
 #endif

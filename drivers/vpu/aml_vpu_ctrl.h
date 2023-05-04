@@ -152,6 +152,17 @@ static struct vpu_ctrl_s vpu_mem_pd_g12a[] = {
 	{VPU_REG_END,         0,   0,    0},
 };
 
+static struct vpu_ctrl_s vpu_mem_pd_g12b[] = {
+	/* reg,               val, bit, len */
+	{HHI_VPU_MEM_PD_REG0, 1,   0,   32},
+	{HHI_VPU_MEM_PD_REG1, 1,   0,   32},
+	{HHI_VPU_MEM_PD_REG2, 1,   0,    2},
+	{HHI_VPU_MEM_PD_REG2, 1,   4,   14},
+	{HHI_VPU_MEM_PD_REG2, 1,  22,    2},
+	{HHI_VPU_MEM_PD_REG2, 1,  30,    2},
+	{VPU_REG_END,         0,   0,    0},
+};
+
 static struct vpu_ctrl_s vpu_mem_pd_tl1[] = {
 	/* reg,               val, bit, len */
 	{HHI_VPU_MEM_PD_REG0, 1,   0,   32},
@@ -218,6 +229,24 @@ static struct vpu_ctrl_s vpu_module_init_txlx[] = {
 	{DOLBY_CORE3_CLKGATE_CTRL,  0,   1,   1},
 	{DOLBY_CORE3_CLKGATE_CTRL,  1,   2,   2},
 	{VPU_REG_END,               0,   0,   0},
+};
+
+static struct vpu_ctrl_s vpu_module_init_g12a[] = {
+	/* reg,                     val, bit, len */
+	{DOLBY_CORE1_CLKGATE_CTRL,  0x55555555, 0,   32},
+	{DOLBY_CORE2A_CLKGATE_CTRL, 0x55555555, 0,   32},
+	{DOLBY_CORE3_CLKGATE_CTRL,  0x55555555, 0,   32},
+	{VPU_REG_END,               0,          0,   0},
+};
+
+static struct vpu_ctrl_s vpu_module_init_tm2[] = {
+	/* reg,                     val, bit, len */
+	{DOLBY_CORE1_CLKGATE_CTRL,  0x55555555, 0,   32},
+	{DOLBY_CORE2A_CLKGATE_CTRL, 0x55555555, 0,   32},
+	{DOLBY_CORE3_CLKGATE_CTRL,  0x55555555, 0,   32},
+	{DOLBY_CORE1_1_CLKGATE_CTRL,0x55555555, 0,   32},
+	{DOLBY_TM2_TV_CLKGATE_CTRL, 0x55555555, 0,   32},
+	{VPU_REG_END,              0,          0,   0},
 };
 
 /* ******************************************************* */

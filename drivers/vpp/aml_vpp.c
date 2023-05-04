@@ -22,11 +22,13 @@
 #include <asm/cpu_id.h>
 #include <config.h>
 #include <common.h>
+#include <malloc.h>
 #include <vpp.h>
 #include "aml_vpp_reg.h"
 #include <asm/arch/cpu.h>
 #include "aml_vpp.h"
 #include "hdr2.h"
+#include <amlogic/hdmi.h>
 
 #define VPP_PR(fmt, args...)     printf("vpp: "fmt"", ## args)
 
@@ -480,6 +482,16 @@ static int YUV709l_to_RGB709_coeff12[MATRIX_5x3_COEF_SIZE] = {
 #define FRAC(a) ((((a) >= 0) ? \
 	((a) & 0x3ff) : ((~(a) + 1) & 0x3ff)) * 10000 / 1024)
 
+#define INORM	50000
+static u32 bt2020_primaries[3][2] = {
+	{0.17 * INORM + 0.5, 0.797 * INORM + 0.5},	/* G */
+	{0.131 * INORM + 0.5, 0.046 * INORM + 0.5},	/* B */
+	{0.708 * INORM + 0.5, 0.292 * INORM + 0.5},	/* R */
+};
+
+static u32 bt2020_white_point[2] = {
+	0.3127 * INORM + 0.5, 0.3290 * INORM + 0.5
+};
 
 /* OSD csc defines end */
 
@@ -509,6 +521,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 
 	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
 		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_SM1) ||
 		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TL1) ||
 		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TM2)){
 		/* POST2 matrix: YUV limit -> RGB  default is 12bit*/
@@ -938,7 +951,7 @@ void set_vpp_lut(
 		for (i = 0; i < 16; i++)
 			vpp_reg_write(data_port,
 				g_map[i * 2 + 1]
-				| (b_map[i * 2 + 2] << 16));
+				| (g_map[i * 2 + 2] << 16));
 		for (i = 0; i < 16; i++)
 			vpp_reg_write(data_port,
 				b_map[i * 2]
@@ -1360,9 +1373,10 @@ void vpp_pq_load(void)
 	str = strdup(pq);
 
 	for (tk = strsep(&str, ","); tk != NULL; tk = strsep(&str, ",")) {
-		tmp[cnt] = tk;
-		if (cnt++ > 4)
+		if (cnt >= 4)
 			break;
+		tmp[cnt] = tk;
+		cnt++;
 	}
 
 	if (cnt == 4) {
@@ -1372,6 +1386,8 @@ void vpp_pq_load(void)
 		}
 		vpp_pq_init(val[0], val[1], val[2], val[3]);
 	}
+
+	free(str);
 }
 
 void vpp_load_gamma_table(unsigned short *data, unsigned int len, enum vpp_gamma_sel_e flag)
@@ -1461,13 +1477,9 @@ void vpp_init_lcd_gamma_table(void)
 {
 	VPP_PR("%s\n", __func__);
 
-	vpp_disable_lcd_gamma_table();
-
 	vpp_set_lcd_gamma_table(gamma_table_r, H_SEL_R);
 	vpp_set_lcd_gamma_table(gamma_table_g, H_SEL_G);
 	vpp_set_lcd_gamma_table(gamma_table_b, H_SEL_B);
-
-	vpp_enable_lcd_gamma_table();
 }
 
 void vpp_matrix_update(int type)
@@ -1537,6 +1549,64 @@ static void vpp_ofifo_init(void)
 
 	data32 = 0x08080808;
 	vpp_reg_write(VPP_HOLD_LINES, data32);
+}
+
+static void amvecm_cp_hdr_info(struct master_display_info_s *hdr_data)
+{
+	int i, j;
+
+	hdr_data->features =
+		(0 << 30) /*sdr output 709*/
+		| (1 << 29)	/*video available*/
+		| (5 << 26)	/* unspecified */
+		| (0 << 25)	/* limit */
+		| (1 << 24)	/* color available */
+		| (9 << 16)	/* bt2020 */
+		| (16 << 8)	/* bt2020-10 */
+		| (10 << 0);	/* bt2020c */
+
+	for (i = 0; i < 3; i++)
+		for (j = 0; j < 2; j++)
+			hdr_data->primaries[i][j] =
+					bt2020_primaries[i][j];
+	hdr_data->white_point[0] = bt2020_white_point[0];
+	hdr_data->white_point[1] = bt2020_white_point[1];
+	/* default luminance */
+	hdr_data->luminance[0] = 1000 * 10000;
+	hdr_data->luminance[1] = 50;
+
+	/* content_light_level */
+	hdr_data->max_content = 0;
+	hdr_data->max_frame_average = 0;
+	hdr_data->luminance[0] = hdr_data->luminance[0] / 10000;
+	hdr_data->present_flag = 1;
+}
+
+void hdr_tx_pkt_cb(void)
+{
+	int hdr_policy = 0;
+	struct master_display_info_s hdr_data;
+	struct hdr_info *hdrinfo;
+	const char *hdr_policy_env = getenv("hdr_policy");
+
+	if (hdr_policy_env == NULL)
+		return;
+
+	hdr_policy = simple_strtoul(hdr_policy_env, NULL, 10);
+	hdrinfo = hdmitx_get_rx_hdr_info();
+
+	if ((hdrinfo && hdrinfo->hdr_sup_eotf_smpte_st_2084) &&
+		(hdr_policy == 0)) {
+		hdr_func(OSD1_HDR, SDR_HDR);
+		hdr_func(VD1_HDR, SDR_HDR);
+		amvecm_cp_hdr_info(&hdr_data);
+		hdmitx_set_drm_pkt(&hdr_data);
+	}
+
+	VPP_PR("hdr_policy = %d\n", hdr_policy);
+	if (hdrinfo)
+		VPP_PR("Rx hdr_info.hdr_sup_eotf_smpte_st_2084 = %d\n",
+			hdrinfo->hdr_sup_eotf_smpte_st_2084);
 }
 
 void vpp_init(void)

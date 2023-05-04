@@ -32,4 +32,6 @@
 #define VPP_PREBLEND_EN             (1 << 6)
 #define VPP_POST_FG_OSD2            (1 << 4)
 
+void set_vpp_matrix(int m_select, int *s, int on);
+
 #endif

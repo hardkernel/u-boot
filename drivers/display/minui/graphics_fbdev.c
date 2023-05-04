@@ -43,11 +43,8 @@ static minui_backend my_backend = {
 static unsigned long env_strtoul(const char *name, int base)
 {
 	unsigned long ret = 0;
-	char *str = NULL;
 
-	str = getenv(name);
-	if (str)
-		ret = simple_strtoul(str, NULL, base);
+	ret = getenv_ulong(name, base, 0);
 
 	if (base == 16)
 		ui_logd("%s: 0x%lx\n", name, ret);
@@ -67,7 +64,8 @@ static void fbdev_blank(bool blank)
 	int osd_index;
 
 	osd_index = get_osd_layer();
-	osd_enable_hw(osd_index, blank);
+	if (osd_index >= 0)
+		osd_enable_hw(osd_index, blank);
 }
 
 static void set_displayed_framebuffer(unsigned n)
@@ -85,6 +83,18 @@ static void set_displayed_framebuffer(unsigned n)
 	displayed_buffer = n;
 }
 
+static char * getenv_str(const char *name)
+{
+	char *str = NULL;
+	if (!name) {
+		ui_loge("read env, name is NULL\n");
+		return NULL;
+	}
+	str = getenv(name);
+
+	return str ? str : NULL;
+}
+
 static GRSurface* fbdev_init(void)
 {
 	u32 color_index, display_bpp;
@@ -92,12 +102,12 @@ static GRSurface* fbdev_init(void)
 	char *outputmode = NULL;
 	char mode[64];
 
-	outputmode = getenv("outputmode");
+	outputmode = getenv_str("outputmode");
 	if (!outputmode)
 		return NULL;
 
 	memset(mode, 0, sizeof(mode));
-	sprintf(mode, "vout output %s", outputmode);
+	snprintf(mode, sizeof(mode), "vout output %s", outputmode);
 	run_command(mode, 0);
 
 	color_index = env_strtoul("display_color_index", 10);

@@ -459,3 +459,10 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 0, do_hdmitx,
 	"hdmitx mode [hdmi/dvi]\n"
 	"    set vout mode : hdmi or dvi\n"
 );
+
+struct hdr_info *hdmitx_get_rx_hdr_info(void)
+{
+	struct hdmitx_dev *hdev = &hdmitx_device;
+
+	return &hdev->RXCap.hdr_info;
+}

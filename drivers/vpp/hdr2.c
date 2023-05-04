@@ -1,3 +1,23 @@
+/*
+* Copyright (C) 2017 Amlogic, Inc. All rights reserved.
+* *
+This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+* *
+This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+* *
+You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+* *
+Description:
+*/
+
 #include <asm/cpu_id.h>
 #include <malloc.h>
 #include "hdr2.h"
@@ -239,16 +259,16 @@ int oo_y_lut_hlg_hdr[149] = {
 };
 
 int oo_y_lut_sdr_hdr[149] = {
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38, 38,
-	38, 38, 38, 38, 38
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+	32, 32, 32, 32, 32
 };
 
 int oo_y_lut_hlg_sdr[149] = {
@@ -613,8 +633,13 @@ void set_hdr_matrix(
 					adpscl_shift[i] = adp_scal_shift;
 				else
 					adpscl_shift[i] = adp_scal_shift - 2;
-			} else
-				adpscl_shift[i] = adp_scal_shift;
+			} else {
+				/* shift value keep consistent with kernel */
+				if (i == 1)
+					adpscl_shift[i] = adp_scal_shift - 1;
+				else
+					adpscl_shift[i] = adp_scal_shift;
+			}
 
 			adpscl_ys_coef[i] =
 					1 << adp_scal_shift;
@@ -625,7 +650,7 @@ void set_hdr_matrix(
 		/*gamut mode: 1->gamut before ootf*/
 					/*2->gamut after ootf*/
 					/*other->disable gamut*/
-		vpp_reg_setb(hdr_ctrl, 2, 6, 2);
+		vpp_reg_setb(hdr_ctrl, 1, 6, 2);
 
 	    vpp_reg_write(GMUT_CTRL, gmut_shift);
 	    vpp_reg_write(GMUT_COEF0,
@@ -647,7 +672,7 @@ void set_hdr_matrix(
 			c_gain_lim_coef[1] << 16 |
 			c_gain_lim_coef[0]);
 	    vpp_reg_write(CGAIN_COEF1, c_gain_lim_coef[2] |
-			0x400 << 16);
+			0x1000 << 16);
 
 	    vpp_reg_write(ADPS_CTRL, adpscl_enable[2] << 6 |
 							adpscl_enable[1] << 5 |
@@ -844,7 +869,7 @@ void set_c_gain(
 
 	/*cgain mode: 0->y domin*/
 	/*cgain mode: 1->rgb domin, use r/g/b max*/
-	vpp_reg_setb(hdr_ctrl, hdr_lut_param->cgain_en, 12, 1);
+	vpp_reg_setb(hdr_ctrl, 0, 12, 1);
 	vpp_reg_setb(hdr_ctrl, hdr_lut_param->cgain_en, 0, 1);
 
 	if (!hdr_lut_param->cgain_en)
@@ -865,6 +890,7 @@ void hdr_func(enum hdr_module_sel module_sel,
 	int bit_depth;
 	unsigned int i = 0;
 	struct hdr_proc_mtx_param_s hdr_mtx_param;
+	printf("hdr_func %d, hdr_process_select 0x%x\n", module_sel, hdr_process_select);
 
 	memset(&hdr_mtx_param, 0, sizeof(struct hdr_proc_mtx_param_s));
 	memset(&hdr_lut_param, 0, sizeof(struct hdr_proc_lut_param_s));
@@ -935,8 +961,7 @@ void hdr_func(enum hdr_module_sel module_sel,
 		hdr_lut_param.lut_on = LUT_ON;
 		hdr_lut_param.bitdepth = bit_depth;
 		/*for g12a/g12b osd blend shift rtl bug*/
-		if (((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-			(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)) &&
+		if ((get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) &&
 			(module_sel & OSD1_HDR))
 			hdr_lut_param.cgain_en = LUT_ON;
 		else
@@ -996,6 +1021,21 @@ void hdr_func(enum hdr_module_sel module_sel,
 			hdr_lut_param.cgain_en = LUT_ON;
 		else
 			hdr_lut_param.cgain_en = LUT_OFF;
+	} else if (hdr_process_select & HDR_OFF) {
+		for (i = 0; i < HDR2_OETF_LUT_SIZE; i++) {
+			hdr_lut_param.oetf_lut[i]  = oe_y_lut_sdr[i];
+			hdr_lut_param.ogain_lut[i] =
+				oo_y_lut_hdr_sdr[i];
+			if (i < HDR2_EOTF_LUT_SIZE)
+				hdr_lut_param.eotf_lut[i] =
+					eo_y_lut_hdr[i];
+			if (i < HDR2_CGAIN_LUT_SIZE)
+				hdr_lut_param.cgain_lut[i] =
+					cgain_lut1[i] - 1;
+		}
+		hdr_lut_param.lut_on = LUT_OFF;
+		hdr_lut_param.bitdepth = bit_depth;
+		hdr_lut_param.cgain_en = LUT_OFF;
 	} else
 		return;
 
@@ -1123,9 +1163,9 @@ void hdr_func(enum hdr_module_sel module_sel,
 					ncl_709_2020[i];
 				if (i < 3) {
 					hdr_mtx_param.mtxi_pre_offset[i] =
-						bypass_coeff[i];
+						bypass_pre[i];
 					hdr_mtx_param.mtxi_pos_offset[i] =
-						bypass_coeff[i];
+						bypass_pos[i];
 					hdr_mtx_param.mtxo_pre_offset[i] =
 						rgb2yuvpre[i];
 					hdr_mtx_param.mtxo_pos_offset[i] =
@@ -1219,6 +1259,29 @@ void hdr_func(enum hdr_module_sel module_sel,
 		}
 		hdr_mtx_param.mtx_on = MTX_ON;
 		hdr_mtx_param.p_sel = SDR_HLG;
+	} else if (hdr_process_select & HDR_OFF) {
+		for (i = 0; i < 15; i++) {
+			hdr_mtx_param.mtx_in[i] = rgb2ycbcr_709[i];
+			hdr_mtx_param.mtx_cgain[i] = bypass_coeff[i];
+			hdr_mtx_param.mtx_ogain[i] = bypass_coeff[i];
+			hdr_mtx_param.mtx_out[i] = bypass_coeff[i];
+			if (i < 9)
+				hdr_mtx_param.mtx_gamut[i] =
+					bypass_coeff[i];
+			if (i < 3) {
+				hdr_mtx_param.mtxi_pre_offset[i] =
+					rgb2yuvpre[i];
+				hdr_mtx_param.mtxi_pos_offset[i] =
+					rgb2yuvpos[i];
+				hdr_mtx_param.mtxo_pre_offset[i] =
+					bypass_pre[i];
+				hdr_mtx_param.mtxo_pos_offset[i] =
+					bypass_pos[i];
+			}
+		}
+		hdr_mtx_param.mtx_on = MTX_OFF;
+		hdr_mtx_param.p_sel = HDR_BYPASS;
+		hdr_mtx_param.mtx_only = HDR_ONLY;
 	}
 
 	set_hdr_matrix(module_sel, HDR_IN_MTX, &hdr_mtx_param);

@@ -1,3 +1,23 @@
+/*
+* Copyright (C) 2017 Amlogic, Inc. All rights reserved.
+* *
+This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+* *
+This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+* *
+You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+* *
+Description:
+*/
+
 #ifndef __HDMI_H__
 #define __HDMI_H__
 
@@ -234,6 +254,31 @@ struct dtd {
 	enum hdmi_vic vic;
 };
 
+
+struct hdr_info {
+	unsigned int hdr_sup_eotf_sdr:1;
+	unsigned int hdr_sup_eotf_hdr:1;
+	unsigned int hdr_sup_eotf_smpte_st_2084:1;
+	unsigned int hdr_sup_eotf_hlg:1;
+	unsigned int hdr_sup_SMD_type1:1;
+	unsigned char hdr_lum_max;
+	unsigned char hdr_lum_avg;
+	unsigned char hdr_lum_min;
+	unsigned char rawdata[7];
+};
+
+
+/* master_display_info for display device */
+struct master_display_info_s {
+	u32 present_flag;
+	u32 features;			/* feature bits bt2020/2084 */
+	u32 primaries[3][2];		/* normalized 50000 in G,B,R order */
+	u32 white_point[2]; 	/* normalized 50000 */
+	u32 luminance[2];		/* max/min lumin, normalized 10000 */
+	u32 max_content;		/* Maximum Content Light Level */
+	u32 max_frame_average;	/* Maximum Frame-average Light Level */
+};
+
 #define VIC_MAX_NUM 256
 struct rx_cap {
 	unsigned int native_Mode;
@@ -274,6 +319,7 @@ struct rx_cap {
 	unsigned char flag_vfpdb;
 	unsigned char number_of_dtd;
 	unsigned char pref_colorspace;
+	struct hdr_info hdr_info;
 	/*blk0 check sum*/
 	unsigned char chksum;
 };
@@ -380,6 +426,8 @@ int hdmi_outputmode_check(char *mode);
 unsigned int hdmi_edid_parsing(unsigned char *edid, struct rx_cap *pRXCap);
 struct hdmi_format_para *hdmi_match_dtd_paras(struct dtd *t);
 
+extern void hdmitx_set_drm_pkt(struct master_display_info_s *data);
+
 /*
  * Must be called at uboot
  */
@@ -396,4 +444,5 @@ extern struct hdmitx_dev hdmitx_device;
 
 #define hdmitx_debug() /* printf("hd: %s[%d]\n", __func__, __LINE__) */
 
+extern struct hdr_info *hdmitx_get_rx_hdr_info(void);
 #endif

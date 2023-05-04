@@ -199,6 +199,26 @@ static void osd_debug_dump_register_all(void)
 			reg = VIU_OSD2_BLK0_CFG_W4;
 		osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
 	}
+
+#ifdef CONFIG_AML_MESON_G12A
+	/* for viu2_osd */
+	if (!strcmp(getenv("display_layer"), "viu2_osd0")) {
+		reg = VIU2_OSD1_FIFO_CTRL_STAT;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_CTRL_STAT;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_BLK0_CFG_W0;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_BLK0_CFG_W1;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_BLK0_CFG_W2;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_BLK0_CFG_W3;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU2_OSD1_BLK0_CFG_W4;
+		osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
+	}
+#endif
 }
 
 static void osd_test_colorbar(void)
