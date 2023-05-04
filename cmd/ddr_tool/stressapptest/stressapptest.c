@@ -507,6 +507,23 @@ static void pattern_list_init(struct pattern *pattern_list,
 	sat->weight_count = weight_count;
 }
 
+static u32 get_max_page_num(ulong page_size_byte)
+{
+	ulong start_adr[CONFIG_NR_DRAM_BANKS], length[CONFIG_NR_DRAM_BANKS];
+	u32 page_num = 0;
+
+	get_print_available_addr(start_adr, length, 0);
+
+	page_num = 0;
+	for (int i = 0; i < ARRAY_SIZE(start_adr) || i < ARRAY_SIZE(length); i++) {
+		if ((start_adr[i] == 0 && length[i] == 0))
+			break;
+		page_num += (u32)(length[i] / page_size_byte);
+	}
+
+	return page_num;
+}
+
 static int get_page_addr(struct page *page_list,
 			 struct stressapptest_params *sat)
 {
@@ -541,7 +558,10 @@ static int get_page_addr(struct page *page_list,
 		}
 	}
 
-	if (page < sat->page_num) {
+	if (sat->total_test_size_mb == 0) {
+		/* No arg for total_test_size_mb, test all available space by default. */
+		sat->page_num = page;
+	} else if (page < sat->page_num || page < sat->cpu_num * 4) {
 		printf("ERROR: Cannot get enough pages to test.\n");
 		printf("Please decrease page_size or test_size\n");
 
@@ -1089,7 +1109,10 @@ static int doing_stressapptest(void)
 	sat.cpu_num = 1;
 #endif
 
-	sat.page_num = (sat.total_test_size_mb << 20) / sat.page_size_byte;
+	if (sat.total_test_size_mb == 0)
+		sat.page_num = get_max_page_num(sat.page_size_byte);
+	else
+		sat.page_num = (sat.total_test_size_mb << 20) / sat.page_size_byte;
 	sat.block_num = sat.page_size_byte / sat.block_size_byte;
 
 	udelay(100);
@@ -1183,7 +1206,7 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 	ulong test_time_sec = 20;
 	ulong page_size_kb = 1024;
 
-	sat.total_test_size_mb = 32;
+	sat.total_test_size_mb = 0;
 	sat.block_size_byte = 4096;
 	sat.total_start_addr = 0x0;
 
@@ -1199,7 +1222,7 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 		if (strict_strtoul(argv[2], 0, &sat.total_test_size_mb) < 0)
 			return CMD_RET_USAGE;
 		if (sat.total_test_size_mb < 1)
-			sat.total_test_size_mb = 32;
+			sat.total_test_size_mb = 0;
 	}
 	if (argc > 3) {
 		if (strict_strtoul(argv[3], 0, &sat.total_start_addr) < 0)
@@ -1228,11 +1251,11 @@ static int do_stressapptest(cmd_tbl_t *cmdtp, int flag, int argc, char *const ar
 U_BOOT_CMD(stressapptest,	5,	1,	do_stressapptest,
 	   "StressAppTest for Rockchip\n",
 	   "\narg1: test time in second, default value is 20s.\n"
-	   "arg2: test size in MB, default value is 32MB.\n"
+	   "arg2: test size in MB, default value is all available space.\n"
 	   "arg3: start addr for test.\n"
 	   "arg4: test page size in kB, default value is 1024kB(1MB).\n"
 	   "example:\n"
-	   "	stressapptest: test for 20s, test size is 32MB, each page size is 1MB (32 pages).\n"
+	   "	stressapptest: test for 20s, test size is all available space, each page size is 1MB.\n"
 	   "	stressapptest 43200 64: test for 12h, test size is 64MB, each page size is 1MB (64 pages).\n"
 	   "	stressapptest 86400 1024 0x80000000: test for 24h, test size is 1024MB, start addr for test is 0x80000000, each page size is 1MB (1024 pages).\n"
 	   "	stressapptest 43200 16 0x40000000 512: test for 12h, test size is 16MB, start addr for test is 0x40000000, each page size is 512kB (32 pages).\n"
