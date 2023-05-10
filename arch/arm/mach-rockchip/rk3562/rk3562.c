@@ -16,6 +16,7 @@
 #include <fdt_support.h>
 #include <asm/arch/clock.h>
 #include <dt-bindings/clock/rk3562-cru.h>
+#include <asm/arch-rockchip/rockchip_smccc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -28,23 +29,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PMU_GRF_BASE		0xff010000
 #define PMU_GRF_SOC_CON9	0x0124
-
-#define SYS_SGRF_BASE		0xff020000
-#define SYS_SGRF_SOC_CON3	0x000c
-#define SYS_SGRF_SOC_CON4	0x0010
-#define SYS_SGRF_SOC_CON9	0x0024
-#define SYS_SGRF_SOC_CON10	0x0028
-#define SYS_SGRF_SOC_CON12	0x0030
-#define SYS_SGRF_FW_SLV_CON0	0x0080
-#define SYS_SGRF_FW_SLV_CON1	0x0084
-#define SYS_SGRF_FW_SLV_CON2	0x0088
-#define SYS_SGRF_FW_SLV_CON3	0x008c
-#define SYS_SGRF_FW_SLV_CON4	0x0090
-#define SYS_SGRF_FW_SLV_CON5	0x0094
-#define SYS_SGRF_FW_SLV_CON6	0x0098
-#define SYS_SGRF_FW_SLV_CON7	0x009c
-#define SYS_SGRF_FW_SLV_CON8	0x00a0
-#define SYS_SGRF_FW_SLV_CON9	0x00a4
 
 #define SYS_GRF_BASE		0xff030000
 #define SYS_GRF_SOC_CON5	0x0414
@@ -513,6 +497,34 @@ void board_debug_uart_init(void)
 #endif
 }
 
+int fit_standalone_release(char *id, uintptr_t entry_point)
+{
+	/* bus m0 configuration: */
+	/* open hclk_dcache / hclk_icache / clk_bus m0 rtc / fclk_bus_m0_core */
+	writel(0x03180000, TOP_CRU_BASE + TOP_CRU_GATE_CON23);
+
+	/* open bus m0 sclk / bus m0 hclk / bus m0 dclk */
+	writel(0x00070000, TOP_CRU_BASE + TOP_CRU_CM0_GATEMASK);
+
+	/* mcu_cache_peripheral_addr */
+	writel(0xa0000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
+	writel(0xffb40000, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
+
+	sip_smc_mcu_config(ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID,
+			   ROCKCHIP_SIP_CONFIG_MCU_CODE_START_ADDR,
+			   0xffff0000 | (entry_point >> 16));
+	sip_smc_mcu_config(ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID,
+			   ROCKCHIP_SIP_CONFIG_MCU_EXPERI_START_ADDR, 0xffffa000);
+
+	/* release dcache / icache / bus m0 jtag / bus m0 */
+	writel(0x03280000, TOP_CRU_BASE + TOP_CRU_SOFTRST_CON23);
+
+	/* release pmu m0 jtag / pmu m0 */
+	/* writel(0x00050000, PMU1_CRU_BASE + PMU1_CRU_SOFTRST_CON02); */
+
+	return 0;
+}
+
 #if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 static void qos_priority_init(void)
 {
@@ -643,62 +655,6 @@ int arch_cpu_init(void)
 #endif
 
 	qos_priority_init();
-
-	return 0;
-}
-
-int spl_fit_standalone_release(char *id, uintptr_t entry_point)
-{
-	u32 val;
-
-	/* bus m0 configuration: */
-	/* open hclk_dcache / hclk_icache / clk_bus m0 rtc / fclk_bus_m0_core */
-	writel(0x03180000, TOP_CRU_BASE + TOP_CRU_GATE_CON23);
-	/* open bus m0 sclk / bus m0 hclk / bus m0 dclk */
-	writel(0x00070000, TOP_CRU_BASE + TOP_CRU_CM0_GATEMASK);
-	/* set the mcu to access ddr memory */
-	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST6_REG);
-	writel(val & 0xffffff00, FIREWALL_DDR_BASE + FW_DDR_MST6_REG);
-	/* set all slave to non-secure */
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON0);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON1);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON2);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON3);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON4);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON5);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON6);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON7);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON8);
-	writel(0xffff0000, SYS_SGRF_BASE + SYS_SGRF_FW_SLV_CON9);
-	/* set the mcu to non-secure */
-	writel(0x80008000, SYS_SGRF_BASE + SYS_SGRF_SOC_CON3);
-	/* set start addr, mcu_code_addr_start */
-	writel(0xffff0000 | (entry_point >> 16), SYS_SGRF_BASE + SYS_SGRF_SOC_CON9);
-	/* set start addr, mcu_experi_addr_start */
-	writel(0xffffa000, SYS_SGRF_BASE + SYS_SGRF_SOC_CON10);
-	/* mcu_cache_peripheral_addr */
-	writel(0xa0000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
-	writel(0xffb40000, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
-	/* jtag_m1 gpio1b5/gpio1b6 iomux */
-	/* writel(0x0ff00220, 0xff06000c); */
-	/* writel(0x00060002, 0xff060504); */
-	/* release dcache / icache / bus m0 jtag / bus m0 */
-	writel(0x03280000, TOP_CRU_BASE + TOP_CRU_SOFTRST_CON23);
-
-	/* pmu m0 configuration: */
-	/* open clk_pmu m0 rtc / fclk_pmu_m0_core */
-	/* writel(0x00030000, PMU1_CRU_BASE + PMU1_CRU_GATE_CON02); */
-	/* open pmu m0 sclk / pmu m0 hclk / pmu m0 dclk */
-	/* writel(0x00070000, PMU1_CRU_BASE + PMU1_CRU_CM0_GATEMASK); */
-	/* set the mcu to secure */
-	/* writel(0x00080000, SYS_SGRF_BASE + SYS_SGRF_SOC_CON4); */
-	/* set start addr, mcu_code_addr_start */
-	/* writel(0xfffffe49, PMU_GRF_BASE + PMU_GRF_SOC_CON9); */
-	/* jtag_m1 gpio1b5/gpio1b6 iomux */
-	/* writel(0x0ff00220, 0xff06000c); */
-	/* writel(0x00060004, 0xff060504); */
-	/* release pmu m0 jtag / pmu m0 */
-	/* writel(0x00050000, PMU1_CRU_BASE + PMU1_CRU_SOFTRST_CON02); */
 
 	return 0;
 }
