@@ -113,7 +113,7 @@ function gen_bl31_node()
 	${srctree}/arch/arm/mach-rockchip/decode_bl31.py
 
 	NUM=1
-	for ATF in `ls -l bl31_0x*.bin | sort --key=5 -nr | awk '{ print $9 }'`
+	for ATF in `ls -1 -S bl31_0x*.bin`
 	do
 		ATF_LOAD_ADDR=`echo ${ATF} | awk -F "_" '{ printf $2 }' | awk -F "." '{ printf $1 }'`
 		# only atf-1 support compress
