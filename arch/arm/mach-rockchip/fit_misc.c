@@ -26,7 +26,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #if CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS)
 
 #define FIT_UNCOMP_HASH_NODENAME	"digest"
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP) || CONFIG_IS_ENABLED(LZMA)
 static int fit_image_get_uncomp_digest(const void *fit, int parent_noffset)
 {
 	const char *name;
@@ -127,8 +127,10 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 		else
 			misc_decompress_sync(comp);
 #else
+#if CONFIG_IS_ENABLED(GZIP)
 		ret = gunzip((void *)(*load_addr), ALIGN(len, FIT_MAX_SPL_IMAGE_SZ),
 			     (void *)(*src_addr), (void *)(&len));
+#endif
 #endif
 	}
 
@@ -155,7 +157,7 @@ static int fit_decomp_image(void *fit, int node, ulong *load_addr,
 void board_fit_image_post_process(void *fit, int node, ulong *load_addr,
 				  ulong **src_addr, size_t *src_len, void *spec)
 {
-#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP)
+#if CONFIG_IS_ENABLED(MISC_DECOMPRESS) || CONFIG_IS_ENABLED(GZIP) || CONFIG_IS_ENABLED(LZMA)
 	fit_decomp_image(fit, node, load_addr, src_addr, src_len, spec);
 #endif
 
