@@ -703,6 +703,7 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 		 bootm_headers_t *images,
 		 char **of_flat_tree, ulong *of_size);
 void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob);
+void boot_mem_rsv_regions(struct lmb *lmb, void *fdt_blob);
 #ifdef CONFIG_SYSMEM
 int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob);
 #else
