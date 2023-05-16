@@ -497,15 +497,13 @@ int vendor_storage_init(void)
 	/* Initialize */
 	bootdev_type = dev_desc->if_type;
 
-	/* Always use, no need to release */
-	buffer = (u8 *)malloc(size + PAGE_ALGIN_SIZE);
+	/* Always use, no need to release, align to page size for kerenl reserved memory */
+	buffer = (u8 *)memalign(PAGE_ALGIN_SIZE, size);
 	if (!buffer) {
 		printf("[Vendor ERROR]:Malloc failed!\n");
 		ret = -ENOMEM;
 		goto out;
 	}
-	/* buffer align to page size kerenl reserved memory */
-	buffer = (u8 *)((ulong)buffer & PAGE_ALGIN_MASK) + PAGE_ALGIN_SIZE;
 
 	/* Pointer initialization */
 	vendor_info.hdr = (struct vendor_hdr *)buffer;
