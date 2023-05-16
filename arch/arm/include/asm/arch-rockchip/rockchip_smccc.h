@@ -29,6 +29,7 @@
 #define SIP_LAST_LOG			0x8200000e
 #define SIP_AMP_CFG			0x82000022
 #define SIP_HDCP_CONFIG			0x82000025
+#define SIP_MCU_CFG			0x82000028
 
 #define ROCKCHIP_SIP_CONFIG_DRAM_INIT		0x00
 #define ROCKCHIP_SIP_CONFIG_DRAM_SET_RATE	0x01
@@ -46,6 +47,19 @@
 #define ROCKCHIP_SIP_CONFIG_DRAM_ECC		0x0d
 #define ROCKCHIP_SIP_CONFIG_DRAM_GET_FREQ_INFO	0x0e
 #define ROCKCHIP_SIP_CONFIG_DRAM_FSP_INIT	0x0f
+
+/* RK_SIP_MCU_CFG child configs, MCU ID */
+#define ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID		0x00
+#define ROCKCHIP_SIP_CONFIG_BUSMCU_1_ID		0x01
+#define ROCKCHIP_SIP_CONFIG_PMUMCU_0_ID		0x10
+#define ROCKCHIP_SIP_CONFIG_DDRMCU_0_ID		0x20
+#define ROCKCHIP_SIP_CONFIG_NPUMCU_0_ID		0x30
+
+/* RK_SIP_MCU_CFG child configs */
+#define ROCKCHIP_SIP_CONFIG_MCU_CODE_START_ADDR		0x01
+#define ROCKCHIP_SIP_CONFIG_MCU_EXPERI_START_ADDR	0x02
+#define ROCKCHIP_SIP_CONFIG_MCU_SRAM_START_ADDR		0x03
+#define ROCKCHIP_SIP_CONFIG_MCU_EXSRAM_START_ADDR	0x04
 
 /* Rockchip Sip version */
 #define SIP_IMPLEMENT_V1                (1)
@@ -172,6 +186,13 @@ struct arm_smccc_res sip_smc_get_sip_version(void);
  */
 int sip_smc_hdcp_config(unsigned long func,
 			unsigned long arg1, unsigned long arg2);
+
+/*
+ * sip_smc_mcu_config() - handle mcu.
+ *
+ * @return  0 on success, otherwise failed.
+ */
+int sip_smc_mcu_config(unsigned long mcu_id, unsigned long func, unsigned long arg2);
 
 /*
  * psci_cpu_on() - Standard ARM PSCI cpu on call.

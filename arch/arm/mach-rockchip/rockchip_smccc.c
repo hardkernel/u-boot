@@ -151,3 +151,11 @@ int sip_smc_set_sip_version(unsigned long version)
 
 	return 0;
 }
+
+int sip_smc_mcu_config(unsigned long mcu_id, unsigned long func, unsigned long arg2)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_MCU_CFG, mcu_id, func, arg2);
+	return res.a0;
+}
