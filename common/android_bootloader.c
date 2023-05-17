@@ -18,6 +18,7 @@
 #include <dt_table.h>
 #include <image-android-dt.h>
 #include <malloc.h>
+#include <mp_boot.h>
 #include <fdt_support.h>
 #include <fs.h>
 #include <boot_rkimg.h>
@@ -821,6 +822,11 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 
 	if (strcmp(boot_partname, ANDROID_PARTITION_RECOVERY) == 0)
 		flags |= AVB_SLOT_VERIFY_FLAGS_NO_VBMETA_PARTITION;
+
+#ifdef CONFIG_MP_BOOT
+	preload_user_data.boot.addr = (void *)mpb_post(1);
+	preload_user_data.boot.size = (size_t)mpb_post(2);
+#endif
 
 	/* use preload one if available */
 	if (preload_user_data.boot.addr) {

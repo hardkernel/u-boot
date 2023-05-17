@@ -144,6 +144,17 @@ config SPL_SKIP_RELOCATE
 	  The SPL code will be relocated to a high memory if you say no here.
 	  Only ARM64 and PowerPC SPL support relocate now.
 
+config SPL_BOOT_IMAGE
+	bool "SPL boot image load support"
+	default n
+	help
+	  This enable SPL boot image load support
+
+config SPL_BOOT_IMAGE_BUF
+	hex "SPL boot image memory buffer"
+	depends on SPL_BOOT_IMAGE
+	default 0x10000000
+
 config SPL_RELOC_TEXT_BASE
 	hex "Address the SPL relocate to"
 	depends on !SPL_SKIP_RELOCATE

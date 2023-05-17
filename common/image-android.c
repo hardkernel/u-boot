@@ -15,6 +15,7 @@
 #include <boot_rkimg.h>
 #include <crypto.h>
 #include <sysmem.h>
+#include <mp_boot.h>
 #include <u-boot/sha1.h>
 #ifdef CONFIG_RKIMG_BOOTLOADER
 #include <asm/arch/resource_img.h>
@@ -656,8 +657,10 @@ crypto_calc:
 	if (hdr->header_version < 3) {
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
 #ifdef CONFIG_DM_CRYPTO
-		crypto_sha_update(crypto, (u32 *)buffer, length);
-		crypto_sha_update(crypto, (u32 *)&length, typesz);
+		if (crypto) {
+			crypto_sha_update(crypto, (u32 *)buffer, length);
+			crypto_sha_update(crypto, (u32 *)&length, typesz);
+		}
 #else
 		sha1_update(&sha1_ctx, (void *)buffer, length);
 		sha1_update(&sha1_ctx, (void *)&length, typesz);
@@ -724,7 +727,12 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 		return -1;
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
-	if (hdr->header_version < 3) {
+	int verify = 1;
+
+#ifdef CONFIG_MP_BOOT
+	verify = mpb_post(3);
+#endif
+	if (hdr->header_version < 3 && verify) {
 		struct udevice *dev = NULL;
 		uchar hash[20];
 #ifdef CONFIG_DM_CRYPTO

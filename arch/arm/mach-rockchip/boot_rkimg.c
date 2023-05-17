@@ -19,6 +19,7 @@
 #include <key.h>
 #include <mmc.h>
 #include <malloc.h>
+#include <mp_boot.h>
 #include <mtd_blk.h>
 #include <nvme.h>
 #include <scsi.h>
@@ -92,6 +93,10 @@ static void boot_devtype_init(void)
 
 	if (done)
 		return;
+
+#ifdef CONFIG_MP_BOOT
+	mpb_post(0);
+#endif
 
 	/* configuration */
 	if (!param_parse_assign_bootdev(&devtype, &devnum)) {

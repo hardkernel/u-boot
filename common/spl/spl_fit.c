@@ -12,6 +12,7 @@
 #include <image.h>
 #include <malloc.h>
 #include <mtd_blk.h>
+#include <mp_boot.h>
 #include <spl.h>
 #include <spl_ab.h>
 #include <linux/libfdt.h>
@@ -794,6 +795,10 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	ulong sector_offs = sector;
 	int ret = -EINVAL;
 	int i;
+
+#ifdef CONFIG_MP_BOOT
+	mpb_init_1(*info);
+#endif
 
 	printf("Trying fit image at 0x%lx sector\n", sector_offs);
 	for (i = 0; i < CONFIG_SPL_FIT_IMAGE_MULTIPLE; i++) {

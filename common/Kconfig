@@ -682,5 +682,17 @@ config HASH
 
 endmenu
 
+menu "MT support"
+
+config MP_BOOT
+	bool "Support MT boot"
+	default n
+
+config MP_BOOT_BOOTM
+	bool "MT simple bootm image"
+	depends on MP_BOOT
+
+endmenu
+
 source "common/spl/Kconfig"
 source "common/usbplug/Kconfig"

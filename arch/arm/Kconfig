@@ -343,6 +343,10 @@ config ARM64_SUPPORT_AARCH32
 	help
 	  This ARM64 system supports AArch32 execution state.
 
+config ARM_SMP
+	bool "Enable ARM Symmetric Multiprocessing"
+	default n
+
 choice
 	prompt "Target select"
 	default TARGET_HIKEY

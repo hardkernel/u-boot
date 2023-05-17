@@ -444,6 +444,7 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 	disk_partition_t part_info;
 	ulong load_addr;
 	AvbIOResult ret;
+	int full_preload = 0;
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc)
@@ -470,7 +471,7 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 		}
 
-		printf("preloaded: %sfull image from '%s' at 0x%08lx - 0x%08lx\n",
+		printf("preloaded(s): %sfull image from '%s' at 0x%08lx - 0x%08lx\n",
 		       preload_info->size ? "pre-" : "", partition,
 		       (ulong)preload_info->addr,
 		       (ulong)preload_info->addr + num_bytes);
@@ -493,7 +494,18 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 		    !strncmp(partition, ANDROID_PARTITION_BOOT, 4) ||
 		    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8) ||
 		    !strncmp(partition, ANDROID_PARTITION_RESOURCE, 8)) {
-			printf("preloaded: distribute image from '%s'\n", partition);
+			/* If already full preloaded, just use it */
+			if (!strncmp(partition, ANDROID_PARTITION_BOOT, 4) ||
+			    !strncmp(partition, ANDROID_PARTITION_RECOVERY, 8)) {
+				preload_info = &data->boot;
+				if (preload_info->size) {
+					*out_pointer = preload_info->addr;
+					*out_num_bytes_preloaded = num_bytes;
+					full_preload = 1;
+				}
+			}
+			printf("preloaded: %s image from '%s\n",
+			       full_preload ? "pre-full" : "distribute", partition);
 		} else {
 			printf("Error: unknown preloaded partition '%s'\n", partition);
 			return AVB_IO_RESULT_ERROR_OOM;
@@ -510,6 +522,10 @@ static AvbIOResult get_preloaded_partition(AvbOps* ops,
 			*out_num_bytes_preloaded = num_bytes; /* return what it expects */
 			return AVB_IO_RESULT_OK;
 		}
+
+		/* If already full preloaded, there is nothing to do and just return */
+		if (full_preload)
+			return AVB_IO_RESULT_OK;
 
 		/*
 		 * only boot/recovery partition can reach here

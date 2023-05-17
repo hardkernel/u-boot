@@ -197,6 +197,43 @@ slave_cpu:
 	cbz	x0, slave_cpu
 	br	x0			/* branch to the given address */
 #endif /* CONFIG_ARMV8_MULTIENTRY */
+
+#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_ARM_SMP)
+	mrs	x0, mpidr_el1
+	and x0, x0, #0xfff
+	cmp x0, #0
+	beq master_cpu
+
+#ifdef SMP_CPU1
+	cmp x0, #(SMP_CPU1)
+	ldr x1, =(SMP_CPU1_STACK)
+	beq slave_cpu
+#endif
+
+#ifdef SMP_CPU2
+	cmp x0, #(SMP_CPU2)
+	ldr x1, =(SMP_CPU2_STACK)
+	beq slave_cpu
+#endif
+
+#ifdef SMP_CPU3
+	cmp x0, #(SMP_CPU3)
+	ldr x1, =(SMP_CPU3_STACK)
+	beq slave_cpu
+#endif
+	dsb sy
+	isb
+
+loop:
+	wfe
+	b loop
+
+slave_cpu:
+	bic	sp, x1, #0xf
+	bl	smp_entry
+	b	loop
+#endif
+
 master_cpu:
 	bl	_main
 

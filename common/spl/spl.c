@@ -17,6 +17,7 @@
 #include <version.h>
 #include <image.h>
 #include <malloc.h>
+#include <mp_boot.h>
 #include <dm/root.h>
 #include <linux/compiler.h>
 #include <fdt_support.h>
@@ -547,6 +548,10 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 
 	memset(&spl_image, '\0', sizeof(spl_image));
 
+#ifdef CONFIG_MP_BOOT
+	mpb_init_x(0);
+#endif
+
 #if CONFIG_IS_ENABLED(ATF)
 	/*
 	 * Bl32 ep is optional, initial it as an invalid value.
@@ -574,6 +579,10 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	}
 
 	spl_perform_fixups(&spl_image);
+
+#ifdef CONFIG_MP_BOOT
+	mpb_init_x(2);
+#endif
 
 #ifdef CONFIG_CPU_V7M
 	spl_image.entry_point |= 0x1;
