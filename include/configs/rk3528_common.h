@@ -34,6 +34,20 @@
 #define GICD_BASE			0xfed01000
 #define GICC_BASE			0xfed02000
 
+#ifdef CONFIG_SPL_DM_VIDEO
+#undef CONFIG_SPL_MAX_SIZE
+#undef CONFIG_SPL_BSS_MAX_SIZE
+#define CONFIG_SPL_MAX_SIZE		0x00140000
+#define CONFIG_SPL_BSS_MAX_SIZE		0x00080000
+#endif
+
+#ifdef CONFIG_ARM_SMP
+#define SMP_CPU1			0x1
+#define SMP_CPU1_STACK			0x04fe0000
+#define SMP_CPU2			0x2
+#define SMP_CPU2_STACK			0x05fe0000
+#endif
+
 /* secure otp */
 #define OTP_UBOOT_ROLLBACK_OFFSET	0x350
 #define OTP_UBOOT_ROLLBACK_WORDS	2	/* 64 bits, 2 words */
