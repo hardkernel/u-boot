@@ -20,6 +20,7 @@ obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPORT) += mtd/spi/
 obj-$(CONFIG_$(SPL_TPL_)SPI_SUPPORT) += spi/
 obj-$(CONFIG_$(SPL_TPL_)TIMER) += timer/
 obj-$(CONFIG_$(SPL_TPL_)IRQ) += irq/
+obj-$(CONFIG_$(SPL_TPL_)DM_VIDEO) += video/
 
 ifndef CONFIG_TPL_BUILD
 ifdef CONFIG_SPL_BUILD
@@ -101,7 +102,6 @@ obj-y += sound/
 obj-y += spmi/
 obj-y += sysreset/
 obj-y += tpm/
-obj-y += video/
 obj-y += watchdog/
 obj-$(CONFIG_QE) += qe/
 obj-$(CONFIG_U_QE) += qe/
