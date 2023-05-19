@@ -50,13 +50,21 @@ struct rkpcie_cmd {
 	u32 data[6];
 };
 
+/* rkep device mode status definition */
 #define RKEP_MODE_BOOTROM 	1
 #define RKEP_MODE_LOADER	2
-#define RKEP_MODE_FUN0  	3
+#define RKEP_MODE_KERNEL  	3
+
+/* Common status */
 #define RKEP_SMODE_INIT		0
-#define RKEP_SMODE_RDY		1
-#define RKEP_SMODE_ERR		2
-#define RKEP_SMODE_BUSY		3
+#define RKEP_SMODE_LNKRDY	1
+#define RKEP_SMODE_LNKUP	2
+#define RKEP_SMODE_ERR		0xff
+/* Firmware download status */
+#define RKEP_SMODE_FWDLRDY	0x10
+#define RKEP_SMODE_FWDLDONE	0x11
+/* Application status*/
+#define RKEP_SMODE_APPRDY	0x20
 
 struct rkpcie_boot{
 	/* magic: "RKEP" */
@@ -289,6 +297,14 @@ static void pcie_bar0_header_init(void)
 	memset((char *)RKEP_BAR0_CMD_ADDR, 0, sizeof(struct rkpcie_cmd));
 }
 
+static void pcie_devmode_update(int mode, int submode)
+{
+	struct rkpcie_boot *bh = (struct rkpcie_boot *)RKEP_BAR0_ADDR;
+
+	bh->devmode.mode = mode;
+	bh->devmode.submode = submode;
+}
+
 #ifdef CONFIG_SPL_RAM_DEVICE
 static void pcie_wait_for_fw(void)
 {
@@ -337,8 +353,10 @@ static void pcie_update_atags(void)
 
 void rockchip_pcie_ep_get_firmware(void)
 {
+	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_FWDLRDY);
 	pcie_wait_for_fw();
 	pcie_update_atags();
+	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_FWDLDONE);
 }
 #endif
 
@@ -389,6 +407,7 @@ reinit:
 	else		/* Enable LTSSM */
 		writel(0xc000c, apb_base);
 	printep("init PCIe fast Link up\n");
+	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_LNKRDY);
 
 	/* Waiting for Link up */
 	while (1) {
@@ -416,6 +435,7 @@ reinit:
 		udelay(1);
 	}
 	printep("Done\n");
+	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_LNKUP);
 
 	return;
 }
