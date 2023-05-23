@@ -24,7 +24,7 @@
 #include "stressapptest.h"
 #include "../ddr_tool_common.h"
 
-#define __version__ "v1.0.0 20230214"
+#define __version__ "v1.1.0 20230523"
 
 #if defined(CONFIG_ARM64)
 /* Float operation in TOOLCHAIN_ARM32 will cause the compile error */
@@ -531,10 +531,9 @@ static int get_page_addr(struct page *page_list,
 	ulong used_length;
 	u32 page = 0;
 
-	get_print_available_addr(start_adr, length, 1);
+	get_print_available_addr(start_adr, length, 0);
 
-	printf("Pages for test:\n	Page	Start        End        Length\n");
-
+	printf("Address for test:\n	Start         End         Length\n");
 	for (int i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		if ((start_adr[i] == 0 && length[i] == 0) || page >= sat->page_num)
 			break;
@@ -550,13 +549,14 @@ static int get_page_addr(struct page *page_list,
 		       length[i] >= used_length + sat->page_size_byte) {
 			page_list[page].base_addr = (void *)(start_adr[i] + used_length);
 			used_length += sat->page_size_byte;
-			printf("	%d	0x%08lx - 0x%08lx 0x%08lx\n",
-			       page, (ulong)page_list[page].base_addr,
-			       (ulong)page_list[page].base_addr + sat->page_size_byte,
-			       (ulong)sat->page_size_byte);
 			page++;
 		}
+		printf("	0x%09lx - 0x%09lx 0x%09lx\n",
+		       start_adr[i], start_adr[i] + used_length, used_length);
 	}
+
+	printf("page_num = %d, page_size = 0x%lx, total_test_size = 0x%lx\n",
+	       page, sat->page_size_byte, sat->page_size_byte * page);
 
 	if (sat->total_test_size_mb == 0) {
 		/* No arg for total_test_size_mb, test all available space by default. */
