@@ -1759,7 +1759,7 @@ static const struct udevice_id rockchip_usb2phy_ids[] = {
 #ifdef CONFIG_ROCKCHIP_RK3308
 	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3308_phy_cfgs },
 #endif
-#ifdef CONFIG_ROCKCHIP_RK3328
+#if defined CONFIG_ROCKCHIP_RK3328 || defined CONFIG_ROCKCHIP_PX30
 	{ .compatible = "rockchip,rk3328-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 #endif
 #ifdef CONFIG_ROCKCHIP_RK3368
