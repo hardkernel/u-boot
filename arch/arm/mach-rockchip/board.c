@@ -1151,7 +1151,6 @@ char *board_fdt_chosen_bootargs(void *fdt)
 		 */
 #ifdef CONFIG_ANDROID_AB
 		env_update_filter("bootargs", bootargs, "root=");
-		ab_update_root_partition();
 #else
 		env_update("bootargs", bootargs);
 #endif
@@ -1199,6 +1198,10 @@ char *board_fdt_chosen_bootargs(void *fdt)
 				env_update("bootargs", mtd_par_info);
 		}
 	}
+#endif
+
+#ifdef CONFIG_ANDROID_AB
+	ab_update_root_partition();
 #endif
 	/*
 	 * Initrd fixup: remove unused "initrd=0x...,0x...",
