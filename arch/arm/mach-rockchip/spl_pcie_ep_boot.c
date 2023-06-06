@@ -303,6 +303,7 @@ static void pcie_devmode_update(int mode, int submode)
 
 	bh->devmode.mode = mode;
 	bh->devmode.submode = submode;
+	flush_dcache_range(RKEP_BAR0_ADDR, RKEP_BAR0_ADDR + 64);
 }
 
 #ifdef CONFIG_SPL_RAM_DEVICE
