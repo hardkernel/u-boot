@@ -167,6 +167,10 @@ function gen_bl32_node()
 		return
 	fi
 
+	if ! grep -q '^CONFIG_SPL_OPTEE=y' .config ; then
+		return
+	fi
+
 	if [ "${ARCH}" == "arm" ]; then
 		# If not AArch32 mode
 		if ! grep  -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
