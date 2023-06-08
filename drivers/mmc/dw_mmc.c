@@ -8,6 +8,7 @@
 
 #include <common.h>
 #include <bouncebuf.h>
+#include <div64.h>
 #include <errno.h>
 #include <malloc.h>
 #include <memalign.h>
@@ -19,6 +20,7 @@
 #endif
 
 #define PAGE_SIZE 4096
+#define MSEC_PER_SEC	1000ULL
 
 /*
  * Currently it supports read/write up to 8*8*4 Bytes per
@@ -159,18 +161,62 @@ static void dwmci_prepare_data(struct dwmci_host *host,
 	dwmci_writel(host, DWMCI_BYTCNT, data->blocksize * data->blocks);
 }
 
-static unsigned int dwmci_get_timeout(struct mmc *mmc, const unsigned int size)
+#ifdef CONFIG_SPL_BUILD
+static unsigned int dwmci_get_drto(struct dwmci_host *host,
+				   const unsigned int size)
+{
+	unsigned int drto_clks;
+	unsigned int drto_div;
+	unsigned int drto_ms;
+
+	drto_clks = dwmci_readl(host, DWMCI_TMOUT) >> 8;
+	drto_div = (dwmci_readl(host, DWMCI_CLKDIV) & 0xff) * 2;
+	if (drto_div == 0)
+		drto_div = 1;
+
+	drto_ms = DIV_ROUND_UP_ULL((u64)MSEC_PER_SEC * drto_clks * drto_div,
+				   host->mmc->clock);
+
+	/* add a bit spare time */
+	drto_ms += 10;
+
+	return drto_ms;
+}
+#else
+static unsigned int dwmci_get_drto(struct dwmci_host *host,
+				   const unsigned int size)
 {
 	unsigned int timeout;
 
 	timeout = size * 8;	/* counting in bits */
 	timeout *= 10;		/* wait 10 times as long */
-	timeout /= mmc->clock;
-	timeout /= mmc->bus_width;
+	timeout /= host->mmc->clock;
+	timeout /= host->mmc->bus_width;
 	timeout *= 1000;	/* counting in msec */
 	timeout = (timeout < 10000) ? 10000 : timeout;
 
 	return timeout;
+}
+#endif
+
+static unsigned int dwmci_get_cto(struct dwmci_host *host)
+{
+	unsigned int cto_clks;
+	unsigned int cto_div;
+	unsigned int cto_ms;
+
+	cto_clks = dwmci_readl(host, DWMCI_TMOUT) & 0xff;
+	cto_div = (dwmci_readl(host, DWMCI_CLKDIV) & 0xff) * 2;
+	if (cto_div == 0)
+		cto_div = 1;
+
+	cto_ms = DIV_ROUND_UP_ULL((u64)MSEC_PER_SEC * cto_clks * cto_div,
+				  host->mmc->clock);
+
+	/* add a bit spare time */
+	cto_ms += 10;
+
+	return cto_ms;
 }
 
 static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
@@ -192,7 +238,7 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 	else
 		buf = (unsigned int *)data->src;
 
-	timeout = dwmci_get_timeout(host->mmc, size);
+	timeout = dwmci_get_drto(host, size);
 	size /= 4;
 
 	for (;;) {
@@ -252,6 +298,7 @@ read_again:
 				}
 				dwmci_writel(host, DWMCI_RINTSTS,
 					     DWMCI_INTMSK_RXDR);
+				start = get_timer(0);
 			} else if (data->flags == MMC_DATA_WRITE &&
 				   (mask & DWMCI_INTMSK_TXDR)) {
 				while (size) {
@@ -281,6 +328,7 @@ write_again:
 				}
 				dwmci_writel(host, DWMCI_RINTSTS,
 					     DWMCI_INTMSK_TXDR);
+				start = get_timer(0);
 			}
 		}
 
@@ -329,9 +377,8 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 	struct dwmci_host *host = mmc->priv;
 	ALLOC_CACHE_ALIGN_BUFFER(struct dwmci_idmac, cur_idmac,
 				 data ? DIV_ROUND_UP(data->blocks, 8) : 0);
-	int ret = 0, flags = 0, i;
+	int ret = 0, flags = 0;
 	unsigned int timeout = 500;
-	u32 retry = 100000;
 	u32 mask, ctrl;
 	ulong start = get_timer(0);
 	struct bounce_buffer bbstate;
@@ -400,16 +447,18 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 
 	dwmci_writel(host, DWMCI_CMD, flags);
 
-	for (i = 0; i < retry; i++) {
+	timeout = dwmci_get_cto(host);
+	start = get_timer(0);
+	do {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
 		if (mask & DWMCI_INTMSK_CDONE) {
 			if (!data)
 				dwmci_writel(host, DWMCI_RINTSTS, mask);
 			break;
 		}
-	}
+	} while (!(get_timer(start) > timeout));
 
-	if (i == retry) {
+	if (get_timer(start) > timeout) {
 		debug("%s: Timeout.\n", __func__);
 		return -ETIMEDOUT;
 	}
@@ -470,9 +519,8 @@ static int dwmci_send_cmd_prepare(struct mmc *mmc, struct mmc_cmd *cmd,
 #endif
 	struct dwmci_host *host = mmc->priv;
 	struct dwmci_idmac *cur_idmac;
-	int ret = 0, flags = 0, i;
+	int ret = 0, flags = 0;
 	unsigned int timeout = 500;
-	u32 retry = 100000;
 	u32 mask;
 	ulong start = get_timer(0);
 	struct bounce_buffer bbstate;
@@ -541,16 +589,18 @@ static int dwmci_send_cmd_prepare(struct mmc *mmc, struct mmc_cmd *cmd,
 
 	dwmci_writel(host, DWMCI_CMD, flags);
 
-	for (i = 0; i < retry; i++) {
+	timeout = dwmci_get_cto(host);
+	start = get_timer(0);
+	do {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
 		if (mask & DWMCI_INTMSK_CDONE) {
 			if (!data)
 				dwmci_writel(host, DWMCI_RINTSTS, mask);
 			break;
 		}
-	}
+	} while (!(get_timer(start) > timeout));
 
-	if (i == retry) {
+	if (get_timer(start) > timeout) {
 		debug("%s: Timeout.\n", __func__);
 		return -ETIMEDOUT;
 	}
