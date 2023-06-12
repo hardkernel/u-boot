@@ -8,6 +8,7 @@ obj-$(CONFIG_SPI_NAND_TOSHIBA) += toshiba.o
 obj-$(CONFIG_SPI_NAND_WINBOND) += winbond.o
 obj-$(CONFIG_SPI_NAND_DOSILICON) += dosilicon.o
 obj-$(CONFIG_SPI_NAND_ESMT) += esmt.o
+obj-$(CONFIG_SPI_NAND_XINCUN) += xincun.o
 obj-$(CONFIG_SPI_NAND_XTX) += xtx.o
 obj-$(CONFIG_SPI_NAND_HYF) += hyf.o
 obj-$(CONFIG_SPI_NAND_FMSH) += fmsh.o
