@@ -13,6 +13,7 @@
 struct max96745_priv {
 	struct udevice *dev;
 	struct gpio_desc enable_gpio;
+	struct gpio_desc pwdnb_gpio;
 	bool idle_disc;
 };
 
@@ -66,6 +67,11 @@ static int max96745_power_on(struct max96745_priv *priv)
 		mdelay(200);
 	}
 
+	if (dm_gpio_is_valid(&priv->pwdnb_gpio)) {
+		dm_gpio_set_value(&priv->pwdnb_gpio, 0);
+		mdelay(30);
+	}
+
 	/* Set for I2C Fast-mode speed */
 	ret = dm_i2c_reg_write(priv->dev, 0x0070, 0x16);
 	if (ret < 0)
@@ -102,6 +108,13 @@ static int max96745_probe(struct udevice *dev)
 				   &priv->enable_gpio, GPIOD_IS_OUT);
 	if (ret && ret != -ENOENT) {
 		dev_err(dev, "%s: failed to get enable GPIO: %d\n", __func__, ret);
+		return ret;
+	}
+
+	ret = gpio_request_by_name(dev, "pwdnb-gpios", 0,
+				   &priv->pwdnb_gpio, GPIOD_IS_OUT);
+	if (ret && ret != -ENOENT) {
+		dev_err(dev, "%s: failed to get pwdnb GPIO: %d\n", __func__, ret);
 		return ret;
 	}
 
