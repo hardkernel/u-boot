@@ -63,6 +63,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PMU_PWR_DWN_ST		(0x108)
 #define PMU_PWR_GATE_SFTCON	(0x110)
 
+#define PMU_BUS_IDLE_NPU	BIT(18)
+#define PMU_BUS_IDLE_VEPU	BIT(9)
+
 #define CRU_BASE		0xFF490000
 #define CRU_CLKSEL_CON02	0x108
 #define CRU_CLKSEL_CON03	0x10c
@@ -548,6 +551,7 @@ int arch_cpu_init(void)
 	 * CONFIG_DM_RAMDISK: for ramboot that without SPL.
 	 */
 #if defined(CONFIG_SPL_BUILD) || defined(CONFIG_DM_RAMDISK)
+	u32 pd_st, idle_st;
 	int delay;
 
 	/*
@@ -624,11 +628,7 @@ int arch_cpu_init(void)
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0) {
-			printf("Fail to set domain.");
-			hang();
-		}
-	} while (readl(PMU_BASE_ADDR + PMU_PWR_DWN_ST));
+	} while (delay && readl(PMU_BASE_ADDR + PMU_PWR_DWN_ST));
 
 	/* release all idle request */
 	writel(0xffff0000, PMU_BASE_ADDR + PMU_BUS_IDLE_SFTCON(0));
@@ -639,22 +639,30 @@ int arch_cpu_init(void)
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0) {
-			printf("Fail to get ack on domain.\n");
-			hang();
-		}
-	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ACK));
+	} while (delay && readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ACK));
 
 	delay = 1000;
 	/* wait idle status */
 	do {
 		udelay(1);
 		delay--;
-		if (delay == 0) {
-			printf("Fail to set idle on domain.\n");
-			hang();
-		}
-	} while (readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ST));
+	} while (delay && readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ST));
+
+	pd_st = readl(PMU_BASE_ADDR + PMU_PWR_DWN_ST);
+	idle_st = readl(PMU_BASE_ADDR + PMU_BUS_IDLE_ST);
+
+	if (pd_st || idle_st) {
+		printf("PMU_PWR_DOWN_ST: 0x%08x\n", pd_st);
+		printf("PMU_BUS_IDLE_ST: 0x%08x\n", idle_st);
+
+		if (idle_st & PMU_BUS_IDLE_NPU)
+			printf("Failed to enable PD_NPU, please check VDD_NPU is supplied\n");
+
+		if (idle_st & PMU_BUS_IDLE_VEPU)
+			printf("Failed to enable PD_VEPU, please check VDD_VEPU is supplied\n");
+
+		hang();
+	}
 
 	writel(0x303, USB_HOST_PRIORITY_REG);
 	writel(0x303, USB_OTG_PRIORITY_REG);
