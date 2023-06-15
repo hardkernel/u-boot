@@ -24,7 +24,7 @@
 #include "stressapptest.h"
 #include "../ddr_tool_common.h"
 
-#define __version__ "v1.1.0 20230523"
+#define __version__ "v1.2.0 20230619"
 
 #if defined(CONFIG_ARM64)
 /* Float operation in TOOLCHAIN_ARM32 will cause the compile error */
@@ -659,39 +659,56 @@ static u32 page_rand_pick(struct page *page_list, bool valid,
 	return pick;
 }
 
-static u32 block_inv_mis_search(void *dst_addr, struct pattern *src_pattern,
-				struct stressapptest_params *sat)
+static u32 block_mis_search(void *dst_addr, struct pattern *src_pattern, char *item,
+			    struct stressapptest_params *sat, u8 cpu_id)
 {
 	u32 *dst_mem;
-	u32 dst_data;
-	u32 expc_data;
-	u32 mis_bit;
+	u32 read, reread, expected;
 	u32 err = 0;
+	u32 *print_addr;
+	int i, j;
 
 	dst_mem = (u32 *)dst_addr;
 
-	for (int i = 0; i < sat->block_size_byte / sizeof(u32); i++) {
-		dst_data = dst_mem[i];
-		expc_data = pattern_get(src_pattern, i);
+	for (i = 0; i < sat->block_size_byte / sizeof(u32); i++) {
+		read = dst_mem[i];
+		expected = pattern_get(src_pattern, i);
 
-		if (dst_data != expc_data) {
+		if (read != expected) {
+			flush_dcache_range((ulong)&dst_mem[i], (ulong)&dst_mem[i + 1]);
+			reread = dst_mem[i];
+
 			lock_byte_mutex(&print_mutex);
 
 			print_time_stamp();
-			printf("INV ERROR at 0x%010lx:\n", (ulong)&dst_mem[i]);
-			printf("	data = 0x%08x\n", dst_data);
-			printf("	expc = 0x%08x\n", expc_data);
-
-			mis_bit = dst_data ^ expc_data;
-			printf("	mismatch at bit");
-			for (int j = 31; j >= 0; j--) {
-				if (((mis_bit >> j) & 1) == 1)
-					printf(" %d", j);
-			}
+			printf("%s Hardware Error: miscompare on CPU %d at 0x%lx:\n",
+			       item, cpu_id, (ulong)&dst_mem[i]);
+			printf("	read:    0x%08x\n", read);
+			printf("	reread:  0x%08x(reread^read:0x%08x)\n",
+			       reread, reread ^ read);
+			printf("	expected:0x%08x(expected^read:0x%08x)\n",
+			       expected, expected ^ read);
+			printf("	\'%s%s%d\'", src_pattern->pat->name,
+							  src_pattern->inv ? "~" : "",
+							  32 << src_pattern->repeat);
+			if (reread == expected)
+				printf(" read error");
 			printf("\n");
 
+			/* Dump data around the error address */
+			print_addr = &dst_mem[i] - 64;
+			for (j = 0; j < 128; j += 8)
+				printf("  [0x%010lx] 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+				       (ulong)(print_addr + j),
+				       *(print_addr + j), *(print_addr + j + 1),
+				       *(print_addr + j + 2), *(print_addr + j + 3),
+				       *(print_addr + j + 4), *(print_addr + j + 5),
+				       *(print_addr + j + 6), *(print_addr + j + 7));
+
 			unlock_byte_mutex(&print_mutex);
-			dst_mem[i] = expc_data;
+
+			/* fix the error */
+			dst_mem[i] = expected;
 			err++;
 		}
 	}
@@ -699,7 +716,7 @@ static u32 block_inv_mis_search(void *dst_addr, struct pattern *src_pattern,
 
 	if (err == 0) {
 		lock_byte_mutex(&print_mutex);
-		printf("INV ERROR detected but cannot find mismatch data (maybe read error).\n");
+		printf("%s ERROR detected but cannot find mismatch data (maybe read error).\n", item);
 		unlock_byte_mutex(&print_mutex);
 	}
 
@@ -760,15 +777,8 @@ static u32 block_inv_check(void *dst_addr, struct pattern *src_pattern,
 	if (adler_sum.a1 != src_pattern->adler_sum.a1 ||
 	    adler_sum.b1 != src_pattern->adler_sum.b1 ||
 	    adler_sum.a2 != src_pattern->adler_sum.a2 ||
-	    adler_sum.b2 != src_pattern->adler_sum.b2) {
-		err = block_inv_mis_search(dst_addr, src_pattern, sat);
-
-		lock_byte_mutex(&print_mutex);
-		printf("(CPU%d, Pattern: %s, inv: %d, repeat: %d)\n\n",
-		       cpu_id, src_pattern->pat->name, src_pattern->inv,
-		       src_pattern->repeat);
-		unlock_byte_mutex(&print_mutex);
-	}
+	    adler_sum.b2 != src_pattern->adler_sum.b2)
+		err = block_mis_search(dst_addr, src_pattern, "Inv", sat, cpu_id);
 
 	return err;
 }
@@ -835,82 +845,17 @@ static u32 page_inv(struct stressapptest_params *sat, u8 cpu_id)
 	return err;
 }
 
-static u32 block_copy_mis_search(void *dst_addr, void *src_addr,
-				 struct pattern *src_pattern,
-				 struct stressapptest_params *sat)
-{
-	u32 *dst_mem;
-	u32 *src_mem;
-	u32 dst_data;
-	u32 src_data;
-	u32 expc_data;
-	u32 mis_bit;
-	u32 err = 0;
-
-	dst_mem = (u32 *)dst_addr;
-	src_mem = (u32 *)src_addr;
-
-	for (int i = 0; i < sat->block_size_byte / sizeof(u32); i++) {
-		dst_data = dst_mem[i];
-		src_data = src_mem[i];
-		expc_data = pattern_get(src_pattern, i);
-
-		if (dst_data != expc_data) {
-			lock_byte_mutex(&print_mutex);
-
-			print_time_stamp();
-			printf("COPY ERROR (");
-			if (src_data == expc_data)
-				printf("read");
-			else if (src_data != expc_data)
-				printf("write");
-			printf(" error) at 0x%010lx:\n", (ulong)&src_mem[i]);
-			printf("	data = 0x%08x\n", dst_data);
-			printf("	expc = 0x%08x\n", expc_data);
-
-			mis_bit = dst_data ^ expc_data;
-			printf("	mismatch at bit");
-			for (int j = 31; j >= 0; j--) {
-				if (((mis_bit >> j) & 1) == 1)
-					printf(" %d", j);
-			}
-			printf("\n");
-
-			unlock_byte_mutex(&print_mutex);
-			err++;
-			dst_mem[i] = expc_data;
-		}
-	}
-	flush_dcache_all();
-
-	if (err == 0) {
-		lock_byte_mutex(&print_mutex);
-		printf("COPY ERROR detected but cannot find mismatch data (maybe read error).\n");
-		unlock_byte_mutex(&print_mutex);
-	}
-
-	return err;
-}
-
-static u32 block_copy_check(void *dst_addr, void *src_addr,
-			    struct adler_sum *adler_sum,
-			    struct pattern *src_pattern,
-			    struct stressapptest_params *sat, u8 cpu_id)
+static u32 block_copy_check(void *dst_addr, struct adler_sum *adler_sum,
+			    struct pattern *src_pattern, struct stressapptest_params *sat,
+			    u8 cpu_id)
 {
 	u32 err = 0;
 
 	if (adler_sum->a1 != src_pattern->adler_sum.a1 ||
 	    adler_sum->b1 != src_pattern->adler_sum.b1 ||
 	    adler_sum->a2 != src_pattern->adler_sum.a2 ||
-	    adler_sum->b2 != src_pattern->adler_sum.b2) {
-		err += block_copy_mis_search(dst_addr, src_addr, src_pattern, sat);
-
-		lock_byte_mutex(&print_mutex);
-		printf("(CPU%d, Pattern: %s, inv: %d, repeat: %d)\n\n",
-		       cpu_id, src_pattern->pat->name, src_pattern->inv,
-		       src_pattern->repeat);
-		unlock_byte_mutex(&print_mutex);
-	}
+	    adler_sum->b2 != src_pattern->adler_sum.b2)
+		err = block_mis_search(dst_addr, src_pattern, "Copy", sat, cpu_id);
 
 	return err;
 }
@@ -978,7 +923,7 @@ static u32 block_copy(void *dst_addr, void *src_addr,
 		printf("This will probably never happen.\n");
 #endif
 
-	return block_copy_check(dst_addr, src_addr, &adler_sum, src_pattern, sat, cpu_id);
+	return block_copy_check(dst_addr, &adler_sum, src_pattern, sat, cpu_id);
 }
 
 static u32 page_copy(struct stressapptest_params *sat, u8 cpu_id)
