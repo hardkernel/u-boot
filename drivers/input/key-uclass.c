@@ -39,7 +39,7 @@ uint64_t key_timer(uint64_t base)
 }
 
 #ifdef CONFIG_ADC
-static int adc_raw_to_uV(struct udevice *dev, unsigned int raw, int *uV)
+static int adc_raw_to_mV(struct udevice *dev, unsigned int raw, int *mV)
 {
 	unsigned int data_mask;
 	int ret, vref = 1800000;
@@ -51,7 +51,7 @@ static int adc_raw_to_uV(struct udevice *dev, unsigned int raw, int *uV)
 
 	raw64 *= vref;
 	do_div(raw64, data_mask);
-	*uV = raw64;
+	*mV = raw64;
 
 	return 0;
 }
@@ -62,11 +62,11 @@ static int key_adc_event(struct udevice *dev,
 	int val = adcval;
 
 	if (uc_key->in_volt) {
-		if (adc_raw_to_uV(dev, adcval, &val))
+		if (adc_raw_to_mV(dev, adcval, &val))
 			return KEY_PRESS_NONE;
 	}
 
-	debug("[%s] <%d, %d, %d>: adcval=%d -> uV=%d\n",
+	debug("[%s] <%d, %d, %d>: adcval=%d -> mV=%d\n",
 	      uc_key->name, uc_key->min, uc_key->center, uc_key->max,
 	      adcval, val);
 
