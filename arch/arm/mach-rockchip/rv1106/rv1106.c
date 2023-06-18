@@ -7,6 +7,9 @@
 #include <boot_rkimg.h>
 #include <cli.h>
 #include <debug_uart.h>
+#include <miiphy.h>
+#include <syscon.h>
+#include <asm/arch/clock.h>
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rv1106.h>
@@ -538,3 +541,54 @@ int rk_board_scan_bootdev(void)
 }
 #endif
 
+#define GMAC_NODE_FDT_PATH		"/ethernet@ffa80000"
+#define RK630_MII_NAME			"ethernet@ffa80000"
+#define	PHY_ADDR			2
+#define	PAGE_SWITCH			0x1f
+#define	DISABLE_APS_REG			0x12
+#define	DISABLE_APS_VAL			0x4824
+#define	PHYAFE_PDCW_REG			0x1c
+#define	PHYAFE_PDCW_VAL			0x8880
+#define	PD_ANALOG_REG			0x0
+#define PD_ANALOG_VAL			0x3900
+#define RV1106_MACPHY_SHUTDOWN		BIT(1)
+#define RV1106_MACPHY_ENABLE_MASK	BIT(1)
+
+int rk_board_fdt_fixup(const void *blob)
+{
+	void *fdt = (void *)gd->fdt_blob;
+	struct rv1106_grf *grf;
+	int gmac_node;
+
+	/* Turn off GMAC FEPHY to reduce chip power consumption at uboot level,
+	 * if the gmac node is disabled at kernel dtb. RV1106/1103 has the
+	 * internal gmac phy, u-boot.dtb defines and enables the gmac node
+	 * by default, so even if the gmac node of the kernel dts is disabled,
+	 * U-Boot will enable and initialize the gmac phy. So it is not okay
+	 * to turn off gmac phy by default in arch_cpu_init(), need to turn off
+	 * gmac phy in the current function.
+	 */
+	gmac_node = fdt_path_offset(gd->fdt_blob, GMAC_NODE_FDT_PATH);
+	if (fdt_stringlist_search(fdt, gmac_node, "status", "disabled") >= 0) {
+		/* switch to page 1 */
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, PAGE_SWITCH, 0x0100);
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, DISABLE_APS_REG,
+			     DISABLE_APS_VAL);
+		/* switch to pae 6 */
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, PAGE_SWITCH, 0x0600);
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, PHYAFE_PDCW_REG,
+			     PHYAFE_PDCW_VAL);
+		/* switch to page 0 */
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, PAGE_SWITCH, 0x0000);
+		miiphy_write(RK630_MII_NAME, PHY_ADDR, PD_ANALOG_REG,
+			     PD_ANALOG_VAL);
+
+		grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+		if (grf)
+			rk_clrsetreg(&grf->macphy_con0,
+				     RV1106_MACPHY_ENABLE_MASK,
+				     RV1106_MACPHY_SHUTDOWN);
+	}
+
+	return 0;
+}
