@@ -18,7 +18,11 @@ SIG_UBOOT="${FIT_DIR}/uboot.data2sign"
 SIG_BOOT="${FIT_DIR}/boot.data2sign"
 SIG_RECOVERY="${FIT_DIR}/recovery.data2sign"
 # offs
-OFFS_DATA="0x1000"
+if grep -q '^CONFIG_FIT_ENABLE_RSA4096_SUPPORT=y' .config ; then
+	OFFS_DATA="0x1200"
+else
+	OFFS_DATA="0x1000"
+fi
 # placeholder address
 FDT_ADDR_PLACEHOLDER="0xffffff00"
 KERNEL_ADDR_PLACEHOLDER="0xffffff01"
