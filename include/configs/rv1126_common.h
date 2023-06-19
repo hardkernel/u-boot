@@ -105,6 +105,7 @@
 #endif
 #endif
 
+#define CONFIG_LIB_HW_RAND
 #define CONFIG_PREBOOT
 
 #endif
