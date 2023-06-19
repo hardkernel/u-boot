@@ -86,11 +86,17 @@ static int rsa_mod_exp_hw(struct key_prop *prop, const uint8_t *sig,
 	uint8_t buf[sig_len];
 	rsa_key rsa_key;
 	int i, ret;
+#ifdef CONFIG_FIT_ENABLE_RSA4096_SUPPORT
+	if (key_len != RSA4096_BYTES)
+		return -EINVAL;
 
+	rsa_key.algo = CRYPTO_RSA4096;
+#else
 	if (key_len != RSA2048_BYTES)
 		return -EINVAL;
 
 	rsa_key.algo = CRYPTO_RSA2048;
+#endif
 	rsa_key.n = malloc(key_len);
 	rsa_key.e = malloc(key_len);
 	rsa_key.c = malloc(key_len);

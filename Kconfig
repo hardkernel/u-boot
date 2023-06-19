@@ -203,6 +203,18 @@ config FIT_ENABLE_SHA256_SUPPORT
 	  SHA256 variant is supported: SHA512 and others are not currently
 	  supported in U-Boot.
 
+config FIT_ENABLE_RSA4096_SUPPORT
+	bool "Support RSA4096 verification of FIT image contents"
+	select RSA_SOFTWARE_EXP if !DM_CRYPTO
+	default n
+	help
+	  Enable this to support RSA4096 checksum of FIT image contents. A
+	  RSA4096 is a 4096-bit (512-byte) key used to check that
+	  check if the content comes from an encryption party. RSA4096 is one
+	  of algorithms recommended for use in secure applications since (as at 2016)
+	  there is no known feasible attack that could produce a 'collision' with differing
+	  input data. Use this for the higher security than RSA2048 in default.
+
 config FIT_SIGNATURE
 	bool "Enable signature verification of FIT uImages"
 	depends on DM
