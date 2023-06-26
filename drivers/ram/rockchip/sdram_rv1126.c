@@ -374,6 +374,8 @@ static void rkclk_set_dpll(struct dram_info *dram, unsigned int hz)
 			break;
 		delay--;
 	}
+	if (delay <= 0)
+		printascii("ERROR: DPLL lock timeout!\n");
 
 	writel(DPLL_MODE(CLOCK_FROM_PLL), &dram->cru->mode);
 }
@@ -557,11 +559,18 @@ static void phy_pll_set(struct dram_info *dram, u32 freq, u32 wait)
 {
 	void __iomem *phy_base = dram->phy;
 	u32 fbdiv, prediv, postdiv, postdiv_en;
+	int delay = 1000;
 
 	if (wait) {
 		clrbits_le32(PHY_REG(phy_base, 0x53), PHY_PD_DISB);
-		while (!(readl(PHY_REG(phy_base, 0x90)) & PHY_PLL_LOCK))
-			continue;
+		while (!(readl(PHY_REG(phy_base, 0x90)) & PHY_PLL_LOCK)) {
+			udelay(1);
+			if (delay-- <= 0) {
+				printascii("ERROR: phy pll lock timeout!\n");
+				while (1)
+					;
+			}
+		}
 	} else {
 		freq /= MHz;
 		prediv = 1;
@@ -2490,6 +2499,7 @@ int sdram_init_(struct dram_info *dram, struct rv1126_sdram_params *sdram_params
 	void __iomem *phy_base = dram->phy;
 	u32 ddr4_vref;
 	u32 mr_tmp, tmp;
+	int delay = 1000;
 
 	rkclk_configure_ddr(dram, sdram_params);
 
@@ -2537,8 +2547,14 @@ int sdram_init_(struct dram_info *dram, struct rv1126_sdram_params *sdram_params
 
 	rkclk_ddr_reset(dram, 0, 0, 0, 0);
 
-	while ((readl(pctl_base + DDR_PCTL2_STAT) & 0x7) == 0)
-		continue;
+	while ((readl(pctl_base + DDR_PCTL2_STAT) & 0x7) == 0) {
+		udelay(1);
+		if (delay-- <= 0) {
+			printascii("ERROR: Cannot wait dfi_init_done!\n");
+			while (1)
+				;
+		}
+	}
 
 	if (sdram_params->base.dramtype == LPDDR3) {
 		pctl_write_mr(dram->pctl, 3, 11, lp3_odt_value, LPDDR3);
@@ -3299,6 +3315,7 @@ void ddr_set_rate(struct dram_info *dram,
 	struct rv1126_sdram_params *sdram_params_new;
 	void __iomem *pctl_base = dram->pctl;
 	void __iomem *phy_base = dram->phy;
+	int delay = 1000;
 
 	lp_stat = low_power_update(dram, 0);
 	sdram_params_new = get_default_sdram_config(freq);
@@ -3387,8 +3404,14 @@ void ddr_set_rate(struct dram_info *dram,
 					(0x0 << ACLK_DDR_UPCTL_EN_SHIFT),
 			BUS_SGRF_BASE_ADDR + SGRF_SOC_CON12);
 	while ((readl(pctl_base + DDR_PCTL2_DFISTAT) &
-	       PCTL2_DFI_INIT_COMPLETE) != PCTL2_DFI_INIT_COMPLETE)
-		continue;
+	       PCTL2_DFI_INIT_COMPLETE) != PCTL2_DFI_INIT_COMPLETE) {
+		udelay(1);
+		if (delay-- <= 0) {
+			printascii("ERROR: Cannot wait DFI_INIT_COMPLETE\n");
+			while (1)
+				;
+		}
+	}
 
 	sw_set_req(dram);
 	setbits_le32(pctl_base + DDR_PCTL2_MSTR, 0x1 << 29);
