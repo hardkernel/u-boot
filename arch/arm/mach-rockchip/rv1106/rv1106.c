@@ -541,6 +541,7 @@ int rk_board_scan_bootdev(void)
 }
 #endif
 
+#if (defined CONFIG_MII || defined CONFIG_CMD_MII || defined CONFIG_PHYLIB)
 #define GMAC_NODE_FDT_PATH		"/ethernet@ffa80000"
 #define RK630_MII_NAME			"ethernet@ffa80000"
 #define	PHY_ADDR			2
@@ -554,7 +555,7 @@ int rk_board_scan_bootdev(void)
 #define RV1106_MACPHY_SHUTDOWN		BIT(1)
 #define RV1106_MACPHY_ENABLE_MASK	BIT(1)
 
-int rk_board_fdt_fixup(const void *blob)
+static int rk_board_fdt_pwrdn_gmac(const void *blob)
 {
 	void *fdt = (void *)gd->fdt_blob;
 	struct rv1106_grf *grf;
@@ -589,6 +590,16 @@ int rk_board_fdt_fixup(const void *blob)
 				     RV1106_MACPHY_ENABLE_MASK,
 				     RV1106_MACPHY_SHUTDOWN);
 	}
+
+	return 0;
+}
+#endif
+
+int rk_board_fdt_fixup(const void *blob)
+{
+#if (defined CONFIG_MII || defined CONFIG_CMD_MII || defined CONFIG_PHYLIB)
+	rk_board_fdt_pwrdn_gmac(blob);
+#endif
 
 	return 0;
 }
