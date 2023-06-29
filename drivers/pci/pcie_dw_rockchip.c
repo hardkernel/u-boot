@@ -151,6 +151,8 @@ enum {
 #define LINK_WAIT_MAX_IATU_RETRIES	5
 #define LINK_WAIT_IATU			10000
 
+#define PCIE_TYPE0_HDR_DBI2_OFFSET      0x100000
+
 static int rk_pcie_read(void __iomem *addr, int size, u32 *val)
 {
 	if ((uintptr_t)addr & (size - 1)) {
@@ -304,6 +306,10 @@ static void rk_pcie_setup_host(struct rk_pcie *rk_pcie)
 	val = readl(rk_pcie->dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
 	val |= PORT_LOGIC_SPEED_CHANGE;
 	writel(val, rk_pcie->dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
+
+	/* Disable BAR0 BAR1 */
+	writel(0, rk_pcie->dbi_base + PCIE_TYPE0_HDR_DBI2_OFFSET + 0x10 + 0 * 4);
+	writel(0, rk_pcie->dbi_base + PCIE_TYPE0_HDR_DBI2_OFFSET + 0x10 + 1 * 4);
 
 	rk_pcie_dbi_write_enable(rk_pcie, false);
 }
