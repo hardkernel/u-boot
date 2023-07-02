@@ -12,6 +12,8 @@
 #include <common.h>
 #include <dm.h>
 #include <errno.h>
+#include <log.h>
+#include <linux/delay.h>
 #include <power/rk8xx_pmic.h>
 #include <power/pmic.h>
 #include <power/regulator.h>
@@ -700,6 +702,9 @@ static int _ldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 		ret = pmic_reg_write(pmic, en_reg, value);
 		break;
 	}
+
+	if (enable)
+		udelay(500);
 
 	return ret;
 }
