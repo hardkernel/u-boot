@@ -23,15 +23,27 @@
 			printf(fmt, ##__VA_ARGS__); \
 		} while (0)
 
+#ifdef CONFIG_ROCKCHIP_RK3588
+#define PCIE_SNPS_DBI_BASE	0xf5000000
+#define PCIE_SNPS_APB_BASE	0xfe150000
+#define PCIE_SNPS_IATU_BASE	0xa40300000
+
+#define PCI_RESBAR		0x2e8
+#elif CONFIG_ROCKCHIP_RK3568
+#define PCIE_SNPS_DBI_BASE	0xf6000000
+#define PCIE_SNPS_APB_BASE	0xfe280000
+#define PCIE_SNPS_IATU_BASE	0x3c0b00000
+
+#define PCI_RESBAR		0x2b8
+#else
+#error "this soc is not support pcie ep!"
+#endif
+
 #define RKEP_BAR0_ADDR		0x3c000000
 #define RKEP_BAR2_ADDR		CONFIG_SPL_LOAD_FIT_ADDRESS
 #define RKEP_BAR0_CMD_ADDR	(RKEP_BAR0_ADDR + 0x400)
 #define RKEP_BOOT_MAGIC		0x524b4550 /* RKEP */
 #define RKEP_CMD_LOADER_RUN	0x524b4501
-
-#define PCIE_SNPS_DBI_BASE	0xf5000000
-#define PCIE_SNPS_APB_BASE	0xfe150000
-#define PCIE_SNPS_IATU_BASE	0xa40300000
 
 #define PCI_EXP_LNKCAP		12	/* Link Capabilities */
 #define PCI_EXP_LNKCTL2		48	/* Link Control 2 */
@@ -154,110 +166,6 @@ static void pcie_inbound_config(void)
 	/* BAR4 is wired reg, no need iATU */
 }
 
-#define PHY_MODE_PCIE_AGGREGATION 4	/* PCIe3x4 */
-#define PHY_MODE_PCIE_NANBNB	0	/* P1:PCIe3x2  +  P0:PCIe3x2 */
-#define PHY_MODE_PCIE_NANBBI	1	/* P1:PCIe3x2  +  P0:PCIe3x1*2 */
-#define PHY_MODE_PCIE_NABINB	2	/* P1:PCIe3x1*2 + P0:PCIe3x2 */
-#define PHY_MODE_PCIE_NABIBI	3	/* P1:PCIe3x1*2 + P0:PCIe3x1*2 */
-
-#define CRU_BASE_ADDR			0xfd7c0000
-#define CRU_SOFTRST_CON32		(CRU_BASE_ADDR + 0x0a80)
-#define CRU_SOFTRST_CON33		(CRU_BASE_ADDR + 0x0a84)
-#define CRU_SOFTRST_CON34		(CRU_BASE_ADDR + 0x0a88)
-#define CRU_GATE_CON32			(CRU_BASE_ADDR + 0x0880)
-#define CRU_GATE_CON33			(CRU_BASE_ADDR + 0x0884)
-#define CRU_GATE_CON34			(CRU_BASE_ADDR + 0x0888)
-#define CRU_GATE_CON38			(CRU_BASE_ADDR + 0x0898)
-#define CRU_GATE_CON39			(CRU_BASE_ADDR + 0x089c)
-#define PHPTOPCRU_BASE_ADDR		0xfd7c8000
-#define PHPTOPCRU_SOFTRST_CON00		(PHPTOPCRU_BASE_ADDR + 0x0a00)
-#define PHPTOPCRU_GATE_CON00		(PHPTOPCRU_BASE_ADDR + 0x0800)
-#define PCIE3PHY_GRF_BASE		0xfd5b8000
-#define RK3588_PCIE3PHY_GRF_CMN_CON0	(PCIE3PHY_GRF_BASE + 0x0000)
-#define PCIE3PHY_GRF_PHY0_CON6		(PCIE3PHY_GRF_BASE + 0x0118)
-#define PCIE3PHY_GRF_PHY1_CON6		(PCIE3PHY_GRF_BASE + 0x0218)
-#define PCIE3PHY_GRF_PHY0_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x1004)
-#define PCIE3PHY_GRF_PHY0_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x1104)
-#define PCIE3PHY_GRF_PHY1_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x2004)
-#define PCIE3PHY_GRF_PHY1_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x2104)
-#define FIREWALL_PCIE_MASTER_SEC	0xfe0300f0
-#define FIREWALL_PCIE_ACCESS		0xfe586040
-#define CRU_PHYREF_ALT_GATE_CON		(CRU_BASE_ADDR + 0x0c38)
-#define PMU_PWR_GATE_SFTCON1		0xfd8d8150
-static void pcie_cru_init(void)
-{
-	/* Enable power domain: PD_PCIE & PD_PHP */
-	writel(0x1 << 23 | 0x1 << 21, PMU_PWR_GATE_SFTCON1);
-
-	/* FixMe init 3.0 PHY */
-	/* Phy mode: Aggregation NBNB */
-	writel((0x7 << 16) | PHY_MODE_PCIE_AGGREGATION, RK3588_PCIE3PHY_GRF_CMN_CON0);
-	printep("PHY Mode 0x%x\n", readl(RK3588_PCIE3PHY_GRF_CMN_CON0) & 7);
-	/* Enable clock and sfreset for Controller and PHY */
-	writel(0xffff0000, CRU_SOFTRST_CON32);
-	writel(0xffff0000, CRU_SOFTRST_CON33);
-	writel(0xffff0000, CRU_SOFTRST_CON34);
-	writel(0xffff0000, CRU_GATE_CON32);
-	writel(0xffff0000, CRU_GATE_CON33);
-	writel(0xffff0000, CRU_GATE_CON34);
-	writel(0xffff0000, CRU_GATE_CON38);
-	writel(0xffff0000, CRU_GATE_CON39);
-
-	writel((0x1 << 24), PHPTOPCRU_SOFTRST_CON00);
-	writel(0xffff0000, PHPTOPCRU_GATE_CON00);
-
-	/* PHY Reset */
-	writel((0x1 << 10) | (0x1 << 26), PHPTOPCRU_SOFTRST_CON00);
-
-	udelay(1);
-
-#ifdef PCIE_ENABLE_SRNS_PLL_REFCLK
-	writel(0x000f0000, CRU_PHYREF_ALT_GATE_CON);
-
-	/* PHY0 & PHY1  use internal clock */
-	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY0_CON6);
-	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY1_CON6);
-
-	/* phy0_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN0_CON1);
-	/* phy1_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN1_CON1);
-	/* phy0_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN0_CON1);
-	/* phy1_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN1_CON1);
-#endif
-
-	udelay(1000);
-
-	/* Deassert PCIe PMA output clamp mode */
-	writel((0x1 << 8) | (0x1 << 24), RK3588_PCIE3PHY_GRF_CMN_CON0);
-
-	/* Deassert PHY Reset */
-	writel((0x1 << 26), PHPTOPCRU_SOFTRST_CON00);
-
-	/* PHY config: no config need for snps3.0phy */
-
-	/* Enable PCIe Access in firewall and master secure mode */
-	writel(0xffff0000, FIREWALL_PCIE_MASTER_SEC);
-	writel(0x01800000, FIREWALL_PCIE_ACCESS);
-}
-
-#define BUS_IOC_GPIO3D_IOMUX_SEL_H	0xfd5f807c
-#define GPIO3_BASE			0xfec40000
-#define GPIO3_SWPORT_DR_H		(GPIO3_BASE + 0x4)
-#define GPIO3_SWPORT_DDR_H		(GPIO3_BASE + 0xc)
-
-static void pcie_board_init(void)
-{
-	/* Enable AU5426 buffer chip on EVB4v10 */
-	/* Set GPIO3D4 to gpio output HIGH mode PCIE20_CLK_PWREN */
-	writel(0xf << 16, BUS_IOC_GPIO3D_IOMUX_SEL_H);
-	writel(0x10001000, GPIO3_SWPORT_DDR_H);
-	writel(0x10001000, GPIO3_SWPORT_DR_H);
-	udelay(100);
-}
-
 static int rockchip_pcie_ep_set_bar_flag(void *dbi_base, u32 barno, int flags)
 {
 	u32 reg;
@@ -287,7 +195,7 @@ static void pcie_bar_init(void *dbi_base)
 	writel(0, dbi_base + 0x24);
 
 	/* Resize BAR0 to support 4M 32bits */
-	resbar_base = dbi_base + 0x2e8;
+	resbar_base = dbi_base + PCI_RESBAR;
 	writel(0xfffff0, resbar_base + 0x4);
 	writel(0x2c0, resbar_base + 0x8);
 	/* BAR2: 64M 64bits */
@@ -359,7 +267,7 @@ static void pcie_link_set_lanes(void *dbi_base, u32 lanes)
 		val |= PORT_LINK_MODE_4_LANES;
 		break;
 	default:
-		printf("num-lanes %u: invalid value\n", lanes);
+		printf("RKEP: num-lanes %u: invalid value\n", lanes);
 		return;
 	}
 	writel(val, dbi_base + PCIE_PORT_LINK_CONTROL);
@@ -425,7 +333,7 @@ static void pcie_update_atags(void)
 	struct tag_ram_partition t_ram_part;
 
 	if (!atags_is_available()) {
-		printf("No ATAGS data found, create new!\n");
+		printf("RKEP: No ATAGS data found, create new!\n");
 		atags_destroy();
 	}
 
@@ -445,6 +353,224 @@ void rockchip_pcie_ep_get_firmware(void)
 	pcie_wait_for_fw();
 	pcie_update_atags();
 	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_FWDLDONE);
+}
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3588
+#define BUS_IOC_GPIO3D_IOMUX_SEL_H	0xfd5f807c
+#define GPIO3_BASE			0xfec40000
+#define GPIO3_SWPORT_DR_H		(GPIO3_BASE + 0x4)
+#define GPIO3_SWPORT_DDR_H		(GPIO3_BASE + 0xc)
+
+static void pcie_board_init(void)
+{
+	/* Enable AU5426 buffer chip on EVB4v10 */
+	/* Set GPIO3D4 to gpio output HIGH mode PCIE20_CLK_PWREN */
+	writel(0xf << 16, BUS_IOC_GPIO3D_IOMUX_SEL_H);
+	writel(0x10001000, GPIO3_SWPORT_DDR_H);
+	writel(0x10001000, GPIO3_SWPORT_DR_H);
+	udelay(100);
+}
+
+#define PHY_MODE_PCIE_AGGREGATION 4	/* PCIe3x4 */
+#define PHY_MODE_PCIE_NANBNB	0	/* P1:PCIe3x2  +  P0:PCIe3x2 */
+#define PHY_MODE_PCIE_NANBBI	1	/* P1:PCIe3x2  +  P0:PCIe3x1*2 */
+#define PHY_MODE_PCIE_NABINB	2	/* P1:PCIe3x1*2 + P0:PCIe3x2 */
+#define PHY_MODE_PCIE_NABIBI	3	/* P1:PCIe3x1*2 + P0:PCIe3x1*2 */
+
+#define CRU_BASE_ADDR			0xfd7c0000
+#define CRU_SOFTRST_CON32		(CRU_BASE_ADDR + 0x0a80)
+#define CRU_SOFTRST_CON33		(CRU_BASE_ADDR + 0x0a84)
+#define CRU_SOFTRST_CON34		(CRU_BASE_ADDR + 0x0a88)
+#define CRU_GATE_CON32			(CRU_BASE_ADDR + 0x0880)
+#define CRU_GATE_CON33			(CRU_BASE_ADDR + 0x0884)
+#define CRU_GATE_CON34			(CRU_BASE_ADDR + 0x0888)
+#define CRU_GATE_CON38			(CRU_BASE_ADDR + 0x0898)
+#define CRU_GATE_CON39			(CRU_BASE_ADDR + 0x089c)
+#define PHPTOPCRU_BASE_ADDR		0xfd7c8000
+#define PHPTOPCRU_SOFTRST_CON00		(PHPTOPCRU_BASE_ADDR + 0x0a00)
+#define PHPTOPCRU_GATE_CON00		(PHPTOPCRU_BASE_ADDR + 0x0800)
+#define PCIE3PHY_GRF_BASE		0xfd5b8000
+#define RK3588_PCIE3PHY_GRF_CMN_CON0	(PCIE3PHY_GRF_BASE + 0x0000)
+#define PCIE3PHY_GRF_PHY0_CON6		(PCIE3PHY_GRF_BASE + 0x0118)
+#define PCIE3PHY_GRF_PHY1_CON6		(PCIE3PHY_GRF_BASE + 0x0218)
+#define PCIE3PHY_GRF_PHY0_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x1004)
+#define PCIE3PHY_GRF_PHY0_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x1104)
+#define PCIE3PHY_GRF_PHY1_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x2004)
+#define PCIE3PHY_GRF_PHY1_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x2104)
+#define FIREWALL_PCIE_MASTER_SEC	0xfe0300f0
+#define FIREWALL_PCIE_ACCESS		0xfe586040
+#define CRU_PHYREF_ALT_GATE_CON		(CRU_BASE_ADDR + 0x0c38)
+#define PMU_PWR_GATE_SFTCON1		0xfd8d8150
+static void pcie_cru_init(void)
+{
+	u32 phy0_mplla, phy1_mplla, t0 = 0, t1 = 0;
+	u32 i, timeout = 500;
+
+	/* Enable power domain: PD_PCIE & PD_PHP */
+	writel(0x1 << 23 | 0x1 << 21, PMU_PWR_GATE_SFTCON1);
+
+	/* FixMe init 3.0 PHY */
+	/* Phy mode: Aggregation NBNB */
+	writel((0x7 << 16) | PHY_MODE_PCIE_AGGREGATION, RK3588_PCIE3PHY_GRF_CMN_CON0);
+	printep("PHY Mode 0x%x\n", readl(RK3588_PCIE3PHY_GRF_CMN_CON0) & 7);
+	/* Enable clock and sfreset for Controller and PHY */
+	writel(0xffff0000, CRU_SOFTRST_CON32);
+	writel(0xffff0000, CRU_SOFTRST_CON33);
+	writel(0xffff0000, CRU_SOFTRST_CON34);
+	writel(0xffff0000, CRU_GATE_CON32);
+	writel(0xffff0000, CRU_GATE_CON33);
+	writel(0xffff0000, CRU_GATE_CON34);
+	writel(0xffff0000, CRU_GATE_CON38);
+	writel(0xffff0000, CRU_GATE_CON39);
+
+	writel((0x1 << 24), PHPTOPCRU_SOFTRST_CON00);
+	writel(0xffff0000, PHPTOPCRU_GATE_CON00);
+
+	/* PHY Reset */
+	writel((0x1 << 10) | (0x1 << 26), PHPTOPCRU_SOFTRST_CON00);
+
+	udelay(1);
+
+#ifdef PCIE_ENABLE_SRNS_PLL_REFCLK
+	writel(0x000f0000, CRU_PHYREF_ALT_GATE_CON);
+
+	/* PHY0 & PHY1  use internal clock */
+	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY0_CON6);
+	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY1_CON6);
+
+	/* phy0_rx0_cmn_refclk_mod */
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN0_CON1);
+	/* phy1_rx0_cmn_refclk_mod */
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN1_CON1);
+	/* phy0_rx0_cmn_refclk_mod */
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN0_CON1);
+	/* phy1_rx0_cmn_refclk_mod */
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN1_CON1);
+#endif
+
+	udelay(1000);
+
+	/* Deassert PCIe PMA output clamp mode */
+	writel((0x1 << 8) | (0x1 << 24), RK3588_PCIE3PHY_GRF_CMN_CON0);
+
+	/* Deassert PHY Reset */
+	writel((0x1 << 26), PHPTOPCRU_SOFTRST_CON00);
+
+	/* S-Phy: waiting for phy locked */
+	for (i = 0; i < timeout; i++) {
+		phy0_mplla = readl(PCIE3PHY_GRF_BASE + 0x904);
+		phy1_mplla = readl(PCIE3PHY_GRF_BASE + 0xA04);
+
+		if (phy0_mplla != t0 || phy1_mplla != t1) {
+			printf("RKEP: GRF:904=%x, a04=%x...\n", phy0_mplla, phy1_mplla);
+
+			t0 = phy0_mplla;
+			t1 = phy1_mplla;
+			if (phy0_mplla == 0xF && phy1_mplla == 0xF)
+				break;
+		}
+
+		udelay(10);
+	}
+
+	/* PHY config: no config need for snps3.0phy */
+
+	/* Enable PCIe Access in firewall and master secure mode */
+	writel(0xffff0000, FIREWALL_PCIE_MASTER_SEC);
+	writel(0x01800000, FIREWALL_PCIE_ACCESS);
+}
+#elif CONFIG_ROCKCHIP_RK3568
+
+static void pcie_board_init(void)
+{
+	/* to-do */
+}
+
+static const u16 phy_fw[] = {
+	#include "./../../../drivers/phy/phy-rockchip-snps-pcie3.fw"
+};
+
+#define GRF_PCIE30PHY_RK3568_CON1 0x4
+#define GRF_PCIE30PHY_RK3568_CON3 0xC
+#define GRF_PCIE30PHY_RK3568_CON4 0x10
+#define GRF_PCIE30PHY_RK3568_CON5 0x14
+#define GRF_PCIE30PHY_RK3568_CON6 0x18
+#define GRF_PCIE30PHY_RK3568_CON9 0x24
+#define GRF_PCIE30PHY_RK3568_STATUS0 0x80
+#define RK3568_SRAM_INIT_DONE(reg) ((reg) & BIT(14))
+
+#define PMUCRU_BASE			0xFDD00000
+#define PMUCRU_PMUGATE_CON02		(PMUCRU_BASE + 0x188)
+
+#define CRU_BASE			0xFDD20000
+#define CRU_GATE_CON12			(CRU_BASE + 0x330)
+#define CRU_GATE_CON13			(CRU_BASE + 0x334)
+#define CRU_GATE_CON33			(CRU_BASE + 0x384)
+#define CRU_SOFTRST_CON12		(CRU_BASE + 0x430)
+#define CRU_SOFTRST_CON27		(CRU_BASE + 0x46c)
+
+#define PCIE30_PHY_GRF			0xFDCB8000
+
+void pcie_cru_init(void)
+{
+	u32 i, reg;
+	void __iomem *mmio = (void __iomem *)0xFE8C0000;
+
+	/* Enable phy and controoler clk */
+	writel(0xffff0000, PMUCRU_PMUGATE_CON02);
+	writel(0xffff0000, CRU_GATE_CON12);
+	writel(0xffff0000, CRU_GATE_CON13);
+	writel(0xffff0000, CRU_GATE_CON33);
+	writel(0xffff0000, CRU_SOFTRST_CON27);
+
+	writel(0x40004000, CRU_SOFTRST_CON27);
+	writel(0x80008000, PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9);
+
+	writel((0x1 << 15) | (0x1 << 31),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9); //map to access sram
+
+#ifdef PCIE_ENABLE_SRNS_PLL_REFCLK
+	/* use internal clock */
+	writel(0x0 | (0x1 << 31), PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON3);
+
+	/* rx0_cmn_refclk_mode disabled */
+	writel((0x0) | (0x1 << 25), PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON5);
+	/* rx1_cmn_refclk_mode disabled */
+	writel((0x0) | (0x1 << 25), PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON6);
+#endif
+
+	writel((0x0 << 14) | (0x1 << (14 + 16)),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON4); //sdram_ld_done
+	writel((0x0 << 13) | (0x1 << (13 + 16)),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON4); //sdram_bypass
+
+	writel(0x40000000, CRU_SOFTRST_CON27);
+
+	udelay(5);
+	printf("RKEP: sram initial\n");
+	while (1) {
+		reg = readl(PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_STATUS0);
+		if (RK3568_SRAM_INIT_DONE(reg))
+			break;
+	}
+	printf("RKEP: sram init done\n");
+
+	writel((0x3 << 8) | (0x3 << (8 + 16)),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9); //map to access sram
+	for (i = 0; i < ARRAY_SIZE(phy_fw); i++)
+		writel(phy_fw[i], mmio + (i << 2));
+
+	printf("RKEP: snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
+	writel((0x0 << 8) | (0x3 << (8 + 16)),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9);
+	writel((0x1 << 14) | (0x1 << (14 + 16)),
+	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON4); //sdram_ld_done
+
+	writel(0xffff0000, CRU_SOFTRST_CON12);
+	writel(0x100010, PCIE_SNPS_APB_BASE + 0x180);
+
+	udelay(1);
 }
 #endif
 
@@ -486,7 +612,12 @@ reinit:
 	writel(0x1200, dbi_base + 0x0a);
 
 	pcie_link_set_max_speed(dbi_base, PCI_EXP_LNKCTL2_TLS_8_0GT);
+
+#ifdef	CONFIG_ROCKCHIP_RK3588
 	pcie_link_set_lanes(dbi_base, 4);
+#elif	CONFIG_ROCKCHIP_RK3568
+	pcie_link_set_lanes(dbi_base, 2);
+#endif
 
 	/* EP mode */
 	writel(0xf00000, apb_base);
@@ -534,12 +665,22 @@ reinit:
 
 void rockchip_pcie_ep_init(void)
 {
+	u32 val;
+
 	printf("\nRKEP: Init PCIe EP\n");
 	pcie_bar0_header_init();
 
-	/*
-	 * TODO: Move board_init/cru_init to soc level if more SoCs available
-	 */
+#ifdef CONFIG_ROCKCHIP_RK3588
+	writel(0x1 << 23 | 0x1 << 21, PMU_PWR_GATE_SFTCON1);
+	udelay(10);
+#endif
+	/* Re-in pcie initial */
+	val = readl(PCIE_SNPS_APB_BASE + 0x300);
+	if (((val & 0x3ffff) & ((0x3 << 16))) == 0x30000) {
+		printf("RKEP: already link up\n");
+		return;
+	}
+
 	pcie_board_init();
 	/* CRU and PHY Init */
 	pcie_cru_init();
