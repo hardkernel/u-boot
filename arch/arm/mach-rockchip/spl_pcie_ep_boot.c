@@ -19,8 +19,8 @@
 
 #define printep(fmt, ...) \
 		do { \
-		printf("RKEP: %d - ", readl(CONFIG_ROCKCHIP_STIMER_BASE + 0x2c)/24); \
-		printk(fmt, ##__VA_ARGS__); \
+			printf("RKEP: %d - ", readl(CONFIG_ROCKCHIP_STIMER_BASE + 0x2c) / 24); \
+			printf(fmt, ##__VA_ARGS__); \
 		} while (0)
 
 #define RKEP_BAR0_ADDR		0x3c000000
@@ -33,6 +33,33 @@
 #define PCIE_SNPS_APB_BASE	0xfe150000
 #define PCIE_SNPS_IATU_BASE	0xa40300000
 
+#define PCI_EXP_LNKCAP		12	/* Link Capabilities */
+#define PCI_EXP_LNKCTL2		48	/* Link Control 2 */
+#define PCI_EXP_LNKCTL2_TLS		0x000f
+#define PCI_EXP_LNKCAP_SLS		0x0000000f
+
+#define PCI_EXP_LNKCTL2_TLS_2_5GT	0x0001 /* Supported Speed 2.5GT/s */
+#define PCI_EXP_LNKCTL2_TLS_5_0GT	0x0002 /* Supported Speed 5GT/s */
+#define PCI_EXP_LNKCTL2_TLS_8_0GT	0x0003 /* Supported Speed 8GT/s */
+
+/* Synopsys-specific PCIe configuration registers */
+#define PCIE_PORT_LINK_CONTROL		0x710
+#define PORT_LINK_MODE_MASK		(0x3f << 16)
+#define PORT_LINK_MODE_1_LANES		(0x1 << 16)
+#define PORT_LINK_MODE_2_LANES		(0x3 << 16)
+#define PORT_LINK_MODE_4_LANES		(0x7 << 16)
+#define PORT_LINK_MODE_8_LANES		(0xf << 16)
+
+#define PCIE_LINK_WIDTH_SPEED_CONTROL	0x80C
+#define PORT_LOGIC_SPEED_CHANGE		(0x1 << 17)
+#define PORT_LOGIC_LINK_WIDTH_MASK	(0x1f << 8)
+#define PORT_LOGIC_LINK_WIDTH_1_LANES	(0x1 << 8)
+#define PORT_LOGIC_LINK_WIDTH_2_LANES	(0x2 << 8)
+#define PORT_LOGIC_LINK_WIDTH_4_LANES	(0x4 << 8)
+#define PORT_LOGIC_LINK_WIDTH_8_LANES	(0x8 << 8)
+
+#define PCIE_DIRECT_SPEED_CHANGE	(0x1 << 17)
+
 #define LINK_WAIT_IATU			10000
 #define PCIE_ATU_ENABLE			(0x1 << 31)
 #define PCIE_ATU_BAR_MODE_ENABLE	(0x1 << 30 | 1 << 19)
@@ -41,7 +68,7 @@
 #define PCIE_ATU_CPU_ADDR_LOW		0x14
 #define PCIE_ATU_CPU_ADDR_HIGH		0x18
 
-/* SRNS: Use Seperate refclk(internal clock) instead of from RC */
+/* SRNS: Use Separate refclk(internal clock) instead of from RC */
 // #define PCIE_ENABLE_SRNS_PLL_REFCLK
 
 struct rkpcie_cmd {
@@ -51,9 +78,9 @@ struct rkpcie_cmd {
 };
 
 /* rkep device mode status definition */
-#define RKEP_MODE_BOOTROM 	1
+#define RKEP_MODE_BOOTROM	1
 #define RKEP_MODE_LOADER	2
-#define RKEP_MODE_KERNEL  	3
+#define RKEP_MODE_KERNEL	3
 
 /* Common status */
 #define RKEP_SMODE_INIT		0
@@ -66,7 +93,7 @@ struct rkpcie_cmd {
 /* Application status*/
 #define RKEP_SMODE_APPRDY	0x20
 
-struct rkpcie_boot{
+struct rkpcie_boot {
 	/* magic: "RKEP" */
 	u32 magic;
 	u32 version;
@@ -147,12 +174,12 @@ static void pcie_inbound_config(void)
 #define PHPTOPCRU_GATE_CON00		(PHPTOPCRU_BASE_ADDR + 0x0800)
 #define PCIE3PHY_GRF_BASE		0xfd5b8000
 #define RK3588_PCIE3PHY_GRF_CMN_CON0	(PCIE3PHY_GRF_BASE + 0x0000)
-#define PCIe3PHY_GRF_PHY0_CON6		(PCIE3PHY_GRF_BASE + 0x0118)
-#define PCIe3PHY_GRF_PHY1_CON6		(PCIE3PHY_GRF_BASE + 0x0218)
-#define PCIe3PHY_GRF_PHY0_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x1004)
-#define PCIe3PHY_GRF_PHY0_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x1104)
-#define PCIe3PHY_GRF_PHY1_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x2004)
-#define PCIe3PHY_GRF_PHY1_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x2104)
+#define PCIE3PHY_GRF_PHY0_CON6		(PCIE3PHY_GRF_BASE + 0x0118)
+#define PCIE3PHY_GRF_PHY1_CON6		(PCIE3PHY_GRF_BASE + 0x0218)
+#define PCIE3PHY_GRF_PHY0_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x1004)
+#define PCIE3PHY_GRF_PHY0_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x1104)
+#define PCIE3PHY_GRF_PHY1_LN0_CON1	(PCIE3PHY_GRF_BASE + 0x2004)
+#define PCIE3PHY_GRF_PHY1_LN1_CON1	(PCIE3PHY_GRF_BASE + 0x2104)
 #define FIREWALL_PCIE_MASTER_SEC	0xfe0300f0
 #define FIREWALL_PCIE_ACCESS		0xfe586040
 #define CRU_PHYREF_ALT_GATE_CON		(CRU_BASE_ADDR + 0x0c38)
@@ -188,17 +215,17 @@ static void pcie_cru_init(void)
 	writel(0x000f0000, CRU_PHYREF_ALT_GATE_CON);
 
 	/* PHY0 & PHY1  use internal clock */
-	writel(0x0 | (0x1 << 18), PCIe3PHY_GRF_PHY0_CON6);
-	writel(0x0 | (0x1 << 18), PCIe3PHY_GRF_PHY1_CON6);
+	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY0_CON6);
+	writel(0x0 | (0x1 << 18), PCIE3PHY_GRF_PHY1_CON6);
 
 	/* phy0_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIe3PHY_GRF_PHY0_LN0_CON1);
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN0_CON1);
 	/* phy1_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIe3PHY_GRF_PHY0_LN1_CON1);
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY0_LN1_CON1);
 	/* phy0_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIe3PHY_GRF_PHY1_LN0_CON1);
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN0_CON1);
 	/* phy1_rx0_cmn_refclk_mod */
-	writel((0x0) | (0x1 << 23), PCIe3PHY_GRF_PHY1_LN1_CON1);
+	writel((0x0) | (0x1 << 23), PCIE3PHY_GRF_PHY1_LN1_CON1);
 #endif
 
 	udelay(1000);
@@ -216,7 +243,7 @@ static void pcie_cru_init(void)
 	writel(0x01800000, FIREWALL_PCIE_ACCESS);
 }
 
-#define BUS_IOC_GPIO3D_IOMUX_SEL_H 	0xfd5f807c
+#define BUS_IOC_GPIO3D_IOMUX_SEL_H	0xfd5f807c
 #define GPIO3_BASE			0xfec40000
 #define GPIO3_SWPORT_DR_H		(GPIO3_BASE + 0x4)
 #define GPIO3_SWPORT_DDR_H		(GPIO3_BASE + 0xc)
@@ -271,7 +298,8 @@ static void pcie_bar_init(void *dbi_base)
 	writel(0xc0, resbar_base + 0x28);
 	/* Set flags */
 	rockchip_pcie_ep_set_bar_flag(dbi_base, 0, PCI_BASE_ADDRESS_MEM_TYPE_32);
-	rockchip_pcie_ep_set_bar_flag(dbi_base, 2, PCI_BASE_ADDRESS_MEM_PREFETCH | PCI_BASE_ADDRESS_MEM_TYPE_64);
+	rockchip_pcie_ep_set_bar_flag(dbi_base, 2,
+				      PCI_BASE_ADDRESS_MEM_PREFETCH | PCI_BASE_ADDRESS_MEM_TYPE_64);
 	rockchip_pcie_ep_set_bar_flag(dbi_base, 4, PCI_BASE_ADDRESS_MEM_TYPE_32);
 
 	/* Close bar1 bar3 bar5 */
@@ -295,6 +323,65 @@ static void pcie_bar0_header_init(void)
 	bh->cap_size = 0;
 
 	memset((char *)RKEP_BAR0_CMD_ADDR, 0, sizeof(struct rkpcie_cmd));
+}
+
+static void pcie_link_set_max_speed(void *dbi_base, u32 link_gen)
+{
+	u32 cap, ctrl2, link_speed;
+	u8 offset = 0x70;
+
+	cap = readl(dbi_base + offset + PCI_EXP_LNKCAP);
+	ctrl2 = readl(dbi_base + offset + PCI_EXP_LNKCTL2);
+	ctrl2 &= ~PCI_EXP_LNKCTL2_TLS;
+
+	link_speed = link_gen;
+
+	cap &= ~((u32)PCI_EXP_LNKCAP_SLS);
+	writel(ctrl2 | link_speed, dbi_base + offset + PCI_EXP_LNKCTL2);
+	writel(cap | link_speed, dbi_base + offset + PCI_EXP_LNKCAP);
+}
+
+static void pcie_link_set_lanes(void *dbi_base, u32 lanes)
+{
+	u32 val;
+
+	/* Set the number of lanes */
+	val = readl(dbi_base + PCIE_PORT_LINK_CONTROL);
+	val &= ~PORT_LINK_MODE_MASK;
+	switch (lanes) {
+	case 1:
+		val |= PORT_LINK_MODE_1_LANES;
+		break;
+	case 2:
+		val |= PORT_LINK_MODE_2_LANES;
+		break;
+	case 4:
+		val |= PORT_LINK_MODE_4_LANES;
+		break;
+	default:
+		printf("num-lanes %u: invalid value\n", lanes);
+		return;
+	}
+	writel(val, dbi_base + PCIE_PORT_LINK_CONTROL);
+
+	/* Set link width speed control register */
+	val = readl(dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
+	val &= ~PORT_LOGIC_LINK_WIDTH_MASK;
+	switch (lanes) {
+	case 1:
+		val |= PORT_LOGIC_LINK_WIDTH_1_LANES;
+		break;
+	case 2:
+		val |= PORT_LOGIC_LINK_WIDTH_2_LANES;
+		break;
+	case 4:
+		val |= PORT_LOGIC_LINK_WIDTH_4_LANES;
+		break;
+	}
+
+	val |= PCIE_DIRECT_SPEED_CHANGE;
+
+	writel(val, dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
 }
 
 static void pcie_devmode_update(int mode, int submode)
@@ -326,7 +413,7 @@ static void pcie_wait_for_fw(void)
 		i++;
 		if (!(i % 10))
 			printep("Waiting for FW, CMD: %x\n", val);
-		udelay(100000);
+		mdelay(100);
 	}
 	/* Invalidate Cache for firmware area: BAR2, 64MB */
 	invalidate_dcache_range(RKEP_BAR2_ADDR, RKEP_BAR2_ADDR + 0x4000000);
@@ -375,10 +462,13 @@ static void pcie_ep_init(void)
 #endif
 
 	/*
-	 * ltssm_enbale enhance mode and enable delaying the link training
+	 * ltssm_enable enhance mode and enable delaying the link training
 	 * after Hot Reset
 	 */
 	writel(0x120012, apb_base + 0x180);
+
+	/* Unmask pm_turnoff_int */
+	writel(0x04000000, apb_base + 0x18);
 
 	/* PortLorgic DBI_RO_WR_EN */
 	val = readl((dbi_base + 0x8bc));
@@ -394,6 +484,9 @@ reinit:
 	writel(0x356a, dbi_base + 0x02);
 	/* Device Class: Processing accelerators */
 	writel(0x1200, dbi_base + 0x0a);
+
+	pcie_link_set_max_speed(dbi_base, PCI_EXP_LNKCTL2_TLS_8_0GT);
+	pcie_link_set_lanes(dbi_base, 4);
 
 	/* EP mode */
 	writel(0xf00000, apb_base);
@@ -415,10 +508,10 @@ reinit:
 		val = readl(apb_base + 0x300);
 		if (((val & 0x3ffff) & ((0x3 << 16) | 0x11)) == 0x30011)
 			break;
-		udelay(1000);
+		mdelay(1);
 	}
 	printep("Link up %x\n", val);
-	udelay(3000);
+	mdelay(3);
 
 	/* Wait for link stable */
 	for (i = 0; i < 10000; i++) {
@@ -437,8 +530,6 @@ reinit:
 	}
 	printep("Done\n");
 	pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_LNKUP);
-
-	return;
 }
 
 void rockchip_pcie_ep_init(void)
