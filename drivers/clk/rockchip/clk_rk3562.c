@@ -59,8 +59,8 @@ static struct rockchip_pll_clock rk3562_pll_clks[] = {
 #define RK3562_CPUCLK_RATE(_rate, _aclk_m_core, _pclk_dbg)	\
 {								\
 	.rate = _rate##U,					\
-	.aclk_div = (_aclk_m_core) - 1,				\
-	.pclk_div = (_pclk_dbg) - 1,				\
+	.aclk_div = _aclk_m_core,				\
+	.pclk_div = _pclk_dbg,					\
 }
 
 static struct rockchip_cpu_rate_table rk3562_cpu_rates[] = {
