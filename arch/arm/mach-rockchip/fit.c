@@ -247,6 +247,7 @@ int fit_image_pre_process(const void *fit)
 {
 	int ret;
 
+	/* free for fit_image_fixup_alloc(FIT_FDT_PROP) to re-alloc */
 	if ((gd->flags & GD_FLG_KDTB_READY) && !gd->fdt_blob_kern)
 		sysmem_free((phys_addr_t)gd->fdt_blob);
 
