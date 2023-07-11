@@ -62,10 +62,10 @@ static int is_pmbr_valid(legacy_mbr * mbr)
 		return 0;
 
 	for (i = 0; i < 4; i++) {
-		if (pmbr_part_valid(&mbr->partition_record[i])) {
+		if (pmbr_part_valid(&mbr->partition_record[i]))
 			return 1;
-		}
 	}
+
 	return 0;
 }
 
@@ -76,10 +76,10 @@ static int can_find_pmbr(struct blk_desc *dev_desc)
 	/* Read legacy MBR from block 0 and validate it */
 	if ((blk_dread(dev_desc, 0, 1, (ulong *)legacymbr) != 1)
 		|| (is_pmbr_valid(legacymbr) != 1)) {
-		return -1;
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 #endif
 
