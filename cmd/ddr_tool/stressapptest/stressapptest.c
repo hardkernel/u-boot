@@ -24,7 +24,7 @@
 #include "stressapptest.h"
 #include "../ddr_tool_common.h"
 
-#define __version__ "v1.2.0 20230619"
+#define __version__ "v1.3.0 20230713"
 
 #if defined(CONFIG_ARM64)
 /* Float operation in TOOLCHAIN_ARM32 will cause the compile error */
@@ -710,9 +710,9 @@ static u32 block_mis_search(void *dst_addr, struct pattern *src_pattern, char *i
 			/* fix the error */
 			dst_mem[i] = expected;
 			err++;
+			flush_dcache_range((ulong)&dst_mem[i], (ulong)&dst_mem[i + 1]);
 		}
 	}
-	flush_dcache_all();
 
 	if (err == 0) {
 		lock_byte_mutex(&print_mutex);
@@ -791,12 +791,14 @@ static void page_inv_up(void *src_addr, struct stressapptest_params *sat)
 
 	for (int i = 0; i < sat->block_num; i++) {
 		dst_mem = (uint *)dst_addr;
-		for (int j = 0; j < sat->block_size_byte / sizeof(uint); j++) {
-			data = dst_mem[j];
-			dst_mem[j] = ~data;
-		}
+		for (int j = 0; j < sat->block_size_byte / sizeof(uint); j += 32) {
+			for (int k = j; k < j + 32; k++) {
+				data = dst_mem[k];
+				dst_mem[k] = ~data;
+			}
+			flush_dcache_range((ulong)&dst_mem[j], (ulong)&dst_mem[j + 1]);
+ 		}
 		dst_addr += sat->block_size_byte;
-		flush_dcache_all();
 	}
 }
 
@@ -810,12 +812,14 @@ static void page_inv_down(void *src_addr, struct stressapptest_params *sat)
 
 	for (int i = sat->block_num - 1; i >= 0; i--) {
 		dst_mem = (uint *)dst_addr;
-		for (int j = sat->block_size_byte / sizeof(uint) - 1; j >= 0; j--) {
-			data = dst_mem[j];
-			dst_mem[j] = ~data;
-		}
+		for (int j = sat->block_size_byte / sizeof(uint) - 32; j >= 0; j -= 32) {
+			for (int k = j + 31; k >= j; k--) {
+				data = dst_mem[k];
+				dst_mem[k] = ~data;
+			}
+			flush_dcache_range((ulong)&dst_mem[j], (ulong)&dst_mem[j + 1]);
+ 		}
 		dst_addr -= sat->block_size_byte;
-		flush_dcache_all();
 	}
 }
 
@@ -839,8 +843,6 @@ static u32 page_inv(struct stressapptest_params *sat, u8 cpu_id)
 		err += block_inv_check(dst_block_addr, page_list[src].pattern, sat, cpu_id);
 		dst_block_addr += sat->block_size_byte;
 	}
-
-	flush_dcache_all();
 
 	return err;
 }
@@ -914,8 +916,6 @@ static u32 block_copy(void *dst_addr, void *src_addr,
 #endif
 	}
 
-	flush_dcache_all();
-
 #if defined(WARM_CPU)
 	d = a + b + c + d;
 	if (d == 1.0)
@@ -938,7 +938,6 @@ static u32 page_copy(struct stressapptest_params *sat, u8 cpu_id)
 	dst_block_addr = page_list[dst].base_addr;
 	src = page_rand_pick(page_list, 1, sat, cpu_id);	/* pick a valid page */
 	src_block_addr = page_list[src].base_addr;
-	flush_dcache_all();
 
 	for (int i = 0; i < sat->block_num; i++) {
 		err += block_copy(dst_block_addr, src_block_addr,
@@ -950,7 +949,8 @@ static u32 page_copy(struct stressapptest_params *sat, u8 cpu_id)
 	page_list[dst].pattern = page_list[src].pattern;
 	page_list[dst].valid = 1;
 	page_list[src].valid = 0;
-	flush_dcache_all();
+	flush_dcache_range((ulong)&page_list[src], (ulong)&page_list[src + 1]);
+	flush_dcache_range((ulong)&page_list[dst], (ulong)&page_list[dst + 1]);
 
 	return err;
 }
@@ -996,7 +996,12 @@ void secondary_main(void)
 			}
 			test++;
 			cpu_test_finish[cpu_id] = 1;
-			flush_dcache_all();
+			flush_dcache_range((ulong)&cpu_test_finish[cpu_id],
+					   (ulong)&cpu_test_finish[cpu_id + 1]);
+			flush_dcache_range((ulong)&cpu_copy_err[cpu_id],
+					   (ulong)&cpu_copy_err[cpu_id + 1]);
+			flush_dcache_range((ulong)&cpu_inv_err[cpu_id],
+					   (ulong)&cpu_inv_err[cpu_id + 1]);
 		}
 	}
 #else
@@ -1123,9 +1128,11 @@ static int doing_stressapptest(void)
 				break;
 			}
 			mdelay(1);
-			flush_dcache_all();
+			flush_dcache_range((ulong)&cpu_test_finish[i],
+					   (ulong)&cpu_test_finish[i + 1]);
 		}
 	}
+	flush_dcache_all();
 #endif
 
 	for (i = 0; i < sat.cpu_num; i++) {
