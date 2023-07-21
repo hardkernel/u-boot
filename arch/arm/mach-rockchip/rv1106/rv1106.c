@@ -501,15 +501,20 @@ int arch_cpu_init(void)
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
-	/* set the mcu uncache area, usually set the devices address */
-	writel(0xff000, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_START);
-	writel(0xffc00, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_END);
-	/* Reset the hp mcu */
-	writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
-	/* set the mcu addr */
-	writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
-	/* release the mcu */
-	writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+	if (!strcmp(id, "mcu0")) {
+		/* set the mcu uncache area, usually set the devices address */
+		writel(0xff000, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_START);
+		writel(0xffc00, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_END);
+		/* Reset the hp mcu */
+		writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+		/* set the mcu addr */
+		writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
+		/* release the mcu */
+		writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+	} else if (!strcmp(id, "mcu1")) {
+		/* set the mcu addr */
+		writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
+	}
 
 	return 0;
 }
