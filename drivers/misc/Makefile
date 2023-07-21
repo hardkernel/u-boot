@@ -55,40 +55,16 @@ obj-$(CONFIG_QFW) += qfw.o
 obj-$(CONFIG_ROCKCHIP_EFUSE) += rockchip-efuse.o
 obj-$(CONFIG_ROCKCHIP_OTP) += rockchip-otp.o
 
-ifdef CONFIG_ROCKCHIP_RK3308
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3308-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_PX30
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += px30-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RK3328
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3328-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RK3568
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3568-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RV1106
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rv1106-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RV1126
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rv1126-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RK3588
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3588-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RK3528
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3528-secure-otp.o
-endif
-
-ifdef CONFIG_ROCKCHIP_RK3562
-obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP) += rk3562-secure-otp.o
+ifeq ($(CONFIG_$(SPL_TPL_)ROCKCHIP_SECURE_OTP),y)
+obj-$(CONFIG_ROCKCHIP_RK3308) += rk3308-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_PX30)   += px30-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RK3328) += rk3328-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RK3568) += rk3568-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RV1106) += rv1106-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RV1126) += rv1126-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RK3588) += rk3588-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RK3528) += rk3528-secure-otp.o
+obj-$(CONFIG_ROCKCHIP_RK3562) += rk3562-secure-otp.o
 endif
 
 obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_HW_DECOMPRESS) += rockchip_decompress.o
