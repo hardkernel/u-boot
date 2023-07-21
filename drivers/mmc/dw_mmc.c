@@ -14,6 +14,8 @@
 #include <memalign.h>
 #include <mmc.h>
 #include <dwmmc.h>
+#include <dm/pinctrl.h>
+#include <dm.h>
 #ifdef CONFIG_DM_GPIO
 #include <asm/gpio.h>
 #include <asm-generic/gpio.h>
@@ -784,6 +786,22 @@ static int dwmci_init(struct mmc *mmc)
 	struct dwmci_host *host = mmc->priv;
 	uint32_t use_dma;
 	uint32_t verid;
+
+#if defined(CONFIG_DM_GPIO) && (defined(CONFIG_SPL_GPIO_SUPPORT) || !defined(CONFIG_SPL_BUILD))
+	struct gpio_desc pwr_en_gpio;
+	u32 delay_ms;
+
+	if (mmc_getcd(mmc) == 1 &&
+	    !gpio_request_by_name(mmc->dev, "pwr-en-gpios", 0, &pwr_en_gpio, GPIOD_IS_OUT)) {
+		dm_gpio_set_value(&pwr_en_gpio, 0);
+		pinctrl_select_state(mmc->dev, "idle");
+		delay_ms = dev_read_u32_default(mmc->dev, "power-off-delay-ms", 200);
+		mdelay(delay_ms);
+		dm_gpio_set_value(&pwr_en_gpio, 1);
+		pinctrl_select_state(mmc->dev, "default");
+		dm_gpio_free(mmc->dev, &pwr_en_gpio);
+	}
+#endif
 
 	if (host->board_init)
 		host->board_init(host);
