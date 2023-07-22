@@ -443,6 +443,10 @@ static ulong rk3568_pmuclk_set_rate(struct clk *clk, ulong rate)
 	case PCLK_PMU:
 		ret = rk3568_pmu_set_pmuclk(priv, rate);
 		break;
+	case CLK_PCIEPHY0_REF:
+	case CLK_PCIEPHY1_REF:
+	case CLK_PCIEPHY2_REF:
+		return 0;
 	default:
 		return -ENOENT;
 	}
