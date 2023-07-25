@@ -332,6 +332,55 @@ exit:
 	return TeecResult;
 }
 
+static void trusty_notify_always_use_security(void)
+{
+#if defined(CONFIG_OPTEE_V2) && defined(CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION)
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+	TEEC_UUID  tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
+		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return;
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return;
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		return;
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
+						    TEEC_NONE,
+						    TEEC_NONE,
+						    TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					9,
+					&TeecOperation,
+					&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS)
+		debug("notify always use security fail! please update optee!");
+
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+
+	return;
+#endif
+}
+
 uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value)
 {
 	char hs[9];
@@ -613,7 +662,7 @@ uint32_t trusty_write_oem_huk(uint32_t *buf, uint32_t length)
 						  true, buf, length);
 }
 
-void trusty_select_security_level(void)
+static void trusty_select_security_level(void)
 {
 #if (CONFIG_OPTEE_SECURITY_LEVEL > 0)
 	TEEC_Result TeecResult;
@@ -636,6 +685,7 @@ void trusty_select_security_level(void)
 void optee_client_init(void)
 {
 	trusty_select_security_level();
+	trusty_notify_always_use_security();
 }
 
 uint32_t trusty_write_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t byte_len)
