@@ -522,7 +522,7 @@ int board_init(void)
 	soc_clk_dump();
 #endif
 #ifdef CONFIG_OPTEE_CLIENT
-	trusty_select_security_level();
+	optee_client_init();
 #endif
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
