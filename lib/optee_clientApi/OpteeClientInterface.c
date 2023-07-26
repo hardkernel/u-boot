@@ -633,6 +633,11 @@ void trusty_select_security_level(void)
 #endif
 }
 
+void optee_client_init(void)
+{
+	trusty_select_security_level();
+}
+
 uint32_t trusty_write_oem_ns_otp(uint32_t byte_off, uint8_t *byte_buf, uint32_t byte_len)
 {
 	TEEC_Result TeecResult;

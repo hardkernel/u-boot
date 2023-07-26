@@ -66,6 +66,7 @@ typedef struct {
 #define ATTEST_UUID_SIZE     (ATAP_HEX_UUID_LEN+1)
 #define ATTEST_CA_OUT_SIZE     256
 
+void optee_client_init(void);
 uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value);
 uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value);
 uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size);
