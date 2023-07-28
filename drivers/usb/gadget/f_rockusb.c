@@ -639,6 +639,31 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 #else
 			printf("Please enable CONFIG_RK_AVB_LIBAVB_USER!\n");
 #endif
+		} else if (type == 3) {
+			/* efuse or otp*/
+#ifdef CONFIG_OPTEE_CLIENT
+			if (vhead->id == 120) {
+				u8 value;
+				char *written_str = "key is written!";
+				char *not_written_str = "key is not written!";
+				if (trusty_ta_encryption_key_is_written(&value) != 0) {
+					printf("trusty_ta_encryption_key_is_written error!");
+					return -EIO;
+				}
+				if (value) {
+					memcpy(data, written_str, strlen(written_str));
+					vhead->size = strlen(written_str);
+				} else {
+					memcpy(data, not_written_str, strlen(not_written_str));
+					vhead->size = strlen(not_written_str);
+				}
+			} else {
+				printf("Unknown tag\n");
+				return -EIO;
+			}
+#else
+			printf("Please enable CONFIG_OPTEE_CLIENT\n");
+#endif
 		} else {
 			return -EINVAL;
 		}
