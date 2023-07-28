@@ -87,6 +87,7 @@ uint32_t trusty_read_vbootkey_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_write_vbootkey_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_read_vbootkey_enable_flag(uint8_t *flag);
 uint32_t trusty_write_ta_encryption_key(uint32_t *buf, uint32_t length);
+uint32_t trusty_ta_encryption_key_is_written(uint8_t *value);
 uint32_t trusty_check_security_level_flag(uint8_t flag);
 uint32_t trusty_write_oem_huk(uint32_t *buf, uint32_t length);
 uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes);
