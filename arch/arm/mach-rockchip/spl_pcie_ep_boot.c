@@ -338,7 +338,7 @@ static void pcie_update_atags(void)
 	struct tag_ram_partition t_ram_part;
 
 	if (!atags_is_available()) {
-		printf("RKEP: No ATAGS data found, create new!\n");
+		printfep("RKEP: No ATAGS data found, create new!\n");
 		atags_destroy();
 	}
 
@@ -406,7 +406,27 @@ static void pcie_board_init(void)
 #define FIREWALL_PCIE_MASTER_SEC	0xfe0300f0
 #define FIREWALL_PCIE_ACCESS		0xfe586040
 #define CRU_PHYREF_ALT_GATE_CON		(CRU_BASE_ADDR + 0x0c38)
+#define PMU1_GRF_BASE			0xfd58a000
 #define PMU_PWR_GATE_SFTCON1		0xfd8d8150
+#define PMU1_IOC_BASE			0xfd5F0000
+#define CRU_GLB_RST_CON_OFFSET		(0xC10U)
+#define CRU_GLB_SRST_FST_VALUE_OFFSET	(0xC08U)
+
+void pcie_first_reset(void)
+{
+	printep("Fst Reset\n");
+	mdelay(1);
+
+	writel(0xFFDF, CRU_BASE_ADDR + CRU_GLB_RST_CON_OFFSET);
+	writel(0xffffffff, PMU1_GRF_BASE + 0x4); // reset width
+	writel(0x30003000, PMU1_GRF_BASE + 0x1c); // pmu1_grf pmu1_ioc hiold
+	writel(0x00f00020, PMU1_IOC_BASE + 0x0);   //select tsad_shut_m0 iomux
+	writel(0xFDB9, CRU_BASE_ADDR + CRU_GLB_SRST_FST_VALUE_OFFSET);
+
+	while (1)
+		;
+}
+
 static void pcie_cru_init(void)
 {
 	u32 phy0_mplla, phy1_mplla, t0 = 0, t1 = 0;
@@ -468,7 +488,7 @@ static void pcie_cru_init(void)
 		phy1_mplla = readl(PCIE3PHY_GRF_BASE + 0xA04);
 
 		if (phy0_mplla != t0 || phy1_mplla != t1) {
-			printf("RKEP: GRF:904=%x, a04=%x...\n", phy0_mplla, phy1_mplla);
+			printep("RKEP: GRF:904=%x, a04=%x...\n", phy0_mplla, phy1_mplla);
 
 			t0 = phy0_mplla;
 			t1 = phy1_mplla;
@@ -477,6 +497,12 @@ static void pcie_cru_init(void)
 		}
 
 		udelay(10);
+	}
+
+	if (i >= timeout) {
+		printep("lock fail\n");
+		mdelay(1);
+		pcie_first_reset();
 	}
 
 	/* PHY config: no config need for snps3.0phy */
@@ -517,13 +543,31 @@ static const u16 phy_fw[] = {
 #define CRU_GATE_CON33			(CRU_BASE + 0x384)
 #define CRU_SOFTRST_CON12		(CRU_BASE + 0x430)
 #define CRU_SOFTRST_CON27		(CRU_BASE + 0x46c)
+#define CRU_GLB_SRST_FST_OFFSET		(0xD4U)
 
 #define PCIE30_PHY_GRF			0xFDCB8000
 
+#define SYS_GRF_BASE			0xFDC60000
+
+void pcie_first_reset(void)
+{
+	printep("Fst Reset\n");
+	mdelay(1);
+
+	writel(0x00040004, CRU_BASE + 0x104);
+	writel(0x00700010, CRU_BASE);
+	writel(0x00100010, SYS_GRF_BASE + 0x508);
+	writel(0xFDB9, CRU_BASE + CRU_GLB_SRST_FST_OFFSET);
+
+	while (1)
+		;
+}
+
 void pcie_cru_init(void)
 {
-	u32 i, reg;
+	u32 i, reg, timeout = 500;
 	void __iomem *mmio = (void __iomem *)0xFE8C0000;
+	u32 phy0_status0, phy0_status1, t0 = 0, t1 = 0;
 
 	/* Enable phy and controoler clk */
 	writel(0xffff0000, PMUCRU_PMUGATE_CON02);
@@ -556,20 +600,20 @@ void pcie_cru_init(void)
 	writel(0x40000000, CRU_SOFTRST_CON27);
 
 	udelay(5);
-	printf("RKEP: sram initial\n");
+	printfep("RKEP: sram initial\n");
 	while (1) {
 		reg = readl(PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_STATUS0);
 		if (RK3568_SRAM_INIT_DONE(reg))
 			break;
 	}
-	printf("RKEP: sram init done\n");
+	printfep("RKEP: sram init done\n");
 
 	writel((0x3 << 8) | (0x3 << (8 + 16)),
 	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9); //map to access sram
 	for (i = 0; i < ARRAY_SIZE(phy_fw); i++)
 		writel(phy_fw[i], mmio + (i << 2));
 
-	printf("RKEP: snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
+	printfep("RKEP: snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
 	writel((0x0 << 8) | (0x3 << (8 + 16)),
 	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9);
 	writel((0x1 << 14) | (0x1 << (14 + 16)),
@@ -577,6 +621,29 @@ void pcie_cru_init(void)
 
 	writel(0xffff0000, CRU_SOFTRST_CON12);
 	writel(0x100010, PCIE_SNPS_APB_BASE + 0x180);
+
+	/* S-Phy: waiting for phy locked */
+	for (i = 0; i < timeout; i++) {
+		phy0_status0 = readl(PCIE30_PHY_GRF + 0x80);
+		phy0_status1 = readl(PCIE30_PHY_GRF + 0x84);
+
+		if (phy0_status0 != t0 || phy0_status1 != t1) {
+			printep("RKEP: GRF:0x80=%x, 0x84=%x...\n", phy0_status0, phy0_status1);
+
+			t0 = phy0_status0;
+			t1 = phy0_status1;
+			if (RK3568_SRAM_INIT_DONE(phy0_status0))
+				break;
+		}
+
+		udelay(10);
+	}
+
+	if (i >= timeout) {
+		printep("lock fail\n");
+		mdelay(1);
+		pcie_first_reset();
+	}
 
 	udelay(1);
 }
