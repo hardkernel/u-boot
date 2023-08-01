@@ -150,6 +150,17 @@ void *memset(void *s, int c, size_t count)
 }
 #endif
 
+#ifdef CONFIG_SPL_DM_RESET
+static void brom_download(void)
+{
+	if (debug_uart_tstc() && debug_uart_getc() == 0x02) {
+		printf("ctrl+b: Bootrom download!\n");
+		writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+		do_reset(NULL, 0, 0, NULL);
+	}
+}
+#endif
+
 void board_init_f(ulong dummy)
 {
 #ifdef CONFIG_SPL_FRAMEWORK
@@ -198,7 +209,9 @@ void board_init_f(ulong dummy)
 	/* Some SoCs like rk3036 does not use any frame work */
 	sdram_init();
 #endif
-
+#ifdef CONFIG_SPL_DM_RESET
+	brom_download();
+#endif
 	arch_cpu_init();
 	rk_board_init_f();
 #ifdef CONFIG_SPL_RAM_DEVICE
