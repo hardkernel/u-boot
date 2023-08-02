@@ -477,6 +477,13 @@ void ab_update_root_partition(void)
 		else if (strstr(part_type, "EFI"))
 			ab_update_root_uuid();
 		break;
+	case IF_TYPE_SPINAND:
+		if (strstr(part_type, "ENV"))
+			/* TODO */
+			printf("%s: TODO: ENV partition for 'IF_TYPE_SPINAND'.\n", __func__);
+		else if (strstr(part_type, "EFI"))
+			ab_update_root_uuid();
+		break;
 	case IF_TYPE_MTD:
 		if (dev_desc->devnum == BLK_MTD_NAND || dev_desc->devnum == BLK_MTD_SPI_NAND) {
 			if (strstr(boot_args, "rootfstype=squashfs") || strstr(boot_args, "rootfstype=erofs"))
