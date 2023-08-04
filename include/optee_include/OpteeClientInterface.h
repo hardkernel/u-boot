@@ -18,6 +18,12 @@ enum RK_OEM_OTP_KEYID {
 	RK_OEM_OTP_KEYMAX
 };
 
+enum RK_HDCP_KEYID {
+	RK_HDCP_KEY0 = 0,
+	RK_HDCP_KEY1 = 1,
+	RK_HDCP_KEYMAX
+};
+
 /* Crypto mode */
 enum RK_CIPIHER_MODE {
 	RK_CIPHER_MODE_ECB = 0,
@@ -103,6 +109,8 @@ uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id, rk_cipher_confi
 				   uint32_t len);
 uint32_t trusty_oem_user_ta_transfer(void);
 uint32_t trusty_oem_user_ta_storage(void);
+uint32_t trusty_write_oem_hdcp_key(enum RK_HDCP_KEYID key_id,
+				  uint8_t *byte_buf, uint32_t byte_len);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca
