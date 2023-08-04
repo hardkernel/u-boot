@@ -3219,6 +3219,11 @@ static int rk3568_clk_set_parent(struct clk *clk, struct clk *parent)
 	case I2S3_MCLK_IOE:
 	case I2S3_MCLKOUT:
 		return rk3568_i2s3_set_parent(clk, parent);
+	case I2S1_MCLKOUT_TX:
+	case SCLK_GMAC0_RGMII_SPEED:
+	case SCLK_GMAC0_RMII_SPEED:
+	case SCLK_GMAC1_RGMII_SPEED:
+	case SCLK_GMAC1_RMII_SPEED:
 	default:
 		return -ENOENT;
 	}
