@@ -203,8 +203,8 @@ static __maybe_unused int mtd_map_read(struct mtd_info *mtd, loff_t offset,
 		rval = mtd_read(mtd, mapped_offset, read_length, &read_length,
 				p_buffer);
 		if (rval && rval != -EUCLEAN) {
-			printf("NAND read from offset %llx failed %d\n",
-			       offset, rval);
+			printf("NAND read from offset %x failed %d\n",
+			       (u32)offset, rval);
 			*length -= left_to_read;
 			return rval;
 		}
