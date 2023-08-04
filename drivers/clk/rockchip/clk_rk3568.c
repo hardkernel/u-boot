@@ -2208,6 +2208,7 @@ static ulong rk3568_rkvdec_set_clk(struct rk3568_clk_priv *priv,
 
 	return rk3568_rkvdec_get_clk(priv, clk_id);
 }
+#endif
 
 static ulong rk3568_uart_get_rate(struct rk3568_clk_priv *priv, ulong clk_id)
 {
@@ -2344,6 +2345,7 @@ static ulong rk3568_uart_set_rate(struct rk3568_clk_priv *priv,
 	return rk3568_uart_get_rate(priv, clk_id);
 }
 
+#ifndef CONFIG_SPL_BUILD
 static ulong rk3568_i2s3_get_rate(struct rk3568_clk_priv *priv, ulong clk_id)
 {
 	struct rk3568_cru *cru = priv->cru;
@@ -2644,6 +2646,14 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case TCLK_WDT_NS:
 		rate = OSC_HZ;
 		break;
+	case I2S3_MCLKOUT_RX:
+	case I2S3_MCLKOUT_TX:
+	case MCLK_I2S3_2CH_RX:
+	case MCLK_I2S3_2CH_TX:
+	case I2S3_MCLKOUT:
+		rate = rk3568_i2s3_get_rate(priv, clk->id);
+		break;
+#endif
 	case SCLK_UART1:
 	case SCLK_UART2:
 	case SCLK_UART3:
@@ -2655,14 +2665,6 @@ static ulong rk3568_clk_get_rate(struct clk *clk)
 	case SCLK_UART9:
 		rate = rk3568_uart_get_rate(priv, clk->id);
 		break;
-	case I2S3_MCLKOUT_RX:
-	case I2S3_MCLKOUT_TX:
-	case MCLK_I2S3_2CH_RX:
-	case MCLK_I2S3_2CH_TX:
-	case I2S3_MCLKOUT:
-		rate = rk3568_i2s3_get_rate(priv, clk->id);
-		break;
-#endif
 	case ACLK_SECURE_FLASH:
 	case ACLK_CRYPTO_NS:
 	case HCLK_SECURE_FLASH:
@@ -2836,6 +2838,14 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case TCLK_WDT_NS:
 		ret = OSC_HZ;
 		break;
+	case I2S3_MCLKOUT_RX:
+	case I2S3_MCLKOUT_TX:
+	case MCLK_I2S3_2CH_RX:
+	case MCLK_I2S3_2CH_TX:
+	case I2S3_MCLKOUT:
+		ret = rk3568_i2s3_set_rate(priv, clk->id, rate);
+		break;
+#endif
 	case SCLK_UART1:
 	case SCLK_UART2:
 	case SCLK_UART3:
@@ -2847,14 +2857,6 @@ static ulong rk3568_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_UART9:
 		ret = rk3568_uart_set_rate(priv, clk->id, rate);
 		break;
-	case I2S3_MCLKOUT_RX:
-	case I2S3_MCLKOUT_TX:
-	case MCLK_I2S3_2CH_RX:
-	case MCLK_I2S3_2CH_TX:
-	case I2S3_MCLKOUT:
-		ret = rk3568_i2s3_set_rate(priv, clk->id, rate);
-		break;
-#endif
 	case ACLK_SECURE_FLASH:
 	case ACLK_CRYPTO_NS:
 	case HCLK_SECURE_FLASH:
