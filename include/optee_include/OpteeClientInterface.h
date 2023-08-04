@@ -111,6 +111,7 @@ uint32_t trusty_oem_user_ta_transfer(void);
 uint32_t trusty_oem_user_ta_storage(void);
 uint32_t trusty_write_oem_hdcp_key(enum RK_HDCP_KEYID key_id,
 				  uint8_t *byte_buf, uint32_t byte_len);
+uint32_t trusty_oem_hdcp_key_is_written(enum RK_HDCP_KEYID key_id, uint8_t *value);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca
