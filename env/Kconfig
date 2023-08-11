@@ -461,6 +461,20 @@ config ENVF_LIST
 	help
 	  The environment white list.
 
+config ENV_MEM_LAYOUT
+	bool "Enable environment for the Image memory layout"
+	default n
+	help
+	  Use this if you want to define CONFIG_ENV_MEM_LAYOUT_SETTINGS
+	  to override the system default environments in plat header.
+
+config ENV_MEM_LAYOUT_SETTINGS
+	string "Environment of the Image memory layout settings"
+	depends on ENV_MEM_LAYOUT
+	default ""
+	help
+	  The environment settings of Image memory layout.
+
 if ARCH_SUNXI
 
 config ENV_OFFSET
