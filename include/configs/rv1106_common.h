@@ -58,6 +58,9 @@
 #define CONFIG_SET_DFU_ALT_INFO
 #endif
 
+#ifdef CONFIG_ENV_MEM_LAYOUT
+#define ENV_MEM_LAYOUT_SETTINGS		CONFIG_ENV_MEM_LAYOUT_SETTINGS
+#else
 /*
  *   Image:  0 - 8M
  *  zImage:  8 - 12M
@@ -71,6 +74,7 @@
 	"kernel_addr_c=0x00808000\0"	\
 	"kernel_addr_r=0x00008000\0"	\
 	"ramdisk_addr_r=0x000e00000\0"
+#endif
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	ENV_MEM_LAYOUT_SETTINGS		\
