@@ -127,6 +127,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define GPIO4_IOC_GPIO4B_DS0		0x0030
 
+#define VICRU_BASE			0XFF3B4000
+#define VICRU_VISOFTRST_CON01		0xA04
+
 /* OS_REG1[2:0]: chip ver */
 #define CHIP_VER_REG			0xff020204
 #define CHIP_VER_MSK			0x7
@@ -495,6 +498,11 @@ int arch_cpu_init(void)
 #endif
 
 #endif
+	/* reset sdmmc0 to prevent power leak */
+	writel(0x30003000, VICRU_BASE + VICRU_VISOFTRST_CON01);
+	udelay(1);
+	writel(0x30000000, VICRU_BASE + VICRU_VISOFTRST_CON01);
+
 	return 0;
 }
 
