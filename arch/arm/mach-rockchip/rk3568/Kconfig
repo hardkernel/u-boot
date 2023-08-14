@@ -12,6 +12,12 @@ config TARGET_ODROID_M1
 	help
 	  Hardkernel's ODROID-M1 SBC board for Rockchp RK3568.
 
+config TARGET_ODROID_M1S
+	bool "ODROID-M1S"
+	select BOARD_LATE_INIT
+	help
+	  Hardkernel's ODROID-M1 SBC board for Rockchp RK3566.
+
 config SYS_SOC
 	default "rockchip"
 
@@ -20,5 +26,6 @@ config SYS_MALLOC_F_LEN
 
 source board/rockchip/evb_rk3568/Kconfig
 source board/hardkernel/odroid-m1/Kconfig
+source board/hardkernel/odroid-m1s/Kconfig
 
 endif
