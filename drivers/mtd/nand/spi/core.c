@@ -1166,6 +1166,13 @@ static int spinand_init(struct spinand_device *spinand)
 		if (ret)
 			goto err_free_bufs;
 
+		/* HWP_EN must be enabled first before block unlock region is set */
+		if (spinand->id.data[0] == 0x01) {
+			ret = spinand_lock_block(spinand, HWP_EN);
+			if (ret)
+				goto err_free_bufs;
+		}
+
 		ret = spinand_lock_block(spinand, BL_ALL_UNLOCKED);
 		if (ret)
 			goto err_free_bufs;
