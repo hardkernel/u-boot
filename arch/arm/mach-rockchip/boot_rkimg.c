@@ -41,6 +41,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+__weak int board_read_dtb_file(void *fdt_addr)
+{
+	return -EINVAL;
+}
+
 __weak int rk_board_early_fdt_fixup(void *blob)
 {
 	return 0;
@@ -566,6 +571,15 @@ int rockchip_read_dtb_file(void *fdt)
 {
 	int locate, ret;
 	int size;
+
+	ret = board_read_dtb_file(fdt);
+	if (!ret) {
+		u32 fdt_size = fdt_totalsize(fdt);
+
+		if (sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt,
+					ALIGN(fdt_size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+			return 0;
+	}
 
 	for (locate = 0; locate < LOCATE_END; locate++) {
 		ret = dtb_scan(fdt, locate);
