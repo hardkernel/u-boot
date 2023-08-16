@@ -362,6 +362,12 @@ static int brought_up_all_amp(void *fit, const char *fit_uname_cfg)
 	if (conf_noffset < 0)
 		return conf_noffset;
 
+	/*
+	 * If boot cpu is not assigned in amp.img, the default value 0 makes
+	 * boot cpu power down itself in final process, so we must initial it.
+	 */
+	g_bootcpu.boot_on = 1;
+
 	linux_noffset = fdt_subnode_offset(fit, conf_noffset, "linux");
 	if (linux_noffset > 0) {
 		ret = brought_up_amp(fit, linux_noffset, &g_bootcpu, 1);
