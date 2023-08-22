@@ -793,6 +793,7 @@ handle_args_late
 sub_commands
 clean_files
 make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN} all --jobs=${JOB}
+pack_idblock
 pack_images
 finish
 echo ${TOOLCHAIN}
