@@ -1815,7 +1815,7 @@ static ulong rk3568_dclk_vop_get_clk(struct rk3568_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
-#define RK3568_VOP_PLL_LIMIT_FREQ 600000000
+#define RK3568_VOP_PLL_LIMIT_FREQ 594000000
 
 static ulong rk3568_dclk_vop_set_clk(struct rk3568_clk_priv *priv,
 				     ulong clk_id, ulong rate)
@@ -1850,6 +1850,8 @@ static ulong rk3568_dclk_vop_set_clk(struct rk3568_clk_priv *priv,
 		rk3568_pmu_pll_set_rate(priv, HPLL, div * rate);
 	} else if (sel == DCLK_VOP_SEL_VPLL) {
 		div = DIV_ROUND_UP(RK3568_VOP_PLL_LIMIT_FREQ, rate);
+		if (div % 2)
+			div = div + 1;
 		rk_clrsetreg(&cru->clksel_con[conid],
 			     DCLK0_VOP_DIV_MASK | DCLK0_VOP_SEL_MASK,
 			     (DCLK_VOP_SEL_VPLL << DCLK0_VOP_SEL_SHIFT) |
@@ -1865,6 +1867,9 @@ static ulong rk3568_dclk_vop_set_clk(struct rk3568_clk_priv *priv,
 			case DCLK_VOP_SEL_CPLL:
 				pll_rate = priv->cpll_hz;
 				break;
+			case DCLK_VOP_SEL_HPLL:
+			case DCLK_VOP_SEL_VPLL:
+				continue;
 			default:
 				printf("do not support this vop pll sel\n");
 				return -EINVAL;

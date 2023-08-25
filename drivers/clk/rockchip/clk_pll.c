@@ -155,8 +155,8 @@ rockchip_pll_clk_set_by_auto(ulong fin_hz,
 
 		f_frac = (foutvco % MHZ);
 		fin_64 = fin_hz;
-		fin_64 = fin_64 / rate_table->refdiv;
-		frac_64 = f_frac << 24;
+		fin_64 = fin_64 / (ulong)rate_table->refdiv;
+		frac_64 = (ulong)f_frac << 24;
 		frac_64 = frac_64 / fin_64;
 		rate_table->frac = frac_64;
 		if (rate_table->frac > 0)
@@ -330,10 +330,10 @@ static int rk3036_pll_set_rate(struct rockchip_pll_clock *pll,
 		     RK3036_PLLCON1_REFDIV_MASK),
 		     (rate->postdiv2 << RK3036_PLLCON1_POSTDIV2_SHIFT |
 		     rate->refdiv << RK3036_PLLCON1_REFDIV_SHIFT));
-	if (!rate->dsmpd) {
-		rk_clrsetreg(base + pll->con_offset + 0x4,
+	rk_clrsetreg(base + pll->con_offset + 0x4,
 			     RK3036_PLLCON1_DSMPD_MASK,
 			     rate->dsmpd << RK3036_PLLCON1_DSMPD_SHIFT);
+	if (!rate->dsmpd) {
 		writel((readl(base + pll->con_offset + 0x8) &
 			(~RK3036_PLLCON2_FRAC_MASK)) |
 			    (rate->frac << RK3036_PLLCON2_FRAC_SHIFT),
@@ -372,7 +372,7 @@ static ulong rk3036_pll_get_rate(struct rockchip_pll_clock *pll,
 {
 	u32 refdiv, fbdiv, postdiv1, postdiv2, dsmpd, frac;
 	u32 con = 0, shift, mask;
-	ulong rate;
+	ulong rate, p_rate = OSC_HZ;
 	int mode;
 
 	con = readl(base + pll->mode_offset);
@@ -404,14 +404,14 @@ static ulong rk3036_pll_get_rate(struct rockchip_pll_clock *pll,
 		con = readl(base + pll->con_offset + 0x8);
 		frac = (con & RK3036_PLLCON2_FRAC_MASK) >>
 			RK3036_PLLCON2_FRAC_SHIFT;
-		rate = (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
+		rate = (p_rate * fbdiv / (refdiv * postdiv1 * postdiv2));
 		if (dsmpd == 0) {
-			u64 frac_rate = OSC_HZ * (u64)frac;
+			u64 frac_rate = p_rate * (u64)frac;
 
-			do_div(frac_rate, refdiv);
+			do_div(frac_rate, (u64)refdiv);
 			frac_rate >>= 24;
-			do_div(frac_rate, postdiv1);
-			do_div(frac_rate, postdiv1);
+			do_div(frac_rate, (u64)postdiv1);
+			do_div(frac_rate, (u64)postdiv2);
 			rate += frac_rate;
 		}
 		return rate;
@@ -491,11 +491,10 @@ static int rk3588_pll_set_rate(struct rockchip_pll_clock *pll,
 		     RK3588_PLLCON1_S_MASK),
 		     (rate->p << RK3588_PLLCON1_P_SHIFT |
 		     rate->s << RK3588_PLLCON1_S_SHIFT));
-	if (rate->k) {
-		rk_clrsetreg(base + pll->con_offset + RK3588_PLLCON(2),
-			     RK3588_PLLCON2_K_MASK,
-			     rate->k << RK3588_PLLCON2_K_SHIFT);
-	}
+
+	rk_clrsetreg(base + pll->con_offset + RK3588_PLLCON(2),
+		     RK3588_PLLCON2_K_MASK,
+		     rate->k << RK3588_PLLCON2_K_SHIFT);
 	/* Power up */
 	rk_clrreg(base + pll->con_offset + RK3588_PLLCON(1),
 		  RK3588_PLLCON1_PWRDOWN);
