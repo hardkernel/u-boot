@@ -1160,7 +1160,7 @@ static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
 	}
 }
 
-static void fdt_rm_cpus(const void *blob, u8 cpu_mask)
+static void rk3582_fdt_rm_cpus(const void *blob, u8 cpu_mask)
 {
 	/*
 	 * policy:
@@ -1183,7 +1183,7 @@ static void fdt_rm_cpus(const void *blob, u8 cpu_mask)
 	fdt_rm_cpu(blob, cpu_mask);
 }
 
-static void fdt_rm_gpu(void *blob)
+static void rk3582_fdt_rm_gpu(void *blob)
 {
 	/*
 	 * policy:
@@ -1195,7 +1195,7 @@ static void fdt_rm_gpu(void *blob)
 	debug("rm: gpu\n");
 }
 
-static void fdt_rm_rkvdec01(void *blob)
+static void rk3582_fdt_rm_rkvdec01(void *blob)
 {
 	/*
 	 * policy:
@@ -1209,7 +1209,7 @@ static void fdt_rm_rkvdec01(void *blob)
 	debug("rm: rkvdec0, rkvdec1\n");
 }
 
-static void fdt_rm_rkvenc01(void *blob, u8 mask)
+static void rk3582_fdt_rm_rkvenc01(void *blob, u8 mask)
 {
 	/*
 	 * policy:
@@ -1284,27 +1284,29 @@ static int fdt_fixup_modules(void *blob)
 	/* ip_state[1]: bit6,7 */
 	rkvdec_mask = (ip_state[1] & 0xc0) >> 6;
 #endif
-
 	debug("hwmask: 0x%02x, 0x%02x, 0x%02x\n", ip_state[0], ip_state[1], ip_state[2]);
 	debug("swmask: 0x%02x, 0x%02x\n", cpu_mask, rkvenc_mask);
 
 	/*
-	 * RK3582 Policy: gpu/rkvdec are removed by default, the same for other
-	 * IP under some condition.
-	 *
-	 * So don't use pattern like "if (rkvenc_mask) then fdt_rm_rkvenc01()",
-	 * just go through all of them as this chip is rk3582.
-	 *
 	 *		FIXUP WARNING!
 	 *
 	 * The node delete changes the fdt structure, a node offset you already
 	 * got before maybe not right by now. Make sure always reading the node
 	 * offset exactly before you are going to use.
 	 */
-	fdt_rm_gpu(blob);
-	fdt_rm_rkvdec01(blob);
-	fdt_rm_rkvenc01(blob, rkvenc_mask);
-	fdt_rm_cpus(blob, cpu_mask);
+	if (chip_id[0] == 0x35 && chip_id[1] == 0x82) {
+		/*
+		 * RK3582 Policy: gpu/rkvdec are removed by default, the same for other
+		 * IP under some condition.
+		 *
+		 * So don't use pattern like "if (rkvenc_mask) then rk3582_fdt_rm_rkvenc01()",
+		 * just go through all of them as this chip is rk3582.
+		 */
+		rk3582_fdt_rm_gpu(blob);
+		rk3582_fdt_rm_rkvdec01(blob);
+		rk3582_fdt_rm_rkvenc01(blob, rkvenc_mask);
+		rk3582_fdt_rm_cpus(blob, cpu_mask);
+	}
 
 	return 0;
 }
