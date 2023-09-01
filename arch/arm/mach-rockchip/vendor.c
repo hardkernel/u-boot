@@ -649,10 +649,10 @@ int vendor_storage_read(u16 id, void *pbuf, u16 size)
  */
 int vendor_storage_write(u16 id, void *pbuf, u16 size)
 {
-	int cnt, ret = 0;
-	u32 i, next_index, align_size;
-	struct vendor_item *item;
+	u32 i, j, next_index, align_size, alloc_size, next_size;
 	u16 part_size, max_item_num, offset, part_num;
+	struct vendor_item *item;
+	int cnt, ret = 0;
 
 	/* init vendor storage */
 	if (!bootdev_type) {
@@ -703,10 +703,35 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	/* If item already exist, update the item data */
 	for (i = 0; i < vendor_info.hdr->item_num; i++) {
 		if ((item + i)->id == id) {
-			debug("[Vendor INFO]:Find the matching item, id=%d\n", id);
-			offset = (item + i)->offset;
-			memcpy((vendor_info.data + offset), pbuf, size);
-			(item + i)->size = size;
+			alloc_size = ((item + i)->size + VENDOR_BTYE_ALIGN) & (~VENDOR_BTYE_ALIGN);
+			if (size > alloc_size) {
+				if (vendor_info.hdr->free_size < align_size)
+					return -EINVAL;
+				debug("[Vendor INFO]:Find the matching item, id=%d and resize\n", id);
+				offset = (item + i)->offset;
+				for (j = i; j < vendor_info.hdr->item_num - 1; j++) {
+					(item + j)->id = (item + j + 1)->id;
+					(item + j)->size = (item + j + 1)->size;
+					(item + j)->offset = offset;
+
+					next_size = ((item + j + 1)->size + VENDOR_BTYE_ALIGN) & (~VENDOR_BTYE_ALIGN);
+					memcpy((vendor_info.data + offset),
+					       (vendor_info.data + (item + j + 1)->offset),
+					       next_size);
+					offset += next_size;
+				}
+				(item + j)->id = id;
+				(item + j)->offset = offset;
+				(item + j)->size = size;
+				memcpy((vendor_info.data + offset), pbuf, size);
+				vendor_info.hdr->free_offset = offset + align_size;
+				vendor_info.hdr->free_size -= align_size - alloc_size;
+			} else {
+				debug("[Vendor INFO]:Find the matching item, id=%d\n", id);
+				offset = (item + i)->offset;
+				memcpy((vendor_info.data + offset), pbuf, size);
+				(item + i)->size = size;
+			}
 			vendor_info.hdr->version++;
 			*(vendor_info.version2) = vendor_info.hdr->version;
 			vendor_info.hdr->next_index++;
