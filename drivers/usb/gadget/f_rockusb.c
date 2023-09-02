@@ -14,6 +14,8 @@
 #include <write_keybox.h>
 #include <linux/mtd/mtd.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <mmc.h>
+#include <stdlib.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -679,6 +681,60 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 }
 #endif
 
+static int rkusb_do_switch_storage(struct fsg_common *common)
+{
+	enum if_type type, cur_type = ums[common->lun].block_dev.if_type;
+	int devnum, cur_devnum = ums[common->lun].block_dev.devnum;
+	struct blk_desc *block_dev;
+	u32 media = BOOT_TYPE_UNKNOWN;
+
+	media = 1 << common->cmnd[1];
+
+	switch (media) {
+	case BOOT_TYPE_EMMC:
+		type = IF_TYPE_MMC;
+		devnum = 0;
+		mmc_initialize(gd->bd);
+		break;
+	case BOOT_TYPE_MTD_BLK_NAND:
+		type = IF_TYPE_MTD;
+		devnum = 0;
+		break;
+	case BOOT_TYPE_MTD_BLK_SPI_NAND:
+		type = IF_TYPE_MTD;
+		devnum = 1;
+		break;
+	case BOOT_TYPE_MTD_BLK_SPI_NOR:
+		type = IF_TYPE_MTD;
+		devnum = 2;
+		break;
+	default:
+		printf("Bootdev 0x%x is not support\n", media);
+		return -ENODEV;
+	}
+
+	if (cur_type == type && cur_devnum == devnum)
+		return 0;
+
+	block_dev = blk_get_devnum_by_type(type, devnum);
+	if (!block_dev) {
+		printf("Bootdev if_type=%d num=%d toggle fail\n", type, devnum);
+		return -ENODEV;
+	}
+
+	ums[common->lun].num_sectors = block_dev->lba;
+	ums[common->lun].block_dev = *block_dev;
+
+	printf("RKUSB: LUN %d, dev %d, hwpart %d, sector %#x, count %#x\n",
+	       0,
+	       ums[common->lun].block_dev.devnum,
+	       ums[common->lun].block_dev.hwpart,
+	       ums[common->lun].start_sector,
+	       ums[common->lun].num_sectors);
+
+	return 0;
+}
+
 static int rkusb_do_get_storage_info(struct fsg_common *common,
 				     struct fsg_buffhd *bh)
 {
@@ -882,6 +938,10 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		rc = RKUSB_RC_FINISHED;
 		break;
 #endif
+	case RKUSB_SWITCH_STORAGE:
+		*reply = rkusb_do_switch_storage(common);
+		rc = RKUSB_RC_FINISHED;
+		break;
 	case RKUSB_GET_STORAGE_MEDIA:
 		*reply = rkusb_do_get_storage_info(common, bh);
 		rc = RKUSB_RC_FINISHED;
