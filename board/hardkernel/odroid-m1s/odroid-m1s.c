@@ -48,6 +48,9 @@ int board_early_init_r(void)
 	char cmd[256];
 	int n;
 
+	/* Clear memory at $crarmfsaddr */
+	memset((void*)addr, 0, 256);
+
 	for (n = 1; n <= 3; n++) {
 		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);
 

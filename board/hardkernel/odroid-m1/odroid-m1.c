@@ -57,6 +57,9 @@ int board_early_init_r(void)
 		rksfc_scan_namespace();
 #endif
 
+	/* Clear memory at $crarmfsaddr */
+	memset((void*)addr, 0, 256);
+
 	for (n = 1; n <= 3; n++) {
 		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);
 
