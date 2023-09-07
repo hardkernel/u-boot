@@ -1866,7 +1866,7 @@ static int rk3528_clk_init(struct rk3528_clk_priv *priv)
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
 	}
-#else
+#elif CONFIG_IS_ENABLED(CLK_SCMI)
 	if (!priv->armclk_enter_hz) {
 		struct clk clk;
 

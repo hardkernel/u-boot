@@ -2061,7 +2061,10 @@ static int rk3588_clk_probe(struct udevice *dev)
 {
 	struct rk3588_clk_priv *priv = dev_get_priv(dev);
 	int ret;
+
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 	struct clk clk;
+#endif
 
 	priv->sync_kernel = false;
 
@@ -2080,6 +2083,7 @@ static int rk3588_clk_probe(struct udevice *dev)
 	}
 #endif
 
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 	ret = rockchip_get_scmi_clk(&clk.dev);
 	if (ret) {
 		printf("Failed to get scmi clk dev\n");
@@ -2110,6 +2114,7 @@ static int rk3588_clk_probe(struct udevice *dev)
 	ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
 	if (ret < 0)
 		printf("Failed to set cpub23\n");
+#endif
 #endif
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);

@@ -1792,7 +1792,7 @@ static void rk3562_clk_init(struct rk3562_clk_priv *priv)
 					      priv->cru, APLL);
 
 	if (!priv->armclk_init_hz) {
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) || defined(CONFIG_SUPPORT_USBPLUG)
 		ret = rk3562_armclk_set_rate(priv, APLL_HZ);
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
