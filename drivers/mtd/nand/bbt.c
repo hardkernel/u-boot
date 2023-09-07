@@ -103,6 +103,26 @@ static int nanddev_read_bbt(struct nand_device *nand, u32 block, bool update)
 		nand->bbt.version = version;
 	}
 
+#ifdef BBT_DEBUG
+	if (version) {
+		u8 *temp_buf = kzalloc(bbt_page_num * mtd->writesize, GFP_KERNEL);
+
+		memcpy(temp_buf, nand->bbt.cache, nbytes);
+		memcpy(nand->bbt.cache, data_buf, nbytes);
+
+		nand->bbt.option |= NANDDEV_BBT_SCANNED;
+		for (block = 0; block < nblocks; block++) {
+			ret = nanddev_bbt_get_block_status(nand, block);
+			if (ret != NAND_BBT_BLOCK_GOOD)
+				BBT_DBG("bad block[0x%x], ret=%d\n", block, ret);
+		}
+
+		nand->bbt.option &= ~NANDDEV_BBT_SCANNED;
+		memcpy(nand->bbt.cache, temp_buf, nbytes);
+		kfree(temp_buf);
+	}
+#endif
+
 out:
 	kfree(data_buf);
 	kfree(oob_buf);
@@ -183,7 +203,14 @@ static __maybe_unused int nanddev_bbt_format(struct nand_device *nand)
 
 	start_block = nblocks - NANDDEV_BBT_SCAN_MAXBLOCKS;
 
-	for (block = 0; block < nblocks; block++) {
+	/*
+	 * Nand Flash factory defined block0 fixed as good block.
+	 * Do not scan block0 to avoid extreme boundary issues caused by
+	 * scanning anomalies on that block.
+	 */
+	nanddev_bbt_set_block_status(nand, 0, NAND_BBT_BLOCK_GOOD);
+
+	for (block = 1; block < nblocks; block++) {
 		nanddev_offs_to_pos(nand, block * mtd->erasesize, &pos);
 		if (nanddev_isbad(nand, &pos))
 			nanddev_bbt_set_block_status(nand, block,
