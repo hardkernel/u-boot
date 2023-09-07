@@ -325,7 +325,7 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 	spl_image->fdt_addr = (void *)image_info.load_addr;
 #if !CONFIG_IS_ENABLED(FIT_IMAGE_TINY)
 	/* Try to make space, so we can inject details on the loadables */
-	ret = fdt_shrink_to_minimum(spl_image->fdt_addr, 8192);
+	fdt_shrink_to_minimum(spl_image->fdt_addr, 8192);
 #endif
 
 	/*
@@ -336,7 +336,8 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 	 */
 	node = spl_fit_get_image_node(fit, images, FIT_FDT_PROP, 1);
 	if (node < 0) {
-		debug("%s: cannot find FDT node\n", __func__);
+		debug("%s: cannot find kernel FDT node\n", __func__);
+		/* attention: here return ret but not node */
 		return ret;
 	}
 
@@ -723,13 +724,13 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 		spl_image->os = IH_OS_U_BOOT;
 #endif
 
-	/*
-	 * Booting a next-stage U-Boot may require us to append the FDT.
-	 * We allow this to fail, as the U-Boot image might embed its FDT.
-	 */
-	if (spl_image->os == IH_OS_U_BOOT)
-		spl_fit_append_fdt(spl_image, info, sector, fit,
-				   images, base_offset);
+	/* Booting a next-stage U-Boot may require us to append the FDT. */
+	if (spl_image->os == IH_OS_U_BOOT) {
+		ret = spl_fit_append_fdt(spl_image, info, sector, fit,
+					 images, base_offset);
+		if (ret < 0)
+			return ret;
+	}
 
 	/* Now check if there are more images for us to load */
 	for (; ; index++) {
@@ -758,8 +759,10 @@ static int spl_internal_load_simple_fit(struct spl_image_info *spl_image,
 #elif CONFIG_IS_ENABLED(OPTEE)
 			spl_image->entry_point_os = image_info.load_addr;
 #endif
-			spl_fit_append_fdt(&image_info, info, sector,
-					   fit, images, base_offset);
+			ret = spl_fit_append_fdt(&image_info, info, sector,
+						 fit, images, base_offset);
+			if (ret < 0)
+				return ret;
 			spl_image->fdt_addr = image_info.fdt_addr;
 		}
 
