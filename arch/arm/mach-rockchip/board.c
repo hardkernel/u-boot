@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <abuf.h>
 #include <amp.h>
 #include <android_ab.h>
 #include <android_bootloader.h>
@@ -26,6 +27,7 @@
 #include <of_live.h>
 #include <mtd_blk.h>
 #include <ram.h>
+#include <rng.h>
 #include <rockchip_debugger.h>
 #include <syscon.h>
 #include <sysmem.h>
@@ -1113,6 +1115,38 @@ void board_quiesce_devices(void *images)
 #ifdef CONFIG_ROCKCHIP_REBOOT_TEST
 	do_reset(NULL, 0, 0, NULL);
 #endif
+}
+
+/*
+ * Use hardware rng to seed Linux random
+ *
+ * 'Android_14 + GKI' requires this information.
+ */
+int board_rng_seed(struct abuf *buf)
+{
+	struct udevice *dev;
+	size_t len = 32;
+	u64 *data;
+
+	data = malloc(len);
+	if (!data) {
+	        printf("Out of memory\n");
+	        return -ENOMEM;
+	}
+
+	if (uclass_get_device(UCLASS_RNG, 0, &dev) || !dev) {
+	        printf("No RNG device\n");
+	        return -ENODEV;
+	}
+
+	if (dm_rng_read(dev, data, len)) {
+	        printf("Reading RNG failed\n");
+	        return -EIO;
+	}
+
+	abuf_init_set(buf, data, len);
+
+	return 0;
 }
 
 char *board_fdt_chosen_bootargs(void *fdt)
