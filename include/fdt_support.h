@@ -11,6 +11,7 @@
 #ifdef CONFIG_OF_LIBFDT
 
 #include <linux/libfdt.h>
+#include <abuf.h>
 
 u32 fdt_getprop_u32_default_node(const void *fdt, int off, int cell,
 				const char *prop, const u32 dflt);
@@ -182,6 +183,18 @@ int fdt_find_or_add_subnode(void *fdt, int parentoffset, const char *name);
  * @return 0 if ok, or -FDT_ERR_... on error
  */
 int ft_board_setup(void *blob, bd_t *bd);
+
+/**
+ * board_rng_seed() - Provide a seed to be passed via /chosen/rng-seed
+ *
+ * This function is called if CONFIG_BOARD_RNG_SEED is set, and must
+ * be provided by the board. It should return, via @buf, some suitable
+ * seed value to pass to the kernel.
+ *
+ * @param buf         A struct abuf for returning the seed and its size.
+ * @return            0 if ok, negative on error.
+ */
+int board_rng_seed(struct abuf *buf);
 
 /**
  * board_fdt_chosen_bootargs() - Arbitrarily amend fdt kernel command line
