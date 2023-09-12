@@ -194,6 +194,11 @@ static void pcie_bar_init(void *dbi_base)
 	writel(0, dbi_base + 0x20);
 	writel(0, dbi_base + 0x24);
 
+	/* Disable ASPM */
+	val = readl(dbi_base + 0x7c);
+	val &= ~(3 << 10);
+	writel(val, dbi_base + 0x7c);
+
 	/* Resize BAR0 to support 4M 32bits */
 	resbar_base = dbi_base + PCI_RESBAR;
 	writel(0xfffff0, resbar_base + 0x4);
@@ -475,7 +480,10 @@ static void pcie_cru_init(void)
 	}
 
 	/* PHY config: no config need for snps3.0phy */
+}
 
+static void pcie_firewall_init(void)
+{
 	/* Enable PCIe Access in firewall and master secure mode */
 	writel(0xffff0000, FIREWALL_PCIE_MASTER_SEC);
 	writel(0x01800000, FIREWALL_PCIE_ACCESS);
@@ -571,6 +579,10 @@ void pcie_cru_init(void)
 	writel(0x100010, PCIE_SNPS_APB_BASE + 0x180);
 
 	udelay(1);
+}
+
+static void pcie_firewall_init(void)
+{
 }
 #endif
 
@@ -674,10 +686,13 @@ void rockchip_pcie_ep_init(void)
 	writel(0x1 << 23 | 0x1 << 21, PMU_PWR_GATE_SFTCON1);
 	udelay(10);
 #endif
+
+	pcie_firewall_init();
 	/* Re-in pcie initial */
 	val = readl(PCIE_SNPS_APB_BASE + 0x300);
 	if (((val & 0x3ffff) & ((0x3 << 16))) == 0x30000) {
 		printf("RKEP: already link up\n");
+		pcie_devmode_update(RKEP_MODE_LOADER, RKEP_SMODE_LNKUP);
 		return;
 	}
 
