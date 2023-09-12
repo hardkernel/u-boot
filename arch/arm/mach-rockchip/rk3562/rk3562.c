@@ -507,7 +507,7 @@ int fit_standalone_release(char *id, uintptr_t entry_point)
 	writel(0x00070000, TOP_CRU_BASE + TOP_CRU_CM0_GATEMASK);
 
 	/* mcu_cache_peripheral_addr */
-	writel(0xa0000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
+	writel(0xfc000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
 	writel(0xffb40000, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
 
 	sip_smc_mcu_config(ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID,
