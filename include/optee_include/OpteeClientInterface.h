@@ -101,6 +101,8 @@ uint32_t trusty_set_oem_hr_otp_read_lock(enum RK_OEM_OTP_KEYID key_id);
 uint32_t trusty_oem_otp_key_cipher(enum RK_OEM_OTP_KEYID key_id, rk_cipher_config *config,
 				   uint32_t src_phys_addr, uint32_t dst_phys_addr,
 				   uint32_t len);
+uint32_t trusty_oem_user_ta_transfer(void);
+uint32_t trusty_oem_user_ta_storage(void);
 uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
 uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
 uint32_t trusty_attest_get_ca
