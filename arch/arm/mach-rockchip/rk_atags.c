@@ -256,6 +256,9 @@ int atags_set_tag(u32 magic, void *tagdata)
 	case ATAG_PSTORE:
 		size = tag_size(tag_pstore);
 		break;
+	case ATAG_FWVER:
+		size = tag_size(tag_fwver);
+		break;
 	};
 
 	if (!size)
@@ -278,6 +281,28 @@ int atags_set_tag(u32 magic, void *tagdata)
 	/* Setup done */
 	t->hdr.magic = ATAG_NONE;
 	t->hdr.size = 0;
+
+	return 0;
+}
+
+int atags_set_shared_fwver(u32 fwid, char *ver)
+{
+	struct tag_fwver fw = {}, *pfw;
+	struct tag *t;
+
+	if (!ver || (strlen(ver) >= FWVER_LEN) || fwid >= FW_MAX)
+		return -EINVAL;
+
+	t = atags_get_tag(ATAG_FWVER);
+	if (!t) {
+		pfw = &fw;
+		pfw->version = 0;
+	} else {
+		pfw = &t->u.fwver;
+	}
+
+	strcpy(pfw->ver[fwid], ver);
+	atags_set_tag(ATAG_FWVER, pfw);
 
 	return 0;
 }
