@@ -192,6 +192,14 @@ function process_args()
 				ARG_SPL_BIN="spl/u-boot-spl.bin"
 				shift 1
 				;;
+			--spl-fwver)
+				ARG_SPL_FWVER="SPL_FWVER=$2"
+				shift 2
+				;;
+			--fwver)
+				ARG_FWVER="FWVER=$2"
+				shift 2
+				;;
 			--uboot|--fdt|--optee|--mcu|--bl31) # uboot.img components
 				mkdir -p ${REP_DIR}
 				if [ ! -f $2 ]; then
@@ -789,7 +797,7 @@ select_ini_file
 handle_args_late
 sub_commands
 clean_files
-make PYTHON=python2 CROSS_COMPILE=${TOOLCHAIN} all --jobs=${JOB}
+make PYTHON=python2 ${ARG_SPL_FWVER} ${ARG_FWVER} CROSS_COMPILE=${TOOLCHAIN} all --jobs=${JOB}
 pack_images
 finish
 echo ${TOOLCHAIN}
