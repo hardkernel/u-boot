@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <version.h>
 #include <boot_rkimg.h>
 #include <debug_uart.h>
 #include <dm.h>
@@ -329,6 +330,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 {
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	atags_set_bootdev_by_spl_bootdevice(spl_image->boot_device);
+  #ifdef BUILD_SPL_TAG
+	atags_set_shared_fwver(FW_SPL, BUILD_SPL_TAG"-spl");
+  #endif
 #endif
 	return;
 }
