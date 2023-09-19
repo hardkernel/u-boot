@@ -285,6 +285,7 @@ int atags_set_tag(u32 magic, void *tagdata)
 	return 0;
 }
 
+#ifndef CONFIG_TPL_BUILD
 int atags_set_shared_fwver(u32 fwid, char *ver)
 {
 	struct tag_fwver fw = {}, *pfw;
@@ -307,7 +308,6 @@ int atags_set_shared_fwver(u32 fwid, char *ver)
 	return 0;
 }
 
-#ifndef CONFIG_TPL_BUILD
 struct tag *atags_get_tag(u32 magic)
 {
 	u32 *hash, calc_hash, size;
