@@ -227,8 +227,10 @@ int misc_init_r(void)
 				&& (bmp->header.signature[1] == 'M')))
 		bmp = gunzip_bmp(loadaddr, &len, &decomp);
 
-	if (bmp)
+	if (bmp) {
 		set_bmp_logo("logo.bmp", bmp, 1);
+		set_bmp_logo("logo_kernel.bmp", bmp, 1);
+	}
 
 	if (decomp)
 		free(decomp);
