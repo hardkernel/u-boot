@@ -347,6 +347,10 @@ if grep -q '^CONFIG_FIT_ENABLE_RSA4096_SUPPORT=y' .config ; then
 else
 	ALGO_NAME="				algo = \"sha256,rsa2048\";"
 fi
+if [ -z "${LOADABLE_ATF}" ]; then
+	LOADABLE_UBOOT="\"uboot\""
+fi
+
 echo "	};
 
 	configurations {
