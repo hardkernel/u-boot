@@ -66,5 +66,7 @@
 #define CONFIG_ENV_SPI_CS	0
 #define CONFIG_ENV_SPI_MAX_HZ	200000000
 
+#define CONFIG_GPIO_LED_INVERTED_TABLE	{ 22 }
+
 #endif
 #endif
