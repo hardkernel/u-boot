@@ -708,6 +708,9 @@ libs-$(CONFIG_UT_ENV) += test/env/
 libs-$(CONFIG_UT_OVERLAY) += test/overlay/
 
 libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
+ifneq ($(CONFIG_TARGET_ODROID_M1)$(CONFIG_TARGET_ODROID_M1S),)
+libs-y += board/hardkernel/odroid-common/
+endif
 
 libs-y := $(sort $(libs-y))
 

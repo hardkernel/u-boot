@@ -3,5 +3,6 @@
 #
 # Copyright (c) 2023 Hardkernel Co., Ltd
 #
+EXTRA_CFLAGS += -Iboard/hardkernel/odroid-common
 
 obj-y	+= odroid-m1s.o
