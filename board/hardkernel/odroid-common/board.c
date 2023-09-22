@@ -9,22 +9,87 @@
 #include <lcd.h>
 #include <malloc.h>
 #include <mapmem.h>
+#include <boot_rkimg.h>
+#include <jffs2/load_kernel.h>
 #include <asm/unaligned.h>	/* get_unaligned() */
 #include "../../../drivers/video/drm/rockchip_display.h"
 
-extern int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
-extern void *get_display_buffer(int size);
+#ifndef CONFIG_MTD_NOR_FLASH
+# define OFFSET_ADJUSTMENT	0
+#else
+# define OFFSET_ADJUSTMENT	(flash_info[id.num].start[0])
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
 static char *panel = NULL;
+
+extern int cramfs_check (struct part_info *info);
+extern int cramfs_load (char *loadoffset, struct part_info *info, char *filename);
+
+extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
+extern void *get_display_buffer(int size);
 
 int set_panel_name(const char *name)
 {
 	panel = (char *)name;
 
 	return 0;
+}
+
+int load_from_mmc(unsigned long addr, int devnum, int partnum, char *filename)
+{
+	int ret;
+	char buf[16];
+
+	snprintf(buf, sizeof(buf), "%d:%d", devnum, partnum);
+
+	ret = fs_set_blk_dev("mmc", buf, FS_TYPE_ANY);
+	if (!ret) {
+		loff_t len_read;
+		ret = fs_read(filename, addr, 0, 0, &len_read);
+		if (!ret) {
+			printf("%llu bytes read\n", len_read);
+			return 0;
+		}
+	}
+
+	return ret;
+}
+
+int load_from_cramfs(unsigned long addr, char *filename)
+{
+	int size = 0;
+
+	struct part_info part;
+	struct mtd_device dev;
+	struct mtdids id;
+
+	ulong cramfsaddr;
+	cramfsaddr = simple_strtoul(env_get("cramfsaddr"), NULL, 16);
+
+	id.type = MTD_DEV_TYPE_NOR;
+	id.num = 0;
+	dev.id = &id;
+	part.dev = &dev;
+	part.offset = (u64)(uintptr_t) map_sysmem(cramfsaddr - OFFSET_ADJUSTMENT, 0);
+
+	ulong offset = addr;
+	char *offset_virt = map_sysmem(offset, 0);
+
+	if (cramfs_check(&part))
+		size = cramfs_load (offset_virt, &part, filename);
+
+	if (size > 0) {
+		printf("### CRAMFS load complete: %d bytes loaded to 0x%lx\n",
+			size, offset);
+		env_set_hex("filesize", size);
+	}
+
+	unmap_sysmem(offset_virt);
+	unmap_sysmem((void *)(uintptr_t)part.offset);
+
+	return !(size > 0);
 }
 
 int rk_board_late_init(void)
@@ -54,29 +119,35 @@ int rk_board_late_init(void)
 
 int board_read_dtb_file(void *fdt_addr)
 {
-	char buf[32];
-	char *argv[3] = {
-		"cramfsload",
-		buf,
-		CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
-	};
+	int ret;
 
-	snprintf(buf, sizeof(buf), "0x%p", fdt_addr);
+	ret = load_from_cramfs((unsigned long)fdt_addr, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+	if (!ret) {
+		if (panel) {
+			char buf[1024];
 
-	if (do_cramfs_load(NULL, 0, ARRAY_SIZE(argv), argv))
-		return 1;
+			snprintf(buf, sizeof(buf), "%s.dtbo", panel);
 
-	if (panel) {
-		snprintf(buf, sizeof(buf), "%s.dtbo", panel);
+			ret = load_from_cramfs(load_addr, buf);
+			if (!ret) {
+				ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
 
-		argv[1] = env_get("loadaddr");
-		argv[2] = buf;
+				fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
+				fdt_overlay_apply_verbose(fdt_addr, (void *)fdt_dtbo);
+			}
+		}
+	} else {
+		char *paths[] = {
+			"dtb",
+			"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
+		};
+		struct blk_desc *dev_desc = rockchip_get_bootdev();
+		int i;
 
-		if (do_cramfs_load(NULL, 0, ARRAY_SIZE(argv), argv) == 0) {
-			ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
-
-			fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
-			fdt_overlay_apply_verbose(fdt_addr, (void *)fdt_dtbo);
+		for (i = 0; i < ARRAY_SIZE(paths); i++) {
+			ret = load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, paths[i]);
+			if (!ret)
+				break;
 		}
 	}
 
@@ -146,56 +217,21 @@ static int set_bmp_logo(const char *bmp_name, void *addr, int flip)
 	return 0;
 }
 
-static int load_bootsplash_from_mmc(int devnum, unsigned int loadaddr)
-{
-	char buf[16];
-	int n;
-
-	for (n = 1; n <= 2; n++) {
-		snprintf(buf, sizeof(buf), "%d:%d", devnum, n);
-		if (file_exists("mmc", buf, "boot-logo.bmp.gz", FS_TYPE_ANY)) {
-			char cmd[128];
-			snprintf(cmd, sizeof(cmd),
-					"load mmc %s 0x%08x boot-logo.bmp.gz", buf, loadaddr);
-			if (run_command(cmd, 0) == 0)
-				return 0;
-		}
-	}
-
-	return -ENODEV;
-}
-
 int misc_init_r(void)
 {
+	struct blk_desc *dev_desc = rockchip_get_bootdev();
 	void *decomp;
 	struct bmp_image *bmp;
 	unsigned int loadaddr = (unsigned int)env_get_ulong("loadaddr", 16, 0);
 	unsigned long len;
+	char *logofile = "boot-logo.bmp.gz";
 
-	int ret = load_bootsplash_from_mmc(0, loadaddr);	// eMMC
+	int ret = load_from_mmc(loadaddr, dev_desc->devnum, 1, logofile);
 	if (ret)
-		ret = load_bootsplash_from_mmc(1, loadaddr);	// SD
+		ret = load_from_cramfs(load_addr, logofile);
 
-	if (ret) {	// SPI
-#if defined(CONFIG_TARGET_ODROID_M1)
-		char str[80];
-
-		/* Try to load splash image from SPI flash memory */
-		snprintf(str, sizeof(str),
-				"sf read 0x%08x 0x300000 0x100000", loadaddr);
-		ret = run_command(str, 0);
-		if (ret) {
-			/* Try to load splash image from CRAMFS */
-			snprintf(str, sizeof(str),
-					"cramfsload 0x%08x boot-logo.bmp.gz", loadaddr);
-			ret = run_command(str, 0);
-			if (ret)
-				return 0;
-		}
-#else
-		return 0;
-#endif
-	}
+	if (ret)
+		return 0;	// No boot logo file in memory card
 
 	bmp = (struct bmp_image *)map_sysmem(loadaddr, 0);
 

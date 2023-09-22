@@ -46,8 +46,8 @@ int board_usb_init(int index, enum usb_init_type init)
 int board_early_init_r(void)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
+	unsigned long addr = simple_strtoul(env_get("cramfsaddr"), NULL, 16);
 	int ret = -EINVAL;
-	char buf[16];
 	char cmd[256];
 	char env[CONFIG_ENV_SIZE];
 	int n;
@@ -61,15 +61,9 @@ int board_early_init_r(void)
 	memset((void*)addr, 0, 256);
 
 	for (n = 1; n <= 3; n++) {
-		snprintf(buf, sizeof(buf), "%d:%d", dev_desc->devnum, n);
-
-		if (file_exists("mmc", buf, "ODROIDBIOS.BIN", FS_TYPE_ANY)) {
-			snprintf(cmd, sizeof(cmd),
-					"load mmc %s $cramfsaddr ODROIDBIOS.BIN", buf);
-			ret = run_command(cmd, 0);
-			if (!ret)
-				break;
-		}
+		ret = load_from_mmc(addr, dev_desc->devnum, n, "ODROIDBIOS.BIN");
+		if (!ret)
+			return 0;
 	}
 
 	run_command("sf probe", 0);
