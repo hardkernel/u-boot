@@ -897,7 +897,7 @@ int bootm_board_start(void)
 	 * we switch to uart debug function in order to print it after loading
 	 * images.
 	 */
-#if defined(CONFIG_CONSOLE_RECORD)
+#if 0
 	if (!strcmp("mmc", env_get("devtype")) &&
 	    !strcmp("1", env_get("devnum"))) {
 		printf("IOMUX: sdmmc => uart debug");
