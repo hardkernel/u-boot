@@ -453,6 +453,11 @@ unsigned long blk_dread(struct blk_desc *block_dev, lbaint_t start,
 	const struct blk_ops *ops = blk_get_ops(dev);
 	ulong blks_read;
 
+#ifndef CONFIG_SPL_BUILD
+	if (block_dev->if_type == IF_TYPE_MTD)
+		return -ENOSYS;
+#endif
+
 	if (!ops->read)
 		return -ENOSYS;
 
@@ -473,6 +478,11 @@ unsigned long blk_dwrite(struct blk_desc *block_dev, lbaint_t start,
 	struct udevice *dev = block_dev->bdev;
 	const struct blk_ops *ops = blk_get_ops(dev);
 
+#ifndef CONFIG_SPL_BUILD
+	if (block_dev->if_type == IF_TYPE_MTD)
+		return -ENOSYS;
+#endif
+
 	if (!ops->write)
 		return -ENOSYS;
 
@@ -485,6 +495,11 @@ unsigned long blk_derase(struct blk_desc *block_dev, lbaint_t start,
 {
 	struct udevice *dev = block_dev->bdev;
 	const struct blk_ops *ops = blk_get_ops(dev);
+
+#ifndef CONFIG_SPL_BUILD
+	if (block_dev->if_type == IF_TYPE_MTD)
+		return -ENOSYS;
+#endif
 
 	if (!ops->erase)
 		return -ENOSYS;
