@@ -114,6 +114,30 @@ int rk_board_late_init(void)
 	env_set("variant", "m1s");
 #endif
 
+#if defined(CONFIG_TARGET_ODROID_M1S)
+	int devnum = 0;	// MMC device number to access
+	struct mmc *mmc = find_mmc_device(devnum);
+	if (mmc) {
+		// Access the first 'boot' partition and read first block
+		// that stores an device identification number (UUID type 1).
+		int ret = blk_select_hwpart_devnum(IF_TYPE_MMC, devnum, 1);
+		if (!ret) {
+			blk_dread(mmc_get_blk_desc(mmc), 0, 1, (void*)load_addr);
+
+			*(char *)(load_addr + 36) = 0;
+
+			// Serial number
+			env_set("serial#", (char *)load_addr);
+
+			// MAC address
+			unsigned long node = cpu_to_be64(simple_strtoul(
+						(char *)load_addr + 24, NULL, 16)) >> 16;
+
+			eth_env_set_enetaddr_by_index("eth", 1, (unsigned char*)&node);
+		}
+	}
+#endif
+
 	return 0;
 }
 
