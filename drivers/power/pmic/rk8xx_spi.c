@@ -212,7 +212,7 @@ static int rk8xx_spi_ofdata_to_platdata(struct udevice *dev)
 	}
 
 	rk8xx->irq = phandle_gpio_to_irq(phandle, interrupt);
-	if (rk8xx->irq < 0)
+	if (rk8xx->irq < 0 && rk8xx->irq != -EBUSY)
 		printf("Failed to request rk8xx irq, ret=%d\n", rk8xx->irq);
 
 	return 0;
