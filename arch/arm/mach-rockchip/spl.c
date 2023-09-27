@@ -395,16 +395,27 @@ bool spl_is_low_power(void)
 
 void spl_next_stage(struct spl_image_info *spl)
 {
+	const char *reason[] = { "Recovery key", "Ctrl+c", "LowPwr", "Unknown" };
 	uint32_t reg_boot_mode;
+	int i = 0;
 
 	if (spl_rockchip_dnl_key_pressed()) {
+		i = 0;
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
-		return;
+		goto out;
 	}
+
+	if (gd->console_evt == 0x03) {
+		i = 1;
+		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		goto out;
+	}
+
 #ifdef CONFIG_SPL_DM_FUEL_GAUGE
 	if (spl_is_low_power()) {
+		i = 2;
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
-		return;
+		goto out;
 	}
 #endif
 
@@ -418,11 +429,19 @@ void spl_next_stage(struct spl_image_info *spl)
 		spl->next_stage = SPL_NEXT_STAGE_KERNEL;
 		break;
 	default:
-		if ((reg_boot_mode & REBOOT_FLAG) != REBOOT_FLAG)
+		if ((reg_boot_mode & REBOOT_FLAG) != REBOOT_FLAG) {
 			spl->next_stage = SPL_NEXT_STAGE_KERNEL;
-		else
+		} else {
+			i = 3;
 			spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		}
 	}
+
+out:
+	if (spl->next_stage == SPL_NEXT_STAGE_UBOOT)
+		printf("Enter uboot reason: %s\n", reason[i]);
+
+	return;
 }
 #endif
 
