@@ -13,6 +13,7 @@
 #include <boot_rkimg.h>
 #include <jffs2/load_kernel.h>
 #include <asm/unaligned.h>	/* get_unaligned() */
+#include <asm/gpio.h>
 #include "../../../drivers/video/drm/rockchip_display.h"
 #include <environment.h>
 
@@ -31,6 +32,15 @@ extern int cramfs_load (char *loadoffset, struct part_info *info, char *filename
 
 extern struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp);
 extern void *get_display_buffer(int size);
+
+int odroid_gpio_init(unsigned gpio, int value)
+{
+	gpio_request(gpio, "odroid");
+	gpio_direction_output(gpio, value);
+	gpio_free(gpio);
+
+	return 0;
+}
 
 int set_panel_name(const char *name)
 {

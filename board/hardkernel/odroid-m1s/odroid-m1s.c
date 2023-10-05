@@ -48,6 +48,9 @@ int board_early_init_r(void)
 	int ret = -EINVAL;
 	int n;
 
+	/* GPIO Init */
+	odroid_gpio_init(74, 0); // 'gpiochip2/gpio10'
+
 	/* Load environment value for display panel at very early stage */
 	int sectors = CONFIG_ENV_SIZE / 512;
 	int count = blk_dread(dev_desc, CONFIG_ENV_OFFSET / 512, sectors, (void*)env);
