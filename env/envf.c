@@ -24,6 +24,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #define BLK_CNT(desc, sz)	((sz) / (desc)->blksz)
 #define ENVF_MAX		64
 
+/*
+ * env_dev maybe: boot-device, sdcard.
+ *
+ * env_size/offset/offset_redund should be updated when env_dev changed.
+ */
+static u32 env_dev;
 static ulong env_size, env_offset, env_offset_redund;
 
 #if CONFIG_IS_ENABLED(ENV_PARTITION)
@@ -75,6 +81,9 @@ static int can_find_pmbr(struct blk_desc *dev_desc)
 
 static void envf_init_location(struct blk_desc *desc)
 {
+	if (env_dev == ((desc->if_type << 8) | desc->devnum))
+		return;
+
 	/* eMMC (default) */
 	env_size = CONFIG_ENV_SIZE;
 	env_offset = CONFIG_ENV_OFFSET;
@@ -99,6 +108,8 @@ static void envf_init_location(struct blk_desc *desc)
 #endif
 	if (env_offset == env_offset_redund)
 		env_offset_redund = 0;
+
+	env_dev = (desc->if_type << 8) | desc->devnum;
 }
 
 static int env_read(struct blk_desc *desc, u32 offset, u32 size, env_t **envp)
@@ -292,6 +303,8 @@ static int envf_save(void)
 		printf("dev desc null!\n");
 		return -EINVAL;
 	}
+
+	envf_init_location(desc);
 
 	res = (char *)env->data;
 	len = hexport_r(&env_htab, '\0', H_MATCH_KEY | H_MATCH_IDENT,
