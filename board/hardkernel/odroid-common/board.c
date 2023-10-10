@@ -107,12 +107,7 @@ int rk_board_late_init(void)
 	}
 
 	env_set("bootcmd", buf);
-
-#if defined(CONFIG_TARGET_ODROID_M1)
-	env_set("variant", "m1");
-#elif defined(CONFIG_TARGET_ODROID_M1S)
-	env_set("variant", "m1s");
-#endif
+	env_set("variant", BOARD_VARIANT);
 
 #if defined(CONFIG_TARGET_ODROID_M1S)
 	int devnum = 0;	// MMC device number to access
