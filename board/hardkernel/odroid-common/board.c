@@ -136,25 +136,49 @@ int rk_board_late_init(void)
 	return 0;
 }
 
+int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc)
+{
+	char *paths[] = {
+		"",
+		"overlays/"CONFIG_BOARDNAME"/",
+		"rockchip/overlays/"CONFIG_BOARDNAME"/",
+	};
+	char buf[1024];
+	int ret;
+	int i;
+
+	if (!fdt)
+		return -1;
+
+	ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
+
+	for (i = 0; i < ARRAY_SIZE(paths); i++) {
+		snprintf(buf, sizeof(buf), "%s%s.dtbo", paths[i], dtoverlay);
+
+		if (dev_desc)
+			ret = load_from_mmc(fdt_dtbo, dev_desc->devnum, 1, buf);
+		else
+			ret = load_from_cramfs(fdt_dtbo, buf);
+
+		if (!ret) {
+			fdt_increase_size(fdt, fdt_totalsize(fdt_dtbo));
+			fdt_overlay_apply_verbose(fdt, (void *)fdt_dtbo);
+
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
 int board_read_dtb_file(void *fdt_addr)
 {
 	int ret;
 
 	ret = load_from_cramfs((unsigned long)fdt_addr, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
 	if (!ret) {
-		if (panel) {
-			char buf[1024];
-
-			snprintf(buf, sizeof(buf), "%s.dtbo", panel);
-
-			ret = load_from_cramfs(load_addr, buf);
-			if (!ret) {
-				ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
-
-				fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
-				fdt_overlay_apply_verbose(fdt_addr, (void *)fdt_dtbo);
-			}
-		}
+		if (panel)
+			ret = dtoverlay_apply(fdt_addr, panel, NULL);
 	} else {
 		char *paths[] = {
 			"dtb",
@@ -165,8 +189,11 @@ int board_read_dtb_file(void *fdt_addr)
 
 		for (i = 0; i < ARRAY_SIZE(paths); i++) {
 			ret = load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, paths[i]);
-			if (!ret)
+			if (!ret) {
+				if (panel)
+					ret = dtoverlay_apply(fdt_addr, panel, dev_desc);
 				break;
+			}
 		}
 	}
 
