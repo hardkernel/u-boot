@@ -723,8 +723,10 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	 */
 
 	/* load rk-kernel.dtb alone */
+#if !defined(CONFIG_TARGET_ODROID_M1) && !defined(CONFIG_TARGET_ODROID_M1S)
 	if (image_load(IMG_RK_DTB, hdr, bstart, ram_base, NULL))
 		return -1;
+#endif
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
 	int verify = 1;
@@ -808,8 +810,10 @@ static int android_image_separate_v34(struct andr_img_hdr *hdr,
 	 * 1. Load images to their individual target ram position
 	 *    in order to disable fdt/ramdisk relocation.
 	 */
+#if !defined(CONFIG_TARGET_ODROID_M1) && !defined(CONFIG_TARGET_ODROID_M1S)
 	if (image_load(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
 		return -1;
+#endif
 	if (image_load(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
 		return -1;
 	if (image_load(IMG_VENDOR_RAMDISK, hdr, bstart, ram_base, NULL))
