@@ -56,7 +56,5 @@ int board_early_init_r(void)
 			return 0;
 	}
 
-	blk_dread(dev_desc, 1088, 352 * SZ_1K / 512, (void*)addr);
-
 	return 0;
 }
