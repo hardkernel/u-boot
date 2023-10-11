@@ -6,4 +6,7 @@ extern int load_from_cramfs(unsigned long addr, char *filename);
 
 extern int set_panel_name(const char *name);
 
+extern const char *getenv_raw(void *env, int size, const char *key);
+
+
 #endif

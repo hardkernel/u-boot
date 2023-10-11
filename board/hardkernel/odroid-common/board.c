@@ -9,10 +9,12 @@
 #include <lcd.h>
 #include <malloc.h>
 #include <mapmem.h>
+#include <mmc.h>
 #include <boot_rkimg.h>
 #include <jffs2/load_kernel.h>
 #include <asm/unaligned.h>	/* get_unaligned() */
 #include "../../../drivers/video/drm/rockchip_display.h"
+#include <environment.h>
 
 #ifndef CONFIG_MTD_NOR_FLASH
 # define OFFSET_ADJUSTMENT	0
@@ -35,6 +37,35 @@ int set_panel_name(const char *name)
 	panel = (char *)name;
 
 	return 0;
+}
+
+const char *getenv_raw(void *env, int size, const char *key)
+{
+	env_t *ep = (env_t *)env;
+	uint32_t crc;
+
+	size -= ENV_HEADER_SIZE;
+
+	memcpy(&crc, &ep->crc, sizeof(crc));
+
+	if (crc32(0, ep->data, size) == crc) {
+		struct hsearch_data env_htab = {
+			.change_ok = env_flags_validate,
+		};
+
+		if (himport_r(&env_htab, env, size, '\0', 0, 0, 0, NULL)) {
+			ENTRY e, *ep;
+
+			e.key = key;
+			e.data = NULL;
+
+			hsearch_r(e, FIND, &ep, &env_htab, 0);
+
+			return ep->data;
+		}
+	}
+
+	return NULL;
 }
 
 int load_from_mmc(unsigned long addr, int devnum, int partnum, char *filename)

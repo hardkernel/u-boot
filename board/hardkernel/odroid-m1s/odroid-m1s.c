@@ -44,8 +44,18 @@ int board_early_init_r(void)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
 	unsigned long addr = simple_strtoul(env_get("cramfsaddr"), NULL, 16);
+	char env[CONFIG_ENV_SIZE];
 	int ret = -EINVAL;
 	int n;
+
+	/* Load environment value for display panel at very early stage */
+	int sectors = CONFIG_ENV_SIZE / 512;
+	int count = blk_dread(dev_desc, CONFIG_ENV_OFFSET / 512, sectors, (void*)env);
+	if (count == sectors) {
+		const char *panel = getenv_raw(env, CONFIG_ENV_SIZE, "panel");
+		if (panel)
+			set_panel_name(panel);
+	}
 
 	/* Clear memory at $crarmfsaddr */
 	memset((void*)addr, 0, 256);
