@@ -14,4 +14,6 @@
 
 #define CONFIG_GPIO_LED_INVERTED_TABLE	{ 22 }
 
+#define CONFIG_SYS_MMC_ENV_PART	0
+
 #endif
