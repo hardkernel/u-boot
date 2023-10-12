@@ -43,12 +43,14 @@ static disk_partition_t part_info;
 int search_ta(void *uuid_octets, void *ta, size_t *ta_size)
 {
 	char fname[255];
-    unsigned long ret = 0;
+	char *format;
+	unsigned long ret = 0;
 	TEEC_UUID uuid;
 	TEEC_UUID ta_uuid;
 	uint8_t *userta;
-    struct userta_header *header;
+	struct userta_header *header;
 	struct userta_item *item;
+	int ta_ver;
 	int res;
 
 	if (!uuid_octets || !ta_size) {
@@ -70,9 +72,21 @@ int search_ta(void *uuid_octets, void *ta, size_t *ta_size)
 			return -1;
 		}
 	}
+
+#ifdef CONFIG_OPTEE_V1
+	memcpy(&uuid, uuid_octets, sizeof(TEEC_UUID));
+	ta_ver = 1;
+	format = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x.ta";
+#endif
+
+#ifdef CONFIG_OPTEE_V2
 	tee_uuid_from_octets(&uuid, uuid_octets);
+	ta_ver = 2;
+	format = "%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta";
+#endif
+
 	snprintf(fname, 255,
-			"%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta",
+			format,
 			uuid.timeLow,
 			uuid.timeMid,
 			uuid.timeHiAndVersion,
@@ -113,7 +127,7 @@ int search_ta(void *uuid_octets, void *ta, size_t *ta_size)
 	for (int i = 0; i < header->ta_num; i++) {
 		tee_uuid_from_octets(&ta_uuid, item->ta_uuid);
 			snprintf(fname, 255,
-			"%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta",
+			format,
 			ta_uuid.timeLow,
 			ta_uuid.timeMid,
 			ta_uuid.timeHiAndVersion,
@@ -129,7 +143,7 @@ int search_ta(void *uuid_octets, void *ta, size_t *ta_size)
 		debug("item->ta_offset=0x%x item->ta_len=0x%x *ta_size=%zu\n",
 				item->ta_offset, item->ta_len, *ta_size);
 
-		if (is_uuid_equal(ta_uuid, uuid) && item->ta_ver == 2) {
+		if (is_uuid_equal(ta_uuid, uuid) && item->ta_ver == ta_ver) {
 			if (item->ta_len <= *ta_size && ta)
 				memcpy(ta, userta + item->ta_offset, item->ta_len);
 			*ta_size = item->ta_len;
@@ -144,5 +158,5 @@ int search_ta(void *uuid_octets, void *ta, size_t *ta_size)
 exit:
 	if (userta)
 		free(userta);
-    return res;
+	return res;
 }
