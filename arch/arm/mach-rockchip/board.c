@@ -56,7 +56,10 @@
 #ifdef CONFIG_ROCKCHIP_EINK_DISPLAY
 #include <rk_eink.h>
 #endif
-
+#ifdef CONFIG_SERDES_DISPLAY
+#include <serdes-display-core.h>
+#include <serdes-display-gpio.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_ARM64
@@ -547,7 +550,9 @@ int board_init(void)
 	if (ab_decrease_tries())
 		printf("Decrease ab tries count fail!\n");
 #endif
-
+#ifdef CONFIG_SERDES_DISPLAY
+	serdes_power_init();
+#endif
 	return rk_board_init();
 }
 
