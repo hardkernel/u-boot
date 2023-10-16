@@ -635,6 +635,13 @@ int arch_cpu_init(void)
 	/* Assert reset the pipe phy to save power and de-assert when in use */
 	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
 
+#if defined(CONFIG_SUPPORT_USBPLUG)
+	/* Set emmc iomux */
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_H);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
+#endif
+
 #if defined(CONFIG_ROCKCHIP_SFC)
 	/* Set the fspi to access ddr memory */
 	val = readl(FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
