@@ -556,6 +556,23 @@ static int do_spi_flash_test(int argc, char * const argv[])
 }
 #endif /* CONFIG_CMD_SF_TEST */
 
+#if defined(CONFIG_TARGET_ODROID_M1)
+static int do_spi_flash_secure(int argc, char * const argv[])
+{
+	int ret = -1;
+
+	if (argc < 2)
+		return -1;
+
+	if (!strcmp(argv[1], "on"))
+		ret = flash->write_reg(flash, 0xb1, NULL, 0);	// ENSO
+	else if (!strcmp(argv[1], "off"))
+		ret = flash->write_reg(flash, 0xc1, NULL, 0);	// EXSO
+
+	return ret;
+}
+#endif
+
 static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc,
 			char * const argv[])
 {
@@ -591,6 +608,10 @@ static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_CMD_SF_TEST
 	else if (!strcmp(cmd, "test"))
 		ret = do_spi_flash_test(argc, argv);
+#endif
+#if defined(CONFIG_TARGET_ODROID_M1)
+	else if (!strcmp(cmd, "secure"))
+		ret = do_spi_flash_secure(argc, argv);
 #endif
 	else
 		ret = -1;
