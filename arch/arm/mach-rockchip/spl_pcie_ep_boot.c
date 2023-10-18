@@ -186,6 +186,7 @@ static int rockchip_pcie_ep_set_bar_flag(void *dbi_base, u32 barno, int flags)
 static void pcie_bar_init(void *dbi_base)
 {
 	void *resbar_base;
+	u32 val;
 
 	writel(0, dbi_base + 0x10);
 	writel(0, dbi_base + 0x14);
@@ -338,7 +339,7 @@ static void pcie_update_atags(void)
 	struct tag_ram_partition t_ram_part;
 
 	if (!atags_is_available()) {
-		printfep("RKEP: No ATAGS data found, create new!\n");
+		printep("RKEP: No ATAGS data found, create new!\n");
 		atags_destroy();
 	}
 
@@ -600,20 +601,20 @@ void pcie_cru_init(void)
 	writel(0x40000000, CRU_SOFTRST_CON27);
 
 	udelay(5);
-	printfep("RKEP: sram initial\n");
+	printep("RKEP: sram initial\n");
 	while (1) {
 		reg = readl(PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_STATUS0);
 		if (RK3568_SRAM_INIT_DONE(reg))
 			break;
 	}
-	printfep("RKEP: sram init done\n");
+	printep("RKEP: sram init done\n");
 
 	writel((0x3 << 8) | (0x3 << (8 + 16)),
 	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9); //map to access sram
 	for (i = 0; i < ARRAY_SIZE(phy_fw); i++)
 		writel(phy_fw[i], mmio + (i << 2));
 
-	printfep("RKEP: snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
+	printep("RKEP: snps pcie3phy FW update! size %ld\n", ARRAY_SIZE(phy_fw));
 	writel((0x0 << 8) | (0x3 << (8 + 16)),
 	       PCIE30_PHY_GRF + GRF_PCIE30PHY_RK3568_CON9);
 	writel((0x1 << 14) | (0x1 << (14 + 16)),
