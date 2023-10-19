@@ -609,7 +609,8 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	const void *blob = info->fdt_blob;
 	uint8_t digest[FIT_MAX_HASH_LEN];
 	uint8_t digest_read[FIT_MAX_HASH_LEN];
-	int sig_node, node, digest_len, i, ret = 0;
+	int sig_node, node, digest_len, i;
+	int ret = 0, written_size = 0;
 
 	dev = misc_otp_get_device(OTP_S);
 	if (!dev)
@@ -686,14 +687,24 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 		goto error;
 
 	for (i = 0; i < OTP_RSA_HASH_SIZE; i++) {
-		if (digest_read[i]) {
+		if (digest_read[i] == digest[i]) {
+			written_size++;
+		} else if (digest_read[i] == 0) {
+			break;
+		} else {
 			printf("RSA: The secure region has been written.\n");
 			ret = -EIO;
 			goto error;
 		}
 	}
 
-	ret = misc_otp_write(dev, OTP_RSA_HASH_ADDR, digest, OTP_RSA_HASH_SIZE);
+	if (OTP_RSA_HASH_SIZE - written_size) {
+		ret = misc_otp_write(dev, OTP_RSA_HASH_ADDR + written_size, digest + written_size,
+				     OTP_RSA_HASH_SIZE - written_size);
+		if (ret)
+			goto error;
+	}
+
 	if (ret)
 		goto error;
 
@@ -703,6 +714,7 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 		goto error;
 
 	if (memcmp(digest, digest_read, digest_len) != 0) {
+		ret = -EAGAIN;
 		printf("RSA: Write public key hash fail.\n");
 		goto error;
 	}
@@ -713,7 +725,10 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	if (ret)
 		goto error;
 
-	printf("RSA: Write key hash successfully\n");
+	if (written_size)
+		printf("RSA: Repair RSA key hash successfully.\n");
+	else
+		printf("RSA: Write RSA key hash successfully.\n");
 
 error:
 	free(rsa_key);
