@@ -176,6 +176,21 @@ static int rkusb_do_reset(struct fsg_common *common,
 	return 0;
 }
 
+__weak bool rkusb_usb3_capable(void)
+{
+	return false;
+}
+
+static int rkusb_do_switch_to_usb3(struct fsg_common *common,
+				   struct fsg_buffhd *bh)
+{
+	g_dnl_set_serialnumber((char *)&common->cmnd[1]);
+	rkusb_switch_to_usb3_enable(true);
+	bh->state = BUF_STATE_EMPTY;
+
+	return 0;
+}
+
 static int rkusb_do_test_unit_ready(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
@@ -831,6 +846,11 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	buf[1] |= BIT(1); /* Switch Storage */
 	buf[1] |= BIT(2); /* LBAwrite Parity */
 
+	if (rkusb_usb3_capable() && !rkusb_force_usb2_enabled())
+		buf[1] |= (1 << 4);
+	else
+		buf[1] &= (0 << 4);
+
 	/* Set data xfer size */
 	common->residue = len;
 	common->data_size_from_cmnd = len;
@@ -949,6 +969,11 @@ static int rkusb_cmd_process(struct fsg_common *common,
 
 	case RKUSB_READ_CAPACITY:
 		*reply = rkusb_do_read_capacity(common, bh);
+		rc = RKUSB_RC_FINISHED;
+		break;
+
+	case RKUSB_SWITCH_USB3:
+		*reply = rkusb_do_switch_to_usb3(common, bh);
 		rc = RKUSB_RC_FINISHED;
 		break;
 

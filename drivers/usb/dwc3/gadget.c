@@ -1566,6 +1566,7 @@ static int dwc3_gadget_stop(struct usb_gadget *g)
 	__dwc3_gadget_ep_disable(dwc->eps[1]);
 
 	dwc->gadget_driver	= NULL;
+	dwc->connected		= 0;
 
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
@@ -2284,6 +2285,11 @@ static void dwc3_gadget_linksts_change_interrupt(struct dwc3 *dwc,
 	enum dwc3_link_state	next = evtinfo & DWC3_LINK_STATE_MASK;
 	unsigned int		pwropt;
 
+	if (dwc->link_state == DWC3_LINK_STATE_POLL && dwc->check_linksts) {
+		dwc->check_linksts = false;
+		dwc->ts = get_timer(0);
+	}
+
 	/*
 	 * WORKAROUND: DWC3 < 2.50a have an issue when configured without
 	 * Hibernation mode enabled which would show up when device detects
@@ -2576,6 +2582,33 @@ static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
 	return ret;
 }
 
+struct dwc3 *the_controller;
+#define WAIT_USB_CONN_TIMEOUT	(3 * CONFIG_SYS_HZ)
+
+bool dwc3_gadget_is_connected(void)
+{
+	struct dwc3 *dev = the_controller;
+
+	/*
+	 * If the speed is super-speed and wait device
+	 * connection time out, it means that usb3
+	 * enumeration failed. And in a special case,
+	 * if the usb3 host rx-termination is present,
+	 * but host doesn't send LFPS (e.g usb3 host
+	 * initialized fail), this cause dwc3 usb fail
+	 * to detect speed and the speed will be unknown.
+	 */
+	if ((dev->gadget.speed == USB_SPEED_UNKNOWN ||
+	     dev->gadget.speed == USB_SPEED_SUPER) &&
+	    !dev->connected) {
+		debug("ts %ld\n", get_timer(dev->ts));
+		if (get_timer(dev->ts) > WAIT_USB_CONN_TIMEOUT)
+			return false;
+	}
+
+	return true;
+}
+
 /**
  * dwc3_gadget_init - Initializes gadget related registers
  * @dwc: pointer to our controller context structure
@@ -2585,6 +2618,7 @@ static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
 int dwc3_gadget_init(struct dwc3 *dwc)
 {
 	int					ret;
+	the_controller = dwc;
 
 	dwc->ctrl_req = dma_alloc_coherent(sizeof(*dwc->ctrl_req),
 					(unsigned long *)&dwc->ctrl_req_addr);

@@ -674,6 +674,11 @@ static int sleep_thread(struct fsg_common *common)
 			k = 0;
 		}
 
+#ifdef CONFIG_USB_DWC3_GADGET
+		if (rkusb_usb3_capable() && !dwc3_gadget_is_connected())
+			return -ENODEV;
+#endif
+
 		usb_gadget_handle_interrupts(0);
 	}
 	common->thread_wakeup_needed = 0;
