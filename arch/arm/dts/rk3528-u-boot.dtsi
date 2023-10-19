@@ -37,6 +37,11 @@
 	status = "okay";
 };
 
+&combphy_pu {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &cru {
 	/delete-property/ assigned-clocks;
 	/delete-property/ assigned-clock-rates;
