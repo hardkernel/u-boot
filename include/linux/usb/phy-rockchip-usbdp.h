@@ -67,4 +67,13 @@
 #define TRSV_LN2_MON_RX_CDR_DONE_OFFSET		0x1b84	/* trsv_reg06E1 */
 #define TRSV_LN2_MON_RX_CDR_LOCK_DONE		BIT(0)
 
+#if CONFIG_IS_ENABLED(PHY_ROCKCHIP_USBDP)
+int rockchip_u3phy_uboot_init(void);
+#else
+static inline int rockchip_u3phy_uboot_init(void)
+{
+	return -ENOTSUPP;
+}
+#endif
+
 #endif
