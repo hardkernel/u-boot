@@ -241,7 +241,7 @@ void board_init_f(ulong dummy)
 #endif
 	arch_cpu_init();
 	rk_board_init_f();
-#ifdef CONFIG_SPL_RAM_DEVICE
+#if defined(CONFIG_SPL_RAM_DEVICE) && defined(CONFIG_SPL_PCIE_EP_SUPPORT)
 	rockchip_pcie_ep_get_firmware();
 #endif
 #if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM) && !defined(CONFIG_SPL_BOARD_INIT)
