@@ -368,3 +368,8 @@ int misc_init_r(void)
 	return 0;
 }
 #endif
+
+void board_env_fixup(void)
+{
+	env_save();
+}
