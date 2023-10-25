@@ -355,7 +355,7 @@ static int rockchip_nandc_probe(struct udevice *dev)
 		nand_page_size = 2048;
 		nand_page_num = 64;
 		nand_block_num = 1024;
-		if (id[1] == 0xDC) {
+		if (id[1] == 0xDC || id[1] == 0xAC) {
 			if ((id[0] == 0x2C && id[3] == 0xA6) ||
 			    (id[0] == 0xC2 && id[3] == 0xA2)) {
 				nand_page_size = 4096;
