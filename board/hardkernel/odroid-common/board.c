@@ -373,3 +373,11 @@ void board_env_fixup(void)
 {
 	env_save();
 }
+
+int mmc_get_env_dev(void)
+{
+	struct blk_desc *dev_desc = rockchip_get_bootdev();
+	if (dev_desc)
+		return dev_desc->devnum;
+	return 0;
+}
