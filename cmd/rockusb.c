@@ -153,21 +153,29 @@ cleanup:
 
 void rkusb_force_to_usb2(bool enable)
 {
-	g_rkusb->force_usb2 = enable;
+	if (g_rkusb)
+		g_rkusb->force_usb2 = enable;
 }
 
 bool rkusb_force_usb2_enabled(void)
 {
+	if (!g_rkusb)
+		return true;
+
 	return g_rkusb->force_usb2;
 }
 
 void rkusb_switch_to_usb3_enable(bool enable)
 {
-	g_rkusb->switch_usb3 = enable;
+	if (g_rkusb)
+		g_rkusb->switch_usb3 = enable;
 }
 
 bool rkusb_switch_usb3_enabled(void)
 {
+	if (!g_rkusb)
+		return false;
+
 	return g_rkusb->switch_usb3;
 }
 
