@@ -261,6 +261,28 @@ int board_read_dtb_file(void *fdt_addr)
 		for (i = 0; i < ARRAY_SIZE(paths); i++) {
 			ret = load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, paths[i]);
 			if (!ret) {
+				run_command_list(
+						"load mmc 0:1 $loadaddr config.ini;"
+						"ini generic $loadaddr",
+						-1, 0);
+
+				char *overlay_profile = env_get("overlay_profile");
+				if (overlay_profile) {
+					char buf[32];
+					snprintf(buf, sizeof(buf), "ini overlay_%s $loadaddr", overlay_profile);
+					run_command(buf, 0);
+				}
+
+				char *overlays = env_get("overlays");
+				const char *token = strtok(overlays, " ");
+				while (token != NULL) {
+					if (!strncmp(token, "display_", 8)) {
+						set_panel_name(token);
+						break;
+					}
+					token = strtok(NULL, " ");
+				}
+
 				if (panel)
 					ret = dtoverlay_apply(fdt_addr, panel, dev_desc);
 				break;
