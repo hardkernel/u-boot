@@ -150,6 +150,11 @@ int rk_board_late_init(void)
 	env_set("bootcmd", buf);
 	env_set("variant", BOARD_VARIANT);
 
+	/* Delete device specific values if stored in U-Boot env area */
+	run_command_list("setenv -f serial#;"
+			"setenv -f ethaddr;"
+			"setenv -f eth1addr", -1, 0);
+
 #if defined(CONFIG_TARGET_ODROID_M1)
 	const char *commands = "sf probe;"
 		"sf secure on;"
