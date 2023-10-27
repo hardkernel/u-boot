@@ -706,11 +706,13 @@ static int rkusb_do_switch_storage(struct fsg_common *common)
 	media = 1 << common->cmnd[1];
 
 	switch (media) {
+#ifdef CONFIG_MMC
 	case BOOT_TYPE_EMMC:
 		type = IF_TYPE_MMC;
 		devnum = 0;
 		mmc_initialize(gd->bd);
 		break;
+#endif
 	case BOOT_TYPE_MTD_BLK_NAND:
 		type = IF_TYPE_MTD;
 		devnum = 0;
