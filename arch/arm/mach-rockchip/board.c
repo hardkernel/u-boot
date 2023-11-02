@@ -181,10 +181,13 @@ static int rockchip_set_serialno(void)
 		for (i = 0; i < j; i++) {
 			if ((serialno_str[i] >= 'a' && serialno_str[i] <= 'z') ||
 			    (serialno_str[i] >= 'A' && serialno_str[i] <= 'Z') ||
-			    (serialno_str[i] >= '0' && serialno_str[i] <= '9'))
+			    (serialno_str[i] >= '0' && serialno_str[i] <= '9')) {
 				continue;
-			else
+			} else {
+				if (i > 0)
+					serialno_str[i] = 0x0;
 				break;
+			}
 		}
 
 		/* valid character count > 0 */
