@@ -675,7 +675,8 @@ static int sleep_thread(struct fsg_common *common)
 		}
 
 #ifdef CONFIG_USB_DWC3_GADGET
-		if (rkusb_usb3_capable() && !dwc3_gadget_is_connected())
+		if (rkusb_usb3_capable() && !dwc3_gadget_is_connected()
+		    && !rkusb_force_usb2_enabled())
 			return -ENODEV;
 #endif
 
