@@ -138,6 +138,7 @@ static int regulators_parse_assigned_mem_state(struct udevice *dev)
 	return 0;
 }
 
+#ifdef CONFIG_IRQ
 static int regulators_enable_assigned_state_mem(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
@@ -187,7 +188,7 @@ static void pmics_resume(void)
 {
 	pmics_ops(false);
 }
-
+#endif
 static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
