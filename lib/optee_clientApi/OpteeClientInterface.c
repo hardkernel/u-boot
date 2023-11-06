@@ -33,6 +33,7 @@
 #define STORAGE_CMD_WRITE_OEM_HDCP_KEY	21
 #define STORAGE_CMD_OEM_HDCP_KEY_IS_WRITTEN	22
 #define STORAGE_CMD_SET_OEM_HDCP_KEY_MASK	23
+#define STORAGE_CMD_WRITE_OEM_ENCRYPT_DATA	24
 
 #define CRYPTO_SERVICE_CMD_OEM_OTP_KEY_PHYS_CIPHER	0x00000002
 
@@ -699,6 +700,12 @@ uint32_t trusty_ta_encryption_key_is_written(uint8_t *value)
 	TEEC_FinalizeContext(&TeecContext);
 
 	return TeecResult;
+}
+
+uint32_t trusty_write_oem_encrypt_data(uint32_t *buf, uint32_t length)
+{
+	return trusty_base_efuse_or_otp_operation(STORAGE_CMD_WRITE_OEM_ENCRYPT_DATA,
+						  true, buf, length);
 }
 
 uint32_t trusty_check_security_level_flag(uint8_t flag)
