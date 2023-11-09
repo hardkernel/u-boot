@@ -849,9 +849,9 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	buf[1] |= BIT(2); /* LBAwrite Parity */
 
 	if (rkusb_usb3_capable() && !rkusb_force_usb2_enabled())
-		buf[1] |= (1 << 4);
+		buf[1] |= BIT(4);
 	else
-		buf[1] &= (0 << 4);
+		buf[1] &= ~BIT(4);
 
 	/* Set data xfer size */
 	common->residue = len;
