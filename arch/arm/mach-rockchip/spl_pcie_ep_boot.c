@@ -707,6 +707,12 @@ reinit:
 	val = readl(dbi_base + 0x4);
 	writel(val | 0x6, dbi_base + 0x4);
 
+	val = readl(apb_base + 0x10);
+	if (val & 0x4) {
+		printep("Link is reset, int status misc=%x\n", val);
+		retries++;
+	}
+
 	if (retries)	/* Set app_dly2_done to enable app_ltssm_enable */
 		writel(0x80008, apb_base + 0x180);
 	else		/* Enable LTSSM */
