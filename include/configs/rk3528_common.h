@@ -7,6 +7,8 @@
 #ifndef __CONFIG_RK3528_COMMON_H
 #define __CONFIG_RK3528_COMMON_H
 
+#define CFG_CPUID_OFFSET		0xa
+
 #include "rockchip-common.h"
 
 #define CONFIG_SPL_FRAMEWORK
