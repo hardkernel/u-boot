@@ -108,7 +108,6 @@ __weak int rk_board_init(void)
  */
 #define VENDOR_SN_MAX	513
 #define CPUID_LEN	0x10
-#define CPUID_OFF	0x07
 
 #define MAX_ETHERNET	0x2
 
@@ -221,7 +220,7 @@ static int rockchip_set_serialno(void)
 		}
 
 		/* read the cpu_id range from the efuses */
-		ret = misc_read(dev, CPUID_OFF, &cpuid, sizeof(cpuid));
+		ret = misc_read(dev, CFG_CPUID_OFFSET, &cpuid, sizeof(cpuid));
 		if (ret) {
 			printf("%s: read cpuid from efuse/otp failed, ret=%d\n",
 			       __func__, ret);
