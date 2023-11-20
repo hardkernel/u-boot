@@ -7,6 +7,8 @@
 #ifndef __CONFIG_RV1106_COMMON_H
 #define __CONFIG_RV1106_COMMON_H
 
+#define CFG_CPUID_OFFSET		0xa
+
 #include "rockchip-common.h"
 
 #define COUNTER_FREQUENCY		24000000
