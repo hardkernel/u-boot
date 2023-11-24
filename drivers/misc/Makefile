@@ -18,6 +18,7 @@ obj-$(CONFIG_CROS_EC_LPC) += cros_ec_lpc.o
 obj-$(CONFIG_CROS_EC_I2C) += cros_ec_i2c.o
 obj-$(CONFIG_CROS_EC_SANDBOX) += cros_ec_sandbox.o
 obj-$(CONFIG_CROS_EC_SPI) += cros_ec_spi.o
+obj-$(CONFIG_ROCKCHIP_PM_CONFIG) += rockchip_pm_config.o
 endif
 obj-$(CONFIG_FSL_IIM) += fsl_iim.o
 obj-$(CONFIG_LED_STATUS_GPIO) += gpio_led.o
