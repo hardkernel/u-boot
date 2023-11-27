@@ -37,6 +37,28 @@ static struct virq_chip rk805_irq_chip = {
 	.num_irqs		= ARRAY_SIZE(rk805_irqs),
 };
 
+/* RK806 */
+static const struct virq_reg rk806_irqs[] = {
+	[RK8XX_IRQ_PWRON_FALL] = {
+		.mask = RK806_IRQ_PWRON_FALL_MSK,
+		.reg_offset = 0,
+	},
+	[RK8XX_IRQ_PWRON_RISE] = {
+		.mask = RK806_IRQ_PWRON_RISE_MSK,
+		.reg_offset = 0,
+	},
+};
+
+static struct virq_chip rk806_irq_chip = {
+	.status_base		= RK806_INT_STS0,
+	.mask_base		= RK806_INT_MSK0,
+	.num_regs		= 1,
+	.read			= pmic_reg_read,
+	.write			= pmic_reg_write,
+	.irqs			= rk806_irqs,
+	.num_irqs		= ARRAY_SIZE(rk806_irqs),
+};
+
 /* RK808 */
 static const struct virq_reg rk808_irqs[] = {
 	[RK8XX_IRQ_PLUG_OUT] = {
@@ -167,6 +189,8 @@ static struct reg_data rk818_init_current[] = {
 static const struct pmic_child_info pmic_children_info[] = {
 	{ .prefix = "DCDC", .driver = "rk8xx_buck"},
 	{ .prefix = "LDO", .driver = "rk8xx_ldo"},
+	{ .prefix = "NLDO", .driver = "rk8xx_ldo"},
+	{ .prefix = "PLDO", .driver = "rk8xx_pldo"},
 	{ .prefix = "SWITCH", .driver = "rk8xx_switch"},
 	{ },
 };
@@ -237,9 +261,57 @@ static int rk8xx_suspend(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	int ret = 0;
-	u8 val;
+	u8 i, val;
 
 	switch (priv->variant) {
+	case RK806_ID:
+		ret = rk8xx_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_PWRCTRL_FUN_MSK;
+		ret = rk8xx_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+
+		ret = rk8xx_read(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+		if (ret)
+			return ret;
+
+		val &= RK806_PWRCTRL_FUN_MSK;
+		ret = rk8xx_write(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+		if (ret)
+			return ret;
+
+		for (i = RK806_VSEL_CTR_SEL0; i <= RK806_DVS_CTR_SEL4; i++) {
+			ret = rk8xx_read(dev, i, &val, 1);
+			if (ret)
+				return ret;
+			val &= RK806_VSEL_CTRL_MSK;
+			ret = rk8xx_write(dev, i, &val, 1);
+			if (ret)
+				return ret;
+		}
+
+		ret = rk8xx_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_PWRCTRL_FUN_MSK;
+		val |= RK806_ENABLE_PWRCTRL;
+		ret = rk8xx_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+
+		for (i = RK806_VSEL_CTR_SEL0; i <= RK806_DVS_CTR_SEL4; i++) {
+			ret = rk8xx_read(dev, i, &val, 1);
+			if (ret)
+				return ret;
+			val &= RK806_VSEL_CTRL_MSK;
+			val |= RK806_VSEL_PWRCTRL1;
+			ret = rk8xx_write(dev, i, &val, 1);
+			if (ret)
+				return ret;
+		}
+		break;
 	case RK809_ID:
 	case RK817_ID:
 		/* pmic_sleep active high */
@@ -262,8 +334,34 @@ static int rk8xx_resume(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	int ret = 0;
+	u8 i, val;
 
 	switch (priv->variant) {
+	case RK806_ID:
+		for (i = RK806_VSEL_CTR_SEL0; i <= RK806_DVS_CTR_SEL4; i++) {
+			ret = rk8xx_read(dev, i, &val, 1);
+			if (ret)
+				return ret;
+			val &= RK806_VSEL_CTRL_MSK;
+			ret = rk8xx_write(dev, i, &val, 1);
+			if (ret)
+				return ret;
+		}
+
+		ret = rk8xx_read(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_PWRCTRL_FUN_MSK;
+		ret = rk8xx_write(dev, RK806_PWRCTRL_CONFIG0, &val, 1);
+		if (ret)
+			return ret;
+
+		ret = rk8xx_read(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+		if (ret)
+			return ret;
+		val &= RK806_PWRCTRL_FUN_MSK;
+		ret = rk8xx_write(dev, RK806_PWRCTRL_CONFIG1, &val, 1);
+		break;
 	case RK809_ID:
 	case RK817_ID:
 		ret = rk8xx_write(dev, RK817_PMIC_SYS_CFG3, &priv->sleep_pin, 1);
@@ -282,6 +380,10 @@ static int rk8xx_shutdown(struct udevice *dev)
 	int ret = 0;
 
 	switch (priv->variant) {
+	case RK806_ID:
+		devctrl_reg = RK806_SYS_CFG3;
+		dev_off = RK806_DEV_OFF;
+		break;
 	case RK808_ID:
 		devctrl_reg = REG_DEVCTRL;
 		dev_off = BIT(3);
@@ -412,6 +514,8 @@ static int rk8xx_ofdata_to_platdata(struct udevice *dev)
 	val = dev_read_bool(dev, "vsys-off-shutdown");
 	rk8xx->sys_can_sd = val;
 
+	rk8xx->rst_fun = dev_read_u32_default(dev, "pmic-reset-func", 0);
+
 	return 0;
 }
 
@@ -423,6 +527,10 @@ static int rk8xx_irq_chip_init(struct udevice *dev)
 	int ret;
 
 	switch (priv->variant) {
+	case RK806_ID:
+		irq_chip = &rk806_irq_chip;
+		irq_plugout = 0;
+		break;
 	case RK808_ID:
 		irq_chip = &rk808_irq_chip;
 		break;
@@ -496,6 +604,9 @@ static int rk8xx_probe(struct udevice *dev)
 	    device_is_compatible(dev, "rockchip,rk809")) {
 		id_msb = RK817_ID_MSB;
 		id_lsb = RK817_ID_LSB;
+	} else if (device_is_compatible(dev, "rockchip,rk806")) {
+		id_msb = RK806_CHIP_NAME;
+		id_lsb = RK806_CHIP_VER;
 	} else {
 		id_msb = ID_MSB;
 		id_lsb = ID_LSB;
@@ -511,6 +622,35 @@ static int rk8xx_probe(struct udevice *dev)
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
 	show_variant = priv->variant;
 	switch (priv->variant) {
+	case RK806_ID:
+		on_source = RK806_ON_SOURCE;
+		off_source = RK806_OFF_SOURCE;
+		ret = rk8xx_read(dev, RK806_HW_VER, &value, 1);
+		if (ret)
+			panic("RK806: read RK806_HW_VER error!\n");
+
+		if ((lsb & RK806_VERSION_MSK) == RK806_VERSION_AB) {
+			ret = rk8xx_read(dev, RK806_SYS_CFG1, &value, 1);
+			if (ret) {
+				dev_err(dev, "rk806 RK806_SYS_CFG1 read error: %d\n", ret);
+				return ret;
+			}
+			value |= RK806_ABNORDET_EN;
+			rk8xx_write(dev, RK806_SYS_CFG1, &value, 1);
+		}
+
+		if (priv->rst_fun) {
+			rk8xx_read(dev, RK806_SYS_CFG3, &value, 1);
+			value &= RK806_RESET_FUN_CLR;
+			if (priv->rst_fun == RK806_RST_MODE1) {
+				value |= (RK806_RST_MODE1 << 6);
+				rk8xx_write(dev, RK806_SYS_CFG3, &value, 1);
+			} else if (priv->rst_fun == RK806_RST_MODE2) {
+				value |= (RK806_RST_MODE2 << 6);
+				rk8xx_write(dev, RK806_SYS_CFG3, &value, 1);
+			}
+		}
+		break;
 	case RK808_ID:
 		show_variant = 0x808;	/* RK808 hardware ID is 0 */
 		pwron_key = RK8XX_DEVCTRL_REG;
@@ -666,6 +806,7 @@ static struct dm_pmic_ops rk8xx_ops = {
 
 static const struct udevice_id rk8xx_ids[] = {
 	{ .compatible = "rockchip,rk805" },
+	{ .compatible = "rockchip,rk806" },
 	{ .compatible = "rockchip,rk808" },
 	{ .compatible = "rockchip,rk809" },
 	{ .compatible = "rockchip,rk816" },
