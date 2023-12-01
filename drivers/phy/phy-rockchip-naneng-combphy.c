@@ -396,6 +396,12 @@ static int rk3528_combphy_cfg(struct rockchip_combphy_priv *priv)
 		val |= 0x01;
 		writel(val, priv->mmio + 0x200);
 
+		/* Set Rx squelch input filler bandwidth */
+		val = readl(priv->mmio + 0x20c);
+		val &= ~GENMASK(2, 0);
+		val |= 0x06;
+		writel(val, priv->mmio + 0x20c);
+
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);
 		param_write(priv->phy_grf, &cfg->pipe_txelec_sel, false);
 		param_write(priv->phy_grf, &cfg->usb_mode_set, true);
@@ -502,6 +508,9 @@ static int rk3562_combphy_cfg(struct rockchip_combphy_priv *priv)
 
 		/* Set PLL KVCO to min and set PLL charge pump current to max */
 		writel(0xf0, priv->mmio + (0xa << 2));
+
+		/* Set Rx squelch input filler bandwidth */
+		writel(0x0e, priv->mmio + (0x14 << 2));
 
 		param_write(priv->phy_grf, &cfg->pipe_sel_usb, true);
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);
@@ -626,6 +635,9 @@ static int rk3568_combphy_cfg(struct rockchip_combphy_priv *priv)
 
 		/* Set PLL KVCO to min and set PLL charge pump current to max */
 		writel(0xf0, priv->mmio + (0xa << 2));
+
+		/* Set Rx squelch input filler bandwidth */
+		writel(0x0e, priv->mmio + (0x14 << 2));
 
 		param_write(priv->phy_grf, &cfg->pipe_sel_usb, true);
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);
