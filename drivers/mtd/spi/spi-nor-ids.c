@@ -184,7 +184,7 @@ const struct flash_info spi_nor_ids[] = {
 	{
 		INFO("gd25lq256d", 0xc86019, 0, 64 * 1024, 512,
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
-			SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
+			SPI_NOR_4B_OPCODES | SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
 	},
 	/* adding these 1.8V QSPI flash parts */
 	{INFO("gd25lb256", 0xc86719, 0, 64 * 1024, 512,	SECT_4K |
