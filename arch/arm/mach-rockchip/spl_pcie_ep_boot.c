@@ -202,13 +202,13 @@ static void pcie_bar_init(void *dbi_base)
 
 	/* Resize BAR0 to support 4M 32bits */
 	resbar_base = dbi_base + PCI_RESBAR;
-	writel(0xfffff0, resbar_base + 0x4);
+	writel(0x40, resbar_base + 0x4);
 	writel(0x2c0, resbar_base + 0x8);
 	/* BAR2: 64M 64bits */
-	writel(0xfffff0, resbar_base + 0x14);
+	writel(0x400, resbar_base + 0x14);
 	writel(0x6c0, resbar_base + 0x18);
 	/* BAR4: Fixed for EP wired register, 1M 32bits */
-	writel(0xfffff0, resbar_base + 0x24);
+	writel(0x10, resbar_base + 0x24);
 	writel(0xc0, resbar_base + 0x28);
 	/* Set flags */
 	rockchip_pcie_ep_set_bar_flag(dbi_base, 0, PCI_BASE_ADDRESS_MEM_TYPE_32);
