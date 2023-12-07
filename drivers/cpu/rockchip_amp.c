@@ -248,7 +248,7 @@ static int brought_up_amp(void *fit, int noffset,
 	const char *desc;
 	boot_args_t args;
 	u32 cpu, aarch64, hyp;
-	u32 load, thumb, us;
+	u32 load, load_c, thumb, us;
 	u32 pe_state, entry;
 	int boot_on;
 	int data_size;
@@ -261,6 +261,7 @@ static int brought_up_amp(void *fit, int noffset,
 	hyp = fit_get_u32_default(fit, noffset, "hyp", 0);
 	thumb = fit_get_u32_default(fit, noffset, "thumb", 0);
 	entry = load = fit_get_u32_default(fit, noffset, "load", -ENODATA);
+	load_c = fit_get_u32_default(fit, noffset, "load_c", -ENODATA);
 	us = fit_get_u32_default(fit, noffset, "udelay", 0);
 	boot_on = fit_get_u32_default(fit, noffset, "boot-on", 1);
 	fit_image_get_arch(fit, noffset, &arch);
@@ -283,6 +284,14 @@ static int brought_up_amp(void *fit, int noffset,
 		AMP_E("Property missing!\n");
 		return -EINVAL;
 	}
+
+	if (is_linux) {
+		if (load != -ENODATA)
+			env_set_hex("kernel_addr_r", load);
+		if (load_c != -ENODATA)
+			env_set_hex("kernel_addr_c", load_c);
+	}
+
 	aarch64 = (arch == IH_ARCH_ARM) ? 0 : 1;
 	pe_state = PE_STATE(aarch64, hyp, thumb, 0);
 
@@ -293,6 +302,7 @@ static int brought_up_amp(void *fit, int noffset,
 	AMP_I("        hyp: %d\n", hyp);
 	AMP_I("      thumb: %d\n", thumb);
 	AMP_I("       load: 0x%08x\n", load);
+	AMP_I("     load_c: 0x%08x\n", load_c);
 	AMP_I("   pe_state: 0x%08x\n", pe_state);
 	AMP_I("   linux-os: %d\n\n", is_linux);
 #endif
