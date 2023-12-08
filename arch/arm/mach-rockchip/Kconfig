@@ -846,7 +846,7 @@ config ROCKCHIP_HWID_DTB
 
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"
-	depends on RKIMG_BOOTLOADER
+	depends on (RKIMG_BOOTLOADER || SUPPORT_USBPLUG)
 	help
 	  This enable support to read/write vendor configuration data from/to
 	  this partition.

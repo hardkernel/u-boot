@@ -11,6 +11,7 @@
 #include <nand.h>
 #include <part.h>
 #include <fdt_support.h>
+#include <usbplug.h>
 
 /* tag for vendor check */
 #define VENDOR_TAG		0x524B5644

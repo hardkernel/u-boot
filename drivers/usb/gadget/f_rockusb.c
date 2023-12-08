@@ -492,6 +492,7 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 			data  = bh->buf + sizeof(struct vendor_item);
 
 			if (!type) {
+				#ifndef CONFIG_SUPPORT_USBPLUG
 				if (vhead->id == HDCP_14_HDMI_ID ||
 				    vhead->id == HDCP_14_HDMIRX_ID ||
 				    vhead->id == HDCP_14_DP_ID) {
@@ -501,6 +502,7 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 						return -EIO;
 					}
 				}
+				#endif
 
 				/* Vendor storage */
 				rc = vendor_storage_write(vhead->id,
