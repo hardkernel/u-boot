@@ -252,6 +252,11 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 		/* Error during data transfer. */
 		if (mask & (DWMCI_DATA_ERR | DWMCI_DATA_TOUT)) {
 			debug("%s: DATA ERROR!\n", __func__);
+			/*
+			 * It is necessary to wait for several cycles before
+			 * resetting the controller while data timeout or error.
+			 */
+			udelay(1);
 			dwmci_wait_reset(host, DWMCI_RESET_ALL);
 			dwmci_writel(host, DWMCI_CMD, DWMCI_CMD_PRV_DAT_WAIT |
 				     DWMCI_CMD_UPD_CLK | DWMCI_CMD_START);
