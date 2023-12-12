@@ -938,7 +938,7 @@ static int rockchip_udphy_probe(struct udevice *dev)
 
 	udphy->dev = dev;
 
-	dev_read_alias_seq(dev, &id);
+	id = of_alias_get_id(ofnode_to_np(dev->node), "usbdp");
 	if (id < 0)
 		id = 0;
 	udphy->id = id;
