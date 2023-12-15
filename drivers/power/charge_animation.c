@@ -1067,7 +1067,20 @@ static const struct dm_charge_display_ops charge_animation_ops = {
 static int charge_animation_probe(struct udevice *dev)
 {
 	struct charge_animation_priv *priv = dev_get_priv(dev);
+	__maybe_unused struct udevice *rk_pm_cfg;
 	int ret, soc;
+
+#ifdef CONFIG_ROCKCHIP_PM_CONFIG
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_pm_config),
+					  &rk_pm_cfg);
+	if (ret) {
+		if (ret == -ENODEV)
+			printf("Can't find rockchip_pm_config\n");
+		else
+			printf("Get rockchip_pm_config failed: %d\n", ret);
+	}
+#endif
 
 	/* Get PMIC: used for power off system  */
 	ret = uclass_get_device(UCLASS_PMIC, 0, &priv->pmic);
