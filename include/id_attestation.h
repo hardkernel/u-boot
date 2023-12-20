@@ -10,8 +10,8 @@
 
 #include <common.h>
 #include "attestation_key.h"
-#define   DEBUG     0
-#if DEBUG
+#define   IDAT_DEBUG     0
+#if IDAT_DEBUG
     #define MSG(...) printf(__VA_ARGS__)
 #else
     #define MSG(...) do {} while (0)
