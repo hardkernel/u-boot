@@ -16,6 +16,7 @@
 #include <optee_include/OpteeClientInterface.h>
 #include <mmc.h>
 #include <stdlib.h>
+#include <usbplug.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -735,7 +736,11 @@ static int rkusb_do_switch_storage(struct fsg_common *common)
 	if (cur_type == type && cur_devnum == devnum)
 		return 0;
 
+#if CONFIG_IS_ENABLED(SUPPORT_USBPLUG)
+	block_dev = usbplug_blk_get_devnum_by_type(type, devnum);
+#else
 	block_dev = blk_get_devnum_by_type(type, devnum);
+#endif
 	if (!block_dev) {
 		printf("Bootdev if_type=%d num=%d toggle fail\n", type, devnum);
 		return -ENODEV;
