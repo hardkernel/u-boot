@@ -59,10 +59,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define BUS_IOC_BASE			0xfd5f8000
 #define BUS_IOC_GPIO2A_IOMUX_SEL_L	0x40
+#define BUS_IOC_GPIO2A_IOMUX_SEL_H	0x44
 #define BUS_IOC_GPIO2B_IOMUX_SEL_L	0x48
+#define BUS_IOC_GPIO2B_IOMUX_SEL_H	0x4c
 #define BUS_IOC_GPIO2D_IOMUX_SEL_L	0x58
 #define BUS_IOC_GPIO2D_IOMUX_SEL_H	0x5c
 #define BUS_IOC_GPIO3A_IOMUX_SEL_L	0x60
+#define BUS_IOC_GPIO3A_IOMUX_SEL_H	0x64
+#define BUS_IOC_GPIO3C_IOMUX_SEL_H	0x74
 
 #define VCCIO3_5_IOC_BASE		0xfd5fa000
 #define IOC_VCCIO3_5_GPIO2A_DS_H	0x44
@@ -851,6 +855,57 @@ void spl_board_storages_fixup(struct spl_image_loader *loader)
 }
 #endif
 
+void board_set_iomux(enum if_type if_type, int devnum, int routing)
+{
+	switch (if_type) {
+	case IF_TYPE_MMC:
+		/*
+		* set the emmc io drive strength:
+		* data and cmd: 50ohm
+		* clock: 25ohm
+		*/
+		writel(0x00770052, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
+		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
+		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
+
+		/* set emmc iomux */
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
+		break;
+
+	case IF_TYPE_MTD:
+		if (routing == 0) {
+			writel(0x000f0002, EMMC_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+			writel(0xffff2222, EMMC_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+			writel(0x00f00020, EMMC_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
+			/* Set the fspi m0 io ds level to 55ohm */
+			writel(0x00070002, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
+			writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
+			writel(0x07000200, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
+		} else if (routing == 1) {
+			writel(0xff003300, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_H);
+			writel(0xf0ff3033, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_L);
+			writel(0x000f0003, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_H);
+			/* Set the fspi m1 io ds level to 55ohm */
+			writel(0x33002200, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2A_DS_H);
+			writel(0x30332022, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_L);
+			writel(0x00030002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_H);
+		} else if (routing == 2) {
+			writel(0xffff5555, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_L);
+			writel(0x00f00050, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_H);
+			writel(0x000f0002, VCCIO3_5_IOC_BASE + BUS_IOC_GPIO3C_IOMUX_SEL_H);
+			/* Set the fspi m2 io ds level to 55ohm */
+			writel(0x77772222, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_L);
+			writel(0x00700020, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_H);
+			writel(0x00070002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3C_DS_H);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 #ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
@@ -981,21 +1036,6 @@ int arch_cpu_init(void)
 	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
 	secure_reg &= 0xffff0000;
 	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
-
-	/*
-	 * set the emmc io drive strength:
-	 * data and cmd: 50ohm
-	 * clock: 25ohm
-	 */
-	writel(0x00770052, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
-	writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
-	writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
-
-	/* set emmc iomux */
-	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
-	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
-	writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
-
 #else /* U-Boot */
 	/* uboot: config iomux */
 #ifdef CONFIG_ROCKCHIP_EMMC_IOMUX
