@@ -196,13 +196,20 @@ static int rkusb_do_test_unit_ready(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
 	struct blk_desc *desc = &ums[common->lun].block_dev;
+	u32 usb_trb_size;
+	u16 residue;
 
 	if ((desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) ||
 	    desc->if_type == IF_TYPE_SPINOR)
-		common->residue = 0x03 << 24; /* 128KB Max block xfer for SPI Nor */
+		residue = 0x03; /* 128KB Max block xfer for SPI Nor */
+	else if (common->cmnd[1] == 0xf7 && FSG_BUFLEN >= 0x400000)
+		residue = 0x0a; /* Max block xfer for USB DWC3 */
 	else
-		common->residue = 0x06 << 24; /* Max block xfer support from host */
+		residue = 0x06; /* Max block xfer support from host */
 
+	usb_trb_size = (1 << residue) * 4096;
+	common->usb_trb_size = min(usb_trb_size, FSG_BUFLEN);
+	common->residue = residue << 24;
 	common->data_dir = DATA_DIR_NONE;
 	bh->state = BUF_STATE_EMPTY;
 
