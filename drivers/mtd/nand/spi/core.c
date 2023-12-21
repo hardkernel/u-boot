@@ -872,6 +872,7 @@ static const struct spinand_manufacturer *spinand_manufacturers[] = {
 #endif
 #ifdef CONFIG_SPI_NAND_UNIM
 	&unim_spinand_manufacturer,
+	&unim_zl_spinand_manufacturer,
 #endif
 #ifdef CONFIG_SPI_NAND_SKYHIGH
 	&skyhigh_spinand_manufacturer,
