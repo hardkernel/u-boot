@@ -2212,6 +2212,9 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 		break;
 	}
 
+	dev_info(dwc->dev, "usb device is %s\n",
+		 usb_speed_string(dwc->gadget.speed));
+
 	/* Enable USB2 LPM Capability */
 
 	if ((dwc->revision > DWC3_REVISION_194A)
