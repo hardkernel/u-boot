@@ -59,6 +59,7 @@
 /* usb mass storage */
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 #define CONFIG_ROCKUSB_G_DNL_PID	0x350b
+#define ROCKUSB_FSG_BUFLEN		0x400000
 
 /*
  * decompressed kernel:  4M ~ 84M
