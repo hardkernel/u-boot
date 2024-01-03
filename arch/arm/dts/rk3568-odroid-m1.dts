@@ -56,7 +56,7 @@
 		reg = <0>;
 		spi-tx-bus-width = <1>;
 		spi-rx-bus-width = <1>;
-		spi-max-frequency = <100000000>;
+		spi-max-frequency = <200000000>;
 	};
 
 	/delete-node/ flash@1;
