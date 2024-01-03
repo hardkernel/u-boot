@@ -247,14 +247,18 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
 	return -1;
 }
 
-static int load_boot_config(void)
+static int load_boot_config(struct blk_desc *dev_desc, const char *config)
 {
+	char list[1024];
 	int ret = -EINVAL;
 
-	run_command_list(
-			"load mmc 0:1 $loadaddr config.ini;"
-			"ini generic $loadaddr",
-			-1, 0);
+	snprintf(list, sizeof(list),
+			"load mmc %d:1 $loadaddr %s; ini generic $loadaddr",
+			dev_desc ? dev_desc->devnum : 0,
+			config ? config : "config.ini"
+		);
+
+	run_command_list(list, -1, 0);
 
 	char *overlay_profile = env_get("overlay_profile");
 	if (overlay_profile) {
@@ -285,8 +289,6 @@ int board_read_dtb_file(void *fdt_addr)
 		if (panel)
 			ret = dtoverlay_apply(fdt_addr, panel, NULL, NULL);
 	} else {
-		load_boot_config();
-
 		char *paths[] = {
 			"dtb",
 			"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
@@ -295,6 +297,8 @@ int board_read_dtb_file(void *fdt_addr)
 		int i;
 		char buf[1024];
 		char root[1024];
+
+		load_boot_config(dev_desc, "config.ini");
 
 		char *kvers = env_get("fk_kvers");
 		if (!kvers) {
