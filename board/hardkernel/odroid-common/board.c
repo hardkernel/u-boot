@@ -212,10 +212,10 @@ int rk_board_late_init(void)
 	return 0;
 }
 
-int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc)
+int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
+		const char *root)
 {
 	char *paths[] = {
-		"",
 		"overlays/"CONFIG_BOARDNAME"/",
 		"rockchip/overlays/"CONFIG_BOARDNAME"/",
 	};
@@ -229,7 +229,7 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc)
 	ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
 
 	for (i = 0; i < ARRAY_SIZE(paths); i++) {
-		snprintf(buf, sizeof(buf), "%s%s.dtbo", paths[i], dtoverlay);
+		snprintf(buf, sizeof(buf), "%s%s%s.dtbo", root, paths[i], dtoverlay);
 
 		if (dev_desc)
 			ret = load_from_mmc(fdt_dtbo, dev_desc->devnum, 1, buf);
@@ -247,6 +247,35 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc)
 	return -1;
 }
 
+static int load_boot_config(void)
+{
+	int ret = -EINVAL;
+
+	run_command_list(
+			"load mmc 0:1 $loadaddr config.ini;"
+			"ini generic $loadaddr",
+			-1, 0);
+
+	char *overlay_profile = env_get("overlay_profile");
+	if (overlay_profile) {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "ini overlay_%s $loadaddr", overlay_profile);
+		run_command(buf, 0);
+	}
+
+	char *overlays = env_get("overlays");
+	const char *token = strtok(overlays, " ");
+	while (token != NULL) {
+		if (!strncmp(token, "display_", 8)) {
+			ret = set_panel_name(token);
+			break;
+		}
+		token = strtok(NULL, " ");
+	}
+
+	return ret;
+}
+
 int board_read_dtb_file(void *fdt_addr)
 {
 	int ret;
@@ -254,42 +283,42 @@ int board_read_dtb_file(void *fdt_addr)
 	ret = load_from_cramfs((unsigned long)fdt_addr, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
 	if (!ret) {
 		if (panel)
-			ret = dtoverlay_apply(fdt_addr, panel, NULL);
+			ret = dtoverlay_apply(fdt_addr, panel, NULL, NULL);
 	} else {
+		load_boot_config();
+
 		char *paths[] = {
 			"dtb",
 			"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
 		};
 		struct blk_desc *dev_desc = rockchip_get_bootdev();
 		int i;
+		char buf[1024];
+		char root[1024];
+
+		char *kvers = env_get("fk_kvers");
+		if (!kvers) {
+			/* Try to get kernel version from 'dtb' which must
+			 * be symbol link of device tree file in Linux
+			 */
+			load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, "dtb");
+		}
+
+		kvers = env_get("fk_kvers");
+		if (kvers) {
+			/* Set default device tree file with given kernel version */
+			snprintf(root, sizeof(root), "dtbs/%s/rockchip/", kvers);
+			strcpy(buf, root);
+			strcat(buf, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+
+			paths[0] = buf;
+		}
 
 		for (i = 0; i < ARRAY_SIZE(paths); i++) {
 			ret = load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, paths[i]);
 			if (!ret) {
-				run_command_list(
-						"load mmc 0:1 $loadaddr config.ini;"
-						"ini generic $loadaddr",
-						-1, 0);
-
-				char *overlay_profile = env_get("overlay_profile");
-				if (overlay_profile) {
-					char buf[32];
-					snprintf(buf, sizeof(buf), "ini overlay_%s $loadaddr", overlay_profile);
-					run_command(buf, 0);
-				}
-
-				char *overlays = env_get("overlays");
-				const char *token = strtok(overlays, " ");
-				while (token != NULL) {
-					if (!strncmp(token, "display_", 8)) {
-						set_panel_name(token);
-						break;
-					}
-					token = strtok(NULL, " ");
-				}
-
 				if (panel)
-					ret = dtoverlay_apply(fdt_addr, panel, dev_desc);
+					ret = dtoverlay_apply(fdt_addr, panel, dev_desc, root);
 				break;
 			}
 		}

@@ -2241,7 +2241,6 @@ static int ext4fs_find_file1(const char *currpath,
 			}
 
 			debug("Got symlink >%s<\n", symlink);
-
 			if (symlink[0] == '/') {
 				ext4fs_free_node(oldnode, currroot);
 				oldnode = &ext4fs_root->diropen;
@@ -2250,6 +2249,14 @@ static int ext4fs_find_file1(const char *currpath,
 			/* Lookup the node the symlink points to. */
 			status = ext4fs_find_file1(symlink, oldnode,
 						    &currnode, &type);
+
+			/* Take kernel version from symlink path if start
+			 * with 'dtbs/.../...' and store it to 'fk_kvers'
+			 */
+			if (!strncmp(symlink, "dtbs/", 5)) {
+				char *token = strtok(symlink + 5, "/");
+				env_set("fk_kvers", token);
+			}
 
 			free(symlink);
 
