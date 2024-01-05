@@ -229,7 +229,7 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
 	ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
 
 	for (i = 0; i < ARRAY_SIZE(paths); i++) {
-		snprintf(buf, sizeof(buf), "%s%s%s.dtbo", root, paths[i], dtoverlay);
+		snprintf(buf, sizeof(buf), "%s%s%s.dtbo", root ? root : "", paths[i], dtoverlay);
 
 		if (dev_desc)
 			ret = load_from_mmc(fdt_dtbo, dev_desc->devnum, 1, buf);
