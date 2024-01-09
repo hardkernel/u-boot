@@ -612,18 +612,7 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 	int sig_node, node, digest_len, i;
 	int ret = 0, written_size = 0;
 
-	dev = misc_otp_get_device(OTP_S);
-	if (!dev)
-		return -ENODEV;
-
-	ret = misc_otp_read(dev, OTP_SECURE_BOOT_ENABLE_ADDR,
-			    &secure_flags, OTP_SECURE_BOOT_ENABLE_SIZE);
-	if (ret)
-		return ret;
-
-	if (secure_flags == 0xff)
-		return 0;
-
+	/* Check burn-key-hash flag in itb first */
 	sig_node = fdt_subnode_offset(blob, 0, FIT_SIG_NODENAME);
 	if (sig_node < 0) {
 		debug("%s: No signature node found\n", __func__);
@@ -637,7 +626,20 @@ int rsa_burn_key_hash(struct image_sign_info *info)
 		return -1;
 
 	if (!(prop.burn_key))
-		return -EPERM;
+		return 0;
+
+	/* Handle burn_key_hash process from now on */
+	dev = misc_otp_get_device(OTP_S);
+	if (!dev)
+		return -ENODEV;
+
+	ret = misc_otp_read(dev, OTP_SECURE_BOOT_ENABLE_ADDR,
+			    &secure_flags, OTP_SECURE_BOOT_ENABLE_SIZE);
+	if (ret)
+		return ret;
+
+	if (secure_flags == 0xff)
+		return 0;
 
 	if (!prop.hash || !prop.modulus || !prop.public_exponent_BN)
 		return -ENOENT;
