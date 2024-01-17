@@ -15,6 +15,7 @@
 #include <linux/ioport.h>
 #include <linux/iopoll.h>
 #include <linux/math64.h>
+#include <dm/of_access.h>
 
 #include "rockchip_phy.h"
 
@@ -899,8 +900,26 @@ static int inno_video_phy_probe(struct udevice *dev)
 
 	ret = dev_read_resource(dev, 1, &inno->host);
 	if (ret < 0) {
-		dev_err(dev, "resource \"host\" not found\n");
-		return ret;
+		int node;
+		const fdt32_t *php = NULL;
+		struct fdt_resource fres;
+
+		fdt_for_each_subnode(node, gd->fdt_blob, 0) {
+			php = fdt_getprop(gd->fdt_blob, node, "phys", NULL);
+			if (fdt32_to_cpu(*php) == dev->node.np->phandle) {
+				if (fdt_get_resource(gd->fdt_blob, node, "reg", 0, &fres))
+					php = NULL;
+				break;
+			}
+		}
+
+		if (!php) {
+			dev_err(dev, "resource \"host\" not found\n");
+			return ret;
+		}
+
+		inno->host.start = fres.start;
+		inno->host.end = fres.end;
 	}
 
 	phy->dev = dev;
@@ -966,6 +985,12 @@ static const struct udevice_id inno_video_phy_ids[] = {
 		.compatible = "rockchip,rk3568-video-phy",
 		.data = (ulong)&rk3568_inno_video_phy_driver_data,
 	},
+#if defined(CONFIG_TARGET_ODROID_M1) || defined(CONFIG_TARGET_ODROID_M1S)
+	{
+		.compatible = "rockchip,rk3568-dsi-dphy",
+		.data = (ulong)&rk3568_inno_video_phy_driver_data,
+	},
+#endif
 	{}
 };
 
