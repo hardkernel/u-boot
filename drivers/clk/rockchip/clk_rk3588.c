@@ -1103,7 +1103,7 @@ static ulong rk3588_dclk_vop_get_clk(struct rk3588_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
-#define RK3588_VOP_PLL_LIMIT_FREQ 600000000
+#define RK3588_VOP_PLL_LIMIT_FREQ 594000000
 
 static ulong rk3588_dclk_vop_set_clk(struct rk3588_clk_priv *priv,
 				     ulong clk_id, ulong rate)
@@ -1164,6 +1164,8 @@ static ulong rk3588_dclk_vop_set_clk(struct rk3588_clk_priv *priv,
 				     ((div - 1) << div_shift));
 		} else {
 			div = DIV_ROUND_UP(RK3588_VOP_PLL_LIMIT_FREQ, rate);
+			if (div % 2)
+				div = div + 1;
 			rk_clrsetreg(&cru->clksel_con[conid],
 				     mask,
 				     DCLK_VOP_SRC_SEL_V0PLL << sel_shift |
@@ -2061,7 +2063,10 @@ static int rk3588_clk_probe(struct udevice *dev)
 {
 	struct rk3588_clk_priv *priv = dev_get_priv(dev);
 	int ret;
+
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 	struct clk clk;
+#endif
 
 	priv->sync_kernel = false;
 
@@ -2080,6 +2085,7 @@ static int rk3588_clk_probe(struct udevice *dev)
 	}
 #endif
 
+#if CONFIG_IS_ENABLED(CLK_SCMI)
 	ret = rockchip_get_scmi_clk(&clk.dev);
 	if (ret) {
 		printf("Failed to get scmi clk dev\n");
@@ -2110,6 +2116,7 @@ static int rk3588_clk_probe(struct udevice *dev)
 	ret = clk_set_rate(&clk, CPU_PVTPLL_HZ);
 	if (ret < 0)
 		printf("Failed to set cpub23\n");
+#endif
 #endif
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);

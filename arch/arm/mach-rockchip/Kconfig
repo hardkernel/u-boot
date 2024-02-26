@@ -846,7 +846,7 @@ config ROCKCHIP_HWID_DTB
 
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"
-	depends on RKIMG_BOOTLOADER
+	depends on (RKIMG_BOOTLOADER || SUPPORT_USBPLUG)
 	help
 	  This enable support to read/write vendor configuration data from/to
 	  this partition.
@@ -1100,6 +1100,33 @@ config PERSISTENT_RAM_SIZE
 	help
 	  This select linux pstore buffer size for U-Boot, the value must be
 	  set if PERSISTENT_RAM_ADDR != 0.
+
+config ROCKCHIP_MINIDUMP
+	bool "Minidump Save Linux Debug Data To Ram Elf"
+	default n
+	help
+	  This enable saving linux debug data to a reserved memory as a elf file.
+
+config ROCKCHIP_MINIDUMP_SMEM_BASE
+	hex "The base of share memory between Uboot and Linux"
+	default 0x1f0000
+	depends on ROCKCHIP_MINIDUMP
+	help
+	  This select the base address of share memory, which is behind PSTORE.
+
+config ROCKCHIP_MINIDUMP_MAX_ELF_SIZE
+	hex "The max size of minidump elf"
+	default 0x2000000
+	depends on ROCKCHIP_MINIDUMP
+	help
+	  This is used to judge the elf program size and section size.
+
+config ROCKCHIP_MINIDUMP_MAX_ENTRIES
+	hex "The max entries of minidump region"
+	default 0x200
+	depends on ROCKCHIP_MINIDUMP
+	help
+	  This sets the max entries of minidump region.
 
 source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"

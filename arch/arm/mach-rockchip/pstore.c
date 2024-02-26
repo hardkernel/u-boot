@@ -138,15 +138,18 @@ void putc_to_ram(const char c)
 	if (!rb || pstore_size == 0)
 		return;
 
+	if (rb->start >= pstore_size)
+		rb->start = 0;
+
 	dst = rb->data + rb->start;
 	*dst = c;
 
 	if (rb->size < pstore_size)
 		rb->size++;
+	else
+		rb->size = pstore_size;
 
 	rb->start++;
-	if (rb->start >= pstore_size)
-		rb->start = 0;
 }
 
 void puts_to_ram(const char *str)

@@ -7,6 +7,8 @@
 #ifndef __CONFIG_RV1106_COMMON_H
 #define __CONFIG_RV1106_COMMON_H
 
+#define CFG_CPUID_OFFSET		0xa
+
 #include "rockchip-common.h"
 
 #define COUNTER_FREQUENCY		24000000
@@ -29,7 +31,7 @@
 /* SPL */
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_TEXT_BASE		0x00000000
-#define CONFIG_SPL_MAX_SIZE		0x30000
+#define CONFIG_SPL_MAX_SIZE		0x28000
 #define CONFIG_SPL_BSS_START_ADDR	0x001fe000
 #define CONFIG_SPL_BSS_MAX_SIZE		0x20000
 #define CONFIG_SPL_STACK		0x001fe000
@@ -58,6 +60,9 @@
 #define CONFIG_SET_DFU_ALT_INFO
 #endif
 
+#ifdef CONFIG_ENV_MEM_LAYOUT
+#define ENV_MEM_LAYOUT_SETTINGS		CONFIG_ENV_MEM_LAYOUT_SETTINGS
+#else
 /*
  *   Image:  0 - 8M
  *  zImage:  8 - 12M
@@ -71,6 +76,7 @@
 	"kernel_addr_c=0x00808000\0"	\
 	"kernel_addr_r=0x00008000\0"	\
 	"ramdisk_addr_r=0x000e00000\0"
+#endif
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	ENV_MEM_LAYOUT_SETTINGS		\

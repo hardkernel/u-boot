@@ -1252,16 +1252,20 @@ int rockchip_crypto_cipher(struct udevice *dev, cipher_context *ctx,
 	case CRYPTO_DES:
 		ret = rk_crypto_des(dev, ctx->mode, ctx->key, ctx->key_len,
 				    ctx->iv, in, out, len, enc);
+		break;
 	case CRYPTO_AES:
 		ret = rk_crypto_aes(dev, ctx->mode,
 				    ctx->key, ctx->twk_key, ctx->key_len,
 				    ctx->iv, ctx->iv_len, in, out, len, enc);
+		break;
 	case CRYPTO_SM4:
 		ret = rk_crypto_sm4(dev, ctx->mode,
 				    ctx->key, ctx->twk_key, ctx->key_len,
 				    ctx->iv, ctx->iv_len, in, out, len, enc);
+		break;
 	default:
 		ret = -EINVAL;
+		break;
 	}
 
 	rk_crypto_disable_clk(dev);

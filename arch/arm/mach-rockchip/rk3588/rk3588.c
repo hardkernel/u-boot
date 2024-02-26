@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <dm.h>
+#include <fdt_support.h>
 #include <misc.h>
 #include <mmc.h>
 #include <spl.h>
@@ -58,10 +59,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define BUS_IOC_BASE			0xfd5f8000
 #define BUS_IOC_GPIO2A_IOMUX_SEL_L	0x40
+#define BUS_IOC_GPIO2A_IOMUX_SEL_H	0x44
 #define BUS_IOC_GPIO2B_IOMUX_SEL_L	0x48
+#define BUS_IOC_GPIO2B_IOMUX_SEL_H	0x4c
 #define BUS_IOC_GPIO2D_IOMUX_SEL_L	0x58
 #define BUS_IOC_GPIO2D_IOMUX_SEL_H	0x5c
 #define BUS_IOC_GPIO3A_IOMUX_SEL_L	0x60
+#define BUS_IOC_GPIO3A_IOMUX_SEL_H	0x64
+#define BUS_IOC_GPIO3C_IOMUX_SEL_H	0x74
 
 #define VCCIO3_5_IOC_BASE		0xfd5fa000
 #define IOC_VCCIO3_5_GPIO2A_DS_H	0x44
@@ -110,7 +115,13 @@ static struct mm_region rk3588_mem_map[] = {
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			 PTE_BLOCK_NON_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
-	},  {
+	}, {
+		.virt = 0x100000000UL,
+		.phys = 0x100000000UL,
+		.size = 0x700000000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			 PTE_BLOCK_INNER_SHARE
+	}, {
 		.virt = 0x900000000,
 		.phys = 0x900000000,
 		.size = 0x150000000,
@@ -844,6 +855,57 @@ void spl_board_storages_fixup(struct spl_image_loader *loader)
 }
 #endif
 
+void board_set_iomux(enum if_type if_type, int devnum, int routing)
+{
+	switch (if_type) {
+	case IF_TYPE_MMC:
+		/*
+		* set the emmc io drive strength:
+		* data and cmd: 50ohm
+		* clock: 25ohm
+		*/
+		writel(0x00770052, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
+		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
+		writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
+
+		/* set emmc iomux */
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+		writel(0xffff1111, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
+		break;
+
+	case IF_TYPE_MTD:
+		if (routing == 0) {
+			writel(0x000f0002, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_L);
+			writel(0xffff2222, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_L);
+			writel(0x00f00020, BUS_IOC_BASE + BUS_IOC_GPIO2D_IOMUX_SEL_H);
+			/* Set the fspi m0 io ds level to 55ohm */
+			writel(0x00070002, EMMC_IOC_BASE + EMMC_IOC_GPIO2A_DS_L);
+			writel(0x77772222, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_L);
+			writel(0x07000200, EMMC_IOC_BASE + EMMC_IOC_GPIO2D_DS_H);
+		} else if (routing == 1) {
+			writel(0xff003300, BUS_IOC_BASE + BUS_IOC_GPIO2A_IOMUX_SEL_H);
+			writel(0xf0ff3033, BUS_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_L);
+			writel(0x000f0003, BUS_IOC_BASE + BUS_IOC_GPIO2B_IOMUX_SEL_H);
+			/* Set the fspi m1 io ds level to 55ohm */
+			writel(0x33002200, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2A_DS_H);
+			writel(0x30332022, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_L);
+			writel(0x00030002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO2B_DS_H);
+		} else if (routing == 2) {
+			writel(0xffff5555, BUS_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_L);
+			writel(0x00f00050, BUS_IOC_BASE + BUS_IOC_GPIO3A_IOMUX_SEL_H);
+			writel(0x00ff0022, BUS_IOC_BASE + BUS_IOC_GPIO3C_IOMUX_SEL_H);
+			/* Set the fspi m2 io ds level to 55ohm */
+			writel(0x77772222, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_L);
+			writel(0x00700020, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3A_DS_H);
+			writel(0x00070002, VCCIO3_5_IOC_BASE + IOC_VCCIO3_5_GPIO3C_DS_H);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 #ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
@@ -939,6 +1001,41 @@ int arch_cpu_init(void)
 	writel(0x00030003, PMU1CRU_BASE + PMU1CRU_SOFTRST_CON04);
 
 	spl_board_sd_iomux_save();
+#elif defined(CONFIG_SUPPORT_USBPLUG)
+	int secure_reg;
+
+	/* Set the SDMMC eMMC crypto_ns FSPI access secure area */
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST5_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST13_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST13_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST21_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST21_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST26_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST26_REG);
+	secure_reg = readl(FIREWALL_DDR_BASE + FW_DDR_MST27_REG);
+	secure_reg &= 0xffff0000;
+	writel(secure_reg, FIREWALL_DDR_BASE + FW_DDR_MST27_REG);
+
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST5_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST5_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST13_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST13_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST21_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST21_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST26_REG);
+	secure_reg &= 0xffff;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST26_REG);
+	secure_reg = readl(FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
+	secure_reg &= 0xffff0000;
+	writel(secure_reg, FIREWALL_SYSMEM_BASE + FW_SYSM_MST27_REG);
 #else /* U-Boot */
 	/* uboot: config iomux */
 #ifdef CONFIG_ROCKCHIP_EMMC_IOMUX
@@ -966,10 +1063,22 @@ int arch_cpu_init(void)
 
 #define BAD_CPU(mask, n)	((mask) & (1 << (n)))
 #define BAD_RKVENC(mask, n)	((mask) & (1 << (n)))
+#define BAD_RKVDEC(mask, n)	((mask) & (1 << (n)))
 
 static void fdt_rm_path(void *blob, const char *path)
 {
 	fdt_del_node(blob, fdt_path_offset(blob, path));
+}
+
+static void fdt_rename_path(void *blob, const char *path, const char *name)
+{
+	int noffset;
+
+	noffset = fdt_path_offset(blob, path);
+	if (noffset < 0)
+		return;
+
+	fdt_set_name(blob, noffset, name);
 }
 
 static void fdt_rm_cooling_map(const void *blob, u8 cpu_mask)
@@ -1104,7 +1213,7 @@ static void fdt_rm_cpu(const void *blob, u8 cpu_mask)
 	}
 }
 
-static void fdt_rm_cpus(const void *blob, u8 cpu_mask)
+static void rk3582_fdt_rm_cpus(const void *blob, u8 cpu_mask)
 {
 	/*
 	 * policy:
@@ -1127,7 +1236,7 @@ static void fdt_rm_cpus(const void *blob, u8 cpu_mask)
 	fdt_rm_cpu(blob, cpu_mask);
 }
 
-static void fdt_rm_gpu(void *blob)
+static void rk3582_fdt_rm_gpu(void *blob)
 {
 	/*
 	 * policy:
@@ -1139,7 +1248,7 @@ static void fdt_rm_gpu(void *blob)
 	debug("rm: gpu\n");
 }
 
-static void fdt_rm_rkvdec01(void *blob)
+static void rk3582_fdt_rm_rkvdec01(void *blob)
 {
 	/*
 	 * policy:
@@ -1153,13 +1262,15 @@ static void fdt_rm_rkvdec01(void *blob)
 	debug("rm: rkvdec0, rkvdec1\n");
 }
 
-static void fdt_rm_rkvenc01(void *blob, u8 mask)
+static void rk3582_fdt_rm_rkvenc01(void *blob, u8 mask)
 {
 	/*
 	 * policy:
 	 *
 	 * 1. remove bad.
 	 * 2. if both of rkvenc0 and rkvenc1 are normal, remove rkvenc1 by default.
+	 * 3. disable '*-ccu' node
+	 * 4. rename '*-core@' node
 	 */
 	if (!BAD_RKVENC(mask, 0) && !BAD_RKVENC(mask, 1)) {
 		/* rkvenc1 */
@@ -1179,6 +1290,50 @@ static void fdt_rm_rkvenc01(void *blob, u8 mask)
 			debug("rm: rkvenv1\n");
 		}
 	}
+
+	do_fixup_by_path((void *)blob, "/rkvenc-ccu",
+			 "status", "disabled", sizeof("disabled"), 0);
+
+	/* rename node name if the node exist, actually only one exist  */
+	fdt_rename_path(blob, "/rkvenc-core@fdbd0000", "rkvenc@fdbd0000");
+	fdt_rename_path(blob, "/rkvenc-core@fdbe0000", "rkvenc@fdbe0000");
+}
+
+static void rk3583_fdt_rm_rkvdec01(void *blob, u8 mask)
+{
+	/*
+	 * policy:
+	 *
+	 * 1. remove bad.
+	 * 2. if both of rkvdec0 and rkvdec1 are normal, remove rkvdec1 by default.
+	 * 3. disable '*-ccu' node
+	 * 4. rename '*-core@' node
+	 */
+	if (!BAD_RKVDEC(mask, 0) && !BAD_RKVDEC(mask, 1)) {
+		/* rkvdec1 */
+		fdt_rm_path(blob, "/rkvdec-core@fdc48000");
+		fdt_rm_path(blob, "/iommu@fdc48700");
+		debug("rm: rkvdec1\n");
+	} else {
+		if (BAD_RKVDEC(mask, 0)) {
+			fdt_rm_path(blob, "/rkvdec-core@fdc38000");
+			fdt_rm_path(blob, "/iommu@fdc38700");
+			debug("rm: rkvdec0\n");
+
+		}
+		if (BAD_RKVDEC(mask, 1)) {
+			fdt_rm_path(blob, "/rkvdec-core@fdc48000");
+			fdt_rm_path(blob, "/iommu@fdc48700");
+			debug("rm: rkvdec1\n");
+		}
+	}
+
+	do_fixup_by_path((void *)blob, "/rkvdec-ccu@fdc30000",
+			 "status", "disabled", sizeof("disabled"), 0);
+
+	/* rename node name if the node exist, actually only one exist  */
+	fdt_rename_path(blob, "/rkvdec-core@fdc38000", "rkvdec@fdc38000");
+	fdt_rename_path(blob, "/rkvdec-core@fdc48000", "rkvdec@fdc48000");
 }
 
 #define CHIP_ID_OFF	2
@@ -1190,6 +1345,7 @@ static int fdt_fixup_modules(void *blob)
 	u8 ip_state[3];
 	u8 chip_id[2];
 	u8 rkvenc_mask;
+	u8 rkvdec_mask;
 	u8 cpu_mask;
 	int ret;
 
@@ -1208,8 +1364,9 @@ static int fdt_fixup_modules(void *blob)
 
 	debug("# chip: rk%02x%02x\n", chip_id[0], chip_id[1]);
 
-	/* only rk3582 goes further */
-	if (!(chip_id[0] == 0x35 && chip_id[1] == 0x82))
+	/* only rk3582/rk3583 goes further */
+	if (!(chip_id[0] == 0x35 && chip_id[1] == 0x82) &&
+	    !(chip_id[0] == 0x35 && chip_id[1] == 0x83))
 		return 0;
 
 	ret = misc_read(dev, IP_STATE_OFF, &ip_state, sizeof(ip_state));
@@ -1222,33 +1379,42 @@ static int fdt_fixup_modules(void *blob)
 	cpu_mask = ip_state[0];
 	/* ip_state[2]: bit0,2 */
 	rkvenc_mask = (ip_state[2] & 0x1) | ((ip_state[2] & 0x4) >> 1);
+	/* ip_state[1]: bit6,7 */
+	rkvdec_mask = (ip_state[1] & 0xc0) >> 6;
 #if 0
 	/* ip_state[1]: bit1~4 */
 	gpu_mask = (ip_state[1] & 0x1e) >> 1;
-	/* ip_state[1]: bit6,7 */
-	rkvdec_mask = (ip_state[1] & 0xc0) >> 6;
 #endif
-
-	debug("hwmask: 0x%02x, 0x%02x, 0x%02x\n", ip_state[0], ip_state[1], ip_state[2]);
-	debug("swmask: 0x%02x, 0x%02x\n", cpu_mask, rkvenc_mask);
+	debug("hw-mask: 0x%02x, 0x%02x, 0x%02x\n", ip_state[0], ip_state[1], ip_state[2]);
+	debug("sw-mask: 0x%02x, 0x%02x, 0x%02x\n", cpu_mask, rkvenc_mask, rkvdec_mask);
 
 	/*
-	 * RK3582 Policy: gpu/rkvdec are removed by default, the same for other
-	 * IP under some condition.
-	 *
-	 * So don't use pattern like "if (rkvenc_mask) then fdt_rm_rkvenc01()",
-	 * just go through all of them as this chip is rk3582.
-	 *
 	 *		FIXUP WARNING!
 	 *
 	 * The node delete changes the fdt structure, a node offset you already
 	 * got before maybe not right by now. Make sure always reading the node
 	 * offset exactly before you are going to use.
 	 */
-	fdt_rm_gpu(blob);
-	fdt_rm_rkvdec01(blob);
-	fdt_rm_rkvenc01(blob, rkvenc_mask);
-	fdt_rm_cpus(blob, cpu_mask);
+	if (chip_id[0] == 0x35 && chip_id[1] == 0x82) {
+		/*
+		 * RK3582 Policy: gpu/rkvdec are removed by default, the same for other
+		 * IP under some condition.
+		 *
+		 * So don't use pattern like "if (rkvenc_mask) then rk3582_fdt_rm_rkvenc01()",
+		 * just go through all of them as this chip is rk3582.
+		 */
+		rk3582_fdt_rm_gpu(blob);
+		rk3582_fdt_rm_rkvdec01(blob);
+		rk3582_fdt_rm_rkvenc01(blob, rkvenc_mask);
+		rk3582_fdt_rm_cpus(blob, cpu_mask);
+	} else if (chip_id[0] == 0x35 && chip_id[1] == 0x83) {
+		/*
+		 * RK3583 Policy: some rules are the same as rk3582.
+		 */
+		rk3583_fdt_rm_rkvdec01(blob, rkvdec_mask);
+		rk3582_fdt_rm_rkvenc01(blob, rkvenc_mask);
+		rk3582_fdt_rm_cpus(blob, cpu_mask);
+	}
 
 	return 0;
 }

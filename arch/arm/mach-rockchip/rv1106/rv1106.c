@@ -127,6 +127,9 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define GPIO4_IOC_GPIO4B_DS0		0x0030
 
+#define VICRU_BASE			0XFF3B4000
+#define VICRU_VISOFTRST_CON01		0xA04
+
 /* OS_REG1[2:0]: chip ver */
 #define CHIP_VER_REG			0xff020204
 #define CHIP_VER_MSK			0x7
@@ -495,21 +498,31 @@ int arch_cpu_init(void)
 #endif
 
 #endif
+	/* reset sdmmc0 to prevent power leak */
+	writel(0x30003000, VICRU_BASE + VICRU_VISOFTRST_CON01);
+	udelay(1);
+	writel(0x30000000, VICRU_BASE + VICRU_VISOFTRST_CON01);
+
 	return 0;
 }
 
 #ifdef CONFIG_SPL_BUILD
 int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 {
-	/* set the mcu uncache area, usually set the devices address */
-	writel(0xff000, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_START);
-	writel(0xffc00, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_END);
-	/* Reset the hp mcu */
-	writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
-	/* set the mcu addr */
-	writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
-	/* release the mcu */
-	writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+	if (!strcmp(id, "mcu0")) {
+		/* set the mcu uncache area, usually set the devices address */
+		writel(0xff000, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_START);
+		writel(0xffc00, CORE_GRF_BASE + CORE_GRF_CACHE_PERI_ADDR_END);
+		/* Reset the hp mcu */
+		writel(0x1e001e, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+		/* set the mcu addr */
+		writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
+		/* release the mcu */
+		writel(0x1e0000, CORECRU_BASE + CORECRU_CORESOFTRST_CON01);
+	} else if (!strcmp(id, "mcu1")) {
+		/* set the mcu addr */
+		writel(entry_point, CORE_SGRF_BASE + CORE_SGRF_HPMCU_BOOT_ADDR);
+	}
 
 	return 0;
 }

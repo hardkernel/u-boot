@@ -84,6 +84,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CRU_CLKSEL_CON68	0x210
 #define CRU_CLKSEL_CON69	0x214
 #define CRU_SOFTRST_CON02	0x308
+#define CRU_SOFTRST_CON10	0x328
 
 #define CRU_PMU_BASE		0xFF480000
 #define CRU_PMU_GPLL_CON0	0x10
@@ -743,6 +744,10 @@ int arch_cpu_init(void)
 	/* GPIO0_D6 pull down in default, pull up it for SPI Flash */
 	writel(((0x3 << 12) << 16) | (0x1 << 12), GRF1_GPIO0D_P);
 #endif
+	/* reset sdmmc0 to prevent power leak */
+	writel(0x00100010, CRU_BASE + CRU_SOFTRST_CON10);
+	udelay(1);
+	writel(0x00100000, CRU_BASE + CRU_SOFTRST_CON10);
 
 	return 0;
 }

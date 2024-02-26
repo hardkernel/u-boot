@@ -96,6 +96,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define VICAP_PRIORITY_REG	0xfee70108
 #define VOP_PRIORITY_REG	0xfee80008
 
+#define PCIE_SHAPING_REG	0xfeea0088
+
 #define QOS_PRIORITY_LEVEL(h, l)	((((h) & 7) << 8) | ((l) & 7))
 
 #ifdef CONFIG_ARM64
@@ -506,15 +508,17 @@ int fit_standalone_release(char *id, uintptr_t entry_point)
 	/* open bus m0 sclk / bus m0 hclk / bus m0 dclk */
 	writel(0x00070000, TOP_CRU_BASE + TOP_CRU_CM0_GATEMASK);
 
-	/* mcu_cache_peripheral_addr */
-	writel(0xa0000000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
+	/*
+	 * mcu_cache_peripheral_addr
+	 * The uncache area ranges from 0x7c00000 to 0xffb400000
+	 * and contains rpmsg shared memory
+	 */
+	writel(0x07c00000, SYS_GRF_BASE + SYS_GRF_SOC_CON5);
 	writel(0xffb40000, SYS_GRF_BASE + SYS_GRF_SOC_CON6);
 
 	sip_smc_mcu_config(ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID,
 			   ROCKCHIP_SIP_CONFIG_MCU_CODE_START_ADDR,
 			   0xffff0000 | (entry_point >> 16));
-	sip_smc_mcu_config(ROCKCHIP_SIP_CONFIG_BUSMCU_0_ID,
-			   ROCKCHIP_SIP_CONFIG_MCU_EXPERI_START_ADDR, 0xffffa000);
 
 	/* release dcache / icache / bus m0 jtag / bus m0 */
 	writel(0x03280000, TOP_CRU_BASE + TOP_CRU_SOFTRST_CON23);
@@ -531,7 +535,7 @@ static void qos_priority_init(void)
 	u32 delay;
 	u32 i;
 
-	/* power up vo,vi,gpu */
+	/* power up vo,vi */
 	rk_clrreg(PMU_BASE_ADDR + PMU2_PWR_GATE_SFTCON0,
 		  PD_VO_DWN_SFTENA | PD_VI_DWN_SFTENA);
 	delay = 1000;
@@ -604,6 +608,8 @@ static void qos_priority_init(void)
 	writel(QOS_PRIORITY_LEVEL(2, 2), DCF_PRIORITY_REG);
 	writel(QOS_PRIORITY_LEVEL(2, 2), DMA2DDR_PRIORITY_REG);
 	writel(QOS_PRIORITY_LEVEL(2, 2), PCIE_PRIORITY_REG);
+
+	writel(0x5, PCIE_SHAPING_REG);
 }
 
 int arch_cpu_init(void)
@@ -629,6 +635,13 @@ int arch_cpu_init(void)
 
 	/* Assert reset the pipe phy to save power and de-assert when in use */
 	writel(0x00030001, PIPEPHY_GRF_BASE + PIPEPHY_PIPE_CON5);
+
+#if defined(CONFIG_SUPPORT_USBPLUG)
+	/* Set emmc iomux */
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_L);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1A_IOMUX_SEL_H);
+	writel(0xffff1111, GPIO1_IOC_BASE + GPIO1B_IOMUX_SEL_L);
+#endif
 
 #if defined(CONFIG_ROCKCHIP_SFC)
 	/* Set the fspi to access ddr memory */

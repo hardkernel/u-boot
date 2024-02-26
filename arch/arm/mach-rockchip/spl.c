@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <version.h>
 #include <boot_rkimg.h>
 #include <android_bootloader_message.h>
 #include <debug_uart.h>
@@ -151,6 +152,41 @@ void *memset(void *s, int c, size_t count)
 }
 #endif
 
+#ifdef CONFIG_SPL_DM_RESET
+static void brom_download(void)
+{
+	if (gd->console_evt == 0x02) {
+		printf("ctrl+b: Bootrom download!\n");
+		writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+		do_reset(NULL, 0, 0, NULL);
+	}
+}
+#endif
+
+static void spl_hotkey_init(void)
+{
+	/* If disable console, skip getting uart reg */
+	if (!gd || gd->flags & GD_FLG_DISABLE_CONSOLE)
+		return;
+	if (!gd->have_console)
+		return;
+
+	/* serial uclass only exists when enable CONFIG_SPL_FRAMEWORK */
+#ifdef CONFIG_SPL_FRAMEWORK
+	if (serial_tstc()) {
+		gd->console_evt = serial_getc();
+#else
+	if (debug_uart_tstc()) {
+		gd->console_evt = debug_uart_getc();
+#endif
+		if (gd->console_evt <= 0x1a) /* 'z' */
+			printf("SPL Hotkey: ctrl+%c\n",
+				gd->console_evt + 'a' - 1);
+	}
+
+	return;
+}
+
 void board_init_f(ulong dummy)
 {
 #ifdef CONFIG_SPL_FRAMEWORK
@@ -199,10 +235,14 @@ void board_init_f(ulong dummy)
 	/* Some SoCs like rk3036 does not use any frame work */
 	sdram_init();
 #endif
-
+	/* Get hotkey and store in gd */
+	spl_hotkey_init();
+#ifdef CONFIG_SPL_DM_RESET
+	brom_download();
+#endif
 	arch_cpu_init();
 	rk_board_init_f();
-#ifdef CONFIG_SPL_RAM_DEVICE
+#if defined(CONFIG_SPL_RAM_DEVICE) && defined(CONFIG_SPL_PCIE_EP_SUPPORT)
 	rockchip_pcie_ep_get_firmware();
 #endif
 #if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM) && !defined(CONFIG_SPL_BOARD_INIT)
@@ -317,6 +357,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 {
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	atags_set_bootdev_by_spl_bootdevice(spl_image->boot_device);
+  #ifdef BUILD_SPL_TAG
+	atags_set_shared_fwver(FW_SPL, "spl-"BUILD_SPL_TAG);
+  #endif
 #endif
 	return;
 }
@@ -353,16 +396,27 @@ bool spl_is_low_power(void)
 
 void spl_next_stage(struct spl_image_info *spl)
 {
+	const char *reason[] = { "Recovery key", "Ctrl+c", "LowPwr", "Unknown" };
 	uint32_t reg_boot_mode;
+	int i = 0;
 
 	if (spl_rockchip_dnl_key_pressed()) {
+		i = 0;
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
-		return;
+		goto out;
 	}
+
+	if (gd->console_evt == 0x03) {
+		i = 1;
+		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		goto out;
+	}
+
 #ifdef CONFIG_SPL_DM_FUEL_GAUGE
 	if (spl_is_low_power()) {
+		i = 2;
 		spl->next_stage = SPL_NEXT_STAGE_UBOOT;
-		return;
+		goto out;
 	}
 #endif
 
@@ -376,11 +430,19 @@ void spl_next_stage(struct spl_image_info *spl)
 		spl->next_stage = SPL_NEXT_STAGE_KERNEL;
 		break;
 	default:
-		if ((reg_boot_mode & REBOOT_FLAG) != REBOOT_FLAG)
+		if ((reg_boot_mode & REBOOT_FLAG) != REBOOT_FLAG) {
 			spl->next_stage = SPL_NEXT_STAGE_KERNEL;
-		else
+		} else {
+			i = 3;
 			spl->next_stage = SPL_NEXT_STAGE_UBOOT;
+		}
 	}
+
+out:
+	if (spl->next_stage == SPL_NEXT_STAGE_UBOOT)
+		printf("Enter uboot reason: %s\n", reason[i]);
+
+	return;
 }
 #endif
 

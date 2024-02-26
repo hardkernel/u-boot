@@ -14,6 +14,9 @@
 #include <write_keybox.h>
 #include <linux/mtd/mtd.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <mmc.h>
+#include <stdlib.h>
+#include <usbplug.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -174,17 +177,39 @@ static int rkusb_do_reset(struct fsg_common *common,
 	return 0;
 }
 
+__weak bool rkusb_usb3_capable(void)
+{
+	return false;
+}
+
+static int rkusb_do_switch_to_usb3(struct fsg_common *common,
+				   struct fsg_buffhd *bh)
+{
+	g_dnl_set_serialnumber((char *)&common->cmnd[1]);
+	rkusb_switch_to_usb3_enable(true);
+	bh->state = BUF_STATE_EMPTY;
+
+	return 0;
+}
+
 static int rkusb_do_test_unit_ready(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
 	struct blk_desc *desc = &ums[common->lun].block_dev;
+	u32 usb_trb_size;
+	u16 residue;
 
 	if ((desc->if_type == IF_TYPE_MTD && desc->devnum == BLK_MTD_SPI_NOR) ||
 	    desc->if_type == IF_TYPE_SPINOR)
-		common->residue = 0x03 << 24; /* 128KB Max block xfer for SPI Nor */
+		residue = 0x03; /* 128KB Max block xfer for SPI Nor */
+	else if (common->cmnd[1] == 0xf7 && FSG_BUFLEN >= 0x400000)
+		residue = 0x0a; /* Max block xfer for USB DWC3 */
 	else
-		common->residue = 0x06 << 24; /* Max block xfer support from host */
+		residue = 0x06; /* Max block xfer support from host */
 
+	usb_trb_size = (1 << residue) * 4096;
+	common->usb_trb_size = min(usb_trb_size, FSG_BUFLEN);
+	common->residue = residue << 24;
 	common->data_dir = DATA_DIR_NONE;
 	bh->state = BUF_STATE_EMPTY;
 
@@ -475,6 +500,7 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 			data  = bh->buf + sizeof(struct vendor_item);
 
 			if (!type) {
+				#ifndef CONFIG_SUPPORT_USBPLUG
 				if (vhead->id == HDCP_14_HDMI_ID ||
 				    vhead->id == HDCP_14_HDMIRX_ID ||
 				    vhead->id == HDCP_14_DP_ID) {
@@ -484,6 +510,7 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 						return -EIO;
 					}
 				}
+				#endif
 
 				/* Vendor storage */
 				rc = vendor_storage_write(vhead->id,
@@ -639,6 +666,31 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 #else
 			printf("Please enable CONFIG_RK_AVB_LIBAVB_USER!\n");
 #endif
+		} else if (type == 3) {
+			/* efuse or otp*/
+#ifdef CONFIG_OPTEE_CLIENT
+			if (vhead->id == 120) {
+				u8 value;
+				char *written_str = "key is written!";
+				char *not_written_str = "key is not written!";
+				if (trusty_ta_encryption_key_is_written(&value) != 0) {
+					printf("trusty_ta_encryption_key_is_written error!");
+					return -EIO;
+				}
+				if (value) {
+					memcpy(data, written_str, strlen(written_str));
+					vhead->size = strlen(written_str);
+				} else {
+					memcpy(data, not_written_str, strlen(not_written_str));
+					vhead->size = strlen(not_written_str);
+				}
+			} else {
+				printf("Unknown tag\n");
+				return -EIO;
+			}
+#else
+			printf("Please enable CONFIG_OPTEE_CLIENT\n");
+#endif
 		} else {
 			return -EINVAL;
 		}
@@ -653,6 +705,66 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 	return -EIO; /* No default reply */
 }
 #endif
+
+static int rkusb_do_switch_storage(struct fsg_common *common)
+{
+	enum if_type type, cur_type = ums[common->lun].block_dev.if_type;
+	int devnum, cur_devnum = ums[common->lun].block_dev.devnum;
+	struct blk_desc *block_dev;
+	u32 media = BOOT_TYPE_UNKNOWN;
+
+	media = 1 << common->cmnd[1];
+
+	switch (media) {
+#ifdef CONFIG_MMC
+	case BOOT_TYPE_EMMC:
+		type = IF_TYPE_MMC;
+		devnum = 0;
+		mmc_initialize(gd->bd);
+		break;
+#endif
+	case BOOT_TYPE_MTD_BLK_NAND:
+		type = IF_TYPE_MTD;
+		devnum = 0;
+		break;
+	case BOOT_TYPE_MTD_BLK_SPI_NAND:
+		type = IF_TYPE_MTD;
+		devnum = 1;
+		break;
+	case BOOT_TYPE_MTD_BLK_SPI_NOR:
+		type = IF_TYPE_MTD;
+		devnum = 2;
+		break;
+	default:
+		printf("Bootdev 0x%x is not support\n", media);
+		return -ENODEV;
+	}
+
+	if (cur_type == type && cur_devnum == devnum)
+		return 0;
+
+#if CONFIG_IS_ENABLED(SUPPORT_USBPLUG)
+	block_dev = usbplug_blk_get_devnum_by_type(type, devnum);
+#else
+	block_dev = blk_get_devnum_by_type(type, devnum);
+#endif
+	if (!block_dev) {
+		printf("Bootdev if_type=%d num=%d toggle fail\n", type, devnum);
+		return -ENODEV;
+	}
+
+	ums[common->lun].num_sectors = block_dev->lba;
+	ums[common->lun].block_dev = *block_dev;
+
+	printf("RKUSB: LUN %d, dev %d, hwpart %d, sector %#x, count %#x\n",
+	       0,
+	       ums[common->lun].block_dev.devnum,
+	       ums[common->lun].block_dev.hwpart,
+	       ums[common->lun].start_sector,
+	       ums[common->lun].num_sectors);
+
+	return 0;
+}
 
 static int rkusb_do_get_storage_info(struct fsg_common *common,
 				     struct fsg_buffhd *bh)
@@ -749,6 +861,11 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 #endif
 	buf[1] |= BIT(1); /* Switch Storage */
 	buf[1] |= BIT(2); /* LBAwrite Parity */
+
+	if (rkusb_usb3_capable() && !rkusb_force_usb2_enabled())
+		buf[1] |= BIT(4);
+	else
+		buf[1] &= ~BIT(4);
 
 	/* Set data xfer size */
 	common->residue = len;
@@ -857,6 +974,10 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		rc = RKUSB_RC_FINISHED;
 		break;
 #endif
+	case RKUSB_SWITCH_STORAGE:
+		*reply = rkusb_do_switch_storage(common);
+		rc = RKUSB_RC_FINISHED;
+		break;
 	case RKUSB_GET_STORAGE_MEDIA:
 		*reply = rkusb_do_get_storage_info(common, bh);
 		rc = RKUSB_RC_FINISHED;
@@ -864,6 +985,11 @@ static int rkusb_cmd_process(struct fsg_common *common,
 
 	case RKUSB_READ_CAPACITY:
 		*reply = rkusb_do_read_capacity(common, bh);
+		rc = RKUSB_RC_FINISHED;
+		break;
+
+	case RKUSB_SWITCH_USB3:
+		*reply = rkusb_do_switch_to_usb3(common, bh);
 		rc = RKUSB_RC_FINISHED;
 		break;
 

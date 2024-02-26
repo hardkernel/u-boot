@@ -76,6 +76,61 @@ struct public_phy_data {
 	bool phy_init;
 };
 
+char* rockchip_get_output_if_name(u32 output_if, char *name)
+{
+	if (output_if & VOP_OUTPUT_IF_RGB)
+		strcat(name, " RGB");
+	if (output_if & VOP_OUTPUT_IF_BT1120)
+		strcat(name, " BT1120");
+	if (output_if & VOP_OUTPUT_IF_BT656)
+		strcat(name, " BT656");
+	if (output_if & VOP_OUTPUT_IF_LVDS0)
+		strcat(name, " LVDS0");
+	if (output_if & VOP_OUTPUT_IF_LVDS1)
+		strcat(name, " LVDS1");
+	if (output_if & VOP_OUTPUT_IF_MIPI0)
+		strcat(name, " MIPI0");
+	if (output_if & VOP_OUTPUT_IF_MIPI1)
+		strcat(name, " MIPI1");
+	if (output_if & VOP_OUTPUT_IF_eDP0)
+		strcat(name, " eDP0");
+	if (output_if & VOP_OUTPUT_IF_eDP1)
+		strcat(name, " eDP1");
+	if (output_if & VOP_OUTPUT_IF_DP0)
+		strcat(name, " DP0");
+	if (output_if & VOP_OUTPUT_IF_DP1)
+		strcat(name, " DP1");
+	if (output_if & VOP_OUTPUT_IF_HDMI0)
+		strcat(name, " HDMI0");
+	if (output_if & VOP_OUTPUT_IF_HDMI1)
+		strcat(name, " HDMI1");
+
+	return name;
+}
+
+u32 rockchip_drm_get_cycles_per_pixel(u32 bus_format)
+{
+	switch (bus_format) {
+	case MEDIA_BUS_FMT_RGB565_1X16:
+	case MEDIA_BUS_FMT_RGB666_1X18:
+	case MEDIA_BUS_FMT_RGB888_1X24:
+	case MEDIA_BUS_FMT_RGB666_1X24_CPADHI:
+		return 1;
+	case MEDIA_BUS_FMT_RGB565_2X8_LE:
+	case MEDIA_BUS_FMT_BGR565_2X8_LE:
+		return 2;
+	case MEDIA_BUS_FMT_RGB666_3X6:
+	case MEDIA_BUS_FMT_RGB888_3X8:
+	case MEDIA_BUS_FMT_BGR888_3X8:
+		return 3;
+	case MEDIA_BUS_FMT_RGB888_DUMMY_4X8:
+	case MEDIA_BUS_FMT_BGR888_DUMMY_4X8:
+		return 4;
+	default:
+		return 1;
+	}
+}
+
 int rockchip_get_baseparameter(void)
 {
 	struct blk_desc *dev_desc;
@@ -998,7 +1053,9 @@ static int display_logo(struct display_state *state)
 	}
 
 	display_check(state);
-	display_set_plane(state);
+	ret = display_set_plane(state);
+	if (ret)
+		return ret;
 	display_enable(state);
 
 	return 0;
@@ -1283,16 +1340,36 @@ int rockchip_show_bmp(const char *bmp)
 int rockchip_show_logo(void)
 {
 	struct display_state *s;
+	struct display_state *ms = NULL;
 	int ret = 0;
+	int count = 0;
 
 	list_for_each_entry(s, &rockchip_display_list, head) {
 		s->logo.mode = s->logo_mode;
-		if (load_bmp_logo(&s->logo, s->ulogo_name))
+		if (load_bmp_logo(&s->logo, s->ulogo_name)) {
 			printf("failed to display uboot logo\n");
-		else
+		} else {
 			ret = display_logo(s);
-
+			if (ret == -EAGAIN)
+				ms = s;
+		}
 		/* Load kernel bmp in rockchip_display_fixup() later */
+	}
+
+	/*
+	 * For rk3566, the mirror win must be enabled after the related
+	 * source win. If error code is EAGAIN, the mirror win may be
+	 * first enabled unexpectedly, and we will move the enabling process
+	 * as follows.
+	 */
+	if (ms) {
+		while (count < 5) {
+			ret = display_logo(ms);
+			if (ret != -EAGAIN)
+				break;
+			mdelay(10);
+			count++;
+		}
 	}
 
 	return ret;
@@ -1332,7 +1409,7 @@ enum {
 	PORT_DIR_OUT,
 };
 
-static const struct device_node *rockchip_of_graph_get_port_by_id(ofnode node, int id)
+const struct device_node *rockchip_of_graph_get_port_by_id(ofnode node, int id)
 {
 	ofnode ports, port;
 	u32 reg;
@@ -1589,6 +1666,7 @@ static struct rockchip_connector *rockchip_get_split_connector(struct rockchip_c
 	int ret;
 
 	split_mode = ofnode_read_bool(conn->dev->node, "split-mode");
+	split_mode |= ofnode_read_bool(conn->dev->node, "dual-channel");
 	if (!split_mode)
 		return NULL;
 
@@ -1601,6 +1679,9 @@ static struct rockchip_connector *rockchip_get_split_connector(struct rockchip_c
 		break;
 	case DRM_MODE_CONNECTOR_HDMIA:
 		conn_name = "hdmi";
+		break;
+	case DRM_MODE_CONNECTOR_LVDS:
+		conn_name = "lvds";
 		break;
 	default:
 		return NULL;
@@ -2013,7 +2094,8 @@ void rockchip_display_fixup(void *blob)
 			continue;
 		}
 
-		if (s->conn_state.secondary) {
+		if (s->conn_state.secondary &&
+		    s->conn_state.secondary->type != DRM_MODE_CONNECTOR_LVDS) {
 			s->conn_state.mode.clock *= 2;
 			s->conn_state.mode.hdisplay *= 2;
 		}
@@ -2064,27 +2146,27 @@ void rockchip_display_fixup(void *blob)
 			FDT_SET_U32("bcsh,hue", s->conn_state.disp_info->bcsh_info.hue);
 
 			if (!strncasecmp(cacm_header, "CACM", 4)) {
-				FDT_SET_U32("post_csc,hue",
+				FDT_SET_U32("post-csc,hue",
 					    s->conn_state.disp_info->csc_info.hue);
-				FDT_SET_U32("post_csc,saturation",
+				FDT_SET_U32("post-csc,saturation",
 					    s->conn_state.disp_info->csc_info.saturation);
-				FDT_SET_U32("post_csc,contrast",
+				FDT_SET_U32("post-csc,contrast",
 					    s->conn_state.disp_info->csc_info.contrast);
-				FDT_SET_U32("post_csc,brightness",
+				FDT_SET_U32("post-csc,brightness",
 					    s->conn_state.disp_info->csc_info.brightness);
-				FDT_SET_U32("post_csc,r_gain",
+				FDT_SET_U32("post-csc,r-gain",
 					    s->conn_state.disp_info->csc_info.r_gain);
-				FDT_SET_U32("post_csc,g_gain",
+				FDT_SET_U32("post-csc,g-gain",
 					    s->conn_state.disp_info->csc_info.g_gain);
-				FDT_SET_U32("post_csc,b_gain",
+				FDT_SET_U32("post-csc,b-gain",
 					    s->conn_state.disp_info->csc_info.b_gain);
-				FDT_SET_U32("post_csc,r_offset",
+				FDT_SET_U32("post-csc,r-offset",
 					    s->conn_state.disp_info->csc_info.r_offset);
-				FDT_SET_U32("post_csc,g_offset",
+				FDT_SET_U32("post-csc,g-offset",
 					    s->conn_state.disp_info->csc_info.g_offset);
-				FDT_SET_U32("post_csc,b_offset",
+				FDT_SET_U32("post-csc,b-offset",
 					    s->conn_state.disp_info->csc_info.b_offset);
-				FDT_SET_U32("post_csc,csc_enable",
+				FDT_SET_U32("post-csc,enable",
 					    s->conn_state.disp_info->csc_info.csc_enable);
 			}
 		}

@@ -283,11 +283,11 @@ static const struct reg_sequence rk3588_udphy_init_sequence[] = {
 	{0x0D2C, 0xFF}, {0x1D2C, 0xFF},
 	{0x0D34, 0x0F}, {0x1D34, 0x0F},
 	{0x08FC, 0x2A}, {0x0914, 0x28},
-	{0x0A30, 0x03}, {0x0E38, 0x05},
+	{0x0A30, 0x03}, {0x0E38, 0x03},
 	{0x0ECC, 0x27}, {0x0ED0, 0x22},
 	{0x0ED4, 0x26}, {0x18FC, 0x2A},
 	{0x1914, 0x28}, {0x1A30, 0x03},
-	{0x1E38, 0x05}, {0x1ECC, 0x27},
+	{0x1E38, 0x03}, {0x1ECC, 0x27},
 	{0x1ED0, 0x22}, {0x1ED4, 0x26},
 	{0x0048, 0x0F}, {0x0060, 0x3C},
 	{0x0064, 0xF7}, {0x006C, 0x20},
@@ -551,11 +551,10 @@ static int udphy_disable(struct rockchip_udphy *udphy)
 
 static int udphy_parse_lane_mux_data(struct rockchip_udphy *udphy, struct udevice *dev)
 {
-	const struct device_node *np = ofnode_to_np(dev->node);
-	struct property *prop;
+	const void *prop;
 	int ret, i, len, num_lanes;
 
-	prop = of_find_property(np, "rockchip,dp-lane-mux", &len);
+	prop = dev_read_prop(dev, "rockchip,dp-lane-mux", &len);
 	if (!prop) {
 		dev_dbg(dev, "failed to find dp lane mux, following dp alt mode\n");
 		udphy->mode = UDPHY_MODE_USB;
@@ -569,7 +568,7 @@ static int udphy_parse_lane_mux_data(struct rockchip_udphy *udphy, struct udevic
 		return -EINVAL;
 	}
 
-	ret = of_read_u32_array(np, "rockchip,dp-lane-mux", udphy->dp_lane_sel, num_lanes);
+	ret = dev_read_u32_array(dev, "rockchip,dp-lane-mux", udphy->dp_lane_sel, num_lanes);
 	if (ret) {
 		dev_err(dev, "get dp lane mux failed\n");
 		return -EINVAL;
@@ -887,6 +886,7 @@ int rockchip_u3phy_uboot_init(void)
 {
 	struct udevice *udev;
 	struct rockchip_udphy *udphy;
+	unsigned int val;
 	int ret;
 
 	ret = uclass_get_device_by_driver(UCLASS_PHY,
@@ -900,23 +900,45 @@ int rockchip_u3phy_uboot_init(void)
 	/* DP only or high-speed, disable U3 port */
 	udphy = dev_get_priv(udev->parent);
 	if (!(udphy->mode & UDPHY_MODE_USB) || udphy->hs) {
-		udphy_u3_port_disable(udphy, true);
-		return 0;
+		pr_err("%s: udphy mode not support usb3\n", __func__);
+		goto disable_u3;
 	}
 
-	return udphy_power_on(udphy, UDPHY_MODE_USB);
+	udphy->flip = false;
+	upphy_set_typec_default_mapping(udphy);
+
+	ret =  udphy_power_on(udphy, UDPHY_MODE_USB);
+	if (ret) {
+		pr_err("%s: udphy power on failed: %d\n", __func__, ret);
+		goto disable_u3;
+	}
+
+	ret = regmap_read_poll_timeout(udphy->pma_regmap,
+				       TRSV_LN0_MON_RX_CDR_DONE_OFFSET, val,
+				       val & TRSV_LN0_MON_RX_CDR_LOCK_DONE,
+				       200, 100);
+	if (ret) {
+		pr_err("%s: udphy rx cdr lock timeout\n", __func__);
+		goto disable_u3;
+	}
+
+	return 0;
+
+disable_u3:
+	udphy_u3_port_disable(udphy, true);
+
+	return -EOPNOTSUPP;
 }
 
 static int rockchip_udphy_probe(struct udevice *dev)
 {
-	const struct device_node *np = ofnode_to_np(dev->node);
 	struct rockchip_udphy *udphy = dev_get_priv(dev);
 	const struct rockchip_udphy_cfg *phy_cfgs;
 	int id, ret;
 
 	udphy->dev = dev;
 
-	id = of_alias_get_id(np, "usbdp");
+	id = of_alias_get_id(ofnode_to_np(dev->node), "usbdp");
 	if (id < 0)
 		id = 0;
 	udphy->id = id;

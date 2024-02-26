@@ -193,6 +193,24 @@
 	status = "okay";
 };
 
+&usb_grf{
+	u-boot,dm-pre-reloc;
+};
+
+&usbdpphy0_grf{
+	u-boot,dm-pre-reloc;
+};
+
+&usbdp_phy0{
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usbdp_phy0_u3{
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 /* Support SPL-PINCTRL:
  * 1. ioc
  * 2. pinctrl(sdmmc)

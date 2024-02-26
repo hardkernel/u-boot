@@ -884,7 +884,9 @@ config SPL_OPTEE
 
 config SPL_AB
 	bool "Support AB system boot"
-	depends on SPL && SPL_EFI_PARTITION
+	depends on SPL && SPL_LIBDISK_SUPPORT
+	select SPL_MTD_WRITE if SPL_MTD_SUPPORT
+	select SPL_MMC_WRITE if SPL_MMC_SUPPORT
 	help
 	  Enable this config to support AB system boot.
 

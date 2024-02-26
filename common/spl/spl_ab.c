@@ -284,6 +284,35 @@ static int spl_save_metadata_if_changed(struct blk_desc *dev_desc,
 	return 0;
 }
 
+static void spl_slot_set_unbootable(AvbABSlotData* slot)
+{
+	slot->priority = 0;
+	slot->tries_remaining = 0;
+	slot->successful_boot = 0;
+}
+
+/* Ensure all unbootable and/or illegal states are marked as the
+ * canonical 'unbootable' state, e.g. priority=0, tries_remaining=0,
+ * and successful_boot=0.
+ */
+static void spl_slot_normalize(AvbABSlotData* slot)
+{
+	if (slot->priority > 0) {
+		if (slot->tries_remaining == 0 && !slot->successful_boot) {
+			/* We've exhausted all tries -> unbootable. */
+			spl_slot_set_unbootable(slot);
+		}
+		if (slot->tries_remaining > 0 && slot->successful_boot) {
+			/* Illegal state - avb_ab_mark_slot_successful() and so on
+			 * will clear tries_remaining when setting successful_boot.
+			 */
+			spl_slot_set_unbootable(slot);
+		}
+	} else {
+		spl_slot_set_unbootable(slot);
+	}
+}
+
 /* If verify fail in a/b system, then decrease 1. */
 int spl_ab_decrease_tries(struct blk_desc *dev_desc)
 {
@@ -308,6 +337,13 @@ int spl_ab_decrease_tries(struct blk_desc *dev_desc)
 		goto out;
 
 	memcpy(&ab_data_orig, &ab_data, sizeof(AvbABData));
+
+	/* Ensure data is normalized, e.g. illegal states will be marked as
+	 * unbootable and all unbootable states are represented with
+	 * (priority=0, tries_remaining=0, successful_boot=0).
+	 */
+	spl_slot_normalize(&ab_data.slots[0]);
+	spl_slot_normalize(&ab_data.slots[1]);
 
 	/* ... and decrement tries remaining, if applicable. */
 	if (!ab_data.slots[slot_index].successful_boot &&

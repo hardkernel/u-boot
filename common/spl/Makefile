@@ -25,10 +25,10 @@ endif
 ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_$(SPL_TPL_)BOOTROM_SUPPORT) += spl_bootrom.o
 ifdef CONFIG_SPL_KERNEL_BOOT_PREBUILT
-ifdef CONFIG_ARM64
-obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit_tb_arm64.o
-else
-obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit_tb_arm32.o
+ifeq ($(CONFIG_$(SPL_TPL_)LOAD_FIT),y)
+obj-$(CONFIG_ARM64) += spl_fit_tb_arm64.o
+obj-$(CONFIG_ROCKCHIP_RV1106) += spl_fit_tb_rv1106.o
+obj-$(CONFIG_ROCKCHIP_RV1126) += spl_fit_tb_rv1126.o
 endif
 else
 obj-$(CONFIG_$(SPL_TPL_)LOAD_FIT) += spl_fit.o

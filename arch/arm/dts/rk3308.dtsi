@@ -300,7 +300,7 @@
 		#pwm-cells = <3>;
 		pinctrl-names = "active";
 		pinctrl-0 = <&pwm0_pin>;
-		clocks = <&cru SCLK_PWM>, <&cru PCLK_PWM>;
+		clocks = <&cru SCLK_PWM0>, <&cru PCLK_PWM>;
 		clock-names = "pwm", "pclk";
 		status = "disabled";
 	};
@@ -311,7 +311,7 @@
 		#pwm-cells = <3>;
 		pinctrl-names = "active";
 		pinctrl-0 = <&pwm1_pin>;
-		clocks = <&cru SCLK_PWM>, <&cru PCLK_PWM>;
+		clocks = <&cru SCLK_PWM0>, <&cru PCLK_PWM>;
 		clock-names = "pwm", "pclk";
 		status = "disabled";
 	};
@@ -322,7 +322,7 @@
 		#pwm-cells = <3>;
 		pinctrl-names = "active";
 		pinctrl-0 = <&pwm2_pin>;
-		clocks = <&cru SCLK_PWM>, <&cru PCLK_PWM>;
+		clocks = <&cru SCLK_PWM0>, <&cru PCLK_PWM>;
 		clock-names = "pwm", "pclk";
 		status = "disabled";
 	};
@@ -333,7 +333,7 @@
 		#pwm-cells = <3>;
 		pinctrl-names = "active";
 		pinctrl-0 = <&pwm3_pin>;
-		clocks = <&cru SCLK_PWM>, <&cru PCLK_PWM>;
+		clocks = <&cru SCLK_PWM0>, <&cru PCLK_PWM>;
 		clock-names = "pwm", "pclk";
 		status = "disabled";
 	};

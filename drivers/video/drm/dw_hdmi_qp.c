@@ -18,6 +18,7 @@
 #include <linux/media-bus-format.h>
 #include <linux/dw_hdmi.h>
 #include <asm/io.h>
+#include "rockchip_bridge.h"
 #include "rockchip_display.h"
 #include "rockchip_crtc.h"
 #include "rockchip_connector.h"
@@ -1111,9 +1112,15 @@ int dw_hdmi_detect_hotplug(struct dw_hdmi_qp *hdmi,
 			   struct display_state *state)
 {
 	struct connector_state *conn_state = &state->conn_state;
+	struct rockchip_connector *conn = conn_state->connector;
 	int ret;
 
 	ret = hdmi->phy.ops->read_hpd(hdmi->rk_hdmi);
+	if (!ret) {
+		if (conn->bridge)
+			ret = rockchip_bridge_detect(conn->bridge);
+	}
+
 	if (ret || state->force_output) {
 		if (!hdmi->id)
 			conn_state->output_if |= VOP_OUTPUT_IF_HDMI0;
@@ -1209,102 +1216,16 @@ void rockchip_dw_hdmi_qp_deinit(struct rockchip_connector *conn, struct display_
 		free(hdmi);
 }
 
-int rockchip_dw_hdmi_qp_prepare(struct rockchip_connector *conn, struct display_state *state)
-{
-	return 0;
-}
-
-static void dw_hdmi_disable(struct rockchip_connector *conn, struct dw_hdmi_qp *hdmi,
-			    struct display_state *state)
-{
-	if (hdmi->phy.enabled) {
-		hdmi->phy.ops->disable(conn, hdmi->rk_hdmi, state);
-		hdmi->phy.enabled = false;
-	}
-}
-
-int rockchip_dw_hdmi_qp_enable(struct rockchip_connector *conn, struct display_state *state)
+static void rockchip_dw_hdmi_qp_config_output(struct rockchip_connector *conn,
+					      struct display_state *state)
 {
 	struct connector_state *conn_state = &state->conn_state;
 	struct drm_display_mode *mode = &conn_state->mode;
 	struct dw_hdmi_qp *hdmi = conn->data;
-
-	if (!hdmi)
-		return -EFAULT;
-
-	/* Store the display mode for plugin/DKMS poweron events */
-	memcpy(&hdmi->previous_mode, mode, sizeof(hdmi->previous_mode));
-
-	dw_hdmi_setup(hdmi, conn, mode, state);
-
-	return 0;
-}
-
-int rockchip_dw_hdmi_qp_disable(struct rockchip_connector *conn, struct display_state *state)
-{
-	struct dw_hdmi_qp *hdmi = conn->data;
-
-	dw_hdmi_disable(conn, hdmi, state);
-	return 0;
-}
-
-static void rockchip_dw_hdmi_qp_mode_valid(struct dw_hdmi_qp *hdmi)
-{
-	struct hdmi_edid_data *edid_data = &hdmi->edid_data;
-	int i;
-
-	for (i = 0; i < edid_data->modes; i++) {
-		if (edid_data->mode_buf[i].invalid)
-			continue;
-		if (edid_data->mode_buf[i].clock <= 25000)
-			edid_data->mode_buf[i].invalid = true;
-	}
-}
-
-static int _rockchip_dw_hdmi_qp_get_timing(struct rockchip_connector *conn,
-					   struct display_state *state, int edid_status)
-{
-	int i;
-	struct connector_state *conn_state = &state->conn_state;
-	struct drm_display_mode *mode = &conn_state->mode;
-	struct dw_hdmi_qp *hdmi = conn->data;
-	struct edid *edid = (struct edid *)conn_state->edid;
 	unsigned int bus_format;
 	unsigned long enc_out_encoding;
 	struct overscan *overscan = &conn_state->overscan;
-	const u8 def_modes_vic[6] = {4, 16, 2, 17, 31, 19};
 
-	if (!hdmi)
-		return -EFAULT;
-
-	if (!edid_status) {
-		hdmi->sink_is_hdmi =
-			drm_detect_hdmi_monitor(edid);
-		hdmi->sink_has_audio = drm_detect_monitor_audio(edid);
-		edid_status = drm_add_edid_modes(&hdmi->edid_data, conn_state->edid);
-	}
-	if (edid_status < 0) {
-		hdmi->sink_is_hdmi = true;
-		hdmi->sink_has_audio = true;
-		do_cea_modes(&hdmi->edid_data, def_modes_vic,
-			     sizeof(def_modes_vic));
-		hdmi->edid_data.preferred_mode = &hdmi->edid_data.mode_buf[0];
-		printf("failed to get edid\n");
-	}
-	drm_rk_filter_whitelist(&hdmi->edid_data);
-	rockchip_dw_hdmi_qp_mode_valid(hdmi);
-	drm_mode_max_resolution_filter(&hdmi->edid_data,
-				       &state->crtc_state.max_output);
-	if (!drm_mode_prune_invalid(&hdmi->edid_data)) {
-		printf("can't find valid hdmi mode\n");
-		return -EINVAL;
-	}
-
-	for (i = 0; i < hdmi->edid_data.modes; i++)
-		hdmi->edid_data.mode_buf[i].vrefresh =
-			drm_mode_vrefresh(&hdmi->edid_data.mode_buf[i]);
-
-	drm_mode_sort(&hdmi->edid_data);
 	dw_hdmi_qp_selete_output(&hdmi->edid_data, conn, &bus_format,
 				 overscan, hdmi->dev_type,
 				 hdmi->output_bus_format_rgb, hdmi->rk_hdmi,
@@ -1353,6 +1274,132 @@ static int _rockchip_dw_hdmi_qp_get_timing(struct rockchip_connector *conn,
 		conn_state->color_space = V4L2_COLORSPACE_REC709;
 	else
 		conn_state->color_space = V4L2_COLORSPACE_SMPTE170M;
+}
+
+int rockchip_dw_hdmi_qp_prepare(struct rockchip_connector *conn, struct display_state *state)
+{
+	struct connector_state *conn_state = &state->conn_state;
+	struct drm_display_mode *mode = &conn_state->mode;
+	struct dw_hdmi_qp *hdmi = conn->data;
+
+	if (!hdmi->edid_data.preferred_mode && conn->bridge) {
+		drm_add_hdmi_modes(&hdmi->edid_data, mode);
+		drm_mode_sort(&hdmi->edid_data);
+		hdmi->sink_is_hdmi = true;
+		hdmi->sink_has_audio = true;
+		rockchip_dw_hdmi_qp_config_output(conn, state);
+	}
+
+	return 0;
+}
+
+int rockchip_dw_hdmi_qp_check(struct rockchip_connector *conn, struct display_state *state)
+{
+	struct crtc_state *cstate = &state->crtc_state;
+	struct rockchip_crtc *crtc = cstate->crtc;
+	struct dw_hdmi_qp *hdmi = conn->data;
+
+	/* clear hdmi uboot logo on flag */
+	if (crtc->splice_mode && cstate->crtc_id == 1)
+		hdmi_writel(hdmi, 0, I2CM_INTERFACE_CONTROL0);
+
+	return 0;
+}
+
+static void dw_hdmi_disable(struct rockchip_connector *conn, struct dw_hdmi_qp *hdmi,
+			    struct display_state *state)
+{
+	if (hdmi->phy.enabled) {
+		hdmi->phy.ops->disable(conn, hdmi->rk_hdmi, state);
+		hdmi->phy.enabled = false;
+	}
+}
+
+int rockchip_dw_hdmi_qp_enable(struct rockchip_connector *conn, struct display_state *state)
+{
+	struct connector_state *conn_state = &state->conn_state;
+	struct drm_display_mode *mode = &conn_state->mode;
+	struct dw_hdmi_qp *hdmi = conn->data;
+
+	if (!hdmi)
+		return -EFAULT;
+
+	/* Store the display mode for plugin/DKMS poweron events */
+	memcpy(&hdmi->previous_mode, mode, sizeof(hdmi->previous_mode));
+
+	dw_hdmi_setup(hdmi, conn, mode, state);
+
+	return 0;
+}
+
+int rockchip_dw_hdmi_qp_disable(struct rockchip_connector *conn, struct display_state *state)
+{
+	struct dw_hdmi_qp *hdmi = conn->data;
+
+	dw_hdmi_disable(conn, hdmi, state);
+	return 0;
+}
+
+static void rockchip_dw_hdmi_qp_mode_valid(struct dw_hdmi_qp *hdmi)
+{
+	struct hdmi_edid_data *edid_data = &hdmi->edid_data;
+	int i;
+	bool enable_gpio = dw_hdmi_qp_check_enable_gpio(hdmi->rk_hdmi);
+
+	for (i = 0; i < edid_data->modes; i++) {
+		if (edid_data->mode_buf[i].invalid)
+			continue;
+
+		if (edid_data->mode_buf[i].clock <= 25000)
+			edid_data->mode_buf[i].invalid = true;
+
+		if (edid_data->mode_buf[i].clock > 600000 && !enable_gpio)
+			edid_data->mode_buf[i].invalid = true;
+	}
+}
+
+static int _rockchip_dw_hdmi_qp_get_timing(struct rockchip_connector *conn,
+					   struct display_state *state, int edid_status)
+{
+	int i;
+	struct connector_state *conn_state = &state->conn_state;
+	struct dw_hdmi_qp *hdmi = conn->data;
+	struct edid *edid = (struct edid *)conn_state->edid;
+	const u8 def_modes_vic[6] = {4, 16, 2, 17, 31, 19};
+
+	if (!hdmi)
+		return -EFAULT;
+
+	if (!edid_status) {
+		hdmi->sink_is_hdmi =
+			drm_detect_hdmi_monitor(edid);
+		hdmi->sink_has_audio = drm_detect_monitor_audio(edid);
+		edid_status = drm_add_edid_modes(&hdmi->edid_data, conn_state->edid);
+	}
+	if (edid_status < 0) {
+		hdmi->sink_is_hdmi = true;
+		hdmi->sink_has_audio = true;
+		do_cea_modes(&hdmi->edid_data, def_modes_vic,
+			     sizeof(def_modes_vic));
+		hdmi->edid_data.preferred_mode = &hdmi->edid_data.mode_buf[0];
+		printf("failed to get edid\n");
+	}
+	drm_rk_filter_whitelist(&hdmi->edid_data);
+	rockchip_dw_hdmi_qp_mode_valid(hdmi);
+	drm_mode_max_resolution_filter(&hdmi->edid_data,
+				       &state->crtc_state.max_output);
+	if (!drm_mode_prune_invalid(&hdmi->edid_data)) {
+		printf("can't find valid hdmi mode\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < hdmi->edid_data.modes; i++)
+		hdmi->edid_data.mode_buf[i].vrefresh =
+			drm_mode_vrefresh(&hdmi->edid_data.mode_buf[i]);
+
+	drm_mode_sort(&hdmi->edid_data);
+
+	rockchip_dw_hdmi_qp_config_output(conn, state);
 
 	return 0;
 }

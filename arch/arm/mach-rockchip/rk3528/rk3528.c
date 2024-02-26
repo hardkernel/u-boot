@@ -5,6 +5,7 @@
  */
 #include <common.h>
 #include <dm.h>
+#include <misc.h>
 #include <asm/io.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
@@ -492,3 +493,40 @@ int spl_fit_standalone_release(char *id, uintptr_t entry_point)
 }
 #endif
 
+#define CHIP_TYPE_OFF	40
+
+static int fdt_fixup_modules(void *blob)
+{
+	struct udevice *dev;
+	char *compat;
+	u8 chip_type;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_otp), &dev);
+	if (ret) {
+		printf("can't get otp device, ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = misc_read(dev, CHIP_TYPE_OFF, &chip_type, 1);
+	if (ret) {
+		printf("can't read chip type, ret=%d\n", ret);
+		return ret;
+	}
+
+	compat = (char *)fdt_getprop(blob, 0, "compatible", NULL);
+	fdt_setprop_string(blob, 0, "compatible", compat);
+
+	if (chip_type == 0x1)
+		fdt_appendprop_string(blob, 0, "compatible", "rockchip,rk3528");
+	else
+		fdt_appendprop_string(blob, 0, "compatible", "rockchip,rk3528a");
+
+	return 0;
+}
+
+int rk_board_dm_fdt_fixup(const void *blob)
+{
+	return fdt_fixup_modules((void *)blob);
+}

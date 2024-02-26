@@ -123,48 +123,114 @@ static int rockchip_dwmmc_ofdata_to_platdata(struct udevice *dev)
 }
 
 #ifndef CONFIG_MMC_SIMPLE
+#define NUM_PHASES	32
+#define TUNING_ITERATION_TO_PHASE(i, num_phases) (DIV_ROUND_UP((i) * 360, num_phases))
+
 static int rockchip_dwmmc_execute_tuning(struct dwmci_host *host, u32 opcode)
 {
-	int i = 0;
-	int ret = -1;
 	struct mmc *mmc = host->mmc;
 	struct udevice *dev = host->priv;
 	struct rockchip_dwmmc_priv *priv = dev_get_priv(dev);
+	int ret = 0;
+	int i, num_phases = NUM_PHASES;
+	bool v, prev_v = 0, first_v;
+	struct range_t {
+		short start;
+		short end; /* inclusive */
+	};
+	struct range_t ranges[NUM_PHASES / 2 + 1];
+	unsigned int range_count = 0;
+	int longest_range_len = -1;
+	int longest_range = -1;
+	int middle_phase, real_middle_phase;
+	ulong ts;
 
 	if (IS_ERR(&priv->sample_clk))
 		return -EIO;
+	ts = get_timer(0);
 
-	if (mmc->default_phase > 0 && mmc->default_phase < 360) {
-		ret = clk_set_phase(&priv->sample_clk, mmc->default_phase);
-		if (ret)
-			printf("set clk phase fail\n");
-		else
-			ret = mmc_send_tuning(mmc, opcode);
-		mmc->default_phase = 0;
-	}
-	/*
-	 * If use default_phase to tune successfully, return.
-	 * Otherwise, use the othe phase to tune.
-	 */
-	if (!ret)
-		return ret;
-
-	for (i = 0; i < 5; i++) {
-		/* mmc->init_retry must be 0, 1, 2, 3 */
-		if (mmc->init_retry == 4)
-			mmc->init_retry = 0;
-
-		ret = clk_set_phase(&priv->sample_clk, 90 * mmc->init_retry);
-		if (ret) {
-			printf("set clk phase fail\n");
+	/* Try each phase and extract good ranges */
+	for (i = 0; i < num_phases; ) {
+		/* Cannot guarantee any phases larger than 270 would work well */
+		if (TUNING_ITERATION_TO_PHASE(i, num_phases) > 270)
 			break;
+		clk_set_phase(&priv->sample_clk, TUNING_ITERATION_TO_PHASE(i, num_phases));
+
+		v = !mmc_send_tuning(mmc, opcode);
+		debug("3 Tuning phase is %d v = %x\n", TUNING_ITERATION_TO_PHASE(i, num_phases), v);
+		if (i == 0)
+			first_v = v;
+
+		if ((!prev_v) && v) {
+			range_count++;
+			ranges[range_count - 1].start = i;
 		}
-		ret = mmc_send_tuning(mmc, opcode);
-		debug("Tuning phase is %d, ret is %d\n", mmc->init_retry * 90, ret);
-		mmc->init_retry++;
-		if (!ret)
-			break;
+
+		if (v)
+			ranges[range_count - 1].end = i;
+		i++;
+		prev_v = v;
 	}
+
+	if (range_count == 0) {
+		dev_warn(host->dev, "All phases bad!");
+		return -EIO;
+	}
+
+	/* wrap around case, merge the end points */
+	if ((range_count > 1) && first_v && v) {
+		ranges[0].start = ranges[range_count - 1].start;
+		range_count--;
+	}
+
+	/* Find the longest range */
+	for (i = 0; i < range_count; i++) {
+		int len = (ranges[i].end - ranges[i].start + 1);
+
+		if (len < 0)
+			len += num_phases;
+
+		if (longest_range_len < len) {
+			longest_range_len = len;
+			longest_range = i;
+		}
+
+		debug("Good phase range %d-%d (%d len)\n",
+			  TUNING_ITERATION_TO_PHASE(ranges[i].start, num_phases),
+			  TUNING_ITERATION_TO_PHASE(ranges[i].end, num_phases),
+			  len);
+	}
+
+	printf("Best phase range %d-%d (%d len)\n",
+		   TUNING_ITERATION_TO_PHASE(ranges[longest_range].start, num_phases),
+		   TUNING_ITERATION_TO_PHASE(ranges[longest_range].end, num_phases),
+		   longest_range_len);
+
+	middle_phase = ranges[longest_range].start + longest_range_len / 2;
+	middle_phase %= num_phases;
+	real_middle_phase = TUNING_ITERATION_TO_PHASE(middle_phase, num_phases);
+
+	/*
+	 * Since we cut out 270 ~ 360, the original algorithm
+	 * still rolling ranges before and after 270 together
+	 * in some corner cases, we should adjust it to avoid
+	 * using any middle phase located between 270 and 360.
+	 * By calculatiion, it happends due to the bad phases
+	 * lay between 90 ~ 180. So others are all fine to chose.
+	 * Pick 270 is a better choice in those cases. In case of
+	 * bad phases exceed 180, the middle phase of rollback
+	 * would be bigger than 315, so we chose 360.
+	 */
+	if (real_middle_phase > 270) {
+		if (real_middle_phase < 315)
+			real_middle_phase = 270;
+		else
+			real_middle_phase = 0;
+	}
+
+	printf("Successfully tuned phase to %d, used %ldms\n", real_middle_phase, get_timer(0) - ts);
+
+	clk_set_phase(&priv->sample_clk, real_middle_phase);
 
 	return ret;
 }

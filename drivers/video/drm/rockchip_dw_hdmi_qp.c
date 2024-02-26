@@ -1063,7 +1063,8 @@ null_basep:
 	hdmi_select_link_config(hdmi, edid_data->preferred_mode, tmdsclk);
 	dw_hdmi_qp_dsc_configure(hdmi, edid_data->preferred_mode);
 	if (hdmi->link_cfg.frl_mode) {
-		dm_gpio_set_value(&hdmi->enable_gpio, 0);
+		if (dm_gpio_is_valid(&hdmi->enable_gpio))
+			dm_gpio_set_value(&hdmi->enable_gpio, 0);
 		/* in the current version, support max 40G frl */
 		if (hdmi->link_cfg.rate_per_lane >= 10) {
 			hdmi->link_cfg.frl_lanes = 4;
@@ -1078,7 +1079,8 @@ null_basep:
 		else
 			hdmi->bus_width |= HDMI_FRL_MODE;
 	} else {
-		dm_gpio_set_value(&hdmi->enable_gpio, 1);
+		if (dm_gpio_is_valid(&hdmi->enable_gpio))
+			dm_gpio_set_value(&hdmi->enable_gpio, 1);
 		hdmi->bus_width =
 			hdmi_get_tmdsclock(hdmi, pixel_clk * 10);
 		if (hdmi_bus_fmt_is_yuv420(*bus_format))
@@ -1089,6 +1091,16 @@ null_basep:
 	}
 
 	rockchip_phy_set_bus_width(conn->phy, hdmi->bus_width);
+}
+
+bool dw_hdmi_qp_check_enable_gpio(void *data)
+{
+	struct rockchip_hdmi *hdmi = (struct rockchip_hdmi *)data;
+
+	if (!hdmi->enable_gpio.dev)
+		return false;
+	else
+		return true;
 }
 
 static void rk3588_set_link_mode(struct rockchip_hdmi *hdmi)
@@ -1291,6 +1303,7 @@ static const struct rockchip_connector_funcs rockchip_dw_hdmi_qp_funcs = {
 	.init = rockchip_dw_hdmi_qp_init,
 	.deinit = rockchip_dw_hdmi_qp_deinit,
 	.prepare = rockchip_dw_hdmi_qp_prepare,
+	.check = rockchip_dw_hdmi_qp_check,
 	.enable = rockchip_dw_hdmi_qp_enable,
 	.disable = rockchip_dw_hdmi_qp_disable,
 	.get_timing = rockchip_dw_hdmi_qp_get_timing,
@@ -1335,7 +1348,7 @@ static int rockchip_dw_hdmi_qp_probe(struct udevice *dev)
 
 	ret = gpio_request_by_name(dev, "enable-gpios", 0,
 				   &hdmi->enable_gpio, GPIOD_IS_OUT);
-	if (ret) {
+	if (ret && ret != -ENOENT) {
 		dev_err(dev, "Cannot get enable GPIO: %d\n", ret);
 		return ret;
 	}

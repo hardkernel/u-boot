@@ -872,6 +872,7 @@ static const struct spinand_manufacturer *spinand_manufacturers[] = {
 #endif
 #ifdef CONFIG_SPI_NAND_UNIM
 	&unim_spinand_manufacturer,
+	&unim_zl_spinand_manufacturer,
 #endif
 #ifdef CONFIG_SPI_NAND_SKYHIGH
 	&skyhigh_spinand_manufacturer,
@@ -1165,6 +1166,13 @@ static int spinand_init(struct spinand_device *spinand)
 		ret = spinand_select_target(spinand, i);
 		if (ret)
 			goto err_free_bufs;
+
+		/* HWP_EN must be enabled first before block unlock region is set */
+		if (spinand->id.data[0] == 0x01) {
+			ret = spinand_lock_block(spinand, HWP_EN);
+			if (ret)
+				goto err_free_bufs;
+		}
 
 		ret = spinand_lock_block(spinand, BL_ALL_UNLOCKED);
 		if (ret)

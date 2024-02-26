@@ -21,6 +21,7 @@
 #define ATAG_SOC_INFO		0x54410057
 #define ATAG_BOOT1_PARAM	0x54410058
 #define ATAG_PSTORE		0x54410059
+#define ATAG_FWVER		0x5441005a
 #define ATAG_MAX		0x544100ff
 
 /* Tag size and offset */
@@ -74,6 +75,17 @@
 
 /* tag_ddr_mem.flags */
 #define DDR_MEM_FLG_EXT_TOP	1
+
+/* tag_fwver.ver[fwid][] */
+#define FWVER_LEN		36
+
+enum fwid {
+	FW_DDR,
+	FW_SPL,
+	FW_ATF,
+	FW_TEE,
+	FW_MAX,
+};
 
 struct tag_serial {
 	u32 version;
@@ -183,6 +195,12 @@ struct tag_pstore {
 	u32 hash;
 } __packed;
 
+struct tag_fwver {
+	u32 version;
+	char ver[8][FWVER_LEN];
+	u32 hash;
+} __packed;
+
 struct tag_core {
 	u32 flags;
 	u32 pagesize;
@@ -209,6 +227,7 @@ struct tag {
 		struct tag_soc_info	soc;
 		struct tag_boot1p	boot1p;
 		struct tag_pstore	pstore;
+		struct tag_fwver	fwver;
 	} u;
 } __aligned(4);
 
@@ -265,6 +284,13 @@ int atags_overflow(struct tag *t);
  * return: 1 if invalid, otherwise valid.
  */
 int atags_bad_magic(u32 magic);
+
+/*
+ * atags_set_shared_fwver - set fwver tag.
+ *
+ * return: 0 on success, otherwise failed.
+ */
+int atags_set_shared_fwver(u32 fwid, char *ver);
 
 #ifdef CONFIG_SPL_BUILD
 /*

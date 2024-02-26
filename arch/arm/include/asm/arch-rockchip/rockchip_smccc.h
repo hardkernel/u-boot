@@ -95,6 +95,7 @@ typedef enum {
 	SHARE_PAGE_TYPE_DDR_ADDRMAP,
 	SHARE_PAGE_TYPE_LAST_LOG,
 	SHARE_PAGE_TYPE_HDCP,
+	SHARE_PAGE_TYPE_SLEEP,
 	SHARE_PAGE_TYPE_MAX,
 } share_page_type_t;
 
@@ -203,6 +204,15 @@ int sip_smc_mcu_config(unsigned long mcu_id, unsigned long func, unsigned long a
  * @return 0 on success, otherwise failed.
  */
 int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
+
+/*
+ * psci_cpu_off() - Standard ARM PSCI cpu off call.
+ *
+ * @state:		dummy, set 0 by default.
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int psci_cpu_off(uint32_t state);
 
 #ifdef CONFIG_ARM_CPU_SUSPEND
 /*

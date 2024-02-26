@@ -181,6 +181,7 @@ struct dw_hdmi {
 	bool cable_plugin;
 	bool sink_is_hdmi;
 	bool sink_has_audio;
+	bool force_output;
 	void *regs;
 	void *grf;
 	void *gpio_base;
@@ -878,7 +879,7 @@ static int rockchip_dw_hdmi_scrambling_enable(struct dw_hdmi *hdmi,
 
 	drm_scdc_readb(&hdmi->adap, SCDC_TMDS_CONFIG, &stat);
 
-	if (stat < 0) {
+	if (stat < 0 && !hdmi->force_output) {
 		debug("Failed to read tmds config\n");
 		return false;
 	}
@@ -1168,7 +1169,7 @@ static void hdmi_av_composer(struct dw_hdmi *hdmi,
 	}
 
 	/* Scrambling Control */
-	if (hdmi_info->scdc.supported) {
+	if (hdmi_info->scdc.supported || hdmi->force_output) {
 		if (vmode->mtmdsclock > 340000000 ||
 		    (hdmi_info->scdc.scrambling.low_rates &&
 		     hdmi->scramble_low_rates)) {
@@ -2524,6 +2525,20 @@ int rockchip_dw_hdmi_disable(struct rockchip_connector *conn, struct display_sta
 	return 0;
 }
 
+static void rockchip_dw_hdmi_mode_valid(struct dw_hdmi *hdmi)
+{
+	struct hdmi_edid_data *edid_data = &hdmi->edid_data;
+	int i;
+
+	for (i = 0; i < edid_data->modes; i++) {
+		if (edid_data->mode_buf[i].invalid)
+			continue;
+
+		if (edid_data->mode_buf[i].clock > 600000)
+			edid_data->mode_buf[i].invalid = true;
+	}
+}
+
 int rockchip_dw_hdmi_get_timing(struct rockchip_connector *conn, struct display_state *state)
 {
 	int ret, i, vic;
@@ -2560,6 +2575,7 @@ int rockchip_dw_hdmi_get_timing(struct rockchip_connector *conn, struct display_
 	conn_state->disp_info = rockchip_get_disp_info(conn_state->type, hdmi->id);
 #endif
 	drm_rk_filter_whitelist(&hdmi->edid_data);
+	rockchip_dw_hdmi_mode_valid(hdmi);
 	if (hdmi->phy.ops->mode_valid)
 		hdmi->phy.ops->mode_valid(conn, hdmi, state);
 	drm_mode_max_resolution_filter(&hdmi->edid_data,
@@ -2591,8 +2607,12 @@ int rockchip_dw_hdmi_get_timing(struct rockchip_connector *conn, struct display_
 	*mode = *hdmi->edid_data.preferred_mode;
 	hdmi->vic = drm_match_cea_mode(mode);
 
-	if (state->force_output)
+	if (state->force_output) {
+		hdmi->force_output = state->force_output;
+		hdmi->sink_is_hdmi = true;
+		hdmi->sink_has_audio = true;
 		bus_format = state->force_bus_format;
+	}
 	conn_state->bus_format = bus_format;
 	hdmi->hdmi_data.enc_in_bus_format = bus_format;
 	hdmi->hdmi_data.enc_out_bus_format = bus_format;

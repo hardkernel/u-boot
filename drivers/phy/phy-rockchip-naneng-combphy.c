@@ -16,6 +16,7 @@
 #include <asm/arch/clock.h>
 #include <regmap.h>
 #include <reset-uclass.h>
+#include <linux/iopoll.h>
 
 #define BIT_WRITEABLE_SHIFT		16
 
@@ -63,6 +64,7 @@ struct rockchip_combphy_grfcfg {
 	struct combphy_reg pipe_xpcs_phy_ready;
 	struct combphy_reg u3otg0_port_en;
 	struct combphy_reg u3otg1_port_en;
+	struct combphy_reg u3otg0_pipe_clk_sel;
 	struct combphy_reg pipe_phy_grf_reset;
 };
 
@@ -93,6 +95,20 @@ static int param_write(struct regmap *base,
 	val = (tmp << reg->bitstart) | (mask << BIT_WRITEABLE_SHIFT);
 
 	return regmap_write(base, reg->offset, val);
+}
+
+static u32 rockchip_combphy_is_ready(struct rockchip_combphy_priv *priv)
+{
+	const struct rockchip_combphy_grfcfg *cfg = priv->cfg->grfcfg;
+	u32 mask, val;
+
+	mask = GENMASK(cfg->pipe_phy_status.bitend,
+		       cfg->pipe_phy_status.bitstart);
+
+	regmap_read(priv->phy_grf, cfg->pipe_phy_status.offset, &val);
+	val = (val & mask) >> cfg->pipe_phy_status.bitstart;
+
+	return val;
 }
 
 static int rockchip_combphy_pcie_init(struct rockchip_combphy_priv *priv)
@@ -151,6 +167,53 @@ static int rockchip_combphy_sgmii_init(struct rockchip_combphy_priv *priv)
 			return ret;
 		}
 	}
+
+	return ret;
+}
+
+int rockchip_combphy_usb3_uboot_init(void)
+{
+	struct udevice *udev;
+	struct rockchip_combphy_priv *priv;
+	const struct rockchip_combphy_grfcfg *cfg;
+	u32 val;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_PHY,
+					  DM_GET_DRIVER(rockchip_naneng_combphy),
+					  &udev);
+	if (ret) {
+		pr_err("%s: get usb3-phy node failed: %d\n", __func__, ret);
+		return ret;
+	}
+
+	priv = dev_get_priv(udev);
+	priv->mode = PHY_TYPE_USB3;
+	cfg = priv->cfg->grfcfg;
+
+	rockchip_combphy_usb3_init(priv);
+	reset_deassert(&priv->phy_rst);
+
+	if (cfg->pipe_phy_grf_reset.enable)
+		param_write(priv->phy_grf, &cfg->pipe_phy_grf_reset, false);
+
+	if (priv->mode == PHY_TYPE_USB3) {
+		ret = readx_poll_timeout(rockchip_combphy_is_ready,
+					 priv, val,
+					 val == cfg->pipe_phy_status.enable,
+					 1000);
+		if (ret) {
+			dev_err(priv->dev, "wait phy status ready timeout\n");
+			param_write(priv->phy_grf, &cfg->usb_mode_set, false);
+			if (cfg->u3otg0_pipe_clk_sel.disable)
+				param_write(priv->phy_grf, &cfg->u3otg0_pipe_clk_sel, false);
+			return ret;
+		}
+	}
+
+	/* Select clk_usb3otg0_pipe for source clk */
+	if (cfg->u3otg0_pipe_clk_sel.disable)
+		param_write(priv->phy_grf, &cfg->u3otg0_pipe_clk_sel, true);
 
 	return ret;
 }
@@ -333,6 +396,12 @@ static int rk3528_combphy_cfg(struct rockchip_combphy_priv *priv)
 		val |= 0x01;
 		writel(val, priv->mmio + 0x200);
 
+		/* Set Rx squelch input filler bandwidth */
+		val = readl(priv->mmio + 0x20c);
+		val &= ~GENMASK(2, 0);
+		val |= 0x06;
+		writel(val, priv->mmio + 0x20c);
+
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);
 		param_write(priv->phy_grf, &cfg->pipe_txelec_sel, false);
 		param_write(priv->phy_grf, &cfg->usb_mode_set, true);
@@ -379,6 +448,7 @@ static const struct rockchip_combphy_grfcfg rk3528_combphy_grfcfgs = {
 	.con2_for_pcie		= { 0x48008, 15, 0, 0x00, 0x101 },
 	.con3_for_pcie		= { 0x4800c, 15, 0, 0x00, 0x0200 },
 	/* pipe-grf */
+	.u3otg0_pipe_clk_sel	= { 0x40044, 7, 7, 0x01, 0x00 },
 	.u3otg0_port_en		= { 0x40044, 15, 0, 0x0181, 0x1100 },
 };
 
@@ -438,6 +508,9 @@ static int rk3562_combphy_cfg(struct rockchip_combphy_priv *priv)
 
 		/* Set PLL KVCO to min and set PLL charge pump current to max */
 		writel(0xf0, priv->mmio + (0xa << 2));
+
+		/* Set Rx squelch input filler bandwidth */
+		writel(0x0e, priv->mmio + (0x14 << 2));
 
 		param_write(priv->phy_grf, &cfg->pipe_sel_usb, true);
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);
@@ -562,6 +635,9 @@ static int rk3568_combphy_cfg(struct rockchip_combphy_priv *priv)
 
 		/* Set PLL KVCO to min and set PLL charge pump current to max */
 		writel(0xf0, priv->mmio + (0xa << 2));
+
+		/* Set Rx squelch input filler bandwidth */
+		writel(0x0e, priv->mmio + (0x14 << 2));
 
 		param_write(priv->phy_grf, &cfg->pipe_sel_usb, true);
 		param_write(priv->phy_grf, &cfg->pipe_txcomp_sel, false);

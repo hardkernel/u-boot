@@ -16,7 +16,6 @@ obj-$(CONFIG_$(SPL_)DM_REGULATOR_FIXED) += fixed.o
 obj-$(CONFIG_$(SPL_)DM_REGULATOR_GPIO) += gpio-regulator.o
 obj-$(CONFIG_REGULATOR_RK860X) += rk860x_regulator.o
 obj-$(CONFIG_REGULATOR_RK8XX) += rk8xx.o
-obj-$(CONFIG_REGULATOR_RK806) += rk806.o
 obj-$(CONFIG_REGULATOR_S5M8767) += s5m8767.o
 obj-$(CONFIG_DM_REGULATOR_SANDBOX) += sandbox.o
 obj-$(CONFIG_REGULATOR_TPS65090) += tps65090_regulator.o
