@@ -253,22 +253,21 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
 	return -1;
 }
 
-static int load_boot_config(struct blk_desc *dev_desc, const char *config)
+static int load_boot_config(struct blk_desc *dev_desc, char *config)
 {
-	char list[1024];
+	char buf[128];
 	int ret = -EINVAL;
+	unsigned long loadaddr = env_get_ulong("loadaddr", 16, 0);
 
-	snprintf(list, sizeof(list),
-			"load mmc %d:1 $loadaddr %s; ini generic $loadaddr",
-			dev_desc ? dev_desc->devnum : 0,
-			config ? config : "config.ini"
-		);
+	ret = load_from_mmc(loadaddr, dev_desc->devnum, 1,
+			config ? config : "config.ini");
+	if (ret)
+		return ret;
 
-	run_command_list(list, -1, 0);
+	run_command("ini generic $loadaddr", 0);
 
 	char *overlay_profile = env_get("overlay_profile");
 	if (overlay_profile) {
-		char buf[32];
 		snprintf(buf, sizeof(buf), "ini overlay_%s $loadaddr", overlay_profile);
 		run_command(buf, 0);
 	}
