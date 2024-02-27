@@ -143,6 +143,7 @@ int rk_board_late_init(void)
 {
 	char buf[1024] = "run distro_bootcmd";
 
+#if defined(CONFIG_TARGET_ODROID_M1)
 	/* Load SPI firmware when boot device is SPI flash memory
 	 * and environment value 'skip_spiboot' is not 'true'
 	 */
@@ -152,6 +153,7 @@ int rk_board_late_init(void)
 				"source $scriptaddr;"
 				"%s", env_get("bootcmd"));
 	}
+#endif
 
 	env_set("bootcmd", buf);
 	env_set("variant", BOARD_VARIANT);
