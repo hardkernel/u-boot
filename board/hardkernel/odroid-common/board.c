@@ -107,7 +107,12 @@ int load_from_cramfs(unsigned long addr, char *filename)
 	struct mtdids id;
 
 	ulong cramfsaddr;
-	cramfsaddr = simple_strtoul(env_get("cramfsaddr"), NULL, 16);
+
+	char *str = env_get("cramfsaddr");
+	if (!str)
+		return 1;
+
+	cramfsaddr = simple_strtoul(str, NULL, 16);
 
 	id.type = MTD_DEV_TYPE_NOR;
 	id.num = 0;
