@@ -6,6 +6,12 @@ config TARGET_EVB_RK3588
 	help
 	  RK3588 EVB is a evaluation board for Rockchp RK3588.
 
+config TARGET_ODROID_M2
+	bool "ODROID-M2"
+	select BOARD_LATE_INIT
+	help
+	  Hardkernel's ODROID-M2 SBC board for Rockchp RK3588S.
+
 config SYS_SOC
 	default "rockchip"
 
@@ -13,5 +19,6 @@ config SYS_MALLOC_F_LEN
 	default 0x400
 
 source board/rockchip/evb_rk3588/Kconfig
+source board/hardkernel/odroid-m2/Kconfig
 
 endif

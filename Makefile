@@ -715,7 +715,7 @@ libs-$(CONFIG_UT_ENV) += test/env/
 libs-$(CONFIG_UT_OVERLAY) += test/overlay/
 
 libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
-ifneq ($(CONFIG_TARGET_ODROID_M1)$(CONFIG_TARGET_ODROID_M1S),)
+ifneq ($(CONFIG_TARGET_ODROID_M1)$(CONFIG_TARGET_ODROID_M1S)$(CONFIG_TARGET_ODROID_M2),)
 libs-y += board/hardkernel/odroid-common/
 endif
 

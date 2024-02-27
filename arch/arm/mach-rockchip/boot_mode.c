@@ -160,7 +160,8 @@ int rockchip_get_boot_mode(void)
 	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 	if (reg_boot_mode == BOOT_LOADER) {
 		printf("boot mode: loader\n");
-#if defined(CONFIG_TARGET_ODROID_M1) || defined(CONFIG_TARGET_ODROID_M1S)
+#if defined(CONFIG_TARGET_ODROID_M1) || defined(CONFIG_TARGET_ODROID_M1S) \
+		|| defined(CONFIG_TARGET_ODROID_M2)
 		boot_mode[PL] = BOOT_MODE_UMS;
 #else
 		boot_mode[PH] = BOOT_MODE_LOADER;
