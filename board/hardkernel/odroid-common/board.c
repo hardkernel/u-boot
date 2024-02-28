@@ -90,6 +90,7 @@ int load_from_mmc(unsigned long addr, int devnum, int partnum, char *filename)
 		loff_t len_read;
 		ret = fs_read(filename, addr, 0, 0, &len_read);
 		if (!ret) {
+			env_set_ulong("filesize", len_read);
 			printf("%llu bytes read\n", len_read);
 			return 0;
 		}
