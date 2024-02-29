@@ -43,5 +43,6 @@ else
 obj-y += rockchip_spl_display.o rockchip_display_helper.o rockchip_crtc.o rockchip_connector.o rockchip_post_csc.o rockchip_vop2.o rockchip_phy.o rockchip-inno-hdmi-phy.o rockchip_dw_hdmi.o dw_hdmi.o
 endif
 
-obj-$(CONFIG_TARGET_ODROID_M1) += panel-ili9881c.o panel-sitronix-st7701.o
-obj-$(CONFIG_TARGET_ODROID_M1S) += panel-ili9881c.o panel-sitronix-st7701.o
+ifndef CONFIG_SPL_BUILD
+obj-y += panel-ili9881c.o panel-sitronix-st7701.o
+endif
