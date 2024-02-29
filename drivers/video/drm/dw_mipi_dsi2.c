@@ -735,6 +735,9 @@ static int dw_mipi_dsi2_connector_pre_init(struct rockchip_connector *conn,
 
 static int dw_mipi_dsi2_get_dsc_params_from_sink(struct dw_mipi_dsi2 *dsi2)
 {
+	if (!dsi2->device)
+		return -EINVAL;
+
 	struct udevice *dev = dsi2->device->dev;
 	struct rockchip_cmd_header *header;
 	struct drm_dsc_picture_parameter_set *pps = NULL;
