@@ -182,6 +182,7 @@ obj-$(CONFIG_CMD_ATAGS) += atags.o
 
 obj-$(CONFIG_TARGET_ODROID_M1) += setbootdev.o
 obj-$(CONFIG_TARGET_ODROID_M1S) += setbootdev.o
+obj-$(CONFIG_TARGET_ODROID_M2) += setbootdev.o
 
 endif # !CONFIG_SPL_BUILD
 
