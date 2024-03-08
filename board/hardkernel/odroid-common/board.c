@@ -220,12 +220,29 @@ int rk_board_late_init(void)
 	return 0;
 }
 
+static int __dtoverlay_apply(void *fdt, ulong dtbo, struct blk_desc *dev_desc, char *buf)
+{
+	int ret;
+
+	if (dev_desc)
+		ret = load_from_mmc(dtbo, dev_desc->devnum, 1, buf);
+	else
+		ret = load_from_cramfs(dtbo, buf);
+
+	if (!ret) {
+		fdt_increase_size(fdt, fdt_totalsize(dtbo));
+		fdt_overlay_apply_verbose(fdt, (void *)dtbo);
+	}
+
+	return ret;
+}
+
 int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
-		const char *root)
+		const char *root, char **path)
 {
 	char *paths[] = {
 		"overlays/"CONFIG_BOARDNAME"/",
-		"rockchip/overlays/"CONFIG_BOARDNAME"/",
+		""CONFIG_BOARDNAME"/",
 	};
 	char buf[1024];
 	int ret;
@@ -236,17 +253,19 @@ int dtoverlay_apply(void *fdt, const char *dtoverlay, struct blk_desc *dev_desc,
 
 	ulong fdt_dtbo = env_get_ulong("loadaddr", 16, 0);
 
+	if (*path) {
+		snprintf(buf, sizeof(buf), "%s%s%s.dtbo", root ? root : "", *path, dtoverlay);
+
+		return __dtoverlay_apply(fdt, fdt_dtbo, dev_desc, buf);
+	}
+
 	for (i = 0; i < ARRAY_SIZE(paths); i++) {
 		snprintf(buf, sizeof(buf), "%s%s%s.dtbo", root ? root : "", paths[i], dtoverlay);
 
-		if (dev_desc)
-			ret = load_from_mmc(fdt_dtbo, dev_desc->devnum, 1, buf);
-		else
-			ret = load_from_cramfs(fdt_dtbo, buf);
-
+		ret = __dtoverlay_apply(fdt, fdt_dtbo, dev_desc, buf);
 		if (!ret) {
-			fdt_increase_size(fdt, fdt_totalsize(fdt_dtbo));
-			fdt_overlay_apply_verbose(fdt, (void *)fdt_dtbo);
+			if (path)
+				*path = strdup(paths[i]);
 
 			return 0;
 		}
@@ -274,34 +293,23 @@ static int load_boot_config(struct blk_desc *dev_desc, char *config)
 		run_command(buf, 0);
 	}
 
-	char *overlays = env_get("overlays");
-	const char *token = strtok(overlays, " ");
-	while (token != NULL) {
-		if (!strncmp(token, "display_", 8)) {
-			ret = set_panel_name(token);
-			break;
-		}
-		token = strtok(NULL, " ");
-	}
-
 	return ret;
 }
 
 int board_read_dtb_file(void *fdt_addr)
 {
-	char *paths[] = {
-		"dtb",
-		"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
-	};
+	struct blk_desc *dev_desc = rockchip_get_bootdev();
+	char root[1024];
+	char *rootptr = NULL;
+	char *dir = NULL;
 	int ret;
 
 	ret = load_from_cramfs((unsigned long)fdt_addr, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
-	if (!ret) {
-		if (panel)
-			dtoverlay_apply(fdt_addr, panel, NULL, NULL);
-	} else {
-		struct blk_desc *dev_desc = rockchip_get_bootdev();
-		char root[1024];
+	if (ret) {
+		char *paths[] = {
+			"dtb",
+			"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
+		};
 		char buf[1024];
 		int i;
 
@@ -320,15 +328,36 @@ int board_read_dtb_file(void *fdt_addr)
 		for (i = 0; i < ARRAY_SIZE(paths); i++) {
 			ret = load_from_mmc((unsigned long)fdt_addr,
 					dev_desc->devnum, 1, paths[i]);
-			if (!ret) {
-				if (panel) {
-					dtoverlay_apply(fdt_addr,
-							panel, dev_desc, root);
-				}
+			if (!ret)
 				break;
-			}
+		}
+
+		if (ret)
+			return -ENOENT;
+
+		rootptr = kvers ? root : NULL;
+	}
+
+	char *overlays = env_get("overlays");
+	if (overlays) {
+		char *token = strtok(overlays, " ");
+		int offset = 0;
+
+		while (token != NULL) {
+			dtoverlay_apply(fdt_addr, token, dev_desc, rootptr, &dir);
+			offset += strlen(token) + 1;
+			token = strtok(overlays + offset, " ");
+
+			if (panel && !strcmp(token, panel))
+				panel = NULL;
 		}
 	}
+
+	if (panel)
+		dtoverlay_apply(fdt_addr, panel, dev_desc, rootptr, &dir);
+
+	if (dir)
+		free(dir);
 
 	return fdt_check_header(fdt_addr);
 }
