@@ -289,33 +289,25 @@ static int load_boot_config(struct blk_desc *dev_desc, char *config)
 
 int board_read_dtb_file(void *fdt_addr)
 {
+	char *paths[] = {
+		"dtb",
+		"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
+	};
 	int ret;
 
 	ret = load_from_cramfs((unsigned long)fdt_addr, CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
 	if (!ret) {
 		if (panel)
-			ret = dtoverlay_apply(fdt_addr, panel, NULL, NULL);
+			dtoverlay_apply(fdt_addr, panel, NULL, NULL);
 	} else {
-		char *paths[] = {
-			"dtb",
-			"rockchip/"CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH,
-		};
 		struct blk_desc *dev_desc = rockchip_get_bootdev();
-		int i;
-		char buf[1024];
 		char root[1024];
+		char buf[1024];
+		int i;
 
 		load_boot_config(dev_desc, "config.ini");
 
 		char *kvers = env_get("fk_kvers");
-		if (!kvers) {
-			/* Try to get kernel version from 'dtb' which must
-			 * be symbol link of device tree file in Linux
-			 */
-			load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, "dtb");
-		}
-
-		kvers = env_get("fk_kvers");
 		if (kvers) {
 			/* Set default device tree file with given kernel version */
 			snprintf(root, sizeof(root), "dtbs/%s/rockchip/", kvers);
@@ -326,10 +318,13 @@ int board_read_dtb_file(void *fdt_addr)
 		}
 
 		for (i = 0; i < ARRAY_SIZE(paths); i++) {
-			ret = load_from_mmc((unsigned long)fdt_addr, dev_desc->devnum, 1, paths[i]);
+			ret = load_from_mmc((unsigned long)fdt_addr,
+					dev_desc->devnum, 1, paths[i]);
 			if (!ret) {
-				if (panel)
-					ret = dtoverlay_apply(fdt_addr, panel, dev_desc, root);
+				if (panel) {
+					dtoverlay_apply(fdt_addr,
+							panel, dev_desc, root);
+				}
 				break;
 			}
 		}
