@@ -1,0 +1,72 @@
+[submodule "bl2/bin"]
+	path = bl2/bin
+	url = https://git.odroid.com/yocto/firmware/bin/bl2
+	branch = odroidc5-v2023.01
+[submodule "bl30/bin"]
+	path = bl30/bin
+	url = https://git.odroid.com/yocto/firmware/bin/bl30
+	branch = odroidc5-v2023.01
+[submodule "bl30/src_ao"]
+	path = bl30/src_ao
+	url = https://git.odroid.com/yocto/firmware/aocpu
+	branch = odroidc5-v2023.01
+[submodule "bl40/bin"]
+	path = bl40/bin
+	url = https://git.odroid.com/yocto/firmware/bin/bl40/dummy
+	branch = odroidc5-v2023.01
+[submodule "fip"]
+	path = fip
+	url = https://git.odroid.com/yocto/amlogic/tools/fip
+	branch = odroidc5-v2023.01
+[submodule "soc/templates"]
+	path = soc/templates
+	url = https://git.odroid.com/yocto/firmware/bin/templates
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/scripts"]
+	path = bl30/rtos_sdk/scripts
+	url = https://git.odroid.com/yocto/rtos_sdk/scripts
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/drivers_aocpu"]
+	path = bl30/rtos_sdk/drivers_aocpu
+	url = https://git.odroid.com/yocto/rtos_sdk/drivers_aocpu
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/product/aocpu"]
+	path = bl30/rtos_sdk/products/aocpu
+	url = https://git.odroid.com/yocto/rtos_sdk/product/aocpu
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/soc/riscv"]
+	path = bl30/rtos_sdk/soc/riscv
+	url = https://git.odroid.com/yocto/rtos_sdk/soc/riscv
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/boards/riscv"]
+	path = bl30/rtos_sdk/boards/riscv
+	url = https://git.odroid.com/yocto/rtos_sdk/boards/riscv
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/lib/libc"]
+	path = bl30/rtos_sdk/lib/libc
+	url = https://git.odroid.com/yocto/rtos_sdk/libc
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/build_systems"]
+	path = bl30/rtos_sdk/build_system
+	url = https://git.odroid.com/yocto/rtos_sdk/build
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/arch/riscv"]
+	path = bl30/rtos_sdk/arch/riscv
+	url = https://git.odroid.com/yocto/rtos_sdk/arch/riscv
+	branch = odroidc5-v2023.01
+[submodule "bl30/rtos_sdk/kernel/freertos"]
+	path = bl30/rtos_sdk/kernel/freertos
+	url = https://git.odroid.com/yocto/rtos_sdk/freertos
+	branch = odroidc5-v2023.01
+[submodule "bl33/v2023"]
+	path = bl33/v2023
+	url = https://git.odroid.com/yocto/uboot
+	branch = odroidc5-v2023.01_odroidc5-v2023.01
+[submodule "bl32/bl32_3.18/bin"]
+	path = bl32/bl32_3.18/bin
+	url = https://git.odroid.com/yocto/firmware/bin/bl32
+	branch = odroidc5-v2023.01-bl32_3.18
+[submodule "bl31/bl31_2.7/bin"]
+	path = bl31/bl31_2.7/bin
+	url = https://git.odroid.com/yocto/firmware/bin/bl31
+	branch = odroidc5-v2023.01-bl31_2.7

@@ -1,0 +1,23 @@
+menu "Arch Options"
+source "arch/${ARCH}/Kconfig"
+endmenu
+
+menu "Boards Options"
+source "boards/${ARCH}/Kconfig"
+endmenu
+
+menu "Drivers Options"
+source "drivers_aocpu/Kconfig"
+endmenu
+
+menu "Kernel Options"
+source "kernel/freertos/Kconfig"
+endmenu
+
+menu "Lib Options"
+source "lib/libc/Kconfig"
+endmenu
+
+menu "SOC Options"
+source "soc/${ARCH}/Kconfig"
+endmenu
