@@ -61,12 +61,12 @@
 [submodule "bl33/v2023"]
 	path = bl33/v2023
 	url = https://git.odroid.com/yocto/uboot
-	branch = odroidc5-v2023.01_odroidc5-v2023.01
+	branch = odroidc5-v2023.01
 [submodule "bl32/bl32_3.18/bin"]
 	path = bl32/bl32_3.18/bin
 	url = https://git.odroid.com/yocto/firmware/bin/bl32
-	branch = odroidc5-v2023.01-bl32_3.18
+	branch = odroidc5-v2023.01
 [submodule "bl31/bl31_2.7/bin"]
 	path = bl31/bl31_2.7/bin
 	url = https://git.odroid.com/yocto/firmware/bin/bl31
-	branch = odroidc5-v2023.01-bl31_2.7
+	branch = odroidc5-v2023.01
