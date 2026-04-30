@@ -33,6 +33,10 @@ int arch_fixup_fdt(void *blob)
 		size[bank] = bd->bi_dram[bank].size;
 	}
 
+#if defined(CONFIG_ODROID_COMMON)
+	size[0] = get_effective_memsize();
+#endif
+
 	ret = fdt_fixup_memory_banks(blob, start, size, CONFIG_NR_DRAM_BANKS);
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
 	if (ret)
