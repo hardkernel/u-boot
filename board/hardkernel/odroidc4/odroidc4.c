@@ -448,7 +448,8 @@ phys_size_t get_effective_memsize(void)
 	size_aligned = ((size_aligned >> SECTION_SHIFT) << SECTION_SHIFT);
 
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
-	size_aligned = size_aligned - CONFIG_SYS_MEM_TOP_HIDE;
+	if (size_aligned > 0xE0000000UL)
+		size_aligned = size_aligned - CONFIG_SYS_MEM_TOP_HIDE;
 #endif
 
 	return size_aligned;
