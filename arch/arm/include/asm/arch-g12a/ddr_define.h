@@ -277,7 +277,7 @@
 											DDR_FUNC_LPDDR3_CA_TRAINING_CA1_BIT0| \
 											DDR_FUNC_LPDDR3_CA_TRAINING_CA1_BIT1| \
 											DDR_FUNC_LPDDR3_SOC_ODT_ONLY_UP	| \
-											(1 << 31) 						\
+											(1U << 31) 						\
 											)
 
 
