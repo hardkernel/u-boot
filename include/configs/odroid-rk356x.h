@@ -64,7 +64,7 @@
 
 #define CONFIG_ENV_SPI_BUS	4
 #define CONFIG_ENV_SPI_CS	0
-#define CONFIG_ENV_SPI_MAX_HZ	200000000
+#define CONFIG_ENV_SPI_MAX_HZ	100000000
 
 #endif
 #endif
