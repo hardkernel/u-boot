@@ -247,10 +247,13 @@ static int __dtoverlay_apply(void *fdt, ulong dtbo, struct blk_desc *dev_desc, c
 {
 	int ret;
 
-	if (dev_desc)
-		ret = load_from_mmc(dtbo, dev_desc->devnum, 1, buf);
-	else
+	if (!dev_desc)
+		return -EINVAL;
+
+	if (dev_desc->devnum == 2)
 		ret = load_from_cramfs(dtbo, buf);
+	else
+		ret = load_from_mmc(dtbo, dev_desc->devnum, 1, buf);
 
 	if (!ret) {
 		fdt_increase_size(fdt, fdt_totalsize(dtbo));
