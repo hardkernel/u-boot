@@ -3579,7 +3579,7 @@ int add_cea_modes(struct hdmi_edid_data *data, struct edid *edid)
 {
 	const u8 *cea = drm_find_cea_extension(edid);
 	const u8 *db, *hdmi = NULL, *video = NULL;
-	u8 dbl, hdmi_len, video_len = 0;
+	u8 dbl, hdmi_len = 0, video_len = 0;
 	int modes = 0;
 
 	if (cea && cea_revision(cea) >= 3) {
