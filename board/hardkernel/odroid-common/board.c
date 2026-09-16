@@ -171,26 +171,32 @@ int rk_board_late_init(void)
 
 	run_command_list(commands, -1, 0);
 
-	char *in = (char *)load_addr;
+	int n = 0;
 
-	snprintf(buf, sizeof(buf),
-			/* 99999999-9999-9999-9999-999999999999 */
-			"%c%c%c%c%c%c%c%c-%c%c%c%c-%c%c%c%c-%c%c%c%c-%c%c%c%c%c%c%c%c%c%c%c%c",
-			in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7],
-			in[8], in[9], in[10], in[11],
-			in[12], in[13], in[14], in[15],
-			in[16], in[17], in[18], in[19],
-			in[20], in[21], in[22], in[23], in[24], in[25],
-			in[26], in[27], in[28], in[29], in[30], in[31]);
+	for (; n < 32 * 4; n += 32) {
+		char *in = (char *)load_addr + n;
 
-	// Serial number
-	env_set("serial#", (char *)buf);
+		snprintf(buf, sizeof(buf),
+				/* 99999999-9999-9999-9999-999999999999 */
+				"%c%c%c%c%c%c%c%c-%c%c%c%c-%c%c%c%c-%c%c%c%c-%c%c%c%c%c%c%c%c%c%c%c%c",
+				in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7],
+				in[8], in[9], in[10], in[11],
+				in[12], in[13], in[14], in[15],
+				in[16], in[17], in[18], in[19],
+				in[20], in[21], in[22], in[23], in[24], in[25],
+				in[26], in[27], in[28], in[29], in[30], in[31]);
 
-	// MAC address
-	unsigned long node = cpu_to_be64(simple_strtoul(
-				(char *)buf + 24, NULL, 16)) >> 16;
+		// MAC address
+		unsigned long node = cpu_to_be64(simple_strtoul(
+					(char *)buf + 24, NULL, 16)) >> 16;
+		if (is_valid_ethaddr((unsigned char *)&node)) {
+			eth_env_set_enetaddr_by_index("eth", 0, (unsigned char*)&node);
 
-	eth_env_set_enetaddr_by_index("eth", 0, (unsigned char*)&node);
+			// Serial number
+			env_set("serial#", (char *)buf);
+			break;
+		}
+	}
 #endif
 
 #if defined(CONFIG_TARGET_ODROID_M1S)
