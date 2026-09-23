@@ -133,10 +133,22 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 }
 extern void __switch_idle_task(void);
 
+/* timere_read_us() of the Amlogic FreeRTOS BL30 */
+static unsigned long long timere_read_us(void)
+{
+	unsigned long long te = readl(AO_TIMERE_REG);
+
+	te |= (unsigned long long)readl(AO_TIMERE_HI_REG) << 32;
+	return te;
+}
+
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
+	/* BL30 counts the VRTC alarm in 32-bit microseconds and fires early past 4294 s */
+	unsigned int alarm_s = readl(AO_DEBUG_REG2);
+	unsigned long long alarm_start = timere_read_us();
 #ifdef CONFIG_ADC_KEY
 	unsigned char adc_key_cnt = 0;
 	saradc_enable();
@@ -176,8 +188,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = REMOTE_WAKEUP;
 		}
 
-		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM) {
+		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM)
 			irq[IRQ_VRTC] = 0xFFFFFFFF;
+		if (alarm_s && timere_read_us() - alarm_start >
+				alarm_s * 1000000ULL) {
+			writel(0, AO_DEBUG_REG2);
 			exit_reason = RTC_WAKEUP;
 		}
 
