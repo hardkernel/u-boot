@@ -86,7 +86,11 @@ void secure_task(void)
 
 	/*init bss */
 	bss_init();
+#ifdef BL301_ID
+	dbg_prints("secure task start! [" BL301_ID "]\n");
+#else
 	dbg_prints("secure task start!\n");
+#endif
 
 	/* suspend pwr ops init*/
 	suspend_pwr_ops_init();
