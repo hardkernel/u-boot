@@ -49,6 +49,11 @@ ifdef CONFIG_ODROID_COMMON
 CFLAGS += -DCONFIG_ODROID_COMMON
 endif
 
+# Build identifier printed in the "secure task start!" banner
+ifneq ($(BL301_ID),)
+CFLAGS += -DBL301_ID=\"$(BL301_ID)\"
+endif
+
 LDFLAGS=-Bstatic
 #LDFLAGS+=$(LD_LIB_PATH_ARM:%=-L%) -lm -lc -lgcc
 
